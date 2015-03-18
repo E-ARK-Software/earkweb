@@ -1,0 +1,44 @@
+{% extends "access_dipcreator/base.html" %}
+
+
+{% block content %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+    <script type="text/javascript"
+        src="{% static "access_dipcreator/jquery-1.11.2/jquery-1.11.2.js" %}">
+    </script>
+    <script type="text/javascript"
+        src="{% static "access_dipcreator/jquery-1.11.2/jquery.form.min.js" %}">
+    </script>
+    
+    <script type="text/javascript"
+        src="{% static 'search/js/index.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "search/css/index.css" %}" type="text/css" />
+    
+    <script type="text/javascript"
+        src="{% static 'access_dipcreator/bootstrap-notify/bootstrap-notify.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-notify/bootstrap-notify.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "search/css/article.css" %}" type="text/css" />
+{% endblock %}
+
+{% if article_headline %}
+  <h1>{{ article_headline }}</h1>
+{% endif %}
+
+{% if article_author %}
+  <div class="author">{{ article_author }}</div>
+{% endif %}
+
+{% if article_body %}
+  <div class="article_body"> {{ article_body }} </div>
+{% endif %}
+
+<div class="backnav"><a href="{% url 'search:index' %}">back</a></div>
+
+{% endblock %}
+
+        

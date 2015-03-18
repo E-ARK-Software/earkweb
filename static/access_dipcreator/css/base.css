@@ -1,0 +1,24 @@
+body {
+  padding-top: 50px;
+  
+}
+.content-wrapper {
+  padding: 60px 15px;
+  text-align: left;
+  font-size: 1em;
+}
+
+
+a.navbar-brand:hover {
+    text-decoration: underline;
+}
+
+#brand {
+    color: white;
+}
+
+
+
+
+
+

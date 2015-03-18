@@ -1,0 +1,14 @@
+.author {
+    float:right;
+    font-style: italic; 
+    font-weight:bold;
+    padding-bottom: 1em;
+}
+
+.article_body {
+    clear:right
+}
+
+.backnav {
+    padding-top: 2em;
+}

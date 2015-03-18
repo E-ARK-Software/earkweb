@@ -1,0 +1,62 @@
+{% extends "access_dipcreator/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <script type="text/javascript"
+        src="{% static 'access_dipcreator/underscorejs/underscore-min.js' %}">
+    </script>
+    <script type="text/javascript"
+        src="{% static "access_dipcreator/jquery-1.11.2/jquery-1.11.2.js" %}">
+    </script>
+    <script type="text/javascript"
+        src="{% static "access_dipcreator/jquery-1.11.2/jquery.form.min.js" %}">
+    </script>
+    
+    <script type="text/javascript"
+        src="{% static 'search/js/index.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "search/css/index.css" %}" type="text/css" />
+    
+    <script type="text/javascript"
+        src="{% static 'access_dipcreator/bootstrap-notify/bootstrap-notify.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-notify/bootstrap-notify.css" %}" type="text/css" />
+   
+{% endblock %}
+
+{% block content %}
+	    <div class='notifications top-left'></div>
+	    <form id="ajaxform" action="{% url 'search:search_form' %}" method="post">
+	        {% csrf_token %}
+	        {{ form.non_field_errors }}
+	        {{ form.as_p }}
+	        <div id="loading" style="display:none; position: fixed;z-index: 9998;right: 0px;top: 45px; padding-left: 50px; padding-right: 50px; padding-top: 12px; padding-bottom: 12px; background-color:gray">
+	            <span id="load_text">loading...</span>
+	        </div>
+	        <div id="form_ajax_error" style="display:none;">
+	            <span>Search term required</span>
+	        </div>
+	        <p id="sendwrapper"><input type="submit" value="search" id="sendbutton"/></p>
+	    </form>
+	    
+	    <hr/>
+	    
+	     <form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
+	    <div class="tree">
+	      
+		       {% csrf_token %}
+	           <ul>
+	                <li>
+	                    <span><i class="glyphicon glyphicon-folder-open"></i> Collection 1</span> <a href="http://81.189.135.189:8983/solr/#/collection1/query">open in solr query interface</a>
+	                    <ul id="packgroupresults">
+	                        
+	                    </ul>
+	                </li>
+	            </ul>
+	            
+            
+        </div>
+        </form>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% load staticfiles i18n %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="E-ARK">
+    
+
+    <title>DIP Creator</title>
+    
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
+    
+    <script type="text/javascript"
+        src="{% static "access_dipcreator/js/base.js" %}">
+    </script>
+    
+    {% block stylesheets %} 
+    <!-- main style sheet -->
+    <link rel="stylesheet" href="{% static "access_dipcreator/css/base.css" %}" type="text/css" />
+    <!-- bootstrap style sheet -->
+    <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-3.3.2/css/bootstrap.css" %}" type="text/css" />
+    {% endblock %}
+
+    {% comment %} 
+    The 'extra' block allows defining additional header elements, such as 
+    additional style sheet or javascript file includes, for example.
+    {% endcomment %}
+    {% block extra_head %}{% endblock %}
+
+  </head>
+
+  <body>
+    
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+                <div class="container">
+                    <!-- Brand and toggle get grouped for better mobile display -->
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-ex1-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                      <a class="navbar-brand" href="http://bootply.com"><i class="icon-home icon-white"> </i> DIP Creator</a>
+                    </div>
+                    <div class="collapse navbar-collapse navbar-ex1-collapse">
+                        <ul class="nav navbar-nav"><li class="menu-item "><a href="/admin">Administration</a></li>
+                        <li class="menu-item dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Search <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li class="menu-item"><a href="/search">Plain full text search</a></li>
+                            <li class="menu-item"><a href="/search">Full text search by content type</a></li>
+                        </ul>
+                        </li>
+                        </ul>
+                        
+                    </div>
+                </div>
+            </div>
+
+    <div class="container">
+
+      <div class="content-wrapper">
+        {% block content %}
+        {% endblock %}
+      </div>
+
+    </div><!-- /.container -->
+
+    
+    <script src="{% static "access_dipcreator/bootstrap-3.3.2/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "access_dipcreator/bootbox-4.4.0/bootbox.js" %}"></script>
+  </body>
+</html>
