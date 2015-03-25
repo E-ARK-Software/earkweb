@@ -3,7 +3,7 @@
  * @param str String 
  * @return Variable name string
  */
-function toVarName(str) { return  str.replace(/[|&;$%@"<>()+, ]/g, "").toLowerCase(); }
+function toVarName(str) { return  str.replace(/[|&;$%@"<>()+,. ]/g, "").toLowerCase(); }
 
 /**
  * Append new element
@@ -61,6 +61,7 @@ $(document).ready(function() {
         $('.errorlist').remove();
     }
     var options = {
+        
         beforeSubmit: function(form, options) {
             // return false to cancel submit
             block_form();
@@ -81,8 +82,10 @@ $(document).ready(function() {
             for (var key in grouped) {
                 var packArtListItemElm = appendNewElement(packArtListElm, "li", {});
                 var packArtListItemSpanElm = appendNewElement(packArtListItemElm, "span", {id:'result-'+toVarName(key)});
-                //<i class="glyphicon glyphicon-folder-open"></i>
                 appendNewElement(packArtListItemSpanElm, "i", {class:'glyphicon glyphicon-folder-open'});
+                
+                appendNewElement(packArtListItemSpanElm, "input", {type:'hidden', id: toVarName(key),  value: key});
+                
                 appendNewTextNode(packArtListItemSpanElm, " "+key);
                 appendNewElement(packArtListItemElm, "button", {id:'addaip-'+toVarName(key), 
                     class:'glyphicon glyphicon-plus', name: 'addaip-'+toVarName(key), type: 'submit'});
@@ -103,7 +106,7 @@ $(document).ready(function() {
         error:  function(resp) {
             unblock_form();
             $("#form_ajax_error").show();
-            window.console.log(resp.responseText)
+            window.console.log(resp.responseText);
             var errors = JSON.parse(resp.responseText);
             
             $('.top-left').notify({
@@ -124,9 +127,19 @@ $(document).ready(function() {
  */
 $(document).ready(function() {
     var options = {
+       
+        beforeSubmit: function(arr, $form, options) { 
+            // append additional post variables
+            var cleanIdFormObj = $.grep(arr, function(v) {
+                return v.name.startsWith("addaip") || v.name.startsWith("removeaip");
+            });
+            var cleanId = cleanIdFormObj[0].name.split('-').pop();
+            var identifier = $("#"+cleanId).attr('value');
+            arr[arr.length] = {name: "identifier", value: identifier };
+            arr[arr.length+1] = {name: "cleanid", value: cleanId };
+        },
         success: function(resp) {
             var btn = $(document.activeElement).context.id; 
-            window.console.log(btn);
             var sfx = btn.split('-').pop();
             if(btn.startsWith("addaip")) {
                 $('#result-'+sfx).css("background-color", "green");
@@ -135,20 +148,19 @@ $(document).ready(function() {
                 $('#removeaip-'+sfx).show();
             } else  if(btn.startsWith("removeaip")) {
                 $('#result-'+sfx).css("background-color", "transparent");
-                $('#result-'+sfx).css("color", "black");
+                $('#result-'+sfx).css("color", "gray");
                 $('#addaip-'+sfx).show();
                 $('#removeaip-'+sfx).hide();
             }
-            var what = 'removed';
-            if(btn.startsWith('addaip')) what = "added";
-            window.console.log('Package '+what);
+            var action = 'remove';
+            if(btn.startsWith('addaip')) action = "add";
+            window.console.log(action + ' package request for package '+ sfx + ' completed.');
             $('.top-left').notify({
-                message: { text: 'Package '+what },
+                message: { text: 'Package '+action },
                 type: 'success'
             }).show(); 
         }
     };
-    
     $('#select-aip-form').ajaxForm(options);
 
 });

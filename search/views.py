@@ -121,26 +121,19 @@ def search_form(request):
         
     context = {'form':form}
     return render(request, 'search/index.html', context)
-
-def toggle_select_aip(request):
-    if request.POST:
-        if request.is_ajax():
-            identifier = request.POST['identifier']
-            source = "test"
-            if(Package.objects.filter(identifier = identifier).count() == 0):
-                Package.objects.create(identifier=identifier, source=source, date_selected=timezone.now())
-            else:
-                Package.objects.filter(identifier = identifier).delete()
-
-            return HttpResponse("{ \"success\": \"true\" }")
-    else:
-        return render(request, 'search/index.html')
     
 def toggle_select_package(request):
     if request.POST:
         if request.is_ajax():
-            for infoitem in request.POST:
-                print infoitem
+            identifier = request.POST["identifier"]
+            cleanid = request.POST["cleanid"]
+            if(Package.objects.filter(identifier = identifier).count() == 0):
+                Package.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                print "Added package " + identifier
+            else:
+                Package.objects.filter(identifier = identifier).delete()
+                print "Removed package " + identifier
+                
             return HttpResponse("{ \"success\": \"true\" }")
     else:
         return render(request, 'search/index.html')
