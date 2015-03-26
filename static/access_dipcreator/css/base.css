@@ -1,11 +1,10 @@
 body {
   padding-top: 50px;
-  
 }
 .content-wrapper {
   padding: 60px 15px;
   text-align: left;
-  font-size: 1em;
+  font-size: 0.8em;
 }
 
 
@@ -19,6 +18,10 @@ a.navbar-brand:hover {
 
 
 
+.modal70 > .modal-dialog {
+    width:70% !important;
+}
 
-
-
+.xmlview {
+    width:90% !important;
+}

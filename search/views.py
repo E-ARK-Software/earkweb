@@ -64,7 +64,7 @@ def search_form(request):
         if form.is_valid():
             
             keyword = form.cleaned_data['keyword']
-            query_string = settings.SOLR_QUERY_URL.format(keyword)
+            query_string = settings.SERVER_SOLR_QUERY_URL.format(keyword)
             
             print "QUERY STRING:\n" + query_string
             
@@ -127,14 +127,28 @@ def toggle_select_package(request):
         if request.is_ajax():
             identifier = request.POST["identifier"]
             cleanid = request.POST["cleanid"]
-            if(Package.objects.filter(identifier = identifier).count() == 0):
-                Package.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
-                print "Added package " + identifier
-            else:
+            if request.POST["action"] == "add":
+                if(Package.objects.filter(identifier = identifier).count() == 0):
+                    Package.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                    print "Added package " + identifier
+                else:
+                    print "Package added already"
+            elif request.POST["action"] == "rem":
                 Package.objects.filter(identifier = identifier).delete()
                 print "Removed package " + identifier
-                
             return HttpResponse("{ \"success\": \"true\" }")
     else:
         return render(request, 'search/index.html')
     
+
+def get_file_content(request, lily_id):
+    print lily_id
+    if request.is_ajax():
+        query_url =  settings.SERVER_REPO_RECORD_CONTENT_QUERY.format(lily_id)
+        print query_url
+        r = requests.get(query_url)
+        print r.status_code
+        print r.headers['content-type']
+        return HttpResponse(r.text)
+    else:
+        pass

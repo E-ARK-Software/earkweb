@@ -23,12 +23,20 @@
         src="{% static 'access_dipcreator/bootstrap-notify/bootstrap-notify.js' %}">
     </script>
     <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-notify/bootstrap-notify.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "access_dipcreator/loadxml/XMLDisplay.css" %}" type="text/css" />
+    <script type="text/javascript"
+        src="{% static 'access_dipcreator/loadxml/XMLDisplay.js' %}">
+    </script>
+    
+    <script type="text/javascript">
+   
+    </script>
    
 {% endblock %}
 
 {% block content %}
 	    <div class='notifications top-left'></div>
-	    <form id="ajaxform" action="{% url 'search:search_form' %}" method="post">
+	    <form id="search-form" action="{% url 'search:search_form' %}" method="post">
 	        {% csrf_token %}
 	        {{ form.non_field_errors }}
 	        {{ form.as_p }}
@@ -40,8 +48,6 @@
 	        </div>
 	        <p id="sendwrapper"><input type="submit" value="search" id="sendbutton"/></p>
 	    </form>
-	    
-	    <hr/>
 	    
 	     <form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
 	    <div class="tree">

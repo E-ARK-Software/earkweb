@@ -21,9 +21,14 @@
     <script type="text/javascript"
         src="{% static 'access_dipcreator/bootstrap-notify/bootstrap-notify.js' %}">
     </script>
+    
+    <script type="text/javascript"
+        src="{% static 'access_dipcreator/loadxml/XMLDisplay.js' %}">
+    </script>
+    
     <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-notify/bootstrap-notify.css" %}" type="text/css" />
     <link rel="stylesheet" href="{% static "search/css/article.css" %}" type="text/css" />
-{% endblock %}
+    <link rel="stylesheet" href="{% static "access_dipcreator/loadxml/XMLDisplay.css" %}" type="text/css" />{% endblock %}
 
 {% if article_headline %}
   <h1>{{ article_headline }}</h1>
@@ -39,6 +44,9 @@
 
 <div class="backnav"><a href="{% url 'search:index' %}">back</a></div>
 
+<hr/>
+<div id="XMLHolder"></div>
+<script> LoadXML('XMLHolder', '{% static "access_dipcreator/premis.xml" %}'); </script>
 {% endblock %}
 
         

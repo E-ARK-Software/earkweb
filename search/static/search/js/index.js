@@ -78,6 +78,7 @@ $(document).ready(function() {
             while (packArtListElm.firstChild) {
                 packArtListElm.removeChild(packArtListElm.firstChild);
             }
+            // sort by package
             var grouped = _.chain(jsonResp).sortBy("pack").groupBy("pack").value(); 
             for (var key in grouped) {
                 var packArtListItemElm = appendNewElement(packArtListElm, "li", {});
@@ -87,18 +88,20 @@ $(document).ready(function() {
                 appendNewElement(packArtListItemSpanElm, "input", {type:'hidden', id: toVarName(key),  value: key});
                 
                 appendNewTextNode(packArtListItemSpanElm, " "+key);
-                appendNewElement(packArtListItemElm, "button", {id:'addaip-'+toVarName(key), 
-                    class:'glyphicon glyphicon-plus', name: 'addaip-'+toVarName(key), type: 'submit'});
-                appendNewElement(packArtListItemElm, "button", {id:'removeaip-'+toVarName(key), 
-                    class:'glyphicon glyphicon-minus', name: 'removeaip-'+toVarName(key), type: 'submit', style: 'display:none' });
+                appendNewElement(packArtListItemElm, "button", {id:'add-'+toVarName(key), 
+                    class:'glyphicon glyphicon-plus', name: 'add-'+toVarName(key), type: 'submit'});
+                appendNewElement(packArtListItemElm, "button", {id:'rem-'+toVarName(key), 
+                    class:'glyphicon glyphicon-minus', name: 'rem-'+toVarName(key), type: 'submit', style: 'display:none' });
                 var packArtListItemUlElm = appendNewElement(packArtListItemElm, "ul", {id:'package-'+toVarName(key)});
+                // package file item list elements
                 for(var k=0;k<grouped[key].length;k++){                    
                     var lilyId = grouped[key][k].lily_id;
-                    var title = grouped[key][k].title;
+                    var title = (grouped[key][k].title);
+                    title = title.substring(key.length+1, title.length);
                     var articleListItemElm = appendNewElement(packArtListItemUlElm, "li", {});
                     var articleListItemSpanElm = appendNewElement(articleListItemElm, "span", {});
                     var articleListItemAhrefElm = appendNewElement(articleListItemSpanElm, 
-                        "a", {href: 'http://127.0.0.1:8000/search/article/'+lilyId });
+                        "a", {id: 'fileItem', name: encodeURIComponent(lilyId) });
                     appendNewTextNode(articleListItemAhrefElm, title);
                 }
             }
@@ -118,7 +121,7 @@ $(document).ready(function() {
             }, 5000);
         }
     };
-    $('#ajaxform').ajaxForm(options);
+    $('#search-form').ajaxForm(options);
     
 });
 
@@ -131,29 +134,32 @@ $(document).ready(function() {
         beforeSubmit: function(arr, $form, options) { 
             // append additional post variables
             var cleanIdFormObj = $.grep(arr, function(v) {
-                return v.name.startsWith("addaip") || v.name.startsWith("removeaip");
+                return v.name.startsWith("add") || v.name.startsWith("rem");
             });
-            var cleanId = cleanIdFormObj[0].name.split('-').pop();
+            var actionIdArr = cleanIdFormObj[0].name.split('-'); 
+            var cleanId = actionIdArr.pop();
+            var action = actionIdArr.pop();
             var identifier = $("#"+cleanId).attr('value');
-            arr[arr.length] = {name: "identifier", value: identifier };
-            arr[arr.length+1] = {name: "cleanid", value: cleanId };
+            arr.push({name: "action", value: action });
+            arr.push({name: "identifier", value: identifier });
+            arr.push({name: "cleanid", value: cleanId });
         },
         success: function(resp) {
             var btn = $(document.activeElement).context.id; 
             var sfx = btn.split('-').pop();
-            if(btn.startsWith("addaip")) {
+            if(btn.startsWith("add")) {
                 $('#result-'+sfx).css("background-color", "green");
                 $('#result-'+sfx).css("color", "white");
-                $('#addaip-'+sfx).hide();
-                $('#removeaip-'+sfx).show();
-            } else  if(btn.startsWith("removeaip")) {
+                $('#add-'+sfx).hide();
+                $('#rem-'+sfx).show();
+            } else  if(btn.startsWith("rem")) {
                 $('#result-'+sfx).css("background-color", "transparent");
                 $('#result-'+sfx).css("color", "gray");
-                $('#addaip-'+sfx).show();
-                $('#removeaip-'+sfx).hide();
+                $('#add-'+sfx).show();
+                $('#rem-'+sfx).hide();
             }
             var action = 'remove';
-            if(btn.startsWith('addaip')) action = "add";
+            if(btn.startsWith('add')) action = "add";
             window.console.log(action + ' package request for package '+ sfx + ' completed.');
             $('.top-left').notify({
                 message: { text: 'Package '+action },
@@ -204,4 +210,30 @@ $(document).on("click", "[id^=result]", function() {
         folderNode.removeClass("glyphicon-folder-close").addClass("glyphicon-folder-open");
      }
  });
+ 
+ /**
+ * Get file content ajax request (file item links onclick event)
+ */
+$(document).on("click", "[id^=fileItem]", function() {
+    var identifier = ($(this)[0]).getAttribute("name");
+    var encodedIdentifier = encodeURIComponent(identifier);
+    window.console.log("/search/filecontent/"+identifier);
+    
+    $.ajax({
+        //url : "/search/filecontent/USER.DNA_AVID%5C.SA%5C.18001%5C.01_141104%2FMetadata%2FA0072716_PREMIS%5C.xml",
+        url : "/search/filecontent/"+identifier,
+        success : function(result){                
+            bootbox.dialog({
+                message: "<div id='XmlPreview' class='xmlview'></div>",
+                title: "File preview",
+                className: "modal70"
+            }); 
+            //bootbox.alert("Hello").find("div.modal-dialog").addClass("largeWidth");
+            //bootbox.classes.add('medium');
+            LoadXMLString('XmlPreview',result);
+        }
+    });
+ });
+ 
+ 
  
