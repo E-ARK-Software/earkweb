@@ -15,11 +15,13 @@ from django.utils import timezone
 import logging
 import traceback
 
-from access_dipcreator import utils
-
 logger = logging.getLogger(__name__)
 
+from django.contrib.auth.decorators import login_required
+
+@login_required
 def index(request):
+    print request.user
     template = loader.get_template('search/index.html')
     form = SearchForm()
     context = RequestContext(request, {
@@ -27,6 +29,7 @@ def index(request):
     })
     return HttpResponse(template.render(context))
 
+@login_required
 def search_form(request):
     if request.POST:
         form = SearchForm(request.POST)
@@ -80,7 +83,8 @@ def search_form(request):
         form = SearchForm()
     context = {'form':form}
     return render(request, 'search/index.html', context)
-    
+
+@login_required
 def toggle_select_package(request):
     if request.POST:
         if request.is_ajax():
@@ -99,7 +103,7 @@ def toggle_select_package(request):
     else:
         return render(request, 'search/index.html')
     
-
+@login_required
 def get_file_content(request, lily_id):
     logger.debug("Get content for lily_id %s" % lily_id)
     if request.is_ajax():

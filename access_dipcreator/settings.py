@@ -85,7 +85,17 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    'django_cas.middleware.CASMiddleware', 'django.middleware.doc.XViewMiddleware',
 )
+
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', 'django_cas.backends.CASBackend',
+
+)
+
+CAS_SERVER_URL = 'https://localhost:8443/cas-server-webapp-4.0.0/login'
 
 ROOT_URLCONF = 'access_dipcreator.urls'
 
