@@ -108,7 +108,6 @@ $(document).ready(function() {
         },
         error:  function(resp) {
             unblock_form();
-            $("#form_ajax_error").show();
             window.console.log(resp.responseText);
             var errors = JSON.parse(resp.responseText);
             
@@ -117,7 +116,6 @@ $(document).ready(function() {
                 type: 'danger'
             }).show(); 
             setTimeout(function() {
-                $("#form_ajax_error").hide();
             }, 5000);
         }
     };
