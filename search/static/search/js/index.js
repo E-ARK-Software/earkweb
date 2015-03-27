@@ -81,20 +81,27 @@ $(document).ready(function() {
             // sort by package
             var grouped = _.chain(jsonResp).sortBy("pack").groupBy("pack").value(); 
             for (var key in grouped) {
+                var isSelected = grouped[key][0].is_selected_pack;
                 var packArtListItemElm = appendNewElement(packArtListElm, "li", {});
-                var packArtListItemSpanElm = appendNewElement(packArtListItemElm, "span", {id:'result-'+toVarName(key)});
+                var packSpanProps = {id:'result-'+toVarName(key)};
+                if(isSelected) packSpanProps.style = "background-color: green; color: white";
+                var packArtListItemSpanElm = appendNewElement(packArtListItemElm, "span", packSpanProps);
+                
                 appendNewElement(packArtListItemSpanElm, "i", {class:'glyphicon glyphicon-folder-open'});
                 
                 appendNewElement(packArtListItemSpanElm, "input", {type:'hidden', id: toVarName(key),  value: key});
                 
                 appendNewTextNode(packArtListItemSpanElm, " "+key);
-                appendNewElement(packArtListItemElm, "button", {id:'add-'+toVarName(key), 
-                    class:'glyphicon glyphicon-plus', name: 'add-'+toVarName(key), type: 'submit'});
-                appendNewElement(packArtListItemElm, "button", {id:'rem-'+toVarName(key), 
-                    class:'glyphicon glyphicon-minus', name: 'rem-'+toVarName(key), type: 'submit', style: 'display:none' });
+                var addBtnProps = {id:'add-'+toVarName(key), class:'glyphicon glyphicon-plus', name: 'add-'+toVarName(key), type: 'submit'};
+                if(isSelected) addBtnProps.style = 'display:none'; 
+                appendNewElement(packArtListItemElm, "button", addBtnProps);
+                var remBtnProps = {id:'rem-'+toVarName(key), class:'glyphicon glyphicon-minus', name: 'rem-'+toVarName(key), type: 'submit' };
+                if(!isSelected) remBtnProps.style = 'display:none'; 
+                appendNewElement(packArtListItemElm, "button", remBtnProps);
                 var packArtListItemUlElm = appendNewElement(packArtListItemElm, "ul", {id:'package-'+toVarName(key)});
+                
                 // package file item list elements
-                for(var k=0;k<grouped[key].length;k++){                    
+                for(var k=0;k<grouped[key].length;k++){    
                     var lilyId = grouped[key][k].lily_id;
                     var title = (grouped[key][k].title);
                     title = title.substring(key.length+1, title.length);

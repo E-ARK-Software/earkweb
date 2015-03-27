@@ -15,6 +15,8 @@ from django.utils import timezone
 import logging
 import traceback
 
+from access_dipcreator import utils
+
 logger = logging.getLogger(__name__)
 
 def index(request):
@@ -32,6 +34,7 @@ def search_form(request):
             keyword = form.cleaned_data['keyword']
             query_string = settings.SERVER_SOLR_QUERY_URL.format(keyword)
             logger.debug("Solr query string: %s" % query_string)
+            selectedObjects = Package.objects.all()
             try: 
                 response = requests.get(query_string)
                 docs = response.json()["response"]["docs"]  
@@ -42,9 +45,13 @@ def search_form(request):
                     responseObj['lily_id'] = urllib.quote_plus(doc["lily.id"])
                     responseObj['contentType'] = doc["contentType"]
                     # get package property from path
+                    responseObj['is_selected_pack'] = False
                     packageSep = doc["path"].find("/")
                     if(packageSep != -1):
                         responseObj['pack'] = doc["path"][0:packageSep]
+                        print responseObj['pack']
+                        if selectedObjects.filter(identifier=responseObj['pack']).exists():
+                            responseObj['is_selected_pack'] = True
                     else:
                         responseObj['pack'] = "Unknown"
                     if responseObj['lily_id'] != "":
