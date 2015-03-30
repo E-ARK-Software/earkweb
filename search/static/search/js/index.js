@@ -73,13 +73,18 @@ $(document).ready(function() {
                 message: { text: 'search request finished' },
                 type: 'success'
             }).show(); 
-            var jsonResp = JSON.parse(resp);
+            var jsonRes = (JSON.parse(resp));
+            var documents = jsonRes.documents;
+            
             var packArtListElm = document.getElementById("packgroupresults");
             while (packArtListElm.firstChild) {
                 packArtListElm.removeChild(packArtListElm.firstChild);
             }
+            ;
+            var to = ((jsonRes.numFound-jsonRes.start > jsonRes.rows) ? (jsonRes.start+jsonRes.rows) : jsonRes.numFound-jsonRes.start);
+            $('#foundlabel').text(jsonRes.numFound+" documents found (displaying "+(jsonRes.start+1)+" to "+to+")");
             // sort by package
-            var grouped = _.chain(jsonResp).sortBy("pack").groupBy("pack").value(); 
+            var grouped = _.chain(documents).sortBy("pack").groupBy("pack").value(); 
             for (var key in grouped) {
                 var isSelected = grouped[key][0].is_selected_pack;
                 var packArtListItemElm = appendNewElement(packArtListElm, "li", {});

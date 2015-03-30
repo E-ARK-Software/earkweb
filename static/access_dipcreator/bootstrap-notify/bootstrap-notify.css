@@ -10,6 +10,7 @@
 }
 
 .notifications.top-left {
+  display: none;
   right: 0px;
   top: 45px;
 }
