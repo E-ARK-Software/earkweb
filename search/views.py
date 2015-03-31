@@ -31,6 +31,15 @@ def index(request):
     return HttpResponse(template.render(context))
 
 @login_required
+def packsel(request):
+    print request.user
+    template = loader.get_template('search/packsel.html')
+    context = RequestContext(request, {
+        
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
 def search_form(request):
     if request.POST:
         form = SearchForm(request.POST)

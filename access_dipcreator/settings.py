@@ -36,13 +36,7 @@ SERVER_SOLR_PATH = "/solr"
 
 SERVER_SOLR = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_SOLR_PORT
 
-#SOLR_QUERY_URL = "http://172.20.30.219:8983/solr/collection1/select?q=body%3A{0}%20AND%20(url%3A*derstandard.at)&sort=postings%20desc&start=0&rows=10&wt=json" 
 SERVER_SOLR_QUERY_URL = SERVER_SOLR + SERVER_SOLR_PATH + "/collection1/select?q={0}&wt=json" 
-#"http://172.20.30.219:8983/solr/collection1/select?q=body%3A{0}%20AND%20(url%3A*derstandard.at)&sort=postings%20desc&start=0&rows=10&wt=json"
-
-#RECORD_URL = "http://81.189.135.189:12060/repository/record/"
-
-#LILY_CONTENT_URL = "http://81.189.135.189:12060/repository/record/USER.DNA_AVID%5C.SA%5C.18001%5C.01_141104%2FMetadata%2FA0072716_PREMIS%5C.xml/field/n$content/data?ns.n=org.eu.eark"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
@@ -95,7 +89,7 @@ AUTHENTICATION_BACKENDS = (
 
 )
 
-CAS_SERVER_URL = 'https://localhost:8443/cas-server-webapp-4.0.0/login'
+CAS_SERVER_URL = 'https://earkdev.ait.ac.at:8443/cas/login'
 
 ROOT_URLCONF = 'access_dipcreator.urls'
 
@@ -111,6 +105,8 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
