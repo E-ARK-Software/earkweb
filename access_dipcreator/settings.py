@@ -24,7 +24,16 @@ SERVER_REPO_PORT = "12060"
 
 SERVER_REPO = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_REPO_PORT
 
-SERVER_REPO_RECORD_PATH = "/repository/record"
+SERVER_REPO_PATH= "/repository"
+
+SERVER_TABLE_PATH = "/table"
+
+SERVER_RECORD_PATH = "/record"
+
+SERVER_COLLECTION1 = "/eark1"
+
+
+SERVER_REPO_RECORD_PATH = SERVER_REPO_PATH + SERVER_TABLE_PATH + SERVER_COLLECTION1 + SERVER_RECORD_PATH
 
 SERVER_REPO_RECORD_CONTENT_QUERY = SERVER_REPO + SERVER_REPO_RECORD_PATH + "/{0}/field/n$content/data?ns.n=org.eu.eark"
 
@@ -36,7 +45,7 @@ SERVER_SOLR_PATH = "/solr"
 
 SERVER_SOLR = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_SOLR_PORT
 
-SERVER_SOLR_QUERY_URL = SERVER_SOLR + SERVER_SOLR_PATH + "/collection1/select?q={0}&wt=json" 
+SERVER_SOLR_QUERY_URL = SERVER_SOLR + SERVER_SOLR_PATH + "/eark1/select?q={0}&wt=json" 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
