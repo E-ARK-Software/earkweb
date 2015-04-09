@@ -7,7 +7,7 @@ urlpatterns = patterns('',
     # url(r'^$', 'access_dipcreator.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
     
-    url(r'^$', RedirectView.as_view(url='/search/')),
+    url(r'^$', RedirectView.as_view(url='search/')),
     url(r'^search/', include('search.urls', namespace="search")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', 'django_cas.views.login'), 
