@@ -67,6 +67,7 @@ STATICFILES_DIRS = (
 )
 
 
+CAS_REDIRECT_URL = '/access_dipcreator/search'
 LOGIN_URL = '/access_dipcreator/accounts/login/'
 LOGOUT_URL = '/access_dipcreator/accounts/logout/'
 
