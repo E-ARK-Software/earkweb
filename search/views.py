@@ -15,7 +15,7 @@ from django.utils import timezone
 import logging
 import traceback
 from query import get_query_string
-
+from lxml import etree
 logger = logging.getLogger(__name__)
 
 from django.contrib.auth.decorators import login_required
@@ -126,6 +126,20 @@ def get_file_content(request, lily_id):
         r = requests.get(query_url)
         logger.debug("Get file content query status code: %d" % r.status_code)
         logger.debug("Get file content query content-type: %s" % r.headers['content-type'])
+        response_content = r.text
+        response_content_utf8 = response_content.encode("utf-8")
+        try:
+            tree = etree.fromstring(response_content_utf8)
+            # List containing names you want to keep
+            inputID = ['agent', 'dmdSec', 'fileSec']
+            
+            for node in tree.findall('.//data'):
+                # Remove node if the name attribute value is not in inputID
+                if not node.attrib.get('name') in inputID:
+                    tree.getroot().remove(node)
+            print etree.tostring(tree)
+        except Exception:                
+            logger.error(traceback.format_exc())
         return HttpResponse(r.text)
     else:
         pass
