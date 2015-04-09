@@ -67,6 +67,8 @@ STATICFILES_DIRS = (
 )
 
 
+LOGIN_URL = '/access_dipcreator/accounts/login/'
+LOGOUT_URL = '/access_dipcreator/accounts/logout/'
 
 # Application definition
 
