@@ -80,7 +80,6 @@ $(document).ready(function() {
             while (packArtListElm.firstChild) {
                 packArtListElm.removeChild(packArtListElm.firstChild);
             }
-            ;
             var to = ((jsonRes.numFound-jsonRes.start > jsonRes.rows) ? (jsonRes.start+jsonRes.rows) : jsonRes.numFound-jsonRes.start);
             $('#foundlabel').text(jsonRes.numFound+" documents found (displaying "+(jsonRes.start+1)+" to "+to+")");
             // sort by package

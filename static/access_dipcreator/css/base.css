@@ -33,13 +33,16 @@ color: gray;
 
 
 .logininfo {
-    color: gray;
+    color: #FABCAD;
     width: 220px;
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 35px;
 }
 
 .logininfo a {
-    color: white;
+    color: #FFFFFF;
 }
+.logininfo a:focus { color: #FFFFFF; text-decoration:underline; }
+.logininfo a:hover { color: #FFFFFF; text-decoration:underline; }
+.logininfo a:active { color: #FFFFFF; text-decoration:underline; }
