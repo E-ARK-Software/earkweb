@@ -64,3 +64,17 @@
     border:1px solid #94a0b4;
     color:#000
 }
+
+#loading {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(192, 192, 192, 0.5);
+    background-image: url("/static/access_dipcreator/img/loading.gif");
+    background-repeat: no-repeat;
+    background-position: center;
+}
