@@ -144,6 +144,7 @@ $(document).ready(function() {
     var options = {
        
         beforeSubmit: function(arr, $form, options) { 
+        
             // append additional post variables
             var cleanIdFormObj = $.grep(arr, function(v) {
                 return v.name.startsWith("add") || v.name.startsWith("rem");
@@ -227,6 +228,7 @@ $(document).on("click", "[id^=result]", function() {
   * Get file content ajax request (file item links onclick event)
   */
 $(document).on("click", "[id^=fileItem]", function() {
+show('loadingpreview', true);
     var fileContentPath = "/access_dipcreator/search/filecontent/";
     var selectedItem = ($(this)[0]);
     var identifier = selectedItem.getAttribute("name");
@@ -247,7 +249,10 @@ $(document).on("click", "[id^=fileItem]", function() {
             }); 
             switch (mime) {
                 case "application/xml":
+                    
+
                     LoadXMLString('XmlPreview',result);
+                    show('loadingpreview', false);
                     break;
                 case "image/jpeg":
                     window.console.log("load image");
@@ -257,9 +262,11 @@ $(document).on("click", "[id^=fileItem]", function() {
             }
         } 
     });
- });
- 
- 
+ }); 
+ function show(id, value) {
+    document.getElementById(id).style.display = value ? 'block' : 'none';
+}
+/*
 function onReady(callback) {
     var intervalID = window.setInterval(checkReady, 1000);
 
@@ -271,11 +278,10 @@ function onReady(callback) {
     }
 }
 
-function show(id, value) {
-    document.getElementById(id).style.display = value ? 'block' : 'none';
-}
+
 
 onReady(function () {
     show('page', true);
     show('loading', false);
 });
+*/
