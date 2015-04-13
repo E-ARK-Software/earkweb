@@ -17,6 +17,7 @@ import traceback
 from query import get_query_string
 from lxml import etree
 logger = logging.getLogger(__name__)
+import shutil
 
 from django.contrib.auth.decorators import login_required
 
@@ -61,6 +62,7 @@ def search_form(request):
                     responseObj['title'] = doc["path"]
                     responseObj['lily_id'] = urllib.quote_plus(doc["lily.id"])
                     responseObj['contentType'] = doc["contentType"]
+                    responseObj['size'] = doc["size"]
                     # get package property from path
                     responseObj['is_selected_pack'] = False
                     packageSep = doc["path"].find("/")
@@ -123,23 +125,29 @@ def get_file_content(request, lily_id):
     if request.is_ajax():
         query_url =  settings.SERVER_REPO_RECORD_CONTENT_QUERY.format(lily_id)
         logger.debug("Get file content query: %s" % query_url)
-        r = requests.get(query_url)
+        r = requests.get(query_url, stream=True)
         logger.debug("Get file content query status code: %d" % r.status_code)
         logger.debug("Get file content query content-type: %s" % r.headers['content-type'])
+        contentType = r.headers['content-type']
         response_content = r.text
         response_content_utf8 = response_content.encode("utf-8")
-        try:
-            tree = etree.fromstring(response_content_utf8)
-            # List containing names you want to keep
-            inputID = ['agent', 'dmdSec', 'fileSec']
-            
-            for node in tree.findall('.//data'):
-                # Remove node if the name attribute value is not in inputID
-                if not node.attrib.get('name') in inputID:
-                    tree.getroot().remove(node)
-            print etree.tostring(tree)
-        except Exception:                
-            logger.error(traceback.format_exc())
+        #if contentType == 'image/jpeg': 
+        #    with open('/home/shs/test.jpeg', 'wb') as f:
+        #        for chunk in r.iter_content(1024):
+        #            f.write(chunk)
+        if contentType == 'application/xml': 
+            try:
+                tree = etree.fromstring(response_content_utf8)
+                # List containing names you want to keep
+                inputID = ['agent', 'dmdSec', 'fileSec']
+                
+                for node in tree.findall('.//data'):
+                    # Remove node if the name attribute value is not in inputID
+                    if not node.attrib.get('name') in inputID:
+                        tree.getroot().remove(node)
+                print etree.tostring(tree)
+            except Exception:                
+                logger.error(traceback.format_exc())
         return HttpResponse(r.text)
     else:
         pass

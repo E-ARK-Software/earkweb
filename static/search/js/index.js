@@ -109,11 +109,13 @@ $(document).ready(function() {
                 for(var k=0;k<grouped[key].length;k++){    
                     var lilyId = grouped[key][k].lily_id;
                     var title = (grouped[key][k].title);
+                    var size = (grouped[key][k].size);
+                    var contentType = (grouped[key][k].contentType);
                     title = title.substring(key.length+1, title.length);
                     var articleListItemElm = appendNewElement(packArtListItemUlElm, "li", {});
                     var articleListItemSpanElm = appendNewElement(articleListItemElm, "span", {});
                     var articleListItemAhrefElm = appendNewElement(articleListItemSpanElm, 
-                        "a", {id: 'fileItem', name: encodeURIComponent(lilyId) });
+                        "a", {id: 'fileItem', name: encodeURIComponent(lilyId), 'data-mime': contentType, 'data-size': size });
                     appendNewTextNode(articleListItemAhrefElm, title);
                 }
             }
@@ -222,26 +224,38 @@ $(document).on("click", "[id^=result]", function() {
  });
  
  /**
- * Get file content ajax request (file item links onclick event)
- */
+  * Get file content ajax request (file item links onclick event)
+  */
 $(document).on("click", "[id^=fileItem]", function() {
-    var identifier = ($(this)[0]).getAttribute("name");
+    var fileContentPath = "/access_dipcreator/search/filecontent/";
+    var selectedItem = ($(this)[0]);
+    var identifier = selectedItem.getAttribute("name");
     var encodedIdentifier = encodeURIComponent(identifier);
-    window.console.log("/search/filecontent/"+identifier);
+    window.console.log("File content path: " + fileContentPath+identifier);
     
+    var mime = selectedItem.dataset.mime;
+    window.console.log("MIME-Type: " + mime);
+    var size = parseInt(selectedItem.dataset.size);
+    window.console.log("Size: " + size);
     $.ajax({
-        //url : "/search/filecontent/USER.DNA_AVID%5C.SA%5C.18001%5C.01_141104%2FMetadata%2FA0072716_PREMIS%5C.xml",
-        url : "/search/filecontent/"+identifier,
+        url : fileContentPath+identifier,
         success : function(result){                
             bootbox.dialog({
                 message: "<div id='XmlPreview' class='xmlview'></div>",
                 title: "File preview",
                 className: "modal70"
             }); 
-            //bootbox.alert("Hello").find("div.modal-dialog").addClass("largeWidth");
-            //bootbox.classes.add('medium');
-            LoadXMLString('XmlPreview',result);
-        }
+            switch (mime) {
+                case "application/xml":
+                    LoadXMLString('XmlPreview',result);
+                    break;
+                case "image/jpeg":
+                    window.console.log("load image");
+                    appendNewElement(document.getElementById("XmlPreview"), "img", {src: fileContentPath+identifier });
+                    
+                    break;
+            }
+        } 
     });
  });
  
