@@ -80,7 +80,6 @@ $(document).ready(function() {
             while (packArtListElm.firstChild) {
                 packArtListElm.removeChild(packArtListElm.firstChild);
             }
-            ;
             var to = ((jsonRes.numFound-jsonRes.start > jsonRes.rows) ? (jsonRes.start+jsonRes.rows) : jsonRes.numFound-jsonRes.start);
             $('#foundlabel').text(jsonRes.numFound+" documents found (displaying "+(jsonRes.start+1)+" to "+to+")");
             // sort by package
@@ -114,8 +113,9 @@ $(document).ready(function() {
                     title = title.substring(key.length+1, title.length);
                     var articleListItemElm = appendNewElement(packArtListItemUlElm, "li", {});
                     var articleListItemSpanElm = appendNewElement(articleListItemElm, "span", {});
-                    var articleListItemAhrefElm = appendNewElement(articleListItemSpanElm, 
-                        "a", {id: 'fileItem', name: encodeURIComponent(lilyId), 'data-mime': contentType, 'data-size': size });
+                    var linkprops = {id: 'fileItem', name: encodeURIComponent(lilyId), 'data-mime': contentType, 'data-size': size };
+                    if(contentType != 'application/xml') linkprops.style = 'color:gray;text-decoration:none'; 
+                    var articleListItemAhrefElm = appendNewElement(articleListItemSpanElm, "a", linkprops);
                     appendNewTextNode(articleListItemAhrefElm, title);
                 }
             }
