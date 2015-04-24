@@ -40,6 +40,14 @@ def packsel(request):
     })
     return HttpResponse(template.render(context))
 
+def demosearch(request):
+    print request.user
+    template = loader.get_template('search/demosearch.html')
+    context = RequestContext(request, {
+        
+    })
+    return HttpResponse(template.render(context))
+
 @login_required
 def search_form(request):
     if request.POST:
