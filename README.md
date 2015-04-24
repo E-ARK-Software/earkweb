@@ -20,7 +20,7 @@ Web application for creating DIPs based on selected AIPs
 
 ### Local development
 
-Adapt path replacement for local development in access_dipcreator/access_dipcreator/urls.py:
+Change path so that it detects your local development path in acess_dipcreator/access_dipcreator/urls.py:
 
     if "Development/" ...
 
@@ -31,23 +31,6 @@ Set the file to "assume-unchanged":
 and undo if needed:
 
     git update-index --no-assume-unchanged access_dipcreator/access_dipcreator/urls.py
-
-Web application for creating DIPs based on selected AIPs
-Install CAS on server
-Prepare Apache Tomcat (enable SSL)
-
-Create keystore
-
-    keytool -genkey -alias tomcat -keyalg RSA -keystore keystore.jks
-
-Activate SSL using the keystore (in conf/server.xml):
-
-    <Connector port="8443" 
-        keystoreFile="/usr/local/java/apache-tomcat-7.0.56/keystore.jks" 
-        keystorePass="changeit" 
-        protocol="org.apache.coyote.http11.Http11NioProtocol"
-        maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
-        clientAuth="false" sslProtocol="TLS" />
 
 ### Enable CAS in Django
 
