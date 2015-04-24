@@ -11,6 +11,8 @@ Web application for creating DIPs based on selected AIPs
 
     sudo pip install virtualenv
     sudo pip install virtualenvwrapper
+    mkvirtualenv <name>
+    workon <name>
 
 ### Install additional libraries
 
