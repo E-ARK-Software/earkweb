@@ -1,5 +1,5 @@
 # earkweb
-Web application for creating DIPs based on selected AIPs
+E-ARK integrated prototype web application
 
 ## Developer notes
 
