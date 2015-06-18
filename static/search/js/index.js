@@ -229,7 +229,7 @@ $(document).on("click", "[id^=result]", function() {
   */
 $(document).on("click", "[id^=fileItem]", function() {
 show('loadingpreview', true);
-    var fileContentPath = "/access_dipcreator/search/filecontent/";
+    var fileContentPath = "/earkweb/search/filecontent/";
     var selectedItem = ($(this)[0]);
     var identifier = selectedItem.getAttribute("name");
     var encodedIdentifier = encodeURIComponent(identifier);

@@ -14,14 +14,14 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
     
     <script type="text/javascript"
-        src="{% static "access_dipcreator/js/base.js" %}">
+        src="{% static "earkweb/js/base.js" %}">
     </script>
     
     {% block stylesheets %} 
     <!-- main style sheet -->
-    <link rel="stylesheet" href="{% static "access_dipcreator/css/base.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />
     <!-- bootstrap style sheet -->
-    <link rel="stylesheet" href="{% static "access_dipcreator/bootstrap-3.3.2/css/bootstrap.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "earkweb/bootstrap-3.3.2/css/bootstrap.css" %}" type="text/css" />
     {% endblock %}
 
     {% comment %} 
@@ -44,16 +44,16 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-              <a class="navbar-brand" href="/access_dipcreator/"><i class="icon-home icon-white"> </i> DIP Creator</a>
+              <a class="navbar-brand" href="/earkweb/"><i class="icon-home icon-white"> </i> DIP Creator</a>
             </div>
             <div class="collapse navbar-collapse navbar-ex1-collapse">
-                <ul class="nav navbar-nav"><li class="menu-item "><a href="/access_dipcreator/admin">Administration</a></li>
+                <ul class="nav navbar-nav"><li class="menu-item "><a href="/earkweb/admin">Administration</a></li>
                 <li class="menu-item dropdown"><a href="/search" class="dropdown-toggle" data-toggle="dropdown">Search &amp; Package selection <b class="caret"></b></a>
                
                 <ul class="dropdown-menu">
-                <li class="menu-item"><a href="/access_dipcreator/search">File-based package search</a></li>
-                    <li class="menu-item"><a href="/access_dipcreator/search/packsel">Current package selection</a></li>
-                    <li class="menu-item"><a href="/access_dipcreator/search/demosearch">Demo search</a></li>
+                <li class="menu-item"><a href="/earkweb/search">File-based package search</a></li>
+                    <li class="menu-item"><a href="/earkweb/search/packsel">Current package selection</a></li>
+                    <li class="menu-item"><a href="/earkweb/search/demosearch">Demo search</a></li>
                 </ul>
                 </li>
                 </ul>
@@ -63,7 +63,7 @@
         {% if user.is_authenticated %}
         <div class="logininfo">
 		 Logged in as: {{ user.username }}.
-		 [<a href="/access_dipcreator/accounts/logout">logout</a>]
+		 [<a href="/earkweb/accounts/logout">logout</a>]
 		</div>
 		{% endif %}
     </div>
@@ -78,7 +78,7 @@
     </div><!-- /.container -->
 
     
-    <script src="{% static "access_dipcreator/bootstrap-3.3.2/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "access_dipcreator/bootbox-4.4.0/bootbox.js" %}"></script>
+    <script src="{% static "earkweb/bootstrap-3.3.2/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "earkweb/bootbox-4.4.0/bootbox.js" %}"></script>
   </body>
 </html>

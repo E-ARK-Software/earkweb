@@ -1,11 +1,11 @@
-# access_dipcreator
+# earkweb
 Web application for creating DIPs based on selected AIPs
 
 ## Developer notes
 
 ### Checkout project
 
-    git clone https://github.com/eark-project/access_dipcreator
+    git clone https://github.com/eark-project/earkweb
 
 ### Virtual environment (python)
 
@@ -22,17 +22,17 @@ Web application for creating DIPs based on selected AIPs
 
 ### Local development
 
-Change path so that it detects your local development path in acess_dipcreator/access_dipcreator/urls.py:
+Change path so that it detects your local development path in earkweb/earkweb/urls.py:
 
     if "Development/" ...
 
 Set the file to "assume-unchanged":
 
-    git update-index --assume-unchanged access_dipcreator/access_dipcreator/urls.py
+    git update-index --assume-unchanged earkweb/earkweb/urls.py
 
 and undo if needed:
 
-    git update-index --no-assume-unchanged access_dipcreator/access_dipcreator/urls.py
+    git update-index --no-assume-unchanged earkweb/earkweb/urls.py
 
 ### Enable CAS in Django
 
