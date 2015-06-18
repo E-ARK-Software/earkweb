@@ -40,11 +40,39 @@ def packsel(request):
     })
     return HttpResponse(template.render(context))
 
+@login_required
 def demosearch(request):
     print request.user
     template = loader.get_template('search/demosearch.html')
     context = RequestContext(request, {
         
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
+def demosearch_govdocs(request):
+    print request.user
+    template = loader.get_template('search/demosearch_govdocs.html')
+    context = RequestContext(request, {
+
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
+def demosearch_news(request):
+    print request.user
+    template = loader.get_template('search/demosearch_news.html')
+    context = RequestContext(request, {
+
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
+def demosearch_package(request):
+    print request.user
+    template = loader.get_template('search/demosearch_package.html')
+    context = RequestContext(request, {
+
     })
     return HttpResponse(template.render(context))
 

@@ -1,0 +1,37 @@
+.results {
+  padding-bottom: 8px;
+  text-align: center;
+}
+
+table {
+  width: 100%;
+}
+
+.label {
+  width: 200px;
+  float: left;
+  font-size:130%;
+}
+
+.input {
+  width: 300px;
+}
+
+*, *:before, *:after {
+  box-sizing: border-box;
+}
+
+form, .output {
+  padding: 40px;
+  width: 95%;
+  background-color: #cccccc;
+  border-radius: 10px;
+}
+
+.output {
+  float: right;
+}
+
+input, select {
+  font-size: 20px;
+}

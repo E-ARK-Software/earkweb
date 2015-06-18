@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     
     url(r'^$', RedirectView.as_view(url='search/')),
     url(r'^search/', include('search.urls', namespace="search")),
+    url(r'^workflow/', include('workflow.urls', namespace="workflow")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', 'django_cas.views.login'), 
     url(r'^accounts/logout/$', 'django_cas.views.logout'),

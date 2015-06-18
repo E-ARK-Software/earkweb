@@ -78,11 +78,11 @@ E-ARK integrated prototype web application
     
 2. Start web application
 
-    2.1 Start the web application from the command line using the command:
+    Start the web application from the command line using the command:
 
         python manage.py runserver
         
-    2.2 A message similar to the one below should be shown in case of success
+    A message similar to the one below should be shown in case of success
     
         System check identified no issues (0 silenced).
         June 18, 2015 - 08:34:56
@@ -90,9 +90,9 @@ E-ARK integrated prototype web application
         Starting development server at http://127.0.0.1:8000/
         Quit the server with CONTROL-C.
         
-    2.2 Open web browser at http://127.0.0.1:8000/
+    Open web browser at http://127.0.0.1:8000/
 
-## CAS server
+## CAS server installation
 
 The development version points to CAS installed on the demo server, therefore this is not needed for
 development.
@@ -103,37 +103,46 @@ development.
 
 1. Create keystore
 
-    keytool -genkey -alias tomcat -keyalg RSA -keystore keystore.jks
+    Create keystore using the following command:
 
-2. Activate SSL using the keystore (in conf/server.xml):
+        keytool -genkey -alias tomcat -keyalg RSA -keystore keystore.jks
+        
+    In the following questions set the Common Name (CN) to earkdev.ait.ac.at to avoid SSL errors of type 'hostname mismatch'.
 
-    <Connector port="8443" 
-        keystoreFile="/usr/local/java/apache-tomcat-7.0.56/keystore.jks" 
-        keystorePass="changeit" 
-        protocol="org.apache.coyote.http11.Http11NioProtocol"
-        maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
-        clientAuth="false" sslProtocol="TLS" />
+2. Activate SSL:
 
+    To activate SSL, create a connector using the keystore created previously (in conf/server.xml)
 
-    cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
+        <Connector port="8443" 
+            keystoreFile="/usr/local/java/apache-tomcat-7.0.56/keystore.jks" 
+            keystorePass="changeit" 
+            protocol="org.apache.coyote.http11.Http11NioProtocol"
+            maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+            clientAuth="false" sslProtocol="TLS" />
+
+        cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
 
 #### Deployment
 
 1. Download CAS
 
-    http://downloads.jasig.org/cas/cas-server-4.0.0-release.tar.gz
+        wget http://downloads.jasig.org/cas/cas-server-4.0.0-release.tar.gz
 
 2. Deploy CAS WAR to Apache Tomcat
 
-    cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
+        cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
     
 ### Administration
 
 #### Add/Change user
 
-   $CATALINA_HOME/webapps/cas/WEB-INF/deployerConfigContext.xml
+Users are managed in the deployerConfigContext.xml which is located at (variable $CATALINA_HOME must point to the installation directory of apache tomcat):
+
+    $CATALINA_HOME/webapps/cas/WEB-INF/deployerConfigContext.xml
+    
+Users can be added by creating a new entry in the following bean definition:
    
-   <bean id="primaryAuthenticationHandler"
+    <bean id="primaryAuthenticationHandler"
           class="org.jasig.cas.authentication.AcceptUsersAuthenticationHandler">
         <property name="users">
             <map>

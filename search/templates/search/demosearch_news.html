@@ -1,0 +1,82 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <script type="text/javascript"
+        src="{% static "earkweb/jquery-1.11.2/jquery-1.11.2.js" %}">
+    </script>
+    <script type="text/javascript"
+        src="{% static "earkweb/jquery-1.11.2/jquery.form.min.js" %}">
+    </script>
+    
+    <script type="text/javascript"
+        src="{% static 'search/js/demosearch_news.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "search/css/demosearch.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "search/css/demosearch_news.css" %}" type="text/css" />
+
+    <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="http://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+
+{% endblock %}
+
+{% block content %}
+  <div class="content">
+    <h1>Find files in Newspapers</h1>
+    <div class="left-box">
+      <form name="find">
+        <div>
+          <div class="label">
+            <label for="queryString">contained word</label>
+          </div>
+          <input id="queryString" class="input" type="text" name="queryString">
+        </div>
+        <div>
+          <div class="label">
+            <label for="headline">headline</label>
+          </div>
+          <input id="headline" class="input" type="text" name="headline">
+        </div>
+        <div>
+          <div class="label">
+            <label for="url">newspaper</label>
+          </div>
+          <select id="url" class="input" name="url" size="2" multiple>
+            <option value="*derstandard.at">Der Standard</option>
+            <option value="*faz.net">Frankfurter Allgemeine</option>
+          </select>
+        </div>
+        <div>
+          <div class="label">
+            <label for="from">published after</label>
+          </div>
+          <input id="from" class="input" type="text" name="from">
+        </div>
+        <div>
+          <div class="label">
+            <label for="to">published before</label>
+          </div>
+          <input id="to" class="input" type="text" name="to">
+        </div>
+        <div>
+          <div class="label">
+            <label for="sort">sort</label>
+          </div>
+          <select id="sort" class="input" name="sort">
+            <option value="">relevance</option>
+            <option value="size asc">size (ascending)</option>
+            <option value="size desc">size (descending)</option>
+            <option value="postings desc">postings</option>
+          </select>
+        </div>
+        <input type="button" value="Search" onclick="askSolr(0)">
+      </form>
+    </div>
+    <div class="right-box">
+      <div id="output" class="output"></div>
+    </div>
+  </div>
+{% endblock %}
