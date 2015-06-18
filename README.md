@@ -67,7 +67,7 @@ E-ARK integrated prototype web application
 
         cd django-cas
         python setup.py install
-    
+
 ### Prepare database and execute
 
 1. Prepare database
@@ -91,6 +91,35 @@ E-ARK integrated prototype web application
         Quit the server with CONTROL-C.
         
     Open web browser at http://127.0.0.1:8000/
+
+## Deployment on demo server
+
+### Configure as WSGI app
+
+Edit `/etc/apache2/sites-enabled/000-default` and add the variable `WSGIScriptAlias` which marks the file 
+path to the WSGI script, that should be processed by mod_wsgi's wsgi-script handler.:
+
+    WSGIScriptAlias /earkweb /path/to/earkweb/earkweb/wsgi.py
+
+A request for http://earkdev.ait.ac.at/earkweb in this case would cause the server to run the WSGI application defined in /path/to/wsgi-scripts/earkweb.
+
+Additionally create variable `WSGIPythonPath` which defines a directory where to search for Python modules. 
+
+    WSGIPythonPath /home/shsdev/python_wsgi_apps/access_dipcreator
+
+And create a directory entry:
+
+    <Directory /path/to/earkweb>
+        Options Indexes FollowSymLinks MultiViews
+        <Files wsgi.py>
+            Order allow,deny
+            allow from all
+        </Files>
+    </Directory>
+    
+Further information on using Django with Apache and mod_wsgi:
+
+    https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/modwsgi/
 
 ## CAS server installation
 
