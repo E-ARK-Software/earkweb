@@ -38,11 +38,19 @@ E-ARK integrated prototype web application
 
 4. Adapt settings to your local development environment
 
-    Change path so that it detects your local development path in earkweb/earkweb/urls.py:
+    Change local path identification so that it detects your local development path in `earkweb/earkweb/urls.py`:
     
         if "Development/" ...
     
-    Set the file to "assume-unchanged":
+    This is a hack because the development server usually starts at `http://127.0.0.1:8888/`, therefore
+    a path is appended in local development mode to ensure that the "Path"-part (URL part following Host and Port)
+    equals to the one in production mode.
+    
+    Local development mode: `http://127.0.0.1:8000/earkweb/`
+    
+    Production mode: `http://<productionserver>/earkweb/`
+    
+    If you do not want to commit these changes, set the file to "assume-unchanged":
     
         git update-index --assume-unchanged earkweb/earkweb/urls.py
     
@@ -120,10 +128,16 @@ And create a directory entry:
 Further information on using Django with Apache and mod_wsgi:
 
     https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/modwsgi/
+    
+### Update demo server deployment
+
+The deployed version is a copy from this Github repository, update is done by sending a pull request on the master branch:
+
+    sudo -u www-data git pull origin master
 
 ## CAS server installation
 
-The development version points to CAS installed on the demo server, therefore this is not needed for
+The development version points to CAS installed on the demo server, therefore this is not required for
 development.
 
 ### Installation
@@ -151,7 +165,7 @@ development.
 
         cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
 
-#### Deployment
+#### CAS Deployment
 
 1. Download CAS
 
