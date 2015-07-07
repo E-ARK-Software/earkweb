@@ -4,9 +4,12 @@ import urllib
 import json
 
 import requests
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseBadRequest
+from django.http import HttpResponseRedirect
 from django.http import HttpResponseServerError
 from django.shortcuts import render
+from models import DIPackage
 from models import Package
 from forms import SearchForm
 
@@ -24,19 +27,25 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def index(request):
     print request.user
+    logger.debug("count dips: " + str(DIPackage.objects.count()))
+    if DIPackage.objects.count() == 0:
+        logger.debug("create dip")
+        DIPackage.objects.create(name='DIP 1')
     template = loader.get_template('search/index.html')
     form = SearchForm()
     context = RequestContext(request, {
-        'form':form
+        'form':form,
+        'dips':DIPackage.objects.all()
     })
     return HttpResponse(template.render(context))
 
 @login_required
 def packsel(request):
     print request.user
+    dips = DIPackage.objects.all()
     template = loader.get_template('search/packsel.html')
     context = RequestContext(request, {
-        
+        'package_list': dips
     })
     return HttpResponse(template.render(context))
 
@@ -86,7 +95,9 @@ def search_form(request):
             start = 0
             rows = 20
             query_string = get_query_string(keyword, content_type, start, rows)
-            selectedObjects = Package.objects.all()
+            dip_name = request.POST["dip"]
+            dip = DIPackage.objects.get(name=dip_name)
+            selectedObjects = dip.packages.all()
             try: 
                 response = requests.get(query_string)
                 responseJson = response.json()
@@ -138,18 +149,26 @@ def search_form(request):
 
 @login_required
 def toggle_select_package(request):
-    if request.POST:
+    if request.method == "POST":
         if request.is_ajax():
             identifier = request.POST["identifier"]
             cleanid = request.POST["cleanid"]
+            dip_name = request.POST["dip"]
+            dip = DIPackage.objects.get(name=dip_name)
+            logger.debug(dip)
             if request.POST["action"] == "add":
-                if(Package.objects.filter(identifier = identifier).count() == 0):
-                    Package.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
-                    logger.debug("Added package %s" % identifier)
+                if Package.objects.filter(identifier = identifier).count() == 0:
+                    dip.packages.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                    logger.debug("Added new package %s" % identifier)
+                elif dip.packages.filter(identifier = identifier).count() == 0:
+                    package = Package.objects.filter(identifier = identifier)[0]
+                    dip.packages.add(package)
+                    logger.debug("Added existing package %s" % identifier)
                 else:
                     logger.debug("Package %s added already" % identifier)
             elif request.POST["action"] == "rem":
-                Package.objects.filter(identifier = identifier).delete()
+                package = Package.objects.filter(identifier = identifier)[0]
+                dip.packages.remove(package)
                 logger.debug("Removed package %s" % identifier)
             return HttpResponse("{ \"success\": \"true\" }")
     else:
@@ -187,3 +206,21 @@ def get_file_content(request, lily_id):
         return HttpResponse(r.text)
     else:
         pass
+
+@login_required
+def create_dip(request):
+    if request.method == "POST":
+        DIPackage.objects.create(name=request.POST['name'])
+        return HttpResponseRedirect(reverse('search:packsel'))
+    else:
+        pass
+
+@login_required
+def acquire_aips(request):
+    if request.method == "POST":
+        # TODO: start asynchron background process
+        # TODO: notify user that process was started successfully
+        return HttpResponseRedirect(reverse('search:packsel'))
+    else:
+        pass
+

@@ -4,63 +4,57 @@
 
 {% block extra_head %}
 
-    <script type="text/javascript"
-        src="{% static 'earkweb/underscorejs/underscore-min.js' %}">
-    </script>
-    <script type="text/javascript"
-        src="{% static "earkweb/jquery-1.11.2/jquery-1.11.2.js" %}">
-    </script>
-    <script type="text/javascript"
-        src="{% static "earkweb/jquery-1.11.2/jquery.form.min.js" %}">
-    </script>
-    
-    <script type="text/javascript"
-        src="{% static 'search/js/index.js' %}">
-    </script>
-    <link rel="stylesheet" href="{% static "search/css/index.css" %}" type="text/css" />
-    
-    <script type="text/javascript"
-        src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}">
-    </script>
-    <link rel="stylesheet" href="{% static "earkweb/bootstrap-notify/bootstrap-notify.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "earkweb/loadxml/XMLDisplay.css" %}" type="text/css" />
-    <script type="text/javascript"
-        src="{% static 'earkweb/loadxml/XMLDisplay.js' %}">
-    </script>
-    
-    <script type="text/javascript">
-   
-    </script>
+<script type="text/javascript" src="{% static 'earkweb/underscorejs/underscore-min.js' %}"></script>
+<script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script>
+<script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script>
+
+<script type="text/javascript" src="{% static 'search/js/index.js' %}"></script>
+<link rel="stylesheet" href="{% static 'search/css/index.css' %}" type="text/css" />
+
+<script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+<link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+<link rel="stylesheet" href="{% static 'earkweb/loadxml/XMLDisplay.css' %}" type="text/css" />
+<script type="text/javascript" src="{% static 'earkweb/loadxml/XMLDisplay.js' %}"></script>
    
 {% endblock %}
 
 {% block content %}
-	    <form id="search-form" action="{% url 'search:search_form' %}" method="post">
-	        {% csrf_token %}
-	        {{ form.non_field_errors }}
-	        {{ form.as_p }}
-	        <div id="loading" style="display:none; position: fixed;z-index: 9998;right: 0px;top: 45px; padding-left: 50px; padding-right: 50px; padding-top: 12px; padding-bottom: 12px; background-color:gray">
-                <span id="load_text">loading...</span>
-            </div>
-	        <p id="sendwrapper"><input type="submit" value="search" id="sendbutton"/></p>
-	    </form>
-	    
-	     <form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
-	    <div class="tree">
-	           <span id="foundlabel"></span>
-	      
-		       {% csrf_token %}
-	           <ul>
-	                <li>
-	                    <span><i class="glyphicon glyphicon-folder-open"></i> E-ARK Collection 1</span>
-	                    <ul id="packgroupresults">
-	                        
-	                    </ul>
-	                </li>
-	            </ul>
-	            
-            
-        </div>
-        </form>
-        <div id="loadingpreview" style="display:none"></div>
+
+<form id="search-form" action="{% url 'search:search_form' %}" method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.as_p }}
+    <select name="dip">
+        {% for dip in dips %}
+            <option value="{{ dip.name }}">{{ dip.name }}</option>
+        {% endfor %}
+    </select>
+    <div id="loading" style="display: none; position: fixed; z-index: 9998; right: 0px;
+            top: 45px; padding-left: 50px; padding-right: 50px; padding-top: 12px;
+            padding-bottom: 12px; background-color: gray">
+        <span id="load_text">loading...</span>
+    </div>
+    <p id="sendwrapper"><input type="submit" value="search" id="sendbutton"/></p>
+</form>
+
+<form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
+    {% csrf_token %}
+    <div class="tree">
+        <select name="dip">
+        {% for dip in dips %}
+            <option value="{{ dip.name }}">{{ dip.name }}</option>
+        {% endfor %}
+        </select><br>
+        <span id="foundlabel"></span>
+        <ul>
+            <li>
+                <span><i class="glyphicon glyphicon-folder-open"></i> E-ARK Collection 1</span>
+                <ul id="packgroupresults"></ul>
+            </li>
+        </ul>
+    </div>
+    {# <input type="submit" value="add to basket" name="action" /> #}
+</form>
+<div id="loadingpreview" style="display:none"></div>
+
 {% endblock %}

@@ -13,4 +13,6 @@ urlpatterns= patterns('',
     url(r'^toggle_select_package.*', views.toggle_select_package, name='toggle_select_package'), 
     #url(r'^$', 'search_form', name="search_form"),
     url(r'^filecontent/(?P<lily_id>.*)', views.get_file_content, name='filecontent'),
+    url(r'^acquire_aips$', views.acquire_aips, name='acquire_aips'),
+    url(r'^create_dip$', views.create_dip, name='create_dip')
 )

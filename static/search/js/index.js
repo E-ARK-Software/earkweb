@@ -149,13 +149,15 @@ $(document).ready(function() {
             var cleanIdFormObj = $.grep(arr, function(v) {
                 return v.name.startsWith("add") || v.name.startsWith("rem");
             });
-            var actionIdArr = cleanIdFormObj[0].name.split('-'); 
-            var cleanId = actionIdArr.pop();
-            var action = actionIdArr.pop();
-            var identifier = $("#"+cleanId).attr('value');
-            arr.push({name: "action", value: action });
-            arr.push({name: "identifier", value: identifier });
-            arr.push({name: "cleanid", value: cleanId });
+            if (cleanIdFormObj[0]) {
+                var actionIdArr = cleanIdFormObj[0].name.split('-'); 
+                var cleanId = actionIdArr.pop();
+                var action = actionIdArr.pop();
+                var identifier = $("#"+cleanId).attr('value');
+                arr.push({name: "action", value: action });
+                arr.push({name: "identifier", value: identifier });
+                arr.push({name: "cleanid", value: cleanId });
+            }
         },
         success: function(resp) {
             var btn = $(document.activeElement).context.id; 
