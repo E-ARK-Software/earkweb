@@ -27,9 +27,7 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def index(request):
     print request.user
-    logger.debug("count dips: " + str(DIPackage.objects.count()))
     if DIPackage.objects.count() == 0:
-        logger.debug("create dip")
         DIPackage.objects.create(name='DIP 1')
     template = loader.get_template('search/index.html')
     form = SearchForm()
@@ -150,12 +148,13 @@ def search_form(request):
 @login_required
 def toggle_select_package(request):
     if request.method == "POST":
-        if request.is_ajax():
+        if request.POST.__contains__("action") and request.POST["action"] == "search":
+            return search_form(request)
+        else:
             identifier = request.POST["identifier"]
             cleanid = request.POST["cleanid"]
             dip_name = request.POST["dip"]
             dip = DIPackage.objects.get(name=dip_name)
-            logger.debug(dip)
             if request.POST["action"] == "add":
                 if Package.objects.filter(identifier = identifier).count() == 0:
                     dip.packages.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())

@@ -1,3 +1,6 @@
 from django.contrib import admin
+from search.models import Package
+from search.models import DIPackage
 
-# Register your models here.
+admin.site.register(Package)
+admin.site.register(DIPackage)

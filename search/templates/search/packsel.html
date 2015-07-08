@@ -22,21 +22,21 @@
 
 <h1>Order Basket</h1>
 {% for dip in package_list %}
-    <h2>{{ dip.name }}</h2>
+    <input type="checkbox" name="dip" value="{{ dip.name }}"> <b>{{ dip.name }}</b><br>
     {% for package in dip.packages.all %}
         <p>{{ package.identifier }}</p>
     {% endfor %}
 {% endfor %}
 
+<form id="search-form" action="{% url 'search:acquire_aips' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="acquire AIPs" />
+</form>
+<br>
 <form id="search-form" action="{% url 'search:create_dip' %}" method="post">
     {% csrf_token %}
     <input type="text" name="name" />
     <input type="submit" value="new DIP" />
-</form>
-
-<form id="search-form" action="{% url 'search:acquire_aips' %}" method="post">
-    {% csrf_token %}
-    <input type="submit" value="acquire AIPs" />
 </form>
 
 {% endblock %}

@@ -60,9 +60,9 @@ $(document).ready(function() {
         $('input').removeAttr('disabled');
         $('.errorlist').remove();
     }
-    var options = {
+    var searchOptions = {
         
-        beforeSubmit: function(form, options) {
+        beforeSubmit: function() {
             // return false to cancel submit
             block_form();
             $("#articles-1").show();
@@ -133,41 +133,40 @@ $(document).ready(function() {
             }, 5000);
         }
     };
-    $('#search-form').ajaxForm(options);
     
-});
-
-/**
- * Ajax-form action to add or remove a package
- */
-$(document).ready(function() {
     var options = {
        
-        beforeSubmit: function(arr, $form, options) { 
-        
+        beforeSubmit: function(arr, form, options) {
+            var btn = $(document.activeElement).context.id;
+            if(btn.startsWith("sendbutton")) {
+                searchOptions.beforeSubmit();
+                return;
+            }
             // append additional post variables
             var cleanIdFormObj = $.grep(arr, function(v) {
                 return v.name.startsWith("add") || v.name.startsWith("rem");
             });
-            if (cleanIdFormObj[0]) {
-                var actionIdArr = cleanIdFormObj[0].name.split('-'); 
-                var cleanId = actionIdArr.pop();
-                var action = actionIdArr.pop();
-                var identifier = $("#"+cleanId).attr('value');
-                arr.push({name: "action", value: action });
-                arr.push({name: "identifier", value: identifier });
-                arr.push({name: "cleanid", value: cleanId });
-            }
+            var actionIdArr = cleanIdFormObj[0].name.split('-'); 
+            var cleanId = actionIdArr.pop();
+            var action = actionIdArr.pop();
+            var identifier = $("#"+cleanId).attr('value');
+            arr.push({name: "action", value: action });
+            arr.push({name: "identifier", value: identifier });
+            arr.push({name: "cleanid", value: cleanId });
         },
         success: function(resp) {
-            var btn = $(document.activeElement).context.id; 
+            var btn = $(document.activeElement).context.id;
+            if(btn.startsWith("sendbutton")) {
+                searchOptions.success(resp);
+                return;
+            }
             var sfx = btn.split('-').pop();
             if(btn.startsWith("add")) {
                 $('#result-'+sfx).css("background-color", "green");
                 $('#result-'+sfx).css("color", "white");
                 $('#add-'+sfx).hide();
                 $('#rem-'+sfx).show();
-            } else  if(btn.startsWith("rem")) {
+            } else if(btn.startsWith("rem")) {
                 $('#result-'+sfx).css("background-color", "transparent");
                 $('#result-'+sfx).css("color", "gray");
                 $('#add-'+sfx).show();
@@ -180,6 +179,11 @@ $(document).ready(function() {
                 message: { text: 'Package '+action },
                 type: 'success'
             }).show(); 
+        },
+        error: function(resp) {
+            var btn = $(document.activeElement).context.id;
+            if(btn.startsWith("sendbutton"))
+                searchOptions.error(resp);
         }
     };
     $('#select-aip-form').ajaxForm(options);

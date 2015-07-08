@@ -20,27 +20,19 @@
 
 {% block content %}
 
-<form id="search-form" action="{% url 'search:search_form' %}" method="post">
+{# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
+<form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}
     {{ form.as_p }}
-    <select name="dip">
-        {% for dip in dips %}
-            <option value="{{ dip.name }}">{{ dip.name }}</option>
-        {% endfor %}
-    </select>
     <div id="loading" style="display: none; position: fixed; z-index: 9998; right: 0px;
             top: 45px; padding-left: 50px; padding-right: 50px; padding-top: 12px;
             padding-bottom: 12px; background-color: gray">
         <span id="load_text">loading...</span>
     </div>
-    <p id="sendwrapper"><input type="submit" value="search" id="sendbutton"/></p>
-</form>
-
-<form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
-    {% csrf_token %}
+    <p id="sendwrapper"><input type="submit" value="search" id="sendbutton" name="action"/></p>
     <div class="tree">
-        <select name="dip">
+        <select name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
         {% for dip in dips %}
             <option value="{{ dip.name }}">{{ dip.name }}</option>
         {% endfor %}
