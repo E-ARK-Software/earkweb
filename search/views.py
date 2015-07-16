@@ -1,50 +1,65 @@
-from django.template import RequestContext, loader
-from django.http import HttpResponse
-import urllib
-import json
-
-import requests
-from django.core.urlresolvers import reverse
-from django.http import HttpResponseBadRequest
-from django.http import HttpResponseRedirect
-from django.http import HttpResponseServerError
-from django.shortcuts import render
-from models import DIPackage
-from models import Package
-from forms import SearchForm
 
 from django.conf import settings
-from django.utils import timezone
-import logging
-import traceback
-from query import get_query_string
-from lxml import etree
-logger = logging.getLogger(__name__)
-import shutil
-
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
+from django.shortcuts import render
+from django.shortcuts import render_to_response
+from django.template import RequestContext, loader
+from django.utils import timezone
+
+from forms import SearchForm, UploadFileForm
+import functools
+import json
+import logging
+from lxml import etree
+from models import AIP, DIP, Inclusion
+from query import get_query_string
+import requests
+import shutil
+from threading import Thread
+import traceback
+import urllib
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def index(request):
     print request.user
-    if DIPackage.objects.count() == 0:
-        DIPackage.objects.create(name='DIP 1')
+    if DIP.objects.count() == 0:
+        DIP.objects.create(name='DIP 1')
     template = loader.get_template('search/index.html')
     form = SearchForm()
     context = RequestContext(request, {
         'form':form,
-        'dips':DIPackage.objects.all()
+        'dips':DIP.objects.all()
     })
     return HttpResponse(template.render(context))
 
 @login_required
 def packsel(request):
     print request.user
-    dips = DIPackage.objects.all()
+    dips = DIP.objects.all()
     template = loader.get_template('search/packsel.html')
     context = RequestContext(request, {
         'package_list': dips
     })
+    return HttpResponse(template.render(context))
+
+@login_required
+def dip(request, name):
+    dip = DIP.objects.get(name=name)
+    template = loader.get_template('search/dip.html')
+    context = RequestContext(request, {'dip': dip, 'uploadFileForm': UploadFileForm()})
+    return HttpResponse(template.render(context))
+    #return render_to_response('search/dip.html', {'dip': dip, 'uploadFileForm': UploadFileForm()})
+
+@login_required
+def aip(request, dip_name, identifier):
+    dip = DIP.objects.get(name=dip_name)
+    aip = dip.aips.get(identifier=identifier)
+    template = loader.get_template('search/aip.html')
+    context = RequestContext(request, {'dip': dip, 'aip': aip})
     return HttpResponse(template.render(context))
 
 @login_required
@@ -94,8 +109,8 @@ def search_form(request):
             rows = 20
             query_string = get_query_string(keyword, content_type, start, rows)
             dip_name = request.POST["dip"]
-            dip = DIPackage.objects.get(name=dip_name)
-            selectedObjects = dip.packages.all()
+            dip = DIP.objects.get(name=dip_name)
+            selectedObjects = dip.aips.all()
             try: 
                 response = requests.get(query_string)
                 responseJson = response.json()
@@ -154,20 +169,21 @@ def toggle_select_package(request):
             identifier = request.POST["identifier"]
             cleanid = request.POST["cleanid"]
             dip_name = request.POST["dip"]
-            dip = DIPackage.objects.get(name=dip_name)
+            dip = DIP.objects.get(name=dip_name)
             if request.POST["action"] == "add":
-                if Package.objects.filter(identifier = identifier).count() == 0:
-                    dip.packages.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                if AIP.objects.filter(identifier = identifier).count() == 0:
+                    aip = AIP.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                    Inclusion(aip=aip, dip=dip).save()
                     logger.debug("Added new package %s" % identifier)
-                elif dip.packages.filter(identifier = identifier).count() == 0:
-                    package = Package.objects.filter(identifier = identifier)[0]
-                    dip.packages.add(package)
+                elif dip.aips.filter(identifier = identifier).count() == 0:
+                    aip = AIP.objects.filter(identifier = identifier)[0]
+                    Inclusion(aip=aip, dip=dip).save()
                     logger.debug("Added existing package %s" % identifier)
                 else:
                     logger.debug("Package %s added already" % identifier)
             elif request.POST["action"] == "rem":
-                package = Package.objects.filter(identifier = identifier)[0]
-                dip.packages.remove(package)
+                package = AIP.objects.filter(identifier = identifier)[0]
+                dip.aips.remove(package)
                 logger.debug("Removed package %s" % identifier)
             return HttpResponse("{ \"success\": \"true\" }")
     else:
@@ -209,17 +225,54 @@ def get_file_content(request, lily_id):
 @login_required
 def create_dip(request):
     if request.method == "POST":
-        DIPackage.objects.create(name=request.POST['name'])
+        DIP.objects.create(name=request.POST['name'])
         return HttpResponseRedirect(reverse('search:packsel'))
     else:
         pass
 
 @login_required
-def acquire_aips(request):
+def acquire_aips(request, dip_name):
     if request.method == "POST":
-        # TODO: start asynchron background process
-        # TODO: notify user that process was started successfully
+        dip = DIP.objects.get(name=dip_name)
+        aips = dip.aips.all()
+        print(aips)
+        for aip in aips:
+            print(aip)
+        thread = Thread(target=functools.partial(copy_to_local, aips), args=(), kwargs={})
+        thread.start()
         return HttpResponseRedirect(reverse('search:packsel'))
     else:
         pass
+
+@login_required
+def attach_aip(request, dip_name):
+    if request.method == 'POST':
+        dip = DIP.objects.get(name=dip_name)
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            upload_aip(dip, request.FILES['local_aip'])
+            return HttpResponseRedirect(reverse('search:packsel'))
+        else:
+            if form.errors:
+                for error in form.errors:
+                    print(str(error) + str(form.errors[error]))
+            return HttpResponseRedirect(reverse('search:packsel'))
+    else:
+        pass
+
+def upload_aip(dip, f):
+    with open('working_area/' + f.name, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+    aip = AIP.objects.create(identifier=f.name.rpartition('.')[0], cleanid="unused", source="local", date_selected=timezone.now())
+    Inclusion(aip=aip, dip=dip, stored=True).save()
+
+def copy_to_local(aips):
+    for aip in aips:
+        filename = aip.identifier + '.tar'
+        logger.info('copying AIP %s from HDFS' % aip)
+        r = requests.get(settings.SERVER_HDFS_AIP_QUERY.format(filename))
+        with open('working_area/' + filename, 'w') as f:
+            for chunk in r.iter_content(1024 * 1024):
+                f.write(chunk)
 

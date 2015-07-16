@@ -20,22 +20,8 @@
 
 {% block content %}
 
-<h1>Order Basket</h1>
+<h1><a href="{% url 'search:dip' dip.name %}">{{ dip.name }}</a> > {{ aip.identifier }}</h1>
 
-<form>
-    {% csrf_token %}
-    {% for dip in package_list %}
-        <a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a><br>
-        {% for package in dip.aips.all %}
-            <p>{{ package.identifier }}</p>
-        {% endfor %}
-    {% endfor %}
-</form>
-<br>
-<form action="{% url 'search:create_dip' %}" method="post">
-    {% csrf_token %}
-    <input type="text" name="name" />
-    <input type="submit" value="new DIP" />
-</form>
+<p>TODO: list TAR entries</p>
 
 {% endblock %}

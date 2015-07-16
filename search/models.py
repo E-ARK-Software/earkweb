@@ -1,6 +1,6 @@
 from django.db import models
 
-class Package(models.Model):
+class AIP(models.Model):
     identifier = models.CharField(max_length=200)
     cleanid = models.CharField(max_length=200)
     source = models.CharField(max_length=200, default="file:///null")
@@ -8,8 +8,14 @@ class Package(models.Model):
     def __str__(self):
         return self.identifier
 
-class DIPackage(models.Model):
+class DIP(models.Model):
     name = models.CharField(max_length=200, primary_key=True)
-    packages = models.ManyToManyField(Package)
+    aips = models.ManyToManyField(AIP, through='Inclusion')
     def __str__(self):
         return self.name
+
+class Inclusion(models.Model):
+    aip = models.ForeignKey(AIP)
+    dip = models.ForeignKey(DIP)
+    stored = models.BooleanField(default=False)
+

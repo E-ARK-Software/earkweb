@@ -11,4 +11,5 @@ class SearchForm(forms.Form):
     keyword = forms.CharField(max_length=100, initial="*")
     content_type = forms.MultipleChoiceField(widget=forms.SelectMultiple,choices=PREDEFINED_CONTENT_TYPES,initial={'*':[1,2]})
 
-
+class UploadFileForm(forms.Form):
+    local_aip = forms.FileField(label='Local AIP')

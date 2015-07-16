@@ -1,6 +1,5 @@
 from django.contrib import admin
-from search.models import Package
-from search.models import DIPackage
+from search.models import AIP, DIP
 
-admin.site.register(Package)
-admin.site.register(DIPackage)
+admin.site.register(AIP)
+admin.site.register(DIP)

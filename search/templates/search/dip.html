@@ -20,22 +20,20 @@
 
 {% block content %}
 
-<h1>Order Basket</h1>
+<h1>{{ dip.name }}</h1>
 
-<form>
+<form action="{% url 'search:acquire_aips' dip.name %}" method="post">
     {% csrf_token %}
-    {% for dip in package_list %}
-        <a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a><br>
-        {% for package in dip.aips.all %}
-            <p>{{ package.identifier }}</p>
-        {% endfor %}
+    {% for aip in dip.aips.all %}
+        <p><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a></p>
     {% endfor %}
+    <input type="submit" value="acquire AIPs" />
 </form>
 <br>
-<form action="{% url 'search:create_dip' %}" method="post">
+<form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="text" name="name" />
-    <input type="submit" value="new DIP" />
+    {{ uploadFileForm.as_p }}
+    <input type="submit" value="attach local AIP" />
 </form>
 
 {% endblock %}
