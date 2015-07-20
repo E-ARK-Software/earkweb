@@ -3,6 +3,10 @@ E-ARK integrated prototype web application
 
 ## Set up the development environment
 
+Set environment variable to your earkweb directory:
+
+    export EARKWEB=/path/to/earkweb
+
 ### Checkout and install dependencies
 
 1. Checkout project
@@ -20,11 +24,11 @@ E-ARK integrated prototype web application
         
     If the virtual environment is active, this is shown by a prefix in the console:
     
-        (earkweb)user@machine:~/path/to/earkweb$
+        (earkweb)user@machine:${EARKWEB}$
         
     If it is not active, it can be activated as follows:
     
-        user@machine:~/path/to/earkweb$ workon earkweb
+        user@machine:${EARKWEB}$ workon earkweb
 
     And it can be deactivated again by typing:
     
@@ -104,13 +108,17 @@ E-ARK integrated prototype web application
 
 ### Start daemon
 
-Start the daemon from command line:
+make sure the virtual environment "earkweb" is active (prefix "earkweb" in terminal) and change to the earkweb directory:
 
-    (earkweb)<user>@<machine:/opt/python_wsgi_apps/earkweb$ celery --app=earkweb.celeryapp:app worker
+    (earkweb)<user>@<machine>:~/$ cd ${EARKWEB}    
+
+Start the daemon from command line:
+    
+    celery --app=earkweb.celeryapp:app worker
 
 or use the daemon script as super user:
 
-    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ sudo ./celery/celeryd/celeryd start
+    sudo ./celery/celeryd/celeryd start
     celery init v10.0.
     Using config script: /opt/python_wsgi_apps/earkweb/celery/etc/celeryd
     celery multi v3.1.18 (Cipater)
@@ -119,7 +127,7 @@ or use the daemon script as super user:
 
 ### Check registered tasks
 
-    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ celery -A earkweb.celeryapp:app inspect registered
+    celery -A earkweb.celeryapp:app inspect registered
     -> worker1@<machine>: OK
         * earkweb.celeryapp.debug_task
         * somemethod.tasks.SomeCreation
@@ -127,7 +135,7 @@ or use the daemon script as super user:
         
 ### Test task
 
-    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ python manage.py shell
+    python manage.py shell
     Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
     [GCC 4.8.2] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
@@ -147,17 +155,17 @@ or use the daemon script as super user:
 Edit `/etc/apache2/sites-enabled/000-default` and add the variable `WSGIScriptAlias` which marks the file 
 path to the WSGI script, that should be processed by mod_wsgi's wsgi-script handler.:
 
-    WSGIScriptAlias /earkweb /path/to/earkweb/earkweb/wsgi.py
+    WSGIScriptAlias /earkweb ${EARKWEB}/earkweb/wsgi.py
 
 A request for http://earkdev.ait.ac.at/earkweb in this case would cause the server to run the WSGI application defined in /path/to/wsgi-scripts/earkweb.
 
 Additionally create variable `WSGIPythonPath` which defines a directory where to search for Python modules. 
 
-    WSGIPythonPath /opt/python_wsgi_apps/access_dipcreator
+    WSGIPythonPath ${EARKWEB}
 
 And create a directory entry:
 
-    <Directory /path/to/earkweb>
+    <Directory ${EARKWEB}>
         Options Indexes FollowSymLinks MultiViews
         <Files wsgi.py>
             Order allow,deny
