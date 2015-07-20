@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+TIME_ZONE = 'Europe/Stockholm'
+
+import celeryapp
+
+
 # server settings
 
 SERVER_PROTOCOL_PREFIX = "http://"
@@ -71,6 +76,38 @@ CAS_REDIRECT_URL = '/earkweb/search'
 LOGIN_URL = '/earkweb/accounts/login/'
 LOGOUT_URL = '/earkweb/accounts/logout/'
 
+import djcelery
+djcelery.setup_loader()
+
+CELERY_IMPORTS = ['somemethod']
+
+BROKER_URL = 'amqp://guest:guest@localhost:5672/'
+CELERY_RESULT_BACKEND='db+mysql://arkiv:arkiv@localhost/celerydb'
+CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_IGNORE_RESULT = False
+TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+
+from celery.schedules import crontab
+from datetime import timedelta
+
+CELERYBEAT_SCHEDULE = {
+    "CheckProcFiles-every-60-seconds": {
+        "task": "monitoring.tasks.CheckProcFilesTask",
+        "schedule": timedelta(seconds=60),
+        "kwargs": {
+                'proc_log_path':"/var/log/ESSArch/log/proc",
+        }
+    },
+    "CheckStorageMediums-everyday-07:00": {
+        "task": "monitoring.tasks.CheckStorageMediumsTask",
+        "schedule": crontab(hour=7,minute=0),
+        "kwargs": {
+                'email':"admin",
+        }
+    },
+}
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -80,9 +117,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'djcelery',
     'search',
     'workflow',
+    'somemethod',
 )
+
+
+
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',

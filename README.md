@@ -99,6 +99,46 @@ E-ARK integrated prototype web application
         Quit the server with CONTROL-C.
         
     Open web browser at http://127.0.0.1:8000/
+    
+## Celery services
+
+### Start daemon
+
+Start the daemon from command line:
+
+    (earkweb)<user>@<machine:/opt/python_wsgi_apps/earkweb$ celery --app=earkweb.celeryapp:app worker
+
+or use the daemon script as super user:
+
+    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ sudo ./celery/celeryd/celeryd start
+    celery init v10.0.
+    Using config script: /opt/python_wsgi_apps/earkweb/celery/etc/celeryd
+    celery multi v3.1.18 (Cipater)
+    > Starting nodes...
+	> worker1@<machine>: OK
+
+### Check registered tasks
+
+    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ celery -A earkweb.celeryapp:app inspect registered
+    -> worker1@<machine>: OK
+        * earkweb.celeryapp.debug_task
+        * somemethod.tasks.SomeCreation
+        * somemethod.tasks.add
+        
+### Test task
+
+    (earkweb)<user>@<machine>:/opt/python_wsgi_apps/earkweb$ python manage.py shell
+    Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
+    [GCC 4.8.2] on linux2
+    Type "help", "copyright", "credits" or "license" for more information.
+    (InteractiveConsole)
+    >>> from somemethod.tasks import SomeCreation
+    >>> result = SomeCreation().apply_async(('testparam',), queue='default')
+    >>> result.status
+    'SUCCESS'
+    >>> result.result
+    'Parameter: testparam'
+    >>> 
 
 ## Deployment on demo server
 
@@ -113,7 +153,7 @@ A request for http://earkdev.ait.ac.at/earkweb in this case would cause the serv
 
 Additionally create variable `WSGIPythonPath` which defines a directory where to search for Python modules. 
 
-    WSGIPythonPath /home/shsdev/python_wsgi_apps/access_dipcreator
+    WSGIPythonPath /opt/python_wsgi_apps/access_dipcreator
 
 And create a directory entry:
 
