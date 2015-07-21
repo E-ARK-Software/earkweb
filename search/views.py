@@ -17,6 +17,7 @@ from models import AIP, DIP, Inclusion
 from query import get_query_string
 import requests
 import shutil
+import tarfile
 from threading import Thread
 import traceback
 import urllib
@@ -234,7 +235,7 @@ def create_dip(request):
 def acquire_aips(request, dip_name):
     if request.method == "POST":
         dip = DIP.objects.get(name=dip_name)
-        aips = dip.aips.all()
+        aips = dip.aips.filter(stored=False)
         print(aips)
         for aip in aips:
             print(aip)
@@ -264,6 +265,7 @@ def upload_aip(dip, f):
     with open('working_area/' + f.name, 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
+    extractTar(f.name)
     aip = AIP.objects.create(identifier=f.name.rpartition('.')[0], cleanid="unused", source="local", date_selected=timezone.now())
     Inclusion(aip=aip, dip=dip, stored=True).save()
 
@@ -275,4 +277,9 @@ def copy_to_local(aips):
         with open('working_area/' + filename, 'w') as f:
             for chunk in r.iter_content(1024 * 1024):
                 f.write(chunk)
+        extractTar(filename)
+
+def extractTar(filename):
+    with tarfile.open('working_area/' + filename) as tar:
+        tar.extractall('working_area/')
 
