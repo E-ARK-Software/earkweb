@@ -52,12 +52,6 @@ SERVER_SOLR = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_SOLR_PORT
 
 SERVER_SOLR_QUERY_URL = SERVER_SOLR + SERVER_SOLR_PATH + "/eark1/select?q={0}&wt=json" 
 
-# hdfs storage service
-
-SERVER_HDFS = SERVER_PROTOCOL_PREFIX + "localhost" + ":8081/hsink/fileresource"
-
-SERVER_HDFS_AIP_QUERY = SERVER_HDFS + "/retrieve_newest?file={0}"
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
@@ -93,6 +87,7 @@ CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
 CELERY_DEFAULT_QUEUE = 'default'
 CELERY_IGNORE_RESULT = False
 TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+CELERYD_POOL_RESTARTS = True
 
 from celery.schedules import crontab
 from datetime import timedelta
@@ -159,13 +154,27 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        #'STORAGE_ENGINE': 'MyISAM',           # STORAGE_ENGINE for MySQL database tables, 'MyISAM' or 'INNODB'
+        'NAME': 'eark',                    # Or path to database file if using sqlite3.
+        'USER': 'arkiv',                      # Not used with sqlite3.
+        'PASSWORD': 'arkiv',               # Not used with sqlite3.
+        'HOST': '',                           # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                           # Set to empty string for default. Not used with sqlite3.
+        # This options for storage_engine have to be set for "south migrate" to work.
+        'OPTIONS': {
+           "init_command": "SET storage_engine=MyISAM",
+        }
     }
 }
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#    }
+#}
 
 
 
