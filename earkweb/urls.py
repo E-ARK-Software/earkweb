@@ -1,6 +1,8 @@
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.views.generic import RedirectView
+import socket
+
 import os
 
 urlpatterns = patterns('',
@@ -18,7 +20,7 @@ urlpatterns = patterns('',
 
 # Development server starts at http://127.0.0.1:8888/ so this rule is adds
 # the URL prefix path
-if "Development/" in os.path.dirname(os.path.dirname(os.path.abspath(__file__))):
+if socket.gethostname() != "earkdev":
     urlpatterns = patterns('',
         url(r'^$', RedirectView.as_view(url='earkweb/')),
         url(r'^earkweb/', include(urlpatterns)),
