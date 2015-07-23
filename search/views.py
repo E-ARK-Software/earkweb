@@ -1,26 +1,24 @@
+import functools
+import json
+import logging
+import tarfile
+from threading import Thread
+import traceback
+import urllib
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.shortcuts import render
-from django.shortcuts import render_to_response
 from django.template import RequestContext, loader
 from django.utils import timezone
+from lxml import etree
+import requests
 
 from forms import SearchForm, UploadFileForm
-import functools
-import json
-import logging
-from lxml import etree
 from models import AIP, DIP, Inclusion
 from query import get_query_string
-import requests
-import shutil
-import tarfile
-from threading import Thread
-import traceback
-import urllib
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +125,7 @@ def search_form(request):
                     # get package property from path
                     responseObj['is_selected_pack'] = False
                     packageSep = doc["path"].find("/")
-                    if(packageSep != -1):
+                    if packageSep != -1:
                         responseObj['pack'] = doc["path"][0:packageSep]
                         if selectedObjects.filter(identifier=responseObj['pack']).exists():
                             responseObj['is_selected_pack'] = True
@@ -172,19 +170,19 @@ def toggle_select_package(request):
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)
             if request.POST["action"] == "add":
-                if AIP.objects.filter(identifier = identifier).count() == 0:
+                if AIP.objects.filter(identifier=identifier).count() == 0:
                     aip = AIP.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
                     Inclusion(aip=aip, dip=dip).save()
                     logger.debug("Added new package %s" % identifier)
-                elif dip.aips.filter(identifier = identifier).count() == 0:
-                    aip = AIP.objects.filter(identifier = identifier)[0]
+                elif dip.aips.filter(identifier=identifier).count() == 0:
+                    aip = AIP.objects.filter(identifier=identifier)[0]
                     Inclusion(aip=aip, dip=dip).save()
                     logger.debug("Added existing package %s" % identifier)
                 else:
                     logger.debug("Package %s added already" % identifier)
             elif request.POST["action"] == "rem":
-                package = AIP.objects.filter(identifier = identifier)[0]
-                dip.aips.remove(package)
+                aip = AIP.objects.filter(identifier=identifier)[0]
+                Inclusion.objects.filter(aip=aip, dip=dip).delete()
                 logger.debug("Removed package %s" % identifier)
             return HttpResponse("{ \"success\": \"true\" }")
     else:
