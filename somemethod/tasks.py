@@ -34,10 +34,41 @@ from celery import Task, shared_task
 #     result = add.delay(2,5)
 #     result.status
 #     result.result
-@shared_task()
-def add(x, y):
-    return x + y
+# @shared_task()
+# def add(x, y):
+#     return x + y
 
+# @shared_task()
+# def fancyfunc(x, y):
+#     return x + y
+#
+# @shared_task()
+# def anotherreallyfancyfunction(x, y):
+#     return x + y
+
+# @shared_task()
+# def scan(x, y):
+#     return x + y
+# {
+# 	      "name": "SomeCreation",
+# 	      "container": {
+# 	   		"xtype": "WireIt.FormContainer",
+# 	   		"title": "METS XML Validation",
+# 	   		"icon": "../../res/icons/valid-xml.png",
+# 	   		"collapsible": true,
+# 			"drawingMethod": "arrows",
+# 	   		"fields": [
+# 				{"type":"string", "inputParams": {"label": "check well-formed", "name": "param"}},
+# 	   		],
+# 			"terminals": [
+#                              {"name": "_INPUT", "direction": [0,0], "offsetPosition": {"left": 160, "top": -13 },"ddConfig": {"type": "input","allowedTypes": ["output"]}, "nMaxWires": 1,  "drawingMethod": "arrows" },
+#                              {"name": "_OUTPUT", "direction": [0,0], "offsetPosition": {"left": 160, "bottom": -13 },"ddConfig": {"type": "output","allowedTypes": ["input"]}}
+#                          ],
+#
+# 	   		"legend": "METS XML Validation",
+# 			"drawingMethod": "arrows"
+# 	   	}
+# 	   },
 class SomeCreation(Task):
 # Example:
 #     from somemethod.tasks import SomeCreation
@@ -47,5 +78,52 @@ class SomeCreation(Task):
     def __init__(self):
         self.ignore_result = False
 
+    def run(self, param1, param2, *args, **kwargs):
+        """
+        This function creates something
+        @type       param1: string
+        @param      param1: First parameter
+        @type       param2: string
+        @param      param2: Second parameter
+        @rtype:     string
+        @return:    Parameter
+        """
+        return "Parameter: " + param1 + param2
+
+class OtherJob(Task):
+# Example:
+#     from somemethod.tasks import SomeCreation
+#     result = SomeCreation().apply_async(('test',), queue='smdisk')
+#     result.status
+#     result.result
+    def __init__(self):
+        self.ignore_result = False
+
     def run(self, param, *args, **kwargs):
+        """
+        This is another job
+        @type       param: string
+        @param      param: This task takes only one parameter
+        @rtype:     string
+        @return:    Parameter
+        """
+        return "Parameter: " + param
+
+class ANewJobThatINeededRightNow(Task):
+# Example:
+#     from somemethod.tasks import SomeCreation
+#     result = SomeCreation().apply_async(('test',), queue='smdisk')
+#     result.status
+#     result.result
+    def __init__(self):
+        self.ignore_result = False
+
+    def run(self, param, *args, **kwargs):
+        """
+        This is another job
+        @type       param: string
+        @param      param: This task takes only one parameter
+        @rtype:     string
+        @return:    Parameter
+        """
         return "Parameter: " + param
