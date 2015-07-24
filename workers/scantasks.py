@@ -24,10 +24,17 @@ class ReturnParam(Param):
     pass
 
 class TaskScanner(object):
+    """
+    Scan tasks module for Celery tasks. The run method documentation is parsed to provide
+    input parameter documentation.
+    """
 
     task_modules = dict()
 
     def __init__(self, taskmodule):
+        """
+        Scanning celery tasks and parsing run method documentation is done here in the constructor.
+        """
         self.taskmodule = taskmodule
         methodList = [item for item in dir(taskmodule)]
         for item in methodList:
@@ -56,6 +63,9 @@ class TaskScanner(object):
                 self.task_modules[str(item)] = params
 
 class WireItLanguageModules(object):
+    """
+    Build language modules from task module objects based on JSON template.
+    """
 
     def __init__(self, task_modules):
         self.task_modules = task_modules
@@ -70,7 +80,7 @@ class WireItLanguageModules(object):
             "collapsible": true,
             "drawingMethod": "arrows",
             "fields": [
-                {"type":"string", "inputParams": {"label": "check well-formed", "name": "param"}},
+                %(input_params)s
             ],
             "terminals": [
                 {"name": "_INPUT", "direction": [0,0], "offsetPosition": {"left": 160, "top": -13 },"ddConfig": {"type": "input","allowedTypes": ["output"]}, "nMaxWires": 1,  "drawingMethod": "arrows" },
@@ -83,21 +93,23 @@ class WireItLanguageModules(object):
     """
 
     language_module_inputs_template = """
-        {inputParams: {label: 'Working directory', name: 'working_dir', required: true, value:'/home/shs/eark/' } }
+        {"type":"%(type)s", "inputParams": {"label": "%(descr)s", "name": "%(name)s"}},
     """
 
     def register_language_modules(self):
+        """
+        Register tasks as language modules in the database. All records are deleted first,
+        then available celery tasks are stored as language modules.
+        """
         WorkflowModules.objects.all().delete()
         for module_name, module_params in self.task_modules.iteritems():
-            print module_name
-            # for module_param in module_params:
-                # if isinstance(module_param, InputParam):
-                #     print module_param.name
-            model_def = self.language_module_template % { 'module_name': module_name }
+            input_params = ""
+            for module_param in module_params:
+                if isinstance(module_param, InputParam):
+                    input_params += self.language_module_inputs_template % { 'name': module_param.name, 'descr': module_param.descr, 'type': module_param.type}
+            model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
             workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def)
             workflow_module.save()
-            print "maybe done ..."
-
 
 
 

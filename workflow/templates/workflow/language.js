@@ -11,7 +11,7 @@ var demoLanguage = {
 
 		// Additional fields
 		{"type": "boolean", inputParams: {"name": "isTest", value: true, label: "Test"}},
-		{"type": "select", inputParams: {"name": "category", label: "Category", selectValues: ["Demo", "Test", "Other"]} }
+		{"type": "select", inputParams: {"name": "category", label: "Category", selectValues: ["SIP to AIP", "AIP to DIP", "IP to IP"]} }
 	],
 
 	// List of node types definition

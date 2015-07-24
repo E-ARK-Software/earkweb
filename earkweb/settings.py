@@ -79,7 +79,7 @@ LOGOUT_URL = '/earkweb/accounts/logout/'
 import djcelery
 djcelery.setup_loader()
 
-CELERY_IMPORTS = ['somemethod']
+CELERY_IMPORTS = ['workers']
 
 BROKER_URL = 'amqp://guest:guest@localhost:5672/'
 CELERY_RESULT_BACKEND='db+mysql://arkiv:arkiv@localhost/celerydb'
@@ -121,7 +121,7 @@ INSTALLED_APPS = (
     'djcelery',
     'search',
     'workflow',
-    'somemethod',
+    'workers',
 )
 
 
@@ -225,6 +225,13 @@ LOGGING = {
             'propagate': True,
         },
         'search.query': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'workflow.views': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,

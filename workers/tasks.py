@@ -28,53 +28,13 @@ __version__ = '%s.%s' % (__majorversion__,re.sub('[\D]', '',__revision__))
 from celery import Task, shared_task
 
 # Start worker: celery --app=earkweb.celeryapp:app worker
-
 # Example:
-#     from somemethod.tasks import add
-#     result = add.delay(2,5)
-#     result.status
-#     result.result
-# @shared_task()
-# def add(x, y):
-#     return x + y
-
-# @shared_task()
-# def fancyfunc(x, y):
-#     return x + y
-#
-# @shared_task()
-# def anotherreallyfancyfunction(x, y):
-#     return x + y
-
-# @shared_task()
-# def scan(x, y):
-#     return x + y
-# {
-# 	      "name": "SomeCreation",
-# 	      "container": {
-# 	   		"xtype": "WireIt.FormContainer",
-# 	   		"title": "METS XML Validation",
-# 	   		"icon": "../../res/icons/valid-xml.png",
-# 	   		"collapsible": true,
-# 			"drawingMethod": "arrows",
-# 	   		"fields": [
-# 				{"type":"string", "inputParams": {"label": "check well-formed", "name": "param"}},
-# 	   		],
-# 			"terminals": [
-#                              {"name": "_INPUT", "direction": [0,0], "offsetPosition": {"left": 160, "top": -13 },"ddConfig": {"type": "input","allowedTypes": ["output"]}, "nMaxWires": 1,  "drawingMethod": "arrows" },
-#                              {"name": "_OUTPUT", "direction": [0,0], "offsetPosition": {"left": 160, "bottom": -13 },"ddConfig": {"type": "output","allowedTypes": ["input"]}}
-#                          ],
-#
-# 	   		"legend": "METS XML Validation",
-# 			"drawingMethod": "arrows"
-# 	   	}
-# 	   },
-class SomeCreation(Task):
-# Example:
-#     from somemethod.tasks import SomeCreation
+#     from workers.tasks import SomeCreation
 #     result = SomeCreation().apply_async(('test',), queue='smdisk')
 #     result.status
 #     result.result
+
+class SomeCreation(Task):
     def __init__(self):
         self.ignore_result = False
 
@@ -91,11 +51,6 @@ class SomeCreation(Task):
         return "Parameter: " + param1 + param2
 
 class OtherJob(Task):
-# Example:
-#     from somemethod.tasks import SomeCreation
-#     result = SomeCreation().apply_async(('test',), queue='smdisk')
-#     result.status
-#     result.result
     def __init__(self):
         self.ignore_result = False
 
@@ -109,9 +64,9 @@ class OtherJob(Task):
         """
         return "Parameter: " + param
 
-class ANewJobThatINeededRightNow(Task):
+class AnotherJob(Task):
 # Example:
-#     from somemethod.tasks import SomeCreation
+#     from workers.tasks import SomeCreation
 #     result = SomeCreation().apply_async(('test',), queue='smdisk')
 #     result.status
 #     result.result
