@@ -28,19 +28,45 @@ __version__ = '%s.%s' % (__majorversion__,re.sub('[\D]', '',__revision__))
 from celery import Task, shared_task
 
 # Start worker: celery --app=earkweb.celeryapp:app worker
-
 # Example:
-#     from somemethod.tasks import add
-#     result = add.delay(2,5)
+#     from workers.tasks import SomeCreation
+#     result = SomeCreation().apply_async(('test',), queue='smdisk')
 #     result.status
 #     result.result
-@shared_task()
-def add(x, y):
-    return x + y
 
 class SomeCreation(Task):
+    def __init__(self):
+        self.ignore_result = False
+
+    def run(self, param1, param2, *args, **kwargs):
+        """
+        This function creates something
+        @type       param1: string
+        @param      param1: First parameter
+        @type       param2: string
+        @param      param2: Second parameter
+        @rtype:     string
+        @return:    Parameter
+        """
+        return "Parameter: " + param1 + param2
+
+class OtherJob(Task):
+    def __init__(self):
+        self.ignore_result = False
+
+    def run(self, param, *args, **kwargs):
+        """
+        This is another job
+        @type       param: string
+        @param      param: This task takes only one parameter
+        @rtype:     string
+        @return:    Parameter
+        """
+        return "Parameter: " + param
+
+class AnotherJob(Task):
 # Example:
-#     from somemethod.tasks import SomeCreation
+#     from workers.tasks import SomeCreation
 #     result = SomeCreation().apply_async(('test',), queue='smdisk')
 #     result.status
 #     result.result
@@ -48,4 +74,11 @@ class SomeCreation(Task):
         self.ignore_result = False
 
     def run(self, param, *args, **kwargs):
+        """
+        This is another job
+        @type       param: string
+        @param      param: This task takes only one parameter
+        @rtype:     string
+        @return:    Parameter
+        """
         return "Parameter: " + param

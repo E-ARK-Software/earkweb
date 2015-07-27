@@ -3,15 +3,20 @@ E-ARK integrated prototype web application
 
 ## Set up the development environment
 
-Set environment variable to your earkweb directory:
 
-    export EARKWEB=/path/to/earkweb
 
 ### Checkout and install dependencies
 
 1. Checkout project
 
         git clone https://github.com/eark-project/earkweb
+        
+    Optionally, define the earkweb root directory in the environment variable EARKWEB:
+
+        cd earkweb
+        export EARKWEB=`pwd`
+    
+    If the variable is set, it can be used to execute commands explained in this README.
 
 2. Create virtual environment (python)
 
@@ -24,11 +29,11 @@ Set environment variable to your earkweb directory:
         
     If the virtual environment is active, this is shown by a prefix in the console:
     
-        (earkweb)user@machine:${EARKWEB}$
+        (earkweb)user@machine:~$
         
     If it is not active, it can be activated as follows:
     
-        user@machine:${EARKWEB}$ workon earkweb
+        user@machine:$~$ workon earkweb
 
     And it can be deactivated again by typing:
     
@@ -36,46 +41,21 @@ Set environment variable to your earkweb directory:
 
 3. Install additional libraries
 
-        pip install Django==1.7
-        pip install requests
-        pip install lxml
+        pip install -r ${EARKWEB}/requirements.txt
 
-4. Adapt settings to your local development environment
+4. Enable CAS in Django
 
-    Change local path identification so that it detects your local development path in `earkweb/earkweb/urls.py`:
-    
-        if "Development/" ...
-    
-    This is a hack because the development server usually starts at `http://127.0.0.1:8888/`, therefore
-    a path is appended in local development mode to ensure that the "Path"-part (URL part following Host and Port)
-    equals to the one in production mode.
-    
-    Local development mode: `http://127.0.0.1:8000/earkweb/`
-    
-    Production mode: `http://<productionserver>/earkweb/`
-    
-    If you do not want to commit these changes, set the file to "assume-unchanged":
-    
-        git update-index --assume-unchanged earkweb/earkweb/urls.py
-    
-    and undo if needed:
-    
-        git update-index --no-assume-unchanged earkweb/earkweb/urls.py
+    Install the django-cas package.
 
-5. Enable CAS in Django
-
-    Note that the CAS URL setting points to the development server, therefore it is not required
-    to install CAS in the development environment.
-
-    5.1. Install mercurial if it is not available already:
+    4.1. Install mercurial if it is not available already:
 
         sudo apt-get install mercurial
 
-    5.2 Get module from https://bitbucket.org/cpcc/django-cas
+    4.2 Get module from https://bitbucket.org/cpcc/django-cas
 
         hg clone https://bitbucket.org/cpcc/django-cas
     
-    5.3. Install django-cas
+    4.3. Install django-cas
 
         cd django-cas
         python setup.py install
@@ -84,11 +64,22 @@ Set environment variable to your earkweb directory:
 
 1. Prepare database
 
-    A local SQLite database 'db.sqlite3' will be created in the project root directory.
+    A MySQL database is defined in `${EARKWEB}/settings.py`.
+    Create the database first and grant access to user 'arkiv':
+    
+        mysql -u root -p<rootpassword>
+        
+        mysql> create database eark;
+        Query OK, 1 row affected (0.00 sec)
 
+        mysql> GRANT ALL ON eark.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+
+2. Create database schema based on the model and apply initialise the database:
+
+        python manage.py makemigrations
         python manage.py migrate
     
-2. Start web application
+3. Start web application
 
     Start the web application from the command line using the command:
 
@@ -130,8 +121,8 @@ or use the daemon script as super user:
     celery -A earkweb.celeryapp:app inspect registered
     -> worker1@<machine>: OK
         * earkweb.celeryapp.debug_task
-        * somemethod.tasks.SomeCreation
-        * somemethod.tasks.add
+        * workers.tasks.SomeCreation
+        * workers.tasks.add
         
 ### Test task
 
@@ -140,7 +131,7 @@ or use the daemon script as super user:
     [GCC 4.8.2] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
     (InteractiveConsole)
-    >>> from somemethod.tasks import SomeCreation
+    >>> from workers.tasks import SomeCreation
     >>> result = SomeCreation().apply_async(('testparam',), queue='default')
     >>> result.status
     'SUCCESS'
@@ -152,26 +143,19 @@ or use the daemon script as super user:
 
 ### Configure as WSGI app
 
-Edit `/etc/apache2/sites-enabled/000-default` and add the variable `WSGIScriptAlias` which marks the file 
-path to the WSGI script, that should be processed by mod_wsgi's wsgi-script handler.:
+Edit `/etc/apache2/sites-enabled/000-default`, add the variable `WSGIScriptAlias` which marks the file 
+path to the WSGI script, that should be processed by mod_wsgi's wsgi-script handler, define a daemon
+process which allows running the wsgi app using a separate virtual environment, and add the earkweb 
+Location statement:
 
-    WSGIScriptAlias /earkweb ${EARKWEB}/earkweb/wsgi.py
+    WSGIScriptAlias /earkweb /opt/python_wsgi_apps/earkweb/earkweb/wsgi.py
 
-A request for http://earkdev.ait.ac.at/earkweb in this case would cause the server to run the WSGI application defined in /path/to/wsgi-scripts/earkweb.
+    WSGIDaemonProcess earkweb python-path=/opt/PyVirtEnvs/earkweb/lib/python2.7/site-packages:/opt/python_wsgi_apps/earkweb:/opt/python_wsgi_apps/earkweb/earkweb
 
-Additionally create variable `WSGIPythonPath` which defines a directory where to search for Python modules. 
-
-    WSGIPythonPath ${EARKWEB}
-
-And create a directory entry:
-
-    <Directory ${EARKWEB}>
-        Options Indexes FollowSymLinks MultiViews
-        <Files wsgi.py>
-            Order allow,deny
-            allow from all
-        </Files>
-    </Directory>
+    <Location /earkweb>
+        WSGIProcessGroup earkweb
+        WSGIApplicationGroup %{GLOBAL}
+    </Location>
     
 Further information on using Django with Apache and mod_wsgi:
 
@@ -185,7 +169,7 @@ The deployed version is a copy from this Github repository, update is done by se
 
 ## CAS server installation
 
-The development version points to CAS installed on the demo server, therefore this is not required for
+The development version points to the CAS instance installed on the demo server, therefore this is not required for
 development.
 
 ### Installation

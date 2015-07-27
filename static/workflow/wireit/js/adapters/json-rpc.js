@@ -5,7 +5,7 @@
 WireIt.WiringEditor.adapters.JsonRpc = {
 	
 	config: {
-		url: 'http://earkdev.ait.ac.at/wireit/backend/php/WiringEditor.php'
+		url: '/earkweb/workflow/backend'
 	},
 	
 	init: function() {
