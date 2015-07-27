@@ -1,0 +1,210 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="info:lc/xmlns/premis-v2 ../schemas/premis-v2-2.xsd" version="2.0">
+
+    <object xsi:type="file" xmlID="AIPSegmentedPart01Obj">
+        <objectIdentifier>
+            <objectIdentifierType>PACKAGE_LOCAL</objectIdentifierType>
+            <objectIdentifierValue>AIP-segmented-part01</objectIdentifierValue>
+        </objectIdentifier>
+        <objectCharacteristics>
+            <compositionLevel>0</compositionLevel>
+            <fixity>
+                <messageDigestAlgorithm>SHA-256</messageDigestAlgorithm>
+                <messageDigest>a0d10a71da7f38002c8555f3c6a558174808c27abec0086de90d33823fd1de58</messageDigest>
+                <messageDigestOriginator>/usr/bin/sha256sum</messageDigestOriginator>
+            </fixity>
+            <size>43072</size>
+            <format>
+                <formatRegistry>
+                    <formatRegistryName>PRONOM</formatRegistryName>
+                    <formatRegistryKey>x-fmt/266</formatRegistryKey>
+                    <formatRegistryRole>specification</formatRegistryRole>
+                </formatRegistry>
+            </format>
+            <objectCharacteristicsExtension>
+                <mdSec ID="ID8e2499a2-0f7f-11e5-b642-34e6d700c47b">
+                    <mdWrap MDTYPE="OTHER" OTHERMDTYPE="JHOVE">
+                        <xmlData>
+                            <jhove xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://hul.harvard.edu/ois/xml/ns/jhove" xsi:schemaLocation="http://hul.harvard.edu/ois/xml/ns/jhove http://hul.harvard.edu/ois/xml/xsd/jhove/1.6/jhove.xsd" name="Jhove" release="1.6" date="2011-01-04">
+                             <date>2015-06-10T16:47:02+02:00</date>
+                             <repInfo uri="file:///AIP-31ea91ce-0e84-11e5-a6c0-1697f-submiss.tar.gz">
+                              <reportingModule release="1.3" date="2007-04-10">BYTESTREAM</reportingModule>
+                              <lastModified>2015-06-09T10:56:26+02:00</lastModified>
+                              <size>43072</size>
+                              <format>bytestream</format>
+                              <status>Well-Formed and valid</status>
+                              <mimeType>application/octet-stream</mimeType>
+                             </repInfo>
+                            </jhove>
+                        </xmlData>
+                    </mdWrap>
+                </mdSec>
+            </objectCharacteristicsExtension>
+        </objectCharacteristics>
+        <originalName>SIP-segmented-part01.tar.gz</originalName>
+        <storage>
+            <contentLocation>
+                <contentLocationType>URL</contentLocationType>
+                <contentLocationValue>file://../../AIP-segmented-part01.tar.gz</contentLocationValue>
+            </contentLocation>
+        </storage>
+        <relationship>
+            <relationshipType>structural</relationshipType>
+            <relationshipSubType>is part of</relationshipSubType>
+            <relatedObjectIdentification>
+                <relatedObjectIdentifierType>PACKAGE_LOCAL</relatedObjectIdentifierType>
+                <relatedObjectIdentifierValue>AIP-segmented</relatedObjectIdentifierValue>
+            </relatedObjectIdentification>
+        </relationship>
+        <linkingRightsStatementIdentifier>
+            <linkingRightsStatementIdentifierType>guid</linkingRightsStatementIdentifierType>
+            <linkingRightsStatementIdentifierValue>d93b72dc-82df-433c-9979-aa5c3fd1f923</linkingRightsStatementIdentifierValue>
+        </linkingRightsStatementIdentifier>
+    </object>
+
+    <object xsi:type="file" xmlID="AIPSegmentedPart02Obj">
+        <objectIdentifier>
+            <objectIdentifierType>PACKAGE_LOCAL</objectIdentifierType>
+            <objectIdentifierValue>AIP-segmented-part02</objectIdentifierValue>
+        </objectIdentifier>
+        <objectCharacteristics>
+            <compositionLevel>0</compositionLevel>
+            <fixity>
+                <messageDigestAlgorithm>SHA-256</messageDigestAlgorithm>
+                <messageDigest>dd1bb006b48cacd779614f8485644573a8bb2ebe160698728d5b6360ebccc464</messageDigest>
+                <messageDigestOriginator>/usr/bin/sha256sum</messageDigestOriginator>
+            </fixity>
+            <size>46678</size>
+            <format>
+                <formatRegistry>
+                    <formatRegistryName>PRONOM</formatRegistryName>
+                    <formatRegistryKey>x-fmt/266</formatRegistryKey>
+                    <formatRegistryRole>specification</formatRegistryRole>
+                </formatRegistry>
+            </format>
+            <objectCharacteristicsExtension>
+                <mdSec ID="ID8dd2391e-0f7f-11e5-b642-34e6d700c47b">
+                    <mdWrap MDTYPE="OTHER" OTHERMDTYPE="JHOVE">
+                        <xmlData>
+                            <jhove xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://hul.harvard.edu/ois/xml/ns/jhove" xsi:schemaLocation="http://hul.harvard.edu/ois/xml/ns/jhove http://hul.harvard.edu/ois/xml/xsd/jhove/1.6/jhove.xsd" name="Jhove" release="1.6" date="2011-01-04">
+                             <date>2015-06-10T16:47:02+02:00</date>
+                             <repInfo uri="file:///AIP-segmented-part02.tar.gz">
+                              <reportingModule release="1.3" date="2007-04-10">BYTESTREAM</reportingModule>
+                              <lastModified>2015-06-09T10:56:39+02:00</lastModified>
+                              <size>46678</size>
+                              <format>bytestream</format>
+                              <status>Well-Formed and valid</status>
+                              <mimeType>application/octet-stream</mimeType>
+                             </repInfo>
+                            </jhove>
+                        </xmlData>
+                    </mdWrap>
+                </mdSec>
+            </objectCharacteristicsExtension>
+        </objectCharacteristics>
+        <originalName>SIP-segmented-part02.tar.gz</originalName>
+        <storage>
+            <contentLocation>
+                <contentLocationType>URL</contentLocationType>
+                <contentLocationValue>file://../../AIP-segmented-part02.tar.gz</contentLocationValue>
+            </contentLocation>
+        </storage>
+        <relationship>
+            <relationshipType>structural</relationshipType>
+            <relationshipSubType>is part of</relationshipSubType>
+            <relatedObjectIdentification>
+                <relatedObjectIdentifierType>PACKAGE_LOCAL</relatedObjectIdentifierType>
+                <relatedObjectIdentifierValue>AIP-segmented</relatedObjectIdentifierValue>
+            </relatedObjectIdentification>
+        </relationship>
+        <linkingRightsStatementIdentifier>
+            <linkingRightsStatementIdentifierType>guid</linkingRightsStatementIdentifierType>
+            <linkingRightsStatementIdentifierValue>d93b72dc-82df-433c-9979-aa5c3fd1f923</linkingRightsStatementIdentifierValue>
+        </linkingRightsStatementIdentifier>
+    </object>
+
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>LOCAL</eventIdentifierType>
+            <eventIdentifierValue>Ingest001</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>Archive</eventType>
+        <eventDateTime>2014-05-01T01:00:00+01:00</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>SUCCESS</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>LOCAL</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>Sip2Aip</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>PACKAGE_LOCAL</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>AIP-segmented-part01</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>LOCAL</eventIdentifierType>
+            <eventIdentifierValue>Migration001</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>SIARD Representation</eventType>
+        <eventDateTime>2015-05-01T01:00:00+01:00</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>SUCCESS</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>LOCAL</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>DbPresToolkit</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>PACKAGE_LOCAL</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>AIP-segmented-part02</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>Lily</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK Lily</agentName>
+        <agentType>Software</agentType>
+        <linkingRightsStatementIdentifier>
+            <linkingRightsStatementIdentifierType>LOCAL</linkingRightsStatementIdentifierType>
+            <linkingRightsStatementIdentifierValue>DiscoveryRight001</linkingRightsStatementIdentifierValue>
+        </linkingRightsStatementIdentifier>
+    </agent>
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>Sip2Aip</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK SIP to AIP Converter</agentName>
+        <agentType>Software</agentType>
+    </agent>
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>DbPresToolkit</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK db-preservation-toolkit</agentName>
+        <agentType>Software</agentType>
+    </agent>
+
+    <rights>
+        <rightsStatement>
+            <rightsStatementIdentifier>
+                <rightsStatementIdentifierType>LOCAL</rightsStatementIdentifierType>
+                <rightsStatementIdentifierValue>DiscoveryRight001</rightsStatementIdentifierValue>
+            </rightsStatementIdentifier>
+            <rightsBasis>Statute</rightsBasis>
+            <rightsGranted>
+                <act>Discovery</act>
+                <restriction></restriction>
+            </rightsGranted>
+        </rightsStatement>
+    </rights>
+
+</premis>

@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis:premis xmlns:premis="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="info:lc/xmlns/premis-v2 ../metadata/premis-v2-2.xsd" version="2.0">
+  <premis:object xsi:type="premis:file">
+    <premis:objectIdentifier>
+      <premis:objectIdentifierType>guid</premis:objectIdentifierType>
+      <premis:objectIdentifierValue>fac2a7c4-f7cc-41ab-b951-3a18c3802682</premis:objectIdentifierValue>
+    </premis:objectIdentifier>
+    <premis:preservationLevel>
+      <premis:preservationLevelValue>full</premis:preservationLevelValue>
+    </premis:preservationLevel>
+    <premis:objectCharacteristics>
+      <premis:compositionLevel>0</premis:compositionLevel>
+      <premis:format>
+        <premis:formatDesignation>
+          <premis:formatName>sql</premis:formatName>
+        </premis:formatDesignation>
+      </premis:format>
+    </premis:objectCharacteristics>
+    <premis:storage>
+      <premis:storageMedium>harddisk</premis:storageMedium>
+    </premis:storage>
+  </premis:object>
+  <premis:event>
+    <premis:eventIdentifier>
+      <premis:eventIdentifierType>guid</premis:eventIdentifierType>
+      <premis:eventIdentifierValue>8c43aec2-474b-4762-a545-be71f436f119</premis:eventIdentifierValue>
+    </premis:eventIdentifier>
+    <premis:eventType>SQL Dump</premis:eventType>
+    <premis:eventDateTime>2015-06-01T07:24:13+01:00</premis:eventDateTime>
+    <premis:eventDetail>SQL Dump</premis:eventDetail>
+    <premis:eventOutcomeInformation>
+      <premis:eventOutcome>Status: OK</premis:eventOutcome>
+    </premis:eventOutcomeInformation>
+    <premis:linkingAgentIdentifier>
+      <premis:linkingAgentIdentifierType>guid</premis:linkingAgentIdentifierType>
+      <premis:linkingAgentIdentifierValue>4d9129dc-f9bd-4121-a6d9-a807a277c8c2</premis:linkingAgentIdentifierValue>
+    </premis:linkingAgentIdentifier>
+    <premis:linkingObjectIdentifier>
+      <premis:linkingObjectIdentifierType>guid</premis:linkingObjectIdentifierType>
+      <premis:linkingObjectIdentifierValue>fac2a7c4-f7cc-41ab-b951-3a18c3802682</premis:linkingObjectIdentifierValue>
+    </premis:linkingObjectIdentifier>
+  </premis:event>
+  <premis:agent>
+    <premis:agentIdentifier>
+      <premis:agentIdentifierType>guid</premis:agentIdentifierType>
+      <premis:agentIdentifierValue>4d9129dc-f9bd-4121-a6d9-a807a277c8c2</premis:agentIdentifierValue>
+    </premis:agentIdentifier>
+    <premis:agentName>MySQL 5.5.43-0ubuntu0.14.04.1</premis:agentName>
+    <premis:agentType>software</premis:agentType>
+  </premis:agent>
+</premis:premis>

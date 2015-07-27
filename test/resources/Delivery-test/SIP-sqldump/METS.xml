@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mets:mets OBJID="GUID:ID179f3d34-2fab-470e-ab9f-519d2140d5d4" TYPE="Databases" PROFILE="http://www.ra.ee/METS/v01/IP.xml" ID="ID179f3d34-2fab-470e-ab9f-519d2140d5d4" LABEL="SIP including SQL Dump" xsi:schemaLocation="http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd info:lc/xmlns/premis-v2 schemas/premis-v2-2.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd" xmlns:mets="http://www.loc.gov/METS/" xmlns:ext="ExtensionMETS" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:premis="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<mets:metsHdr CREATEDATE="2014-05-01T01:00:00+01:00" ext:OAISSTATUS="SIP">
+		<mets:agent ROLE="ARCHIVIST" TYPE="ORGANIZATION">
+			<mets:name>Institution</mets:name>
+			<mets:note>Note</mets:note>
+		</mets:agent>
+		<mets:agent ROLE="CREATOR" TYPE="ORGANIZATION">
+			<mets:name>Institution</mets:name>
+			<mets:note>Note</mets:note>
+		</mets:agent>
+		<mets:agent TYPE="OTHER" ROLE="CREATOR" OTHERTYPE="SOFTWARE">
+			<mets:name>E-ARK SIP Creator</mets:name>
+			<mets:note>VERSION=0.0.1</mets:note>
+		</mets:agent>
+		<mets:agent ROLE="PRESERVATION" TYPE="ORGANIZATION">
+			<mets:name>Institution</mets:name>
+			<mets:note>Note</mets:note>
+		</mets:agent>
+		<mets:metsDocumentID>METS.xml</mets:metsDocumentID>
+	</mets:metsHdr>
+	 <mets:amdSec ID="ID550e8400-e29b-41d4-a716-4466554400bc">
+	      <mets:techMD ID="ID550e8400-e29b-41d4-a716-4466554400bd">
+		<mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS" MIMETYPE="text/xml" SIZE="2599" CREATED="2012-04-26T12:12:00+01:00" xlink:type="simple" xlink:href="metadata/PREMIS.xml" CHECKSUMTYPE="SHA-256" CHECKSUM="54ce8c7635ad02372ba3e85c18d7c657ce5c1b9410f87e7245eae413e444bdd2"/>
+	      </mets:techMD>
+	 </mets:amdSec>
+	<mets:fileSec>
+		<mets:fileGrp USE="archive">
+			<mets:file ID="ID77146c6c-c8c3-4406-80b5-b3b41901f9d0" MIMETYPE="text/x-sql" SIZE="2862064" CHECKSUMTYPE="SHA-256" CHECKSUM="977fb584d53cd64662dfba427f35190813dfc58979f51a2703f8621b9e1bc274" ADMID="ID550e8400-e29b-41d4-a716-4466554400bc" CREATED="2014-05-01T01:00:00+01:00">
+				<mets:FLocat LOCTYPE="URL" xlink:href="content/data/census.sql" xlink:type="simple"/>
+			</mets:file>
+		</mets:fileGrp>
+	</mets:fileSec>
+	<mets:structMap>
+		<mets:div LABEL="Original submission: SQL Dump">
+			<mets:fptr FILEID="ID77146c6c-c8c3-4406-80b5-b3b41901f9d0"/>
+		</mets:div>
+	</mets:structMap>
+</mets:mets>

@@ -1,9 +1,30 @@
 # earkweb
+
 E-ARK integrated prototype web application
 
+## Dependencies
+
+### Debian-based linux
+
+* [jhove](https://packages.debian.org/jessie/jhove)
+* [summain](https://packages.debian.org/jessie/summain)
+
+Install packages:
+
+    sudo apt-get install summain jhove
+
+### Python modules
+
+* [fido](https://github.com/openpreserve/fido) 
+
+Install fido:
+
+    wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
+    tar -xzvf 1.3.2-81.tar.gz
+    cd fido-1.3.2-81
+    sudo python setup.py install
+
 ## Set up the development environment
-
-
 
 ### Checkout and install dependencies
 
@@ -227,6 +248,17 @@ Users can be added by creating a new entry in the following bean definition:
         </property>
     </bean>
 
+# Development
+
+## Test
+
+Install py.test
+
+    pip install -U pytest
+
+Run all tests:
+
+    py.test tasks lib
 
 ## Attributions
 

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mets:mets OBJID="URN:EARK:AIP-compound" TYPE="Databases" LABEL="AIP - Database (SQL-Dump and SIARD representation)"
+           PROFILE="http://www.ra.ee/METS/v01/IP.xml" ID="ID1f594d58-d09f-46dd-abac-8432068a7f6d"
+           xsi:schemaLocation="http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+           xmlns:mets="http://www.loc.gov/METS/" xmlns:ext="ExtensionMETS" xmlns:xlink="http://www.w3.org/1999/xlink"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <mets:metsHdr CREATEDATE="2015-05-01T01:00:00+01:00" ext:OAISSTATUS="AIC" RECORDSTATUS="NEW">
+        <mets:agent ROLE="ARCHIVIST" TYPE="ORGANIZATION">
+            <mets:name>Institution</mets:name>
+            <mets:note>Note</mets:note>
+        </mets:agent>
+        <mets:agent ROLE="CREATOR" TYPE="ORGANIZATION">
+            <mets:name>Institution</mets:name>
+            <mets:note>Note</mets:note>
+        </mets:agent>
+        <mets:agent TYPE="OTHER" ROLE="CREATOR" OTHERTYPE="SOFTWARE">
+            <mets:name>E-ARK SIP to AIP Converter</mets:name>
+            <mets:note>VERSION=0.0.1</mets:note>
+        </mets:agent>
+        <mets:agent ROLE="PRESERVATION" TYPE="ORGANIZATION">
+            <mets:name>Institution</mets:name>
+            <mets:note>Note</mets:note>
+        </mets:agent>
+        <mets:metsDocumentID>METS.xml</mets:metsDocumentID>
+    </mets:metsHdr>
+
+    <mets:dmdSec ID="ID550e8400-e29b-41d4-a716-44665544000a">
+        <mets:mdRef LOCTYPE="URL" MDTYPE="EAD" MIMETYPE="text/xml" CREATED="2012-04-26T12:00:00+01:00" xlink:type="simple" xlink:href="file://./aip-metadata/EAD.xml"
+                    CHECKSUMTYPE="SHA-256" CHECKSUM="3b1d00f7871d9102001c77f2e031d9ada1b32f9282b40984f72af13c3998a448" SIZE="2321"/>
+    </mets:dmdSec>
+
+    <mets:amdSec ID="ID03a431cb-7801-4356-bcd9-861708eba1a1">
+
+        <mets:techMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7c">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:OBJECT" xlink:href="file://./aip-metadata/PREMIS.xml#CensusSqlObj"/>
+        </mets:techMD>
+        <mets:techMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7d">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:OBJECT" xlink:href="file://./aip-metadata/PREMIS.xml#MetadataXmlObj"/>
+        </mets:techMD>
+        <mets:techMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7f">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:OBJECT" xlink:href="file://./aip-metadata/PREMIS.xml#PersonsXsdObj"/>
+        </mets:techMD>
+        <mets:techMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7e">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:OBJECT" xlink:href="file://./aip-metadata/PREMIS.xml#MetadataXsdObj"/>
+        </mets:techMD>
+        <mets:techMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7g">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:OBJECT" xlink:href="file://./aip-metadata/PREMIS.xml#PersonsXmlObj"/>
+        </mets:techMD>
+
+        <mets:rightsMD ID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:RIGHTS" xlink:href="aip-metadata/PREMIS.xml#DiscoveryRight001"/>
+        </mets:rightsMD>
+
+        <mets:digiprovMD ID="ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbaf">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:EVENT" xlink:href="file://./aip-metadata/PREMIS.xml#Ingest001"/>
+        </mets:digiprovMD>
+        <mets:digiprovMD ID="ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbag">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:EVENT" xlink:href="file://./aip-metadata/PREMIS.xml#Migration001"/>
+        </mets:digiprovMD>
+        <mets:digiprovMD ID="ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbah">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:EVENT" xlink:href="file://./aip-metadata/PREMIS.xml#Migration002"/>
+        </mets:digiprovMD>
+        <mets:digiprovMD ID="ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbai">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:EVENT" xlink:href="file://./aip-metadata/PREMIS.xml#Migration003"/>
+        </mets:digiprovMD>
+        <mets:digiprovMD ID="ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbaj">
+            <mets:mdRef LOCTYPE="URL" MDTYPE="PREMIS:EVENT" xlink:href="file://./aip-metadata/PREMIS.xml#Migration004"/>
+        </mets:digiprovMD>
+    </mets:amdSec>
+
+    <mets:fileSec>
+        <mets:fileGrp USE="submission">
+            <mets:file ID="ID77146c6c-c8c3-4406-80b5-b3b41901f9d0" ADMID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b ID4566af74-0f7b-11e5-a6c0-1697f925ec7c ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbaf"
+                       MIMETYPE="text/x-sql" SIZE="2862064" CHECKSUMTYPE="SHA-256" CHECKSUM="977fb584d53cd64662dfba427f35190813dfc58979f51a2703f8621b9e1bc274" CREATED="2014-05-01T01:00:00+01:00">
+                <mets:FLocat LOCTYPE="URL" xlink:href="file://./submission/content/data/census.sql" xlink:type="simple"/>
+            </mets:file>
+        </mets:fileGrp>
+
+        <mets:fileGrp USE="representations">
+            <mets:fileGrp USE="representation-1">
+                <mets:file USE="SIARD" ID="ID7943a4e6-67dc-48ec-83e9-4ac89ad0fe4e"
+                           ADMID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b ID4566af74-0f7b-11e5-a6c0-1697f925ec7g ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbaj" CREATED="2015-05-01T01:00:00+01:00"
+                           MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="d17bababe941939e10b1beb535c22545c709b72d6089a122920e526df77ed5ef" SIZE="337">
+                    <mets:FLocat xlink:href="file://./representations/representation-1/content/data/census/Persons/Persons.xml" xlink:type="simple" LOCTYPE="URL"/>
+                </mets:file>
+                <mets:file USE="SIARD" ID="ID7b54caca-e844-4d2b-8178-b3a203323a29"
+                           ADMID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b ID4566af74-0f7b-11e5-a6c0-1697f925ec7f ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbah" CREATED="2015-05-01T01:00:00+01:00"
+                           MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="5b3e06324197fe43a984860c21b03a2b42eed9c7ebd44863af7d1eb1ec41d1df" SIZE="1350">
+                    <mets:FLocat xlink:href="file://./representations/representation-1/content/data/census/Persons/Persons.xsd" xlink:type="simple" LOCTYPE="URL"/>
+                </mets:file>
+                <mets:file USE="SIARD" ID="ID7d46134b-9b35-496e-abec-ae1f5d3c6d87" ADMID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbaf"
+                           CREATED="2015-05-01T01:00:00+01:00"
+                           MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="" SIZE="2058">
+                    <mets:FLocat xlink:href="file://./representations/representation-1/content/data/census/Persons/metadata.xml" xlink:type="simple" LOCTYPE="URL"/>
+                </mets:file>
+                <mets:file USE="SIARD" ID="ID73af658b-ca2b-4162-bf9f-d89ea8ef14bd"
+                           ADMID="ID4566af74-0f7b-11e5-a6c0-1697f925ec7b ID4566af74-0f7b-11e5-a6c0-1697f925ec7e ID9a0e8f15-2bf6-4a02-90ba-4dd9fcacfbai" CREATED="2015-05-01T01:00:00+01:00"
+                           MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="046bae4b88cb246be1bd4dbc3532d429e6c913da22b8846735d8188dbaec7aa2" SIZE="24478">
+                    <mets:FLocat xlink:href="file://./representations/representation-1/content/data/census/Persons/metadata.xsd" xlink:type="simple" LOCTYPE="URL"/>
+                </mets:file>
+            </mets:fileGrp>
+        </mets:fileGrp>
+
+        <mets:fileGrp USE="schemas">
+            <mets:file USE="schema" ID="ID57fd2ffa-0f4e-11e5-9ba7-34e6d700c47b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="2c80e83e296a6de6fb9e89dc4fadeddebd847a9ff2efea8c8a6e8f35f7b5af3e" SIZE="65132">
+                <mets:FLocat xlink:href="file://./schemas/premis-v2-2.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+            <mets:file USE="schema" ID="ID57fd6a6a-0f4e-11e5-9ba7-34e6d700c47b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="b277b6163adb0acff64f0593634bfe4d4de662e752f2278d130629ddaee669ef" SIZE="31292">
+                <mets:FLocat xlink:href="file://./schemas/jhove.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+            <mets:file USE="schema" ID="ID57fd9d14-0f4e-11e5-9ba7-34e6d700c47b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="7add6312b6e6aa2914508ecaca96b4cbfd5507e7c8e13217fb12763575b60dae" SIZE="148197">
+                <mets:FLocat xlink:href="file://./schemas/IP.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+            <mets:file USE="schema" ID="ID57fdea8a-0f4e-11e5-9ba7-34e6d700c47b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="f1f5bb6003165cdd8f6c1fcc32f8fd1f965e1681010f3b9806d9460bcffa8a3c" SIZE="3180">
+                <mets:FLocat xlink:href="file://./schemas/xlink.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+            <mets:file USE="schema" ID="ID57fe1b9a-0f4e-11e5-9ba7-34e6d700c47b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="e64e601425d079bfe8aa0351817b42dde363d10e9047bb2618563056e3edb7b6" SIZE="1297">
+                <mets:FLocat xlink:href="file://./schemas/ExtensionMETS.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+            <mets:file USE="schema" ID="ID174d02e8-1028-11e5-9493-1697f925ec7b" ADMID="ID03a431cb-7801-4356-bcd9-861708eba1a1" CREATED="2014-05-01T01:00:00+01:00"
+                       MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CHECKSUM="f7354c17a4aaec1f0f9bc51d8018aa19322d629ab98fb4b17925f3a0afd1d6e6" SIZE="98296">
+                <mets:FLocat xlink:href="file://./schemas/ead.xsd" xlink:type="simple" LOCTYPE="URL"/>
+            </mets:file>
+        </mets:fileGrp>
+    </mets:fileSec>
+
+    <mets:structMap ID="IDf413c073-5b03-4499-830e-8ef724613bef" TYPE="physical" LABEL="Profilestructmap">
+        <mets:div>
+            <mets:div LABEL="submission">
+                <mets:fptr FILEID="ID77146c6c-c8c3-4406-80b5-b3b41901f9d0"/>
+            </mets:div>
+
+            <mets:div LABEL="representations">
+                <mets:div LABEL="representation-1">
+                    <mets:fptr FILEID="ID7943a4e6-67dc-48ec-83e9-4ac89ad0fe4e"/>
+                    <mets:fptr FILEID="ID7b54caca-e844-4d2b-8178-b3a203323a29"/>
+                    <mets:fptr FILEID="ID7d46134b-9b35-496e-abec-ae1f5d3c6d87"/>
+                    <mets:fptr FILEID="ID73af658b-ca2b-4162-bf9f-d89ea8ef14bd"/>
+                </mets:div>
+            </mets:div>
+
+            <mets:div LABEL="schemas">
+                <mets:div LABEL="premis schema">
+                    <mets:fptr FILEID="ID57fd2ffa-0f4e-11e5-9ba7-34e6d700c47b"/>
+                </mets:div>
+                <mets:div LABEL="jhove schema">
+                    <mets:fptr FILEID="ID57fd6a6a-0f4e-11e5-9ba7-34e6d700c47b"/>
+                </mets:div>
+                <mets:div LABEL="eark-ip schema">
+                    <mets:fptr FILEID="ID57fd9d14-0f4e-11e5-9ba7-34e6d700c47b"/>
+                </mets:div>
+                <mets:div LABEL="xlink schema">
+                    <mets:fptr FILEID="ID57fdea8a-0f4e-11e5-9ba7-34e6d700c47b"/>
+                </mets:div>
+                <mets:div LABEL="ExtensionMETS  schema">
+                    <mets:fptr FILEID="ID57fe1b9a-0f4e-11e5-9ba7-34e6d700c47b"/>
+                </mets:div>
+                <mets:div LABEL="ead schema">
+                    <mets:fptr FILEID="ID174d02e8-1028-11e5-9493-1697f925ec7b"/>
+                </mets:div>
+            </mets:div>
+        </mets:div>
+    </mets:structMap>
+
+</mets:mets>
