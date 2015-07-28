@@ -1,9 +1,9 @@
 from django.conf.urls import patterns, include, url
-from django.contrib import admin
 from django.views.generic import RedirectView
 import socket
 
-import os
+from django.contrib import admin
+admin.autodiscover()
 
 urlpatterns = patterns('',
     # Examples:
