@@ -47,3 +47,19 @@ class InformationPackageList(ListView):
         context = super(InformationPackageList, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
         return context
+
+class InformationPackageDetail(DetailView):
+    """
+    Submit and View result from checkout to work area
+    """
+    model = InformationPackage
+    context_object_name='ip'
+    template_name='sip2aip/detail.html'
+
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageDetail, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        return context

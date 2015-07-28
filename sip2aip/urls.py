@@ -5,8 +5,9 @@ from sip2aip import views
 from earkcore.views import InformationPackageDetailView
 
 urlpatterns= patterns('',
-    url(r'^$', views.index, name='index'),
 
-    url(r'^reception/$', views.InformationPackageList.as_view(),name='reception'),
+    url(r'^$', views.InformationPackageList.as_view(),name='reception'),
+
+    url(r'^detail/(?P<pk>\d+)/$', views.InformationPackageDetail.as_view(), name='ip_detail'),
 
 )

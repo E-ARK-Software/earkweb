@@ -1,0 +1,33 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+   
+{% endblock %}
+
+{% block content %}
+
+    <table  class="table table-striped table-bordered table-condensed">
+    <thead>
+      <tr>
+		<th>Name</th>
+		<th>Value</th>
+      </tr>
+    </thead>
+    <tbody>
+    	<tr>
+    		<td>Path</td>
+    		<td>{{ ip.path }}</td>
+    	</tr>
+    	<tr class="row2">
+    		<td>Status</td>
+    		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
+    	</tr>
+    </tbody>
+  </table>
+
+    <p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
+
+{% endblock %}

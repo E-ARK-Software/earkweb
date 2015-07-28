@@ -1,7 +1,7 @@
 from django.db import models
 
 StatusProcess_CHOICES = (
-    (0, 'Receive new object'),
+    (0, 'New object'),
     (25, 'SIP validate'),
     (26, 'SIP validate failed'),
     (29, 'SIP validate OK'),
