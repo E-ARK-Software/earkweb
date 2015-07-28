@@ -51,6 +51,13 @@
                 {% if user.is_active and user.is_staff %}
                 <li class="menu-item "><a href="/earkweb/admin">Administration</a></li>
                 {% endif %}
+
+                <li class="menu-item dropdown"><a href="/sip2aip" class="dropdown-toggle" data-toggle="dropdown">SIP to AIP Conversion <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li class="menu-item"><a href="/earkweb/sip2aip/reception">SIP Reception</a></li>
+                    </ul>
+                </li>
+
                 <li class="menu-item dropdown"><a href="/search" class="dropdown-toggle" data-toggle="dropdown">Package search &amp; selection <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li class="menu-item"><a href="/earkweb/search">File-based package search</a></li>
