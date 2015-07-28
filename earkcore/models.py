@@ -28,4 +28,4 @@ class InformationPackage(models.Model):
     path = models.CharField(max_length=200,unique=True)
     statusprocess = models.IntegerField(null=True, choices=StatusProcess_CHOICES)
     def __str__(self):
-        return self.name
+        return self.path

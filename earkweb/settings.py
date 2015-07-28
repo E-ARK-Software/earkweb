@@ -121,6 +121,7 @@ INSTALLED_APPS = (
     'djcelery',
     'earkcore',
     'search',
+    'workers',
     'workflow',
     'sip2aip',
     'config',

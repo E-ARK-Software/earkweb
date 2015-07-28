@@ -15,6 +15,11 @@ from django.template import RequestContext, loader
 from django.utils import timezone
 from lxml import etree
 import requests
+from django.views.generic.detail import DetailView
+from django.utils.decorators import method_decorator
+from django.views.generic.list import ListView
+from django.contrib.auth.decorators import permission_required, login_required
+from earkcore.models import StatusProcess_CHOICES
 
 from earkcore.models import InformationPackage
 
@@ -26,9 +31,19 @@ def index(request):
     })
     return HttpResponse(template.render(context))
 
-@login_required
-def reception(request):
-    information_packages = InformationPackage.objects.all()
-    template = loader.get_template('sip2aip/reception.html')
-    context = RequestContext(request, {'ips': information_packages})
-    return HttpResponse(template.render(context))
+class InformationPackageList(ListView):
+    """
+    List IngestQueue
+    """
+    model = InformationPackage
+    template_name='sip2aip/reception.html'
+    context_object_name='ips'
+    queryset=InformationPackage.objects.all()
+
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageList, self).dispatch( *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageList, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        return context
