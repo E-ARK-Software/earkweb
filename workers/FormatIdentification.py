@@ -46,7 +46,7 @@ class FormatIdentification():
 class TestFormatIdentification(unittest.TestCase):
 
     def testValidateXML(self):
-        delivery_dir = config.params.root_dir + '/test/resources/Delivery-test/'
+        delivery_dir = config.params.root_dir + '/workers/resources/Delivery-test/'
         vsip = FormatIdentification()
         actual = vsip.find_files(delivery_dir)
         #self.assertTrue(actual)

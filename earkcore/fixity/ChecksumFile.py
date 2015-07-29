@@ -52,7 +52,7 @@ class ChecksumFile(object):
 
 class TestChecksum(unittest.TestCase):
 
-    test_dir = config.params.root_dir + '/test/resources/lib/fixity/'
+    test_dir = config.params.root_dir + '/earkcore/fixity/resources/'
     test_file = test_dir + 'test.txt'
     csobj = ChecksumFile(test_file)
 

@@ -29,7 +29,7 @@ def get_jhove(file):
     return result
 
 
-os.chdir(config.params.root_dir + "/test/resources/AIP-test/AIP-segmented/AIP-segmented/aip-metadata")
+os.chdir(config.params.root_dir + "/workers/resources/AIP-test/AIP-segmented/AIP-segmented/aip-metadata")
 
 file = "../../AIP-segmented.tar.gz"
 

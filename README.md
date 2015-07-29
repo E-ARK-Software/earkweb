@@ -258,7 +258,7 @@ Users can be added by creating a new entry in the following bean definition:
 
 ## Project layout
 
-* celery - Celery configuration
+* celery - Celery configuration and daemon start script
 * config - Configuration files and model (models.py) - parameters can be initialised from database and a fallback value can be defined.
 * earkcore - Generic functionality, can be released as an independent module 
 * earkweb - Django/celery setup and configuration

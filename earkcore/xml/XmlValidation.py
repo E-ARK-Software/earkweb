@@ -97,7 +97,7 @@ class XmlValidation(object):
 
 class TestXmlValidation(unittest.TestCase):
 
-    test_directory = config.params.root_dir + '/test/resources/lib/xml/'
+    test_directory = config.params.root_dir + '/earkcore/xml/resources/'
     schema_file = test_directory + 'schema.xsd'
     print schema_file
 

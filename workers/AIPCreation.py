@@ -66,8 +66,8 @@ class AIPCreation(object):
 
 class TestAIPCreation(unittest.TestCase):
 
-    extracted_sip_dir = config.params.root_dir + '/test/resources/Delivery-test/SIP-sqldump'
-    temp_working_dir = config.params.root_dir + '/test/temp-aip-dir-' + utils.randomutils.randomword(10)
+    extracted_sip_dir = config.params.root_dir + '/workers/resources/Delivery-test/SIP-sqldump'
+    temp_working_dir = config.params.root_dir + '/tmp/temp-aip-dir-' + utils.randomutils.randomword(10)
 
     aip_creation = AIPCreation(temp_working_dir)
 

@@ -40,8 +40,8 @@ class SIPExtraction(object):
 
 class TestXMLValidation(unittest.TestCase):
 
-    delivery_dir = config.params.root_dir + '/test/resources/Delivery-test/'
-    temp_extract_dir = config.params.root_dir + '/test/temp-' + utils.randomutils.randomword(10)
+    delivery_dir = config.params.root_dir + '/workers/resources/Delivery-test/'
+    temp_extract_dir = config.params.root_dir + '/tmp/temp-' + utils.randomutils.randomword(10)
 
     @classmethod
     def setUpClass(cls):

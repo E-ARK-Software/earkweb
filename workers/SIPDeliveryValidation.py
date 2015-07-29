@@ -88,7 +88,7 @@ class TestSIPDeliveryValidation(unittest.TestCase):
 
     _logger = log.init('sip-to-aip-converter')
 
-    delivery_dir = config.params.root_dir + '/test/resources/Delivery-test/'
+    delivery_dir = config.params.root_dir + '/workers/resources/Delivery-test/'
 
     schema_file = delivery_dir + 'schemas/IP_CS_mets.xsd'
     package_file = delivery_dir + 'SIP-sqldump.tar.gz'

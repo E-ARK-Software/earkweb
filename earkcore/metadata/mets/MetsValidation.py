@@ -71,7 +71,7 @@ class MetsValidation(object):
 
 
 class TestMetsValidation(unittest.TestCase):
-    test_dir = config.params.root_dir + '/test/resources/lib/metadata/mets/'
+    test_dir = config.params.root_dir + '/earkcore/metadata/mets/resources/'
 
 
     def test_validate_files_size(self):

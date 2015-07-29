@@ -99,7 +99,7 @@ class ParsedMets(object):
 
 class TestParsedMets(unittest.TestCase):
 
-    test_dir = config.params.root_dir + '/test/resources/lib/metadata/mets/'
+    test_dir = config.params.root_dir + '/earkcore/metadata/mets/resources/'
     test_file = test_dir + 'METS_filesec.xml'
     pmets = ParsedMets(test_dir)
     pmets.load_mets(test_file)

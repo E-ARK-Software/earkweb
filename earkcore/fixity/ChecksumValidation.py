@@ -34,7 +34,7 @@ class ChecksumValidation(object):
 
 class TestChecksumValidation(unittest.TestCase):
 
-    test_directory = config.params.root_dir + '/test/resources/lib/fixity/'
+    test_directory = config.params.root_dir + '/earkcore/fixity/resources/'
     test_file = test_directory + 'test.txt'
 
     csval = ChecksumValidation()
