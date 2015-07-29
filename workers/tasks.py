@@ -38,17 +38,15 @@ class SomeCreation(Task):
     def __init__(self):
         self.ignore_result = False
 
-    def run(self, param1, param2, *args, **kwargs):
+    def run(self, param1, *args, **kwargs):
         """
         This function creates something
         @type       param1: string
         @param      param1: First parameter
-        @type       param2: string
-        @param      param2: Second parameter
         @rtype:     string
         @return:    Parameter
         """
-        return "Parameter: " + param1 + param2
+        return "Parameter: " + param1
 
 class OtherJob(Task):
     def __init__(self):

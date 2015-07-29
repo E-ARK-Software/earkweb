@@ -147,9 +147,9 @@ or use the daemon script as super user:
 
     celery -A earkweb.celeryapp:app inspect registered
     -> worker1@<machine>: OK
-        * earkweb.celeryapp.debug_task
-        * workers.tasks.SomeCreation
-        * workers.tasks.add
+    *  earkweb.celeryapp.debug_task
+    *  workers.tasks.SomeCreation
+    *  workers.tasks.add
         
 ### Test task
 
@@ -255,6 +255,20 @@ Users can be added by creating a new entry in the following bean definition:
     </bean>
 
 # Development
+
+## Project layout
+
+* celery - Celery configuration
+* config - Configuration files and model (models.py) - parameters can be initialised from database and a fallback value can be defined.
+* earkcore - Generic functionality, can be released as an independent module 
+* earkweb - Django/celery setup and configuration
+* resources - E-ARK resources (schemas etc.)
+* search - Django web-gui module 
+* sip2aip -Django web-gui module 
+* static - Static content of the web application
+* templates - Base template
+* workers - Celery tasks
+* workflow - Django web-gui module 
 
 ## Test
 
