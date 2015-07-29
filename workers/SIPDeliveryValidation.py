@@ -16,11 +16,11 @@ from config import log
 
 import config.params
 
-from lib.xml.XmlValidation import XmlValidation
-from lib.fixity.ChecksumAlgorithm import ChecksumAlgorithm
-from lib.fixity.ChecksumValidation import ChecksumValidation
-from lib.metadata.mets.MetsValidation import MetsValidation
-from lib.metadata.mets.ParsedMets import ParsedMets
+from earkcore.xml.XmlValidation import XmlValidation
+from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.fixity.ChecksumValidation import ChecksumValidation
+from earkcore.metadata.mets.MetsValidation import MetsValidation
+from earkcore.metadata.mets.ParsedMets import ParsedMets
 
 class SIPDeliveryValidation(object):
     """

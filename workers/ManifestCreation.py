@@ -17,7 +17,7 @@ import os
 import io
 import StringIO
 from shutil import copytree
-from lib.process.cli.CliCommand import CliCommand
+from earkcore.process.cli.CliCommand import CliCommand
 import utils.randomutils
 import unittest
 import config.params

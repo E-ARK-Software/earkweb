@@ -4,7 +4,7 @@ import socket
 
 from django.contrib import admin
 
-from lib.process.thread.backgroundthread import BackgroundThread
+from earkcore.process.thread.backgroundthread import BackgroundThread
 from sip2aip.watchdir import watchdir
 
 urlpatterns = patterns('',

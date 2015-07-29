@@ -17,7 +17,7 @@ import config.params
 
 from config import log
 
-from lib.metadata.mets.AIPMetsCreation import AIPMetsCreation
+from earkcore.metadata.mets.AIPMetsCreation import AIPMetsCreation
 
 
 class AIPCreation(object):
