@@ -1,9 +1,11 @@
 from django.conf.urls import patterns, include, url
-from django.contrib import admin
 from django.views.generic import RedirectView
 import socket
 
-import os
+from django.contrib import admin
+
+from lib.process.thread.backgroundthread import BackgroundThread
+from sip2aip.watchdir import watchdir
 
 urlpatterns = patterns('',
     # Examples:
@@ -12,6 +14,7 @@ urlpatterns = patterns('',
     
     url(r'^$', RedirectView.as_view(url='search/')),
     url(r'^search/', include('search.urls', namespace="search")),
+    url(r'^sip2aip/', include('sip2aip.urls', namespace="sip2aip")),
     url(r'^workflow/', include('workflow.urls', namespace="workflow")),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', 'django_cas.views.login'), 
@@ -25,3 +28,5 @@ if socket.gethostname() != "earkdev":
         url(r'^$', RedirectView.as_view(url='earkweb/')),
         url(r'^earkweb/', include(urlpatterns)),
     )
+
+BackgroundThread(watchdir)

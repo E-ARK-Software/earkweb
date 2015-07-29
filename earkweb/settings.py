@@ -119,13 +119,13 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'djcelery',
+    'earkcore',
     'search',
-    'workflow',
     'workers',
+    'workflow',
+    'sip2aip',
+    'config',
 )
-
-
-
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -136,7 +136,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
-    'django_cas.middleware.CASMiddleware', 'django.middleware.doc.XViewMiddleware',
+    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
 )
 
 
@@ -232,6 +232,18 @@ LOGGING = {
     },
     'loggers': {
         'workflow.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'sip2aip.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'sip2aip.watchdir': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,
