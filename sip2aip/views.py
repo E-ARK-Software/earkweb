@@ -20,8 +20,18 @@ from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 from django.contrib.auth.decorators import permission_required, login_required
 from earkcore.models import StatusProcess_CHOICES
+from django.views.decorators.csrf import csrf_exempt
 
 from earkcore.models import InformationPackage
+
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+
+from celery.result import AsyncResult
+from workers import tasks
+from django.http import JsonResponse
 
 @login_required
 def index(request):
@@ -63,3 +73,49 @@ class InformationPackageDetail(DetailView):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
         return context
+
+@login_required
+def progress(request):
+    if 'task_id' in request.session.keys() and request.session['task_id']:
+        task_id = request.session['task_id']
+    return render_to_response('sip2aip/progress.html', locals(), context_instance=RequestContext(request))
+
+@login_required
+@csrf_exempt
+def do_task(request):
+    NUM_OBJ_TO_CREATE = 1000
+    try:
+        del request.session['task_id']
+        data = {}
+        if request.is_ajax():
+            job = tasks.SimulateLongRunning().apply_async((NUM_OBJ_TO_CREATE,), queue='default')
+            request.session['task_id'] = job.id
+
+
+            data = {"id": job.id}
+        else:
+            data = {"error": "Not ajax"}
+
+    except Exception, err:
+            print err
+
+    return JsonResponse(data)
+
+@login_required
+@csrf_exempt
+def poll_state(request):
+    try:
+        data = {}
+        if request.is_ajax():
+            if 'task_id' in request.POST.keys() and request.POST['task_id']:
+                task_id = request.POST['task_id']
+                task = AsyncResult(task_id)
+                data = {"result": task.result, "state": task.state}
+            else:
+                data = {"error": "No task_id in the request"}
+        else:
+            data = {"error": "Not ajax"}
+    except Exception, err:
+            print err
+
+    return JsonResponse(data)
