@@ -39,9 +39,17 @@ class Mets:
                 M.fileSec(),
                 M.structMap(M.div())
             )
-            self.add_agent('ARCHIVIST', 'ORGANIZATION')
+            self.add_agent('ARCHIVIST', 'ORGANIZATION', 'Institution')
         else:
             self.root = objectify.parse(f).getroot()
+
+    def add_agent(self, role, agent_type, name):
+        self.root.metsHdr.append(
+            M.agent(
+                {'ROLE': role, 'TYPE': agent_type},
+                M.name(name)
+            )
+        )
 
     def add_dmd_sec(self, md_type, file_path):
         gen_id = generate_id()
@@ -53,9 +61,15 @@ class Mets:
         )
         return gen_id
 
-    def add_premis_info(self, md_node, md_type, file_path):
+    def insert_into_amd_sec(self, md_node, successor_sections, md_type, file_path):
+        insert_function = self.root.amdSec.append
+        for section in successor_sections:
+            path = objectify.ObjectPath('amdSec.' + section)
+            if path.hasattr(self.root.amdSec):
+                insert_function = path(self.root.amdSec).addprevious
+                break
         gen_id = generate_id()
-        self.root.amdSec.append(
+        insert_function(
             md_node(
                 {'ID': gen_id},
                 M.mdRef({'MDTYPE': md_type}, xlink(file_path))
@@ -63,14 +77,14 @@ class Mets:
         )
         return gen_id
 
-    def add_premis_object(self, file_path):
-        return self.add_premis_info(M.techMD, 'PREMIS:OBJECT', file_path)
+    def add_tech_md(self, file_path):
+        return self.insert_into_amd_sec(M.techMD, ['rightsMD', 'sourceMD', 'digiprovMD'], 'PREMIS:OBJECT', file_path)
 
-    def add_premis_rights(self, file_path):
-        return self.add_premis_info(M.rightsMD, 'PREMIS:RIGHTS', file_path)
+    def add_rights_md(self, file_path):
+        return self.insert_into_amd_sec(M.rightsMD, ['sourceMD', 'digiprovMD'], 'PREMIS:RIGHTS', file_path)
 
-    def add_premis_event(self, file_path):
-        return self.add_premis_info(M.digiprovMD, 'PREMIS:EVENT', file_path)
+    def add_digiprov_md(self, file_path):
+        return self.insert_into_amd_sec(M.digiprovMD, [], 'PREMIS:EVENT', file_path)
 
     def add_file_grp(self, grp_use):
         self.root.fileSec.append(
@@ -96,23 +110,24 @@ class Mets:
             )
         )
 
-    def add_agent(self, role, agent_type):
-        self.root.metsHdr.append(
-            M.agent({'ROLE': role, 'TYPE': agent_type})
-        )
+    def validate(self):
+        with open('../../Downloads/mets.xsd', 'r') as f:
+            xmlschema = etree.XMLSchema(file=f)
+        return xmlschema.validate(self.root)
 
     def __str__(self):
         return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
 
-with open('earkresources/AIP-test/AIP-compound/METS.xml', 'r') as f:
-    my_mets = Mets()
+with open('workers/resources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
+    my_mets = Mets(mets_file)
 my_mets.add_dmd_sec('EAD', 'metadata/EAD.xml')
-adm_ids = []
-adm_ids.append(my_mets.add_premis_object('metadata/PREMIS.xml#Obj'))
-adm_ids.append(my_mets.add_premis_rights('metadata/PREMIS.xml#Right'))
-adm_ids.append(my_mets.add_premis_event('metadata/PREMIS.xml#Ingest'))
+admids = []
+admids.append(my_mets.add_tech_md('metadata/PREMIS.xml#Obj'))
+admids.append(my_mets.add_digiprov_md('metadata/PREMIS.xml#Ingest'))
+admids.append(my_mets.add_rights_md('metadata/PREMIS.xml#Right'))
 my_mets.add_file_grp('submission')
-my_mets.add_file('submission', 'content/data.sql', adm_ids)
+my_mets.add_file('submission', 'content/data.sql', admids)
 my_mets.root.set('TYPE', 'DIP')
 print my_mets
+print my_mets.validate()
