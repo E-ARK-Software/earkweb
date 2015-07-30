@@ -2,37 +2,21 @@
 '''
 Created on June 15, 2015
 '''
-
-import glob, os
-import uuid
-import hashlib
 from subprocess import check_output
-import config.params
-import lxml.etree
-
 import shutil
-
-import sys
 import os
-import io
-import StringIO
-from shutil import copytree
 from earkcore.process.cli.CliCommand import CliCommand
-import utils.randomutils
+from earkcore.utils import randomutils
 import unittest
-import config.params
 import re
-from config import log
+from config.config import root_dir
 
 class ManifestCreation(object):
     """
     Create package file manifest using 'summain'
     """
-    _logger = log.init('sip-to-aip-converter')
-
     def __init__(self, working_directory):
         self.working_directory = working_directory
-        self._logger.info("Working directory: %s" % working_directory)
         if not os.path.exists(working_directory):
             os.makedirs(working_directory)
 
@@ -44,8 +28,8 @@ class ManifestCreation(object):
 
 
 class TestManifestCreation(unittest.TestCase):
-    aip_compound_dir = config.params.root_dir + '/workers/resources/AIP-test/AIP-compound'
-    temp_working_dir = config.params.root_dir + '/tmp/temp-aip-dir-' + utils.randomutils.randomword(10) + "/"
+    aip_compound_dir = root_dir + '/workers/resources/AIP-test/AIP-compound'
+    temp_working_dir = root_dir + '/tmp/temp-aip-dir-' + randomutils.randomword(10) + "/"
     manifest_file = os.path.join(temp_working_dir, './manifest.mf')
 
     manifest_creation = ManifestCreation(temp_working_dir)

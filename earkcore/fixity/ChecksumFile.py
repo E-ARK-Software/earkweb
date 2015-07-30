@@ -4,14 +4,12 @@ Created on June 15, 2015
 '''
 __author__ = 'shsdev'
 
-from config import log
 import lxml
 from lxml.etree import XMLSyntaxError
 import unittest
-import config.params
 from ChecksumAlgorithm import ChecksumAlgorithm
 import hashlib
-
+from config.config import root_dir
 
 class ChecksumFile(object):
     """
@@ -52,7 +50,7 @@ class ChecksumFile(object):
 
 class TestChecksum(unittest.TestCase):
 
-    test_dir = config.params.root_dir + '/earkcore/fixity/resources/'
+    test_dir = root_dir + '/earkcore/fixity/resources/'
     test_file = test_dir + 'test.txt'
     csobj = ChecksumFile(test_file)
 

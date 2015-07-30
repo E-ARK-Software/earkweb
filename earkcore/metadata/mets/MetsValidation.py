@@ -7,10 +7,9 @@ __author__ = 'shsdev'
 import unittest
 import os
 
-from config import log
-import config.params
 from ParsedMets import ParsedMets
-
+from config.config import root_dir
+from earkcore.xml.validationresult import ValidationResult
 
 class MetsValidation(object):
     """
@@ -18,8 +17,6 @@ class MetsValidation(object):
     """
     ns = {'mets': 'http://www.loc.gov/METS/', 'xlink': 'http://www.w3.org/1999/xlink',
           'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
-
-    _logger = log.init('sip-to-aip-converter')
 
     parsed_mets = None
 
@@ -41,38 +38,40 @@ class MetsValidation(object):
         @rtype:     bool
         @return:    Validity of size values
         """
+        valid = True
+        log = []
+        err = []
         if self.parsed_mets is None:
-            raise ValueError("Attribute 'parsed_mets' of type ElementTree must be initialized")
+            err.append("Attribute 'parsed_mets' of type ElementTree must be initialized")
 
         mets_file_elms = self.parsed_mets.mets_tree.getroot().xpath('//mets:file', namespaces=MetsValidation.ns)
         if (len(mets_file_elms) == 0):
-            self._logger.error("No mets:file elements found")
+            err.append("No mets:file elements found")
             return False
         for mets_file_elm in mets_file_elms:
             fileloc = mets_file_elm.xpath('mets:FLocat/@xlink:href', namespaces=MetsValidation.ns)
             if (len(fileloc) != 1):
-                self._logger.error("Unable to determine file location reference in METS file")
-                return False
+                err.append("Unable to determine file location reference in METS file")
+                valid = False
             package_file_path = os.path.join(self.parsed_mets.root_dir, fileloc[0])
             if not os.path.isfile(package_file_path):
-                self._logger.error("Unable to find referenced file in delivery METS file")
-                return False
+                err.append("Unable to find referenced file in delivery METS file")
+                valid = False
             size_elms = mets_file_elm.xpath('@SIZE', namespaces={'mets': 'http://www.loc.gov/METS/'})
             if not (len(size_elms) == 1 and size_elms[0].isdigit()):
-                self._logger.error("SIZE attribute value is not a digit")
-                return False
+                err.append("SIZE attribute value is not a digit")
+                valid = False
             package_file_size = os.path.getsize(package_file_path)
             size_attr_value = int(size_elms[0])
             if not package_file_size == size_attr_value:
-                self._logger.error("Actual file size %d does not equal file size attribute value %d" % (
+                err.append("Actual file size %d does not equal file size attribute value %d" % (
                     package_file_size, size_attr_value))
-                return False
-        return True
-
+                valid = False
+        return ValidationResult(valid, log, err)
 
 class TestMetsValidation(unittest.TestCase):
-    test_dir = config.params.root_dir + '/earkcore/metadata/mets/resources/'
 
+    test_dir = root_dir + '/earkcore/metadata/mets/resources/'
 
     def test_validate_files_size(self):
         """
@@ -83,7 +82,7 @@ class TestMetsValidation(unittest.TestCase):
         parsed_mets.load_mets(test_file)
         mval = MetsValidation(parsed_mets)
         actual = mval.validate_files_size()
-        self.assertTrue(actual, "Validates if the files listed in the METS file match the actual file size")
+        self.assertTrue(actual.valid, "Validates if the files listed in the METS file match the actual file size")
 
     def test_not_validate_wrong_filesize(self):
         """
@@ -94,7 +93,7 @@ class TestMetsValidation(unittest.TestCase):
         parsed_mets.load_mets(test_file)
         mval = MetsValidation(parsed_mets)
         actual = mval.validate_files_size()
-        self.assertFalse(actual, "Must not validate if the file size is wrong")
+        self.assertFalse(actual.valid, "Must not validate if the file size is wrong")
 
 if __name__ == '__main__':
     unittest.main()

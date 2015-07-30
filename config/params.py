@@ -1,6 +1,4 @@
-import os
-
-root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+from config import root_dir
 
 from models import Path
 

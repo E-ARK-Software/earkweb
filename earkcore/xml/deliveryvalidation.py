@@ -12,23 +12,18 @@ import unittest
 import lxml
 from lxml.etree import XMLSyntaxError
 
-from config import log
-
-import config.params
-
-from earkcore.xml.XmlValidation import XmlValidation
+from earkcore.xml.xmlvalidation import XmlValidation
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
+from config.config import root_dir
+from earkcore.xml.validationresult import ValidationResult
 
-class SIPDeliveryValidation(object):
+class DeliveryValidation(object):
     """
     SIP delivery validation
     """
-
-    _logger = log.init('sip-to-aip-converter')
-
     # Clear any previous errors
     lxml.etree.clear_error_log()
 
@@ -43,12 +38,15 @@ class SIPDeliveryValidation(object):
         @param      delivery_xml_file:  Path to delivery METS file.
         @type       package_file:  string
         @param      package_file:  Path to package file file (e.g. TAR).
-        @rtype:     bool
-        @return:    Validity of delivery
+        @rtype:     ValidationResult
+        @return:    Validation result (validity, process log, error log)
         """
+        valid = False
+        log = []
+        err = []
         valid_xml = False
         valid_checksum = False
-        self._logger.info("Validating delivery: %s using schema: %s and package file %s" % (
+        log.append("Validating delivery: %s using schema: %s and package file %s" % (
             delivery_xml_file, schema_file, package_file))
 
         try:
@@ -65,8 +63,8 @@ class SIPDeliveryValidation(object):
 
             # Validate the delivery XML file
             xmlVal = XmlValidation()
-            valid_xml = xmlVal.validate_XML(parsed_mets.mets_tree, parsed_sfile)
-
+            validation_result = xmlVal.validate_XML(parsed_mets.mets_tree, parsed_sfile)
+            valid_xml = validation_result.valid
             # Checksum validation
             checksum_expected = ParsedMets.get_file_element_checksum(parsed_mets.get_first_file_element())
             checksum_algorithm = ParsedMets.get_file_element_checksum_algorithm(parsed_mets.get_first_file_element())
@@ -77,22 +75,22 @@ class SIPDeliveryValidation(object):
             mval = MetsValidation(parsed_mets)
             valid_files_size = mval.validate_files_size()
 
-            return (valid_xml and valid_checksum and valid_files_size)
+            valid = (valid_xml and valid_checksum and valid_files_size)
 
         except (XMLSyntaxError), why:
             self._logger.error('Error validating delivery %s, why: %s' % (delivery_xml_file, str(why)))
             return False
 
+        return ValidationResult(valid, log, err)
+
 
 class TestSIPDeliveryValidation(unittest.TestCase):
 
-    _logger = log.init('sip-to-aip-converter')
-
-    delivery_dir = config.params.root_dir + '/workers/resources/Delivery-test/'
+    delivery_dir = root_dir + '/workers/resources/Delivery-test/'
 
     schema_file = delivery_dir + 'schemas/IP_CS_mets.xsd'
     package_file = delivery_dir + 'SIP-sqldump.tar.gz'
-    vsip = SIPDeliveryValidation()
+    vsip = DeliveryValidation()
 
     def test_validate_delivery(self):
         """

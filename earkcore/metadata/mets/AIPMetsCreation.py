@@ -4,17 +4,15 @@ Created on June 26th, 2015
 
 @author: Jan Rörden
 """
-from config import log
-
 import unittest
 import os
 import shutil
-import config.params
 import datetime
 
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import SubElement
 
+from config.config import root_dir
 
 class AIPMetsCreation(object):
     """
@@ -38,7 +36,7 @@ class AIPMetsCreation(object):
         ET.register_namespace('ext', 'ExtensionMETS')
         
         # parse METS template      
-        mets_template = ET.parse(config.params.root_dir+'/lib/metadata/mets/template_METS.xml')
+        mets_template = ET.parse(root_dir+'/lib/metadata/mets/template_METS.xml')
         template_root = mets_template.getroot()
         
         # write info to METS root 

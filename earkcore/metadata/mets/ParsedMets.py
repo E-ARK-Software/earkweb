@@ -4,14 +4,10 @@ Created on June 15, 2015
 '''
 __author__ = 'shsdev'
 
-from config import log
-import lxml
 import unittest
-import config.params
-import hashlib
-import os
 import lxml
 from lxml.etree import XMLSyntaxError
+from config.config import root_dir
 
 
 class ParsedMets(object):
@@ -20,8 +16,6 @@ class ParsedMets(object):
     """
     ns = {'mets': 'http://www.loc.gov/METS/', 'xlink': 'http://www.w3.org/1999/xlink',
           'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
-
-    _logger = log.init('sip-to-aip-converter')
 
     mets_tree = None
 
@@ -90,16 +84,14 @@ class ParsedMets(object):
                 schema_location = locations[position + 1]
                 if schema_location.startswith('http://'):
                     schema_file = schema_file
-                    self._logger.info('New schema location: "%s"' % schema_location)
                 elif schema_location.startswith(''):
                     schema_file = self.root_dir + schema_location
-                    self._logger.info('New schema location: "%s"' % (self.root_dir + schema_location))
         return schema_file
 
 
 class TestParsedMets(unittest.TestCase):
 
-    test_dir = config.params.root_dir + '/earkcore/metadata/mets/resources/'
+    test_dir = root_dir + '/earkcore/metadata/mets/resources/'
     test_file = test_dir + 'METS_filesec.xml'
     pmets = ParsedMets(test_dir)
     pmets.load_mets(test_file)

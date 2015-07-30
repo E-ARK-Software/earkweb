@@ -5,9 +5,9 @@ Created on June 15, 2015
 __author__ = 'shs'
 
 import unittest
-import config.params
 from ChecksumAlgorithm import ChecksumAlgorithm
 from ChecksumFile import ChecksumFile
+from config.config import root_dir
 
 class ChecksumValidation(object):
     """
@@ -34,7 +34,7 @@ class ChecksumValidation(object):
 
 class TestChecksumValidation(unittest.TestCase):
 
-    test_directory = config.params.root_dir + '/earkcore/fixity/resources/'
+    test_directory = root_dir + '/earkcore/fixity/resources/'
     test_file = test_directory + 'test.txt'
 
     csval = ChecksumValidation()

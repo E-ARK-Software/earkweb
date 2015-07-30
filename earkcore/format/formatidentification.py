@@ -7,8 +7,8 @@ Created on June 9, 2015
 
 import os
 
-import config.log
-import config.params
+from config.config import root_dir
+
 import unittest
 
 class FormatIdentification():
@@ -17,16 +17,13 @@ class FormatIdentification():
     """
     # TODO: Dependency to PREMIS! The JHOVE output must go into the PREMIS file.
     # TODO: Element premis:object/premis:objectCharacteristics/premis:objectCharacteristicsExtension/premis:mdSecType/premis:mdWrap/premis:xmlData/jhove:jhove
-    
-    _logger = config.log.init('sip-to-aip-converter')
-    
+
     def _identify_file(self, object):
         """
         This function identifies the file format of every file that is handed over.
         """
-        self._logger.info('Now identifying: %s' % object)
-    
-        
+
+
     def find_files(self, delivery_dir):
         """
         This function iterates the SIP and selects files where the format should be identified.
@@ -40,13 +37,13 @@ class FormatIdentification():
                     os.chdir(os.getcwd()+'/'+delivery_dir+'/'+object+'/content/data')
                     for object in os.listdir(os.getcwd()):
                         self._identify_file(object)
-                    
-    
-        
+
+
+
 class TestFormatIdentification(unittest.TestCase):
 
     def testValidateXML(self):
-        delivery_dir = config.params.root_dir + '/workers/resources/Delivery-test/'
+        delivery_dir = root_dir + '/workers/resources/Delivery-test/'
         vsip = FormatIdentification()
         actual = vsip.find_files(delivery_dir)
         #self.assertTrue(actual)
