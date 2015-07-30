@@ -119,7 +119,7 @@ class Mets:
         return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
 
-with open('workers/resources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
+with open('earkresources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
     my_mets = Mets(mets_file)
 my_mets.add_dmd_sec('EAD', 'metadata/EAD.xml')
 admids = []
