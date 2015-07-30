@@ -1,7 +1,14 @@
 from celery import Task, shared_task
-import time, logging
+import time, logging, os
 from sip2aip.models import MyModel
 from time import sleep
+from config import params
+from celery import current_task
+from earkcore.utils import fileutils
+from earkcore.models import InformationPackage
+from earkcore.utils import randomutils
+from taskresult import TaskResult
+from earkcore.packaging.extraction import Extraction
 # Start worker: celery --app=earkweb.celeryapp:app worker
 # Example:
 #     from workers.tasks import SomeCreation
@@ -80,5 +87,75 @@ class SimulateLongRunning(Task):
           sleep(0.1)
           self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
 
-
         return True
+
+class AssignIdentifier(Task):
+
+    log = []
+    err = []
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def valid_state(self, ip):
+        if not (ip.statusprocess == 0):
+            self.err.append("Incorrect information package status")
+        return (len(self.err) == 0)
+
+    def run(self, package_path, *args, **kwargs):
+        """
+        Unpack tar file to destination directory
+        @type       package_path: string
+        @param      package_path: Path to package to be unpackaged
+        @rtype:     boolean
+        @return:    success/failure of the unpackaging process
+        """
+        self.log.append("AssignIdentifier task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(path=package_path)
+        if not self.valid_state(ip):
+            return TaskResult(False, self.log, self.err)
+        ip.statusprocess=100
+        ip.uuid=randomutils.getUniqueID()
+        ip.save()
+        self.log.append("UUID %s assigned to package %s" % (ip.uuid, package_path))
+        return TaskResult(True, self.log, [])
+
+class ExtractTar4(Task):
+
+    log = []
+    err = []
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def valid_state(self, ip):
+        if not (ip.statusprocess == 100):
+            self.err.append("Incorrect information package status")
+        if (ip.uuid is None or ""):
+            self.err.append("UUID missing")
+        target_dir = os.path.join(params.config_path_work, ip.uuid)
+        if (os.path.exists(target_dir)):
+            self.err.append("Directory already exists in working area")
+        return (len(self.err) == 0)
+
+    def run(self, uuid, *args, **kwargs):
+        """
+        Unpack tar file to destination directory
+        @type       package_path: string
+        @param      package_path: Path to package to be unpackaged
+        @rtype:     boolean
+        @return:    success/failure of the unpackaging process
+        """
+        self.log.append("ExtractTar task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(uuid=uuid)
+        if not self.valid_state(ip):
+            return TaskResult(False, self.log, self.err)
+        ip.statusprocess = 200
+        ip.save()
+        target_dir = os.path.join(params.config_path_work, ip.uuid)
+        fileutils.mkdir_p(target_dir)
+        extr = Extraction()
+        result = extr.extract(ip.path, target_dir)
+        self.log.append(result.log)
+        self.err.append(result.err)
+        return TaskResult(True, self.log, self.err)

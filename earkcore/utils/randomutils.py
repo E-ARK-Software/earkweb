@@ -5,5 +5,5 @@ def randomword(length):
 
 def getUniqueID():
    prefix = ""
-   sf = uuid.uuid1()
+   sf = uuid.uuid4()
    return "%s%d" % (prefix, sf)

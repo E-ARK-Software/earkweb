@@ -6,6 +6,7 @@ import shutil
 from earkcore.utils import randomutils
 
 from config.config import root_dir
+from workers.taskresult import TaskResult
 
 class Extraction(object):
     """
@@ -25,10 +26,10 @@ class Extraction(object):
         try:
             tar_object = tarfile.open(name=package_file_path, mode='r')
             tar_object.extractall(path=extract_to)
-            return True
+            return TaskResult(True,[], [])
         except (ValueError, OSError, IOError, tarfile.TarError),why:
-            self._logger.error('Problem to extract %s, why: %s' % (package_file_path,str(why)))
-            return False
+            err = ['Problem to extract %s, why: %s' % (package_file_path,str(why))]
+            return TaskResult(False,[], err)
 
 
 class TestExtraction(unittest.TestCase):

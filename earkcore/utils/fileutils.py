@@ -1,5 +1,6 @@
 from shutil import copytree
-import os
+import os, errno
+
 
 def copytree(self, origin_dir, target_dir):
     """
@@ -11,3 +12,12 @@ def copytree(self, origin_dir, target_dir):
     @return:    Success of AIP preparation
     """
     copytree(origin_dir, target_dir)
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise

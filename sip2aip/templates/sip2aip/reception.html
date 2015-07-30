@@ -12,6 +12,7 @@
     <thead>
       <tr>
                 <th>Path</th>
+                <th>UUID</th>
                 <th>Status</th>
       </tr>
     </thead>
@@ -19,6 +20,7 @@
 	    	{% for ip in ips %}
 		      	<tr>
                     <td><a href="{% url 'sip2aip:ip_detail' ip.pk %}" title='Detail information'>{{ ip.path }}</a></td>
+                    <td>{{ ip.uuid }}</td>
 					<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
 		      	</tr>
 	      	{% endfor %}
