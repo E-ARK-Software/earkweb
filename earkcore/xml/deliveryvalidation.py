@@ -86,7 +86,7 @@ class DeliveryValidation(object):
 
 class TestSIPDeliveryValidation(unittest.TestCase):
 
-    delivery_dir = root_dir + '/workers/resources/Delivery-test/'
+    delivery_dir = root_dir + '/earkresources/Delivery-test/'
 
     schema_file = delivery_dir + 'schemas/IP_CS_mets.xsd'
     package_file = delivery_dir + 'SIP-sqldump.tar.gz'

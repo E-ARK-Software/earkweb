@@ -28,7 +28,7 @@ class ManifestCreation(object):
 
 
 class TestManifestCreation(unittest.TestCase):
-    aip_compound_dir = root_dir + '/workers/resources/AIP-test/AIP-compound'
+    aip_compound_dir = root_dir + '/earkresources/AIP-test/AIP-compound'
     temp_working_dir = root_dir + '/tmp/temp-aip-dir-' + randomutils.randomword(10) + "/"
     manifest_file = os.path.join(temp_working_dir, './manifest.mf')
 

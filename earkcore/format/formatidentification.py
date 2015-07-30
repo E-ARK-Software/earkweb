@@ -10,6 +10,12 @@ import os
 from config.config import root_dir
 
 import unittest
+import glob, os
+from subprocess import check_output
+
+def get_puid(file):
+    out = check_output(["python", "/usr/local/bin/fido", file])
+    return out.split(",")[2]
 
 class FormatIdentification():
     """
@@ -43,7 +49,7 @@ class FormatIdentification():
 class TestFormatIdentification(unittest.TestCase):
 
     def testValidateXML(self):
-        delivery_dir = root_dir + '/workers/resources/Delivery-test/'
+        delivery_dir = root_dir + '/earkresources/Delivery-test/'
         vsip = FormatIdentification()
         actual = vsip.find_files(delivery_dir)
         #self.assertTrue(actual)

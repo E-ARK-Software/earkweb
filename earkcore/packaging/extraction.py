@@ -33,7 +33,7 @@ class Extraction(object):
 
 class TestExtraction(unittest.TestCase):
 
-    delivery_dir = root_dir + '/workers/resources/Delivery-test/'
+    delivery_dir = root_dir + '/earkresources/Delivery-test/'
     temp_extract_dir = root_dir + '/tmp/temp-' + randomutils.randomword(10)
 
     @classmethod

@@ -11,6 +11,15 @@ from ChecksumAlgorithm import ChecksumAlgorithm
 import hashlib
 from config.config import root_dir
 
+def get_sha256_hash(file):
+    blocksize = 65536
+    hash = hashlib.sha256()
+    print file
+    with open(file, 'rb') as file:
+        for block in iter(lambda: file.read(blocksize), ''):
+            hash.update(block)
+    return hash.hexdigest()
+
 class ChecksumFile(object):
     """
     Checksum validation
