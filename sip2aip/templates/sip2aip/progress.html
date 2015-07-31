@@ -12,10 +12,16 @@
 {% endblock %}
 
 {% block content %}
+<div>
+    <form method="POST" onsubmit="return false">
+    {% csrf_token %}
+    {{ form }}
+  </form>
+</div>
 
   <div id="container">
   <div id="action">
-   <button id="do-task">Click here!</button>
+    <button id="do-task">Click here!</button>
   </div>
 
   <div class="progress_container">

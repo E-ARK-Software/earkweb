@@ -32,6 +32,8 @@ from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from workers import tasks
 from django.http import JsonResponse
+from django.forms import ModelChoiceField
+from sip2aip import forms
 
 @login_required
 def index(request):
@@ -78,7 +80,10 @@ class InformationPackageDetail(DetailView):
 def progress(request):
     if 'task_id' in request.session.keys() and request.session['task_id']:
         task_id = request.session['task_id']
-    return render_to_response('sip2aip/progress.html', locals(), context_instance=RequestContext(request))
+    context = RequestContext(request, {
+        'form': forms.SomeOtherForm()
+    })
+    return render_to_response('sip2aip/progress.html', locals(), context_instance=context)
 
 @login_required
 @csrf_exempt
