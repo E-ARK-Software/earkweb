@@ -12,7 +12,7 @@ urlpatterns= patterns('',
 
     url(r'^progress$', views.progress, name='progress'),
 
-    url(r'^do_task$', views.do_task, name='do_task'),
+    url(r'^apply_task', views.apply_task, name='apply_task'),
 
     url(r'^poll_state$', views.poll_state, name='poll_state'),
 

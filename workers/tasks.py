@@ -1,6 +1,6 @@
 from celery import Task, shared_task
 import time, logging, os
-from sip2aip.models import MyModel
+# from sip2aip.models import MyModel
 from time import sleep
 from config import params
 from celery import current_task
@@ -63,31 +63,31 @@ class AnotherJob(Task):
         """
         return "Parameter: " + param
 
-class SimulateLongRunning(Task):
-
-    def __init__(self):
-        self.ignore_result = False
-
-    def run(self, factor, *args, **kwargs):
-        """
-        This function creates something
-        @type       param1: int
-        @param      param1: Factor
-        @rtype:     string
-        @return:    Parameter
-        """
-        for i in range(1, factor):
-          fn = 'Fn %s' % i
-          ln = 'Ln %s' % i
-          my_model = MyModel(fn=fn, ln=ln)
-          my_model.save()
-
-          process_percent = int(100 * float(i) / float(factor))
-
-          sleep(0.1)
-          self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
-
-        return True
+# class SimulateLongRunning(Task):
+#
+#     def __init__(self):
+#         self.ignore_result = False
+#
+#     def run(self, factor, *args, **kwargs):
+#         """
+#         This function creates something
+#         @type       param1: int
+#         @param      param1: Factor
+#         @rtype:     string
+#         @return:    Parameter
+#         """
+#         for i in range(1, factor):
+#           fn = 'Fn %s' % i
+#           ln = 'Ln %s' % i
+#           my_model = MyModel(fn=fn, ln=ln)
+#           my_model.save()
+#
+#           process_percent = int(100 * float(i) / float(factor))
+#
+#           sleep(0.1)
+#           self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
+#
+#         return True
 
 class AssignIdentifier(Task):
 
@@ -102,7 +102,7 @@ class AssignIdentifier(Task):
             self.err.append("Incorrect information package status")
         return (len(self.err) == 0)
 
-    def run(self, package_path, *args, **kwargs):
+    def run(self, pk_id, *args, **kwargs):
         """
         Unpack tar file to destination directory
         @type       package_path: string
@@ -110,17 +110,19 @@ class AssignIdentifier(Task):
         @rtype:     boolean
         @return:    success/failure of the unpackaging process
         """
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
         self.log.append("AssignIdentifier task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(path=package_path)
+        ip = InformationPackage.objects.get(pk=pk_id)
         if not self.valid_state(ip):
             return TaskResult(False, self.log, self.err)
         ip.statusprocess=100
         ip.uuid=randomutils.getUniqueID()
         ip.save()
-        self.log.append("UUID %s assigned to package %s" % (ip.uuid, package_path))
+        self.log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
+        self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, self.log, [])
 
-class ExtractTar4(Task):
+class ExtractTar(Task):
 
     log = []
     err = []
@@ -158,4 +160,30 @@ class ExtractTar4(Task):
         result = extr.extract(ip.path, target_dir)
         self.log.append(result.log)
         self.err.append(result.err)
+        return TaskResult(True, self.log, self.err)
+
+class Reset(Task):
+
+    log = []
+    err = []
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def run(self, pk_id, *args, **kwargs):
+        """
+        Unpack tar file to destination directory
+        @type       package_path: string
+        @param      package_path: Path to package to be unpackaged
+        @rtype:     boolean
+        @return:    success/failure of the unpackaging process
+        """
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+
+        self.log.append("ResetTask task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+        ip.statusprocess = 0
+        ip.uuid = ""
+        ip.save()
+        self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, self.log, self.err)

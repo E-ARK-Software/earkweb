@@ -21,7 +21,7 @@ function pollstate(in_task_id) {
                   window.console.log("current task: "+task_id);
 
                   $.ajax({
-                      url: "poll_state",
+                      url: "/earkweb/sip2aip/poll_state",
                       type: "POST",
                       data: "task_id=" + task_id,
                   }).success(function(task){
@@ -36,7 +36,7 @@ function pollstate(in_task_id) {
                       PollState(task_id);
                   });
 
-              }, 1000);
+              }, 4000);
           }
           PollState(in_task_id);
       });

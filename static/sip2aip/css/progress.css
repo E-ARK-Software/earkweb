@@ -1,4 +1,19 @@
 .progress {
-   width:50%;
+   width:80%;
    background:gray;
+}
+
+ul { list-style: none; margin: 0; padding: 0; }
+li { margin: .1em 0; }
+
+label {
+   float: left;
+   width: 150px;
+   margin-right: 15px;
+   padding-top: 2px;
+   text-align: right;
+}
+
+#apply-task {
+   margin-left:20px;
 }

@@ -4,6 +4,11 @@
 {% load staticfiles %}
 
 {% block extra_head %}
+<script type="text/javascript" src="{% static 'sip2aip/js/progress.js' %}"></script>
+<link rel="stylesheet" href="{% static 'sip2aip/css/progress.css' %}" type="text/css" />
+{% if task_id %}
+<script type="text/javascript">pollstate('{{ task_id }}');</script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -21,11 +26,25 @@
     		<td>{{ ip.path }}</td>
     	</tr>
     	<tr class="row2">
+    		<td>UUID</td>
+    		<td>{{ ip.uuid }}</td>
+    	</tr>
+	    <tr class="row1">
     		<td>Status</td>
     		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
     	</tr>
     </tbody>
   </table>
+
+  <div id="container">
+  	<div id="action" class="form-group">
+      <form method="POST" onsubmit="return false">
+    		{% csrf_token %}
+    		<ul>{{ form.as_ul }}</ul>
+    		<br/>
+    		<button id="apply-task">Apply task!</button>
+  		</form>
+  </div>
 
     <p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
 

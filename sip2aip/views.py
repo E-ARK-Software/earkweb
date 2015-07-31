@@ -34,6 +34,9 @@ from workers import tasks
 from django.http import JsonResponse
 from django.forms import ModelChoiceField
 from sip2aip import forms
+import urllib2
+import workers.tasks
+from workflow.models import WorkflowModules
 
 @login_required
 def index(request):
@@ -68,12 +71,14 @@ class InformationPackageDetail(DetailView):
     context_object_name='ip'
     template_name='sip2aip/detail.html'
 
+
     def dispatch(self, *args, **kwargs):
         return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        context['form'] = forms.WorkflowModuleSelectForm()
         return context
 
 @login_required
@@ -81,29 +86,33 @@ def progress(request):
     if 'task_id' in request.session.keys() and request.session['task_id']:
         task_id = request.session['task_id']
     context = RequestContext(request, {
-        'form': forms.SomeOtherForm()
+        'form': forms.PackageWorkflowModuleSelectForm()
     })
     return render_to_response('sip2aip/progress.html', locals(), context_instance=context)
 
 @login_required
 @csrf_exempt
-def do_task(request):
-    NUM_OBJ_TO_CREATE = 1000
+def apply_task(request):
+    data = {}
     try:
-        del request.session['task_id']
-        data = {}
+        selected_ip = request.GET['selected_ip']
+        print "selected_ip: " + request.GET['selected_ip']
+        selected_action = request.GET['selected_action']
+        print "selected_action: " + request.GET['selected_action']
+        if not (selected_ip and selected_action):
+            return JsonResponse({"error": "Input parameters missing!"})
+        wfm = WorkflowModules.objects.get(pk=selected_action)
         if request.is_ajax():
-            job = tasks.SimulateLongRunning().apply_async((NUM_OBJ_TO_CREATE,), queue='default')
+            taskClass = getattr(tasks, wfm.identifier)
+            job = taskClass().apply_async((selected_ip,), queue='default')
             request.session['task_id'] = job.id
-
-
             data = {"id": job.id}
         else:
             data = {"error": "Not ajax"}
-
-    except Exception, err:
-            print err
-
+    except:
+         tb = traceback.format_exc()
+         print str(tb)
+         return JsonResponse({"error": "an error occurred!"})
     return JsonResponse(data)
 
 @login_required
@@ -115,7 +124,7 @@ def poll_state(request):
             if 'task_id' in request.POST.keys() and request.POST['task_id']:
                 task_id = request.POST['task_id']
                 task = AsyncResult(task_id)
-                data = {"result": task.result, "state": task.state}
+                data = {"result": task.result.success, "state": task.state}
             else:
                 data = {"error": "No task_id in the request"}
         else:

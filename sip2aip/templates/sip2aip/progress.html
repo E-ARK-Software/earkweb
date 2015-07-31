@@ -12,18 +12,19 @@
 {% endblock %}
 
 {% block content %}
-<div>
-    <form method="POST" onsubmit="return false">
-    {% csrf_token %}
-    {{ form }}
-  </form>
-</div>
 
   <div id="container">
-  <div id="action">
-    <button id="do-task">Click here!</button>
-  </div>
+  <div id="action" class="form-group">
+      <form method="POST" onsubmit="return false">
 
+    {% csrf_token %}
+    <ul>{{ form.as_ul }}</ul>
+
+    <br/><br/>
+    <button id="apply-task">Apply task!</button>
+  </form>
+  </div>
+<hr/>
   <div class="progress_container">
 
    <div class="current-task">
@@ -36,10 +37,10 @@
     </div>
 
     <script>
-    $('#do-task').click( function() {
+    $('#apply-task').click( function() {
        $.ajax({
-        url: "do_task",
-        data: {},
+        url: "apply_task",
+        data: {'selected_ip': $( "#id_ips" ).val(),'selected_action': $( "#id_wfs" ).val()},
         success: function(){
          $.ajax({
           url: "",
@@ -55,6 +56,3 @@
 
  </div>
 {% endblock %}
-
-
-

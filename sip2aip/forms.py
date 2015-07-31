@@ -1,7 +1,10 @@
 from django import forms
 from earkcore.models import InformationPackage
+from workflow.models import WorkflowModules
 
-class SomeOtherForm(forms.Form):
-    your_name = forms.CharField(label='Your names', max_length=100)
-    testen = forms.CharField(label='otherfield', max_length=100)
-    field1 = forms.ModelChoiceField(label="test", queryset=InformationPackage.objects.all())
+class PackageWorkflowModuleSelectForm(forms.Form):
+    ips = forms.ModelChoiceField(label="Information package", queryset=InformationPackage.objects.all())
+    wfs = forms.ModelChoiceField(label="Workflow module", queryset=WorkflowModules.objects.all())
+
+class WorkflowModuleSelectForm(forms.Form):
+    wfs = forms.ModelChoiceField(label="Workflow module", queryset=WorkflowModules.objects.all())

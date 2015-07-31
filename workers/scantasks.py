@@ -1,13 +1,16 @@
-import tasks
+
 import inspect
 import pydoc
 import re
-import os
+import os, sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "earkweb.settings")
 
 import django
 django.setup()
+
+import tasks
 
 from workflow.models import WorkflowModules
 
@@ -40,27 +43,30 @@ class TaskScanner(object):
         for item in methodList:
             if inspect.isclass(getattr(tasks, item)) and str(item) != "Task":
                 c = getattr(tasks, item)
-                runmethod = getattr(c, "run")
-                rundoc = runmethod.__doc__
-                params = []
-                doclist = rundoc.split('\n')
-                paramline = ""
-                for dlitem in doclist:
-                    paramline += dlitem
-                    if "@param" in dlitem:
-                        match = re.search('@type (?P<tpname>.*): (?P<datatype>.*)@param (?P<ppname>.*): (?P<description>.*)', paramline)
-                        type = match.group('datatype').strip()
-                        name = match.group('tpname').strip()
-                        descr = match.group('description').strip()
-                        params.append(InputParam(type, name, descr))
-                        paramline = ""
-                    elif "@return:" in dlitem:
-                        match = re.search('@rtype:\s*(?P<rtype>.*)@return:\s*(?P<descr>.*)', paramline)
-                        type = match.group('rtype').strip()
-                        descr = match.group('descr').strip()
-                        params.append(ReturnParam(type, None, descr))
-                        paramline = ""
-                self.task_modules[str(item)] = params
+                try:
+                    runmethod = getattr(c, "run")
+                    rundoc = runmethod.__doc__
+                    params = []
+                    doclist = rundoc.split('\n')
+                    paramline = ""
+                    for dlitem in doclist:
+                        paramline += dlitem
+                        if "@param" in dlitem:
+                            match = re.search('@type (?P<tpname>.*): (?P<datatype>.*)@param (?P<ppname>.*): (?P<description>.*)', paramline)
+                            type = match.group('datatype').strip()
+                            name = match.group('tpname').strip()
+                            descr = match.group('description').strip()
+                            params.append(InputParam(type, name, descr))
+                            paramline = ""
+                        elif "@return:" in dlitem:
+                            match = re.search('@rtype:\s*(?P<rtype>.*)@return:\s*(?P<descr>.*)', paramline)
+                            type = match.group('rtype').strip()
+                            descr = match.group('descr').strip()
+                            params.append(ReturnParam(type, None, descr))
+                            paramline = ""
+                    self.task_modules[str(item)] = params
+                except AttributeError:
+                    pass
 
 class WireItLanguageModules(object):
     """
