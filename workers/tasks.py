@@ -1,6 +1,6 @@
 from celery import Task, shared_task
 import time, logging, os
-# from sip2aip.models import MyModel
+from sip2aip.models import MyModel
 from time import sleep
 from config import params
 from celery import current_task
@@ -9,12 +9,6 @@ from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
 from taskresult import TaskResult
 from earkcore.packaging.extraction import Extraction
-# Start worker: celery --app=earkweb.celeryapp:app worker
-# Example:
-#     from workers.tasks import SomeCreation
-#     result = SomeCreation().apply_async(('test',), queue='smdisk')
-#     result.status
-#     result.result
 
 class SomeCreation(Task):
     def __init__(self):
@@ -30,160 +24,127 @@ class SomeCreation(Task):
         """
         return "Parameter: " + param1
 
-class OtherJob(Task):
+class SimulateLongRunning(Task):
+
     def __init__(self):
         self.ignore_result = False
 
-    def run(self, param, *args, **kwargs):
+    def run(self, pk_id, *args, **kwargs):
         """
-        This is another job
-        @type       param: string
-        @param      param: This task takes only one parameter
+        This function creates something
+        @type       param1: int
+        @param      param1: Factor
         @rtype:     string
         @return:    Parameter
         """
-        return "Parameter: " + param
+        factor = 1000
+        for i in range(1, factor):
+          fn = 'Fn %s' % i
+          ln = 'Ln %s' % i
+          my_model = MyModel(fn=fn, ln=ln)
+          my_model.save()
 
-class AnotherJob(Task):
-# Example:
-#     from workers.tasks import SomeCreation
-#     result = SomeCreation().apply_async(('test',), queue='smdisk')
-#     result.status
-#     result.result
-    def __init__(self):
-        self.ignore_result = False
+          process_percent = int(100 * float(i) / float(factor))
 
-    def run(self, param, *args, **kwargs):
-        """
-        This is another job
-        @type       param: string
-        @param      param: This task takes only one parameter
-        @rtype:     string
-        @return:    Parameter
-        """
-        return "Parameter: " + param
+          sleep(0.1)
+          self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
 
-# class SimulateLongRunning(Task):
-#
-#     def __init__(self):
-#         self.ignore_result = False
-#
-#     def run(self, factor, *args, **kwargs):
-#         """
-#         This function creates something
-#         @type       param1: int
-#         @param      param1: Factor
-#         @rtype:     string
-#         @return:    Parameter
-#         """
-#         for i in range(1, factor):
-#           fn = 'Fn %s' % i
-#           ln = 'Ln %s' % i
-#           my_model = MyModel(fn=fn, ln=ln)
-#           my_model.save()
-#
-#           process_percent = int(100 * float(i) / float(factor))
-#
-#           sleep(0.1)
-#           self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
-#
-#         return True
+        return TaskResult(True, [], [])
 
 class AssignIdentifier(Task):
-
-    log = []
-    err = []
 
     def __init__(self):
         self.ignore_result = False
 
     def valid_state(self, ip):
+        err = []
         if not (ip.statusprocess == 0):
-            self.err.append("Incorrect information package status")
-        return (len(self.err) == 0)
+            err.append("Incorrect information package status")
+        return  err
+
+    def run(self, pk_id, *args, **kwargs):
+        """
+        Assign identifier
+        @type       package_path: int
+        @param      package_path: Primary key
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("AssignIdentifier task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+        err = self.valid_state(ip)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+        ip.statusprocess=100
+        ip.uuid=randomutils.getUniqueID()
+        ip.save()
+        log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
+        self.update_state(state='PROGRESS',meta={'process_percent': 100})
+        return TaskResult(True, log, err)
+
+class ExtractTar(Task):
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def valid_state(self, ip):
+        err = []
+        if not (ip.statusprocess == 100):
+            err.append("Incorrect information package status (must be 100)")
+        if (ip.uuid is None or ""):
+            err.append("UUID missing")
+        target_dir = os.path.join(params.config_path_work, ip.uuid)
+        if (os.path.exists(target_dir)):
+            err.append("Directory already exists in working area")
+        return  err
 
     def run(self, pk_id, *args, **kwargs):
         """
         Unpack tar file to destination directory
-        @type       package_path: string
-        @param      package_path: Path to package to be unpackaged
-        @rtype:     boolean
-        @return:    success/failure of the unpackaging process
+        @type       package_path: int
+        @param      package_path: Primary key
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
         """
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        self.log.append("AssignIdentifier task %s" % current_task.request.id)
+        log = []
+        log.append("ExtractTar task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
-        if not self.valid_state(ip):
-            return TaskResult(False, self.log, self.err)
-        ip.statusprocess=100
-        ip.uuid=randomutils.getUniqueID()
-        ip.save()
-        self.log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
-        self.update_state(state='PROGRESS',meta={'process_percent': 100})
-        return TaskResult(True, self.log, [])
-
-class ExtractTar(Task):
-
-    log = []
-    err = []
-
-    def __init__(self):
-        self.ignore_result = False
-
-    def valid_state(self, ip):
-        if not (ip.statusprocess == 100):
-            self.err.append("Incorrect information package status")
-        if (ip.uuid is None or ""):
-            self.err.append("UUID missing")
-        target_dir = os.path.join(params.config_path_work, ip.uuid)
-        if (os.path.exists(target_dir)):
-            self.err.append("Directory already exists in working area")
-        return (len(self.err) == 0)
-
-    def run(self, uuid, *args, **kwargs):
-        """
-        Unpack tar file to destination directory
-        @type       package_path: string
-        @param      package_path: Path to package to be unpackaged
-        @rtype:     boolean
-        @return:    success/failure of the unpackaging process
-        """
-        self.log.append("ExtractTar task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(uuid=uuid)
-        if not self.valid_state(ip):
-            return TaskResult(False, self.log, self.err)
+        err = self.valid_state(ip)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
         ip.statusprocess = 200
         ip.save()
         target_dir = os.path.join(params.config_path_work, ip.uuid)
         fileutils.mkdir_p(target_dir)
         extr = Extraction()
         result = extr.extract(ip.path, target_dir)
-        self.log.append(result.log)
-        self.err.append(result.err)
-        return TaskResult(True, self.log, self.err)
+        log.append(result.log)
+        err.append(result.err)
+        return TaskResult(True, log, err)
 
 class Reset(Task):
-
-    log = []
-    err = []
 
     def __init__(self):
         self.ignore_result = False
 
     def run(self, pk_id, *args, **kwargs):
         """
-        Unpack tar file to destination directory
-        @type       package_path: string
-        @param      package_path: Path to package to be unpackaged
-        @rtype:     boolean
-        @return:    success/failure of the unpackaging process
+        Reset identifier and package status
+        @type       package_path: int
+        @param      package_path: Primary key
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
         """
+        log = []
+        err = []
         self.update_state(state='PROGRESS',meta={'process_percent': 50})
 
-        self.log.append("ResetTask task %s" % current_task.request.id)
+        log.append("ResetTask task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
         ip.statusprocess = 0
         ip.uuid = ""
         ip.save()
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
-        return TaskResult(True, self.log, self.err)
+        return TaskResult(True, log, err)

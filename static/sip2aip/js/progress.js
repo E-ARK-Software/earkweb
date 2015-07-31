@@ -3,9 +3,11 @@ function updateProgressInfo(percent) {
     window.document.getElementById("pg").style = 'width:' + percent + '%';
     $('#st').html("In progress: "+percent+"%");
 }
-function updateStatusInfo(status) {
+function updateStatusInfo(status, log, err) {
     if(status == 'SUCCESS') {
         window.document.getElementById("pg").style = 'width: 100%';
+        $('#log').html(log)
+        $('#err').html(err)
         $('#st').html("Finished");
     }
 }
@@ -29,14 +31,19 @@ function pollstate(in_task_id) {
                       if(task.state == 'PROGRESS') {
                           updateProgressInfo(task.result.process_percent);
                       } else {
-                          updateStatusInfo(task.state);
+
+                      window.console.log(task);
+                       window.console.log("log: "+task.log);
+                       window.console.log("err: "+task.err);
+
+                          updateStatusInfo(task.state, task.log, task.err);
                       }
 
                       // recursive call
                       PollState(task_id);
                   });
 
-              }, 4000);
+              }, 1000);
           }
           PollState(in_task_id);
       });

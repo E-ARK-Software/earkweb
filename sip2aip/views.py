@@ -124,7 +124,11 @@ def poll_state(request):
             if 'task_id' in request.POST.keys() and request.POST['task_id']:
                 task_id = request.POST['task_id']
                 task = AsyncResult(task_id)
-                data = {"result": task.result.success, "state": task.state}
+                print task.result.log
+                print task.result.err
+                aggr_log = '\n'.join(task.result.log)
+                aggr_err = '\n'.join(task.result.err)
+                data = {"result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
             else:
                 data = {"error": "No task_id in the request"}
         else:
