@@ -20,12 +20,12 @@ def generate_id():
     return 'ID' + str(uuid.uuid4())
 
 
-def m_find(root, tag, arg, val):
-    return root.find('./mets:{}[@{}="{}"]'.format(tag, arg, val), METS_NSMAP)
+def mets_find(root, path, arg, val):
+    return root.find('{}[@{}="{}"]'.format(path, arg, val), METS_NSMAP)
 
 
 def xlink(file_path):
-    return {'LOCTYPE': 'URL', q(XLINK_NS, 'href'): "file://./" + file_path, q(XLINK_NS, 'type'): 'simple'}
+    return {'LOCTYPE': 'URL', q(XLINK_NS, 'href'): file_path, q(XLINK_NS, 'type'): 'simple'}
 
 
 class Mets:
@@ -34,10 +34,10 @@ class Mets:
         if f is None:
             self.root = M.mets(
                 {q(XSI_NS, 'schemaLocation'): METS_NS + ' schemas/IP.xsd'},
-                M.metsHdr(),
-                M.amdSec(),
-                M.fileSec(),
-                M.structMap(M.div())
+                M.metsHdr,
+                M.amdSec,
+                M.fileSec,
+                M.structMap(M.div)
             )
             self.add_agent('ARCHIVIST', 'ORGANIZATION', 'Institution')
         else:
@@ -61,30 +61,37 @@ class Mets:
         )
         return gen_id
 
-    def insert_into_amd_sec(self, md_node, successor_sections, md_type, file_path):
+    def __insert_into_amd_sec(self, md_node, successor_sections, md_type, file_path, adm_id):
         insert_function = self.root.amdSec.append
         for section in successor_sections:
             path = objectify.ObjectPath('amdSec.' + section)
             if path.hasattr(self.root.amdSec):
-                insert_function = path(self.root.amdSec).addprevious
+                insert_function = self.root.amdSec[section].addprevious
                 break
-        gen_id = generate_id()
+        if adm_id == '':
+            adm_id = generate_id()
         insert_function(
             md_node(
-                {'ID': gen_id},
+                {'ID': adm_id},
                 M.mdRef({'MDTYPE': md_type}, xlink(file_path))
             )
         )
-        return gen_id
+        return adm_id
 
-    def add_tech_md(self, file_path):
-        return self.insert_into_amd_sec(M.techMD, ['rightsMD', 'sourceMD', 'digiprovMD'], 'PREMIS:OBJECT', file_path)
+    def add_tech_md(self, file_path, adm_id=''):
+        return self.__insert_into_amd_sec(M.techMD, ['rightsMD', 'sourceMD', 'digiprovMD'], 'PREMIS:OBJECT', file_path, adm_id)
 
-    def add_rights_md(self, file_path):
-        return self.insert_into_amd_sec(M.rightsMD, ['sourceMD', 'digiprovMD'], 'PREMIS:RIGHTS', file_path)
+    def add_rights_md(self, file_path, adm_id=''):
+        return self.__insert_into_amd_sec(M.rightsMD, ['sourceMD', 'digiprovMD'], 'PREMIS:RIGHTS', file_path, adm_id)
 
-    def add_digiprov_md(self, file_path):
-        return self.insert_into_amd_sec(M.digiprovMD, [], 'PREMIS:EVENT', file_path)
+    def add_digiprov_md(self, file_path, adm_id=''):
+        return self.__insert_into_amd_sec(M.digiprovMD, [], 'PREMIS:EVENT', file_path, adm_id)
+
+    def find_amd_md(self, adm_id):
+        return mets_find(self.root.amdSec, '*', 'ID', adm_id)
+
+    def find_file_grp(self, grp_use):
+        return mets_find(self.root.fileSec, 'mets:fileGrp', 'USE', grp_use)
 
     def add_file_grp(self, grp_use):
         self.root.fileSec.append(
@@ -95,20 +102,37 @@ class Mets:
         )
 
     def add_file(self, grp_use, file_path, adm_ids):
-        gen_id = generate_id()
-        file_grp = m_find(self.root.fileSec, 'fileGrp', 'USE', grp_use)
-        file_grp.append(
+        self.add_file_node(
+            grp_use,
             M.file(
-                {'ID': gen_id, 'ADMID': string.join(adm_ids)},
+                {'ID': generate_id(), 'ADMID': string.join(adm_ids)},
                 M.FLocat(xlink(file_path))
             )
         )
-        div = m_find(self.root.structMap.div, 'div', 'LABEL', grp_use)
+
+    def add_file_node(self, grp_use, file_node):
+        if self.find_file_grp(grp_use) is None:
+            self.add_file_grp(grp_use)
+        file_grp = self.find_file_grp(grp_use)
+        file_grp.append(file_node)
+        div = mets_find(self.root.structMap.div, 'mets:div', 'LABEL', grp_use)
         div.append(
-            M.div(
-                M.fptr({'FILEID': gen_id})
-            )
+            M.fptr({'FILEID': file_node.get('ID')})
         )
+
+    def copy_file_info(self, aip_mets, filepath):
+        f_locat = mets_find(aip_mets.root.fileSec, './/mets:file/mets:FLocat', 'xlink:href', 'file://.' + filepath)
+        file_node = f_locat.getparent()
+        self.add_file_node(file_node.getparent().get('USE'), file_node)
+        for adm_id in string.split(file_node.get('ADMID')):
+            amd_md = aip_mets.find_amd_md(adm_id)
+            if self.find_amd_md(adm_id) is None:
+                if amd_md.tag == q(METS_NS, 'techMD'):
+                    self.add_tech_md(amd_md.mdRef.get(q(XLINK_NS, 'href')), adm_id)
+                elif amd_md.tag == q(METS_NS, 'rightsMD'):
+                    self.add_rights_md(amd_md.mdRef.get(q(XLINK_NS, 'href')), adm_id)
+                elif amd_md.tag == q(METS_NS, 'digiprovMD'):
+                    self.add_digiprov_md(amd_md.mdRef.get(q(XLINK_NS, 'href')), adm_id)
 
     def validate(self):
         with open('../../Downloads/mets.xsd', 'r') as f:
@@ -119,15 +143,19 @@ class Mets:
         return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
 
-with open('earkresources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
-    my_mets = Mets(mets_file)
-my_mets.add_dmd_sec('EAD', 'metadata/EAD.xml')
-admids = []
-admids.append(my_mets.add_tech_md('metadata/PREMIS.xml#Obj'))
-admids.append(my_mets.add_digiprov_md('metadata/PREMIS.xml#Ingest'))
-admids.append(my_mets.add_rights_md('metadata/PREMIS.xml#Right'))
-my_mets.add_file_grp('submission')
-my_mets.add_file('submission', 'content/data.sql', admids)
-my_mets.root.set('TYPE', 'DIP')
-print my_mets
-print my_mets.validate()
+def main():
+    with open('earkresources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
+        my_mets = Mets()
+    my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
+    admids = []
+    admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+    admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+    admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+    my_mets.add_file_grp('submission')
+    my_mets.add_file('submission', 'file://./content/data.sql', admids)
+    my_mets.root.set('TYPE', 'DIP')
+    print my_mets
+    print my_mets.validate()
+
+if __name__ == "__main__":
+    main()
