@@ -90,40 +90,69 @@ class Mets:
     def find_amd_md(self, adm_id):
         return mets_find(self.root.amdSec, '*', 'ID', adm_id)
 
-    def find_file_grp(self, grp_use):
-        return mets_find(self.root.fileSec, 'mets:fileGrp', 'USE', grp_use)
+    @staticmethod
+    def recursive_find(parent, tag, attribute, values):
+        node = mets_find(parent, tag, attribute, values[0])
+        if len(values) <= 1 or node is None:
+            return node
+        else:
+            return Mets.recursive_find(node, tag, attribute, values[1:])
 
-    def add_file_grp(self, grp_use):
-        self.root.fileSec.append(
-            M.fileGrp({'USE': grp_use})
-        )
-        self.root.structMap.div.append(
-            M.div({'LABEL': grp_use})
-        )
+    def find_file_grp(self, grp_uses, parent=None):
+        if parent is None:
+            parent = self.root.fileSec
+        return Mets.recursive_find(parent, 'mets:fileGrp', 'USE', grp_uses)
 
-    def add_file(self, grp_use, file_path, adm_ids):
+    def find_div(self, div_labels, parent=None):
+        if parent is None:
+            parent = self.root.structMap.div
+        return Mets.recursive_find(parent, 'mets:div', 'LABEL', div_labels)
+
+    def add_file_grp(self, grp_uses, file_grp_parent=None, div_parent=None):
+        if file_grp_parent is None:
+            file_grp_parent = self.root.fileSec
+            div_parent = self.root.structMap.div
+        file_grp = self.find_file_grp(grp_uses[:1], file_grp_parent)
+        div = self.find_div(grp_uses[:1], div_parent)
+        if file_grp is None:
+            file_grp = M.fileGrp({'USE': grp_uses[0]})
+            file_grp_parent.append(file_grp)
+            div = M.div({'LABEL': grp_uses[0]})
+            div_parent.append(div)
+        if len(grp_uses) > 1:
+            self.add_file_grp(grp_uses[1:], file_grp, div)
+
+    def add_file(self, grp_uses, file_path, adm_ids):
         self.add_file_node(
-            grp_use,
+            grp_uses,
             M.file(
                 {'ID': generate_id(), 'ADMID': string.join(adm_ids)},
                 M.FLocat(xlink(file_path))
             )
         )
 
-    def add_file_node(self, grp_use, file_node):
-        if self.find_file_grp(grp_use) is None:
-            self.add_file_grp(grp_use)
-        file_grp = self.find_file_grp(grp_use)
+    def add_file_node(self, grp_uses, file_node):
+        self.add_file_grp(grp_uses)
+        file_grp = self.find_file_grp(grp_uses)
         file_grp.append(file_node)
-        div = mets_find(self.root.structMap.div, 'mets:div', 'LABEL', grp_use)
+        div = self.find_div(grp_uses)
         div.append(
             M.fptr({'FILEID': file_node.get('ID')})
         )
 
+    @staticmethod
+    def get_grp_uses(inner_file_grp):
+        if inner_file_grp.tag != q(METS_NS, 'fileGrp'):
+            return []
+        else:
+            grp_uses = Mets.get_grp_uses(inner_file_grp.getparent())
+            grp_uses.append(inner_file_grp.get('USE'))
+            return grp_uses
+
     def copy_file_info(self, aip_mets, filepath):
         f_locat = mets_find(aip_mets.root.fileSec, './/mets:file/mets:FLocat', 'xlink:href', 'file://.' + filepath)
         file_node = f_locat.getparent()
-        self.add_file_node(file_node.getparent().get('USE'), file_node)
+        self.add_file_node(Mets.get_grp_uses(file_node.getparent()), file_node)
         for adm_id in string.split(file_node.get('ADMID')):
             amd_md = aip_mets.find_amd_md(adm_id)
             if self.find_amd_md(adm_id) is None:
@@ -151,8 +180,8 @@ def main():
     admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
     admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
     admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
-    my_mets.add_file_grp('submission')
-    my_mets.add_file('submission', 'file://./content/data.sql', admids)
+    my_mets.add_file_grp(['submission'])
+    my_mets.add_file(['submission'], 'file://./content/data.sql', admids)
     my_mets.root.set('TYPE', 'DIP')
     print my_mets
     print my_mets.validate()

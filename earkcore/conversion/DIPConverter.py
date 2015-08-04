@@ -4,6 +4,7 @@ from earkcore.metadata.mets import MetsManipulate
 WORKING_DIRECTORY = './working_area'
 METADATA_DIRECTORY = 'aip-metadata'
 
+
 def convert(directory_name):
     print 'starting DIP conversion'
     rootdir = os.path.join(WORKING_DIRECTORY, directory_name)
@@ -18,6 +19,5 @@ def convert(directory_name):
                     filepath = os.path.join(rel_subdir, file)
                     dip_mets.copy_file_info(aip_mets, filepath)
     print dip_mets
-    print dip_mets.validate()
 
 convert('DIP1')
