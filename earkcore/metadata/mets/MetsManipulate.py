@@ -79,10 +79,12 @@ class Mets:
         return adm_id
 
     def add_tech_md(self, file_path, adm_id=''):
-        return self.__insert_into_amd_sec(M.techMD, ['rightsMD', 'sourceMD', 'digiprovMD'], 'PREMIS:OBJECT', file_path, adm_id)
+        successor_sections = ['rightsMD', 'sourceMD', 'digiprovMD']
+        return self.__insert_into_amd_sec(M.techMD, successor_sections, 'PREMIS:OBJECT', file_path, adm_id)
 
     def add_rights_md(self, file_path, adm_id=''):
-        return self.__insert_into_amd_sec(M.rightsMD, ['sourceMD', 'digiprovMD'], 'PREMIS:RIGHTS', file_path, adm_id)
+        successor_sections = ['sourceMD', 'digiprovMD']
+        return self.__insert_into_amd_sec(M.rightsMD, successor_sections, 'PREMIS:RIGHTS', file_path, adm_id)
 
     def add_digiprov_md(self, file_path, adm_id=''):
         return self.__insert_into_amd_sec(M.digiprovMD, [], 'PREMIS:EVENT', file_path, adm_id)
@@ -139,6 +141,10 @@ class Mets:
         div.append(
             M.fptr({'FILEID': file_node.get('ID')})
         )
+
+    def copy_dmd_sec(self, aip_mets, filepath):
+        md_ref = mets_find(aip_mets.root, 'mets:dmdSec/mets:mdRef', 'xlink:href', 'file://.' + filepath)
+        self.add_dmd_sec(md_ref.get('MDTYPE'), md_ref.get(q(XLINK_NS, 'href')))
 
     @staticmethod
     def get_grp_uses(inner_file_grp):
