@@ -1,31 +1,15 @@
 from lxml import etree, objectify
 import string
 import uuid
+from earkcore.metadata.XmlHelper import q, XSI_NS
 
 METS_NS = 'http://www.loc.gov/METS/'
 XLINK_NS = 'http://www.w3.org/1999/xlink'
-XSI_NS = 'http://www.w3.org/2001/XMLSchema-instance'
 METS_NSMAP = {'mets': METS_NS, 'xlink': XLINK_NS}
 M = objectify.ElementMaker(
     annotate=False,
     namespace=METS_NS,
     nsmap=METS_NSMAP)
-
-
-def q(ns, v):
-    return '{{{}}}{}'.format(ns, v)
-
-
-def generate_id():
-    return 'ID' + str(uuid.uuid4())
-
-
-def mets_find(root, path, arg, val):
-    return root.find('{}[@{}="{}"]'.format(path, arg, val), METS_NSMAP)
-
-
-def xlink(file_path):
-    return {'LOCTYPE': 'URL', q(XLINK_NS, 'href'): file_path, q(XLINK_NS, 'type'): 'simple'}
 
 
 class Mets:
@@ -43,6 +27,18 @@ class Mets:
         else:
             self.root = objectify.parse(f).getroot()
 
+    @staticmethod
+    def generate_id():
+        return 'ID' + str(uuid.uuid4())
+
+    @staticmethod
+    def mets_find(root, path, arg, val):
+        return root.find('{}[@{}="{}"]'.format(path, arg, val), METS_NSMAP)
+
+    @staticmethod
+    def xlink(file_path):
+        return {'LOCTYPE': 'URL', q(XLINK_NS, 'href'): file_path, q(XLINK_NS, 'type'): 'simple'}
+
     def add_agent(self, role, agent_type, name):
         self.root.metsHdr.append(
             M.agent(
@@ -52,11 +48,11 @@ class Mets:
         )
 
     def add_dmd_sec(self, md_type, file_path):
-        gen_id = generate_id()
+        gen_id = self.generate_id()
         self.root.amdSec.addprevious(
             M.dmdSec(
                 {'ID': gen_id},
-                M.mdRef({'MDTYPE': md_type}, xlink(file_path))
+                M.mdRef({'MDTYPE': md_type}, self.xlink(file_path))
             )
         )
         return gen_id
@@ -69,11 +65,11 @@ class Mets:
                 insert_function = self.root.amdSec[section].addprevious
                 break
         if adm_id == '':
-            adm_id = generate_id()
+            adm_id = self.generate_id()
         insert_function(
             md_node(
                 {'ID': adm_id},
-                M.mdRef({'MDTYPE': md_type}, xlink(file_path))
+                M.mdRef({'MDTYPE': md_type}, self.xlink(file_path))
             )
         )
         return adm_id
@@ -90,11 +86,11 @@ class Mets:
         return self.__insert_into_amd_sec(M.digiprovMD, [], 'PREMIS:EVENT', file_path, adm_id)
 
     def find_amd_md(self, adm_id):
-        return mets_find(self.root.amdSec, '*', 'ID', adm_id)
+        return self.mets_find(self.root.amdSec, '*', 'ID', adm_id)
 
     @staticmethod
     def recursive_find(parent, tag, attribute, values):
-        node = mets_find(parent, tag, attribute, values[0])
+        node = Mets.mets_find(parent, tag, attribute, values[0])
         if len(values) <= 1 or node is None:
             return node
         else:
@@ -128,8 +124,8 @@ class Mets:
         self.add_file_node(
             grp_uses,
             M.file(
-                {'ID': generate_id(), 'ADMID': string.join(adm_ids)},
-                M.FLocat(xlink(file_path))
+                {'ID': self.generate_id(), 'ADMID': string.join(adm_ids)},
+                M.FLocat(self.xlink(file_path))
             )
         )
 
@@ -143,7 +139,7 @@ class Mets:
         )
 
     def copy_dmd_sec(self, aip_mets, filepath):
-        md_ref = mets_find(aip_mets.root, 'mets:dmdSec/mets:mdRef', 'xlink:href', 'file://.' + filepath)
+        md_ref = self.mets_find(aip_mets.root, 'mets:dmdSec/mets:mdRef', 'xlink:href', 'file://.' + filepath)
         self.add_dmd_sec(md_ref.get('MDTYPE'), md_ref.get(q(XLINK_NS, 'href')))
 
     @staticmethod
@@ -156,7 +152,7 @@ class Mets:
             return grp_uses
 
     def copy_file_info(self, aip_mets, filepath):
-        f_locat = mets_find(aip_mets.root.fileSec, './/mets:file/mets:FLocat', 'xlink:href', 'file://.' + filepath)
+        f_locat = self.mets_find(aip_mets.root.fileSec, './/mets:file/mets:FLocat', 'xlink:href', 'file://.' + filepath)
         file_node = f_locat.getparent()
         self.add_file_node(Mets.get_grp_uses(file_node.getparent()), file_node)
         for adm_id in string.split(file_node.get('ADMID')):
