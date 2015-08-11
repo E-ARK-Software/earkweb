@@ -19,16 +19,29 @@
 {% block content %}
 
 {# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
-<form id="select-aip-form" action="{% url 'search:toggle_select_package' %}" method="post">
+<form id="select-aip-form"  class="form-horizontal" action="{% url 'search:toggle_select_package' %}" method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}
-    {{ form.as_p }}
+    <div style="width: 500px">
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" class="col-sm-3 control-label">{{ field.label }}</label>
+                <div class="col-sm-9">
+                    {{ field }}
+                </div>
+            </div>
+        {% endfor %}
+        <div class="form-group">
+            <div class="col-sm-offset-3 col-sm-9">
+                <input type="submit" value="search" id="sendbutton" class="btn btn-default" name="action"/>
+            </div>
+        </div>
+    </div>
     <div id="loading" style="display: none; position: fixed; z-index: 9998; right: 0px;
             top: 45px; padding-left: 50px; padding-right: 50px; padding-top: 12px;
             padding-bottom: 12px; background-color: gray">
         <span id="load_text">loading...</span>
     </div>
-    <p id="sendwrapper"><input type="submit" value="search" id="sendbutton" name="action"/></p>
     <div class="tree">
         <select name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
         {% for dip in dips %}
