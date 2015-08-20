@@ -32,10 +32,10 @@ class SimulateLongRunning(Task):
     def run(self, pk_id, *args, **kwargs):
         """
         This function creates something
-        @type       param1: int
-        @param      param1: Factor
-        @rtype:     string
-        @return:    Parameter
+        @type       pk_id: int
+        @param      pk_id: Package id
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
         """
         factor = 1000
         for i in range(1, factor):
@@ -49,7 +49,7 @@ class SimulateLongRunning(Task):
           sleep(0.1)
           self.update_state(state='PROGRESS',meta={'process_percent': process_percent})
 
-        return TaskResult(True, [], [])
+        return TaskResult(True, ['Long running process finished'], [])
 
 class AssignIdentifier(Task):
 
@@ -98,7 +98,7 @@ class ExtractTar(Task):
         target_dir = os.path.join(params.config_path_work, ip.uuid)
         if (os.path.exists(target_dir)):
             err.append("Directory already exists in working area")
-        return  err
+        return err
 
     def run(self, pk_id, *args, **kwargs):
         """
@@ -109,20 +109,21 @@ class ExtractTar(Task):
         @return:    Task result (success/failure, processing log, error log)
         """
         log = []
-        log.append("ExtractTar task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(pk=pk_id)
-        err = self.valid_state(ip)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
-        ip.statusprocess = 200
-        ip.save()
-        target_dir = os.path.join(params.config_path_work, ip.uuid)
-        fileutils.mkdir_p(target_dir)
-        extr = Extraction()
-        result = extr.extract(ip.path, target_dir)
-        log.append(result.log)
-        err.append(result.err)
-        return TaskResult(True, log, err)
+        try:
+            log.append("ExtractTar task %s" % current_task.request.id)
+            ip = InformationPackage.objects.get(pk=pk_id)
+            err = self.valid_state(ip)
+            if len(err) > 0:
+                return TaskResult(False, log, err)
+            ip.statusprocess = 200
+            ip.save()
+            target_dir = os.path.join(params.config_path_work, ip.uuid)
+            fileutils.mkdir_p(target_dir)
+            extr = Extraction()
+            result = extr.extract(ip.path, target_dir)
+            return TaskResult(result.success, log+result.log, err+result.err)
+        except Exception, err:
+            return TaskResult(False, [], err)
 
 class Reset(Task):
 
@@ -143,8 +144,11 @@ class Reset(Task):
 
         log.append("ResetTask task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
+
         ip.statusprocess = 0
+        log.append("Setting statusprocess to 0")
         ip.uuid = ""
+        log.append("Setting uuid to empty string")
         ip.save()
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, log, err)

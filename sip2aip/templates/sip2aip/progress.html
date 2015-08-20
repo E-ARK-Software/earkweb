@@ -7,7 +7,7 @@
 <script type="text/javascript" src="{% static 'sip2aip/js/progress.js' %}"></script>
 <link rel="stylesheet" href="{% static 'sip2aip/css/progress.css' %}" type="text/css" />
 {% if task_id %}
-<script type="text/javascript">pollstate('{{ task_id }}');</script>
+<!--script type="text/javascript">pollstate('{{ task_id }}');</script-->
 {% endif %}
 {% endblock %}
 
@@ -15,7 +15,7 @@
 
   <div id="container">
   <div id="action" class="form-group">
-      <form method="POST" action="/earkweb/sip2aip/progress">
+      <form method="POST">
 
     {% csrf_token %}
     <ul>{{ form.as_ul }}</ul>
@@ -28,7 +28,8 @@
   <div class="progress_container">
 
    <div class="current-task">
-    <h4>{% if task_id %} Task ID: {{ task_id }} {% endif %}</h4>
+    <h4 id="taskheadline"></h4>
+       <p id="error" style="color: red; visibility: hidden"><span>An error occurred: </span><span id="errmsg"></span></p>
    </div>
 
     <div id="st" class="status"></div>
@@ -41,24 +42,7 @@
     <h5>Error log</h5>
     <pre id="err"></pre>
 
-    <script>
-    $('#apply-task').click( function() {
-       $.ajax({
-        url: "apply_task",
-        data: {'selected_ip': $( "#id_ips" ).val(),'selected_action': $( "#id_wfs" ).val()},
-        success: function(resp_data){
-        window.console.log(resp_data);
-         $.ajax({
-          url: "",
-          context: document.body,
-          success: function(s, x) {
-           $(this).html(s);
-          }
-         });
-        }
-       })
-    });
-    </script>
+    <script type="text/javascript" src="{% static 'sip2aip/js/runtask.js' %}"></script>
 
  </div>
 {% endblock %}

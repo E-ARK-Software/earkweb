@@ -10,15 +10,15 @@
 
     <title>E-ARK Integrated Prototype</title>
     
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
-    
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+
+    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script>
+
     <script type="text/javascript"
         src="{% static "js/base.js" %}">
     </script>
 
-    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script>
-    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script>
-    
     {% block stylesheets %} 
     <!-- main style sheet -->
     <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />

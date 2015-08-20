@@ -1,4 +1,4 @@
-import os
+import os, sys
 import unittest
 import tarfile
 import shutil
@@ -8,7 +8,9 @@ from earkcore.utils import randomutils
 from config.config import root_dir
 from workers.taskresult import TaskResult
 
-class Extraction(object):
+from earkcore.process.processor import Processor
+
+class Extraction(Processor):
     """
     Extract SIP
     """
@@ -24,13 +26,17 @@ class Extraction(object):
         @return:    success of extraction
         """
         try:
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+            self.log.append("Extracting package %s to %s" % (package_file_path, extract_to))
             tar_object = tarfile.open(name=package_file_path, mode='r')
             tar_object.extractall(path=extract_to)
-            return TaskResult(True,[], [])
+            self.success = True
         except (ValueError, OSError, IOError, tarfile.TarError),why:
-            err = ['Problem to extract %s, why: %s' % (package_file_path,str(why))]
-            return TaskResult(False,[], err)
-
+            self.err.append('Problem to extract %s, why: %s' % (package_file_path,str(why)))
+            self.success = False
+        return self.result()
 
 class TestExtraction(unittest.TestCase):
 
@@ -50,8 +56,9 @@ class TestExtraction(unittest.TestCase):
         package_file = self.delivery_dir + 'SIP-sqldump.tar.gz'
         contained_sip_dir = './SIP-1f594d58-d09f-46dd-abac-8432068a7f6d/'
         sip_extraction = Extraction()
-        actual = sip_extraction.extract(package_file, TestExtraction.temp_extract_dir)
-        self.assertTrue(actual)
+        result = sip_extraction.extract(package_file, TestExtraction.temp_extract_dir)
+        self.assertTrue(result.success)
+        print result.log[0]
         files_to_check = (
             os.path.join(TestExtraction.temp_extract_dir,contained_sip_dir,'./METS.xml'),
             os.path.join(TestExtraction.temp_extract_dir,contained_sip_dir,'./schemas/premis-v2-2.xsd'),
