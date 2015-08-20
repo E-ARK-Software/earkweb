@@ -1,0 +1,206 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="info:lc/xmlns/premis-v2 ../schemas/premis-v2-2.xsd" version="2.0">
+
+    <object xsi:type="file" xmlID="CensusSqlObj">
+        <objectIdentifier>
+            <objectIdentifierType>FILEPATH</objectIdentifierType>
+            <objectIdentifierValue>file:///submission/content/data/census.sql</objectIdentifierValue>
+        </objectIdentifier>
+        <objectCharacteristics>
+            <compositionLevel>0</compositionLevel>
+            <fixity>
+                <messageDigestAlgorithm>SHA-256</messageDigestAlgorithm>
+                <messageDigest>7e1abaa506f456343f3d1aaceafd273d245ba5cfb399e5f12d6bb4b376e53d16</messageDigest>
+                <messageDigestOriginator>/usr/bin/sha256sum</messageDigestOriginator>
+            </fixity>
+            <size>2085</size>
+            <format>
+                <formatRegistry>
+                    <formatRegistryName>PRONOM</formatRegistryName>
+                    <formatRegistryKey>fmt/101</formatRegistryKey>
+                    <formatRegistryRole>specification</formatRegistryRole>
+                </formatRegistry>
+            </format>
+            <objectCharacteristicsExtension>
+                <mdSec ID="ID426087e8-0f79-11e3-847a-34e6d700c47b">
+                    <mdWrap MDTYPE="OTHER" OTHERMDTYPE="JHOVE">
+                        <xmlData>
+                            <jhove xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://hul.harvard.edu/ois/xml/ns/jhove"
+                                   xsi:schemaLocation="http://hul.harvard.edu/ois/xml/ns/jhove http://hul.harvard.edu/ois/xml/xsd/jhove/1.6/jhove.xsd" name="Jhove" release="1.6" date="2011-01-04">
+                                <date>2015-06-10T16:01:58+02:00</date>
+                                <repInfo uri="file:///representations/represenation-1/content/data/census/Persons/metadata.xml">
+                                    <reportingModule release="1.4" date="2007-01-08">XML-hul</reportingModule>
+                                    <lastModified>2015-06-09T10:24:50+02:00</lastModified>
+                                    <size>2085</size>
+                                    <format>XML</format>
+                                    <version>1.0</version>
+                                    <status>Well-Formed, but not valid</status>
+                                    <sigMatch>
+                                        <module>XML-hul</module>
+                                    </sigMatch>
+                                    <mimeType>text/xml</mimeType>
+                                    <properties>
+                                        <property>
+                                            <name>XMLMetadata</name>
+                                            <values arity="List" type="Property">
+                                                <property>
+                                                    <name>Parser</name>
+                                                    <values arity="Scalar" type="String">
+                                                        <value>com.sun.org.apache.xerces.internal.jaxp.SAXParserImpl$JAXPSAXParser</value>
+                                                    </values>
+                                                </property>
+                                                <property>
+                                                    <name>Encoding</name>
+                                                    <values arity="Scalar" type="String">
+                                                        <value>UTF-8</value>
+                                                    </values>
+                                                </property>
+                                                <property>
+                                                    <name>Schemas</name>
+                                                    <values arity="List" type="Property">
+                                                        <property>
+                                                            <name>Schema</name>
+                                                            <values arity="Array" type="Property">
+                                                                <property>
+                                                                    <name>NamespaceURI</name>
+                                                                    <values arity="Scalar" type="String">
+                                                                        <value>http://www.bar.admin.ch/xmlns/siard/1.0/metadata.xsd</value>
+                                                                    </values>
+                                                                </property>
+                                                                <property>
+                                                                    <name>SchemaLocation</name>
+                                                                    <values arity="Scalar" type="String">
+                                                                        <value>metadata.xsd</value>
+                                                                    </values>
+                                                                </property>
+                                                            </values>
+                                                        </property>
+                                                    </values>
+                                                </property>
+                                                <property>
+                                                    <name>Root</name>
+                                                    <values arity="Scalar" type="String">
+                                                        <value>siardArchive</value>
+                                                    </values>
+                                                </property>
+                                                <property>
+                                                    <name>Namespaces</name>
+                                                    <values arity="List" type="Property">
+                                                        <property>
+                                                            <name>Namespace</name>
+                                                            <values arity="Array" type="Property">
+                                                                <property>
+                                                                    <name>URI</name>
+                                                                    <values arity="Scalar" type="String">
+                                                                        <value>http://www.bar.admin.ch/xmlns/siard/1.0/metadata.xsd</value>
+                                                                    </values>
+                                                                </property>
+                                                            </values>
+                                                        </property>
+                                                        <property>
+                                                            <name>Namespace</name>
+                                                            <values arity="Array" type="Property">
+                                                                <property>
+                                                                    <name>Prefix</name>
+                                                                    <values arity="Scalar" type="String">
+                                                                        <value>xsi</value>
+                                                                    </values>
+                                                                </property>
+                                                                <property>
+                                                                    <name>URI</name>
+                                                                    <values arity="Scalar" type="String">
+                                                                        <value>http://www.w3.org/2001/XMLSchema-instance</value>
+                                                                    </values>
+                                                                </property>
+                                                            </values>
+                                                        </property>
+                                                    </values>
+                                                </property>
+                                            </values>
+                                        </property>
+                                    </properties>
+                                </repInfo>
+                            </jhove>
+                        </xmlData>
+                    </mdWrap>
+                </mdSec>
+            </objectCharacteristicsExtension>
+        </objectCharacteristics>
+        <originalName>metadata.xml</originalName>
+        <storage>
+            <contentLocation>
+                <contentLocationType>FILEPATH</contentLocationType>
+                <contentLocationValue>file:///representations/represenation-1/content/data/census/Persons/metadata.xml</contentLocationValue>
+            </contentLocation>
+        </storage>
+        <relationship>
+            <relationshipType>structural</relationshipType>
+            <relationshipSubType>is included in</relationshipSubType>
+            <relatedObjectIdentification>
+                <relatedObjectIdentifierType>PACKAGE_LOCAL</relatedObjectIdentifierType>
+                <relatedObjectIdentifierValue>AIP-compound</relatedObjectIdentifierValue>
+            </relatedObjectIdentification>
+        </relationship>
+        <linkingRightsStatementIdentifier>
+            <linkingRightsStatementIdentifierType>LOCAL</linkingRightsStatementIdentifierType>
+            <linkingRightsStatementIdentifierValue>DiscoveryRight001</linkingRightsStatementIdentifierValue>
+        </linkingRightsStatementIdentifier>
+    </object>
+
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>LOCAL</eventIdentifierType>
+            <eventIdentifierValue>Ingest001</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>Archive</eventType>
+        <eventDateTime>2014-05-01T01:00:00+01:00</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>SUCCESS</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>LOCAL</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>Sip2Aip</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>FILEPATH</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>file:///content/data/census.sql</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>Lily</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK Lily</agentName>
+        <agentType>Software</agentType>
+        <linkingRightsStatementIdentifier>
+            <linkingRightsStatementIdentifierType>LOCAL</linkingRightsStatementIdentifierType>
+            <linkingRightsStatementIdentifierValue>DiscoveryRight001</linkingRightsStatementIdentifierValue>
+        </linkingRightsStatementIdentifier>
+    </agent>
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>Sip2Aip</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK SIP to AIP Converter</agentName>
+        <agentType>Software</agentType>
+    </agent>
+
+    <rights>
+        <rightsStatement>
+            <rightsStatementIdentifier>
+                <rightsStatementIdentifierType>LOCAL</rightsStatementIdentifierType>
+                <rightsStatementIdentifierValue>DiscoveryRight001</rightsStatementIdentifierValue>
+            </rightsStatementIdentifier>
+            <rightsBasis>Statute</rightsBasis>
+            <rightsGranted>
+                <act>Discovery</act>
+                <restriction></restriction>
+            </rightsGranted>
+        </rightsStatement>
+    </rights>
+
+</premis>

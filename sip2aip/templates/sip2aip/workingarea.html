@@ -1,0 +1,28 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+
+<link rel="stylesheet" href="{% static 'sip2aip/css/workingarea.css' %}" type="text/css" />
+
+<link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
+<script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<h2>Working Area</h2>
+
+<span style="font-weight:bold">{{ uuid }}</span>
+<div id="directorytree"></div>
+
+<script language="javascript">var uuid='{{ uuid }}';</script>
+<script src="{% static 'sip2aip/js/workingarea.js' %}"></script>
+
+<p id="event_result"></p>
+
+{% endblock %}

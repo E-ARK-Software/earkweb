@@ -233,10 +233,7 @@ def create_dip(request):
 def acquire_aips(request, dip_name):
     if request.method == "POST":
         dip = DIP.objects.get(name=dip_name)
-        aips = dip.aips.filter(stored=False)
-        print(aips)
-        for aip in aips:
-            print(aip)
+        aips = dip.aips.filter(inclusion__stored=False)
         thread = Thread(target=functools.partial(copy_to_local, aips), args=(), kwargs={})
         thread.start()
         return HttpResponseRedirect(reverse('search:packsel'))

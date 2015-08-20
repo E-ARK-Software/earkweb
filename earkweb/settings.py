@@ -85,7 +85,7 @@ LOGOUT_URL = '/earkweb/accounts/logout/'
 import djcelery
 djcelery.setup_loader()
 
-CELERY_IMPORTS = ['somemethod']
+CELERY_IMPORTS = ['workers']
 
 BROKER_URL = 'amqp://guest:guest@localhost:5672/'
 CELERY_RESULT_BACKEND='db+mysql://arkiv:arkiv@localhost/celerydb'
@@ -93,6 +93,7 @@ CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
 CELERY_DEFAULT_QUEUE = 'default'
 CELERY_IGNORE_RESULT = False
 TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+CELERYD_POOL_RESTARTS = True
 
 from celery.schedules import crontab
 from datetime import timedelta
@@ -124,13 +125,13 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'djcelery',
+    'earkcore',
     'search',
+    'workers',
     'workflow',
-    'somemethod',
+    'sip2aip',
+    'config',
 )
-
-
-
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -141,7 +142,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
-    'django_cas.middleware.CASMiddleware', 'django.middleware.doc.XViewMiddleware',
+    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
 )
 
 
@@ -159,13 +160,27 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        #'STORAGE_ENGINE': 'MyISAM',           # STORAGE_ENGINE for MySQL database tables, 'MyISAM' or 'INNODB'
+        'NAME': 'eark',                    # Or path to database file if using sqlite3.
+        'USER': 'arkiv',                      # Not used with sqlite3.
+        'PASSWORD': 'arkiv',               # Not used with sqlite3.
+        'HOST': '',                           # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                           # Set to empty string for default. Not used with sqlite3.
+        # This options for storage_engine have to be set for "south migrate" to work.
+        'OPTIONS': {
+           "init_command": "SET storage_engine=MyISAM",
+        }
     }
 }
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#    }
+#}
 
 
 
@@ -216,6 +231,25 @@ LOGGING = {
             'propagate': True,
         },
         'search.query': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'workflow.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'sip2aip.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'sip2aip.watchdir': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,

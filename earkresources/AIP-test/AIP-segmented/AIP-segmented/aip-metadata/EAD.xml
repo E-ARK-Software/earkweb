@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ead:ead xmlns:ead="urn:isbn:1-931666-22-9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink"
+         xsi:schemaLocation="urn:isbn:1-931666-22-9 ../schemas/ead.xsd http://www.w3.org/1999/xlink ../schemas/xlink.xsd">
+    <ead:eadheader>
+        <ead:eadid>EAD.xml</ead:eadid>
+        <ead:filedesc>
+            <ead:titlestmt>
+                <ead:titleproper encodinganalog="Title">Databases</ead:titleproper>
+            </ead:titlestmt>
+        </ead:filedesc>
+        <ead:profiledesc>
+            <ead:creation>
+                <ead:date normal="2015-06-11">2015-06-11 09:35:UTC</ead:date>
+            </ead:creation>
+            <ead:langusage>
+                <ead:language langcode="eng" encodinganalog="Language">English</ead:language>
+            </ead:langusage>
+        </ead:profiledesc>
+    </ead:eadheader>
+    <ead:archdesc level="fonds">
+        <ead:did>
+            <ead:unittitle>Data</ead:unittitle>
+        </ead:did>
+        <ead:dsc type="combined">
+            <ead:c level="series">
+                <ead:did>
+                    <ead:unittitle encodinganalog="3.1.2">Databases</ead:unittitle>
+                </ead:did>
+                <ead:c level="subseries">
+                    <ead:did>
+                        <ead:unittitle encodinganalog="3.1.2">Census databases</ead:unittitle>
+                    </ead:did>
+                    <ead:c level="file">
+                        <ead:did>
+                            <ead:unittitle encodinganalog="3.1.2">Person tables</ead:unittitle>
+                        </ead:did>
+                        <ead:c level="item">
+                            <ead:did>
+                                <ead:unittitle encodinganalog="3.1.2">Persons table</ead:unittitle>
+                                <ead:unitdate>2002</ead:unitdate>
+                                <ead:daogrp>
+                                    <ead:daoloc xlink:href="file://../representations/representation-1/content/data/census/Persons/Persons.xml"/>
+                                </ead:daogrp>
+                            </ead:did>
+                        </ead:c>
+                    </ead:c>
+                </ead:c>
+            </ead:c>
+        </ead:dsc>
+    </ead:archdesc>
+</ead:ead>
+

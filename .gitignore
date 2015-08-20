@@ -57,3 +57,6 @@ db.sqlite3
 
 # IDEs
 .idea
+
+/working_area/
+migrations/

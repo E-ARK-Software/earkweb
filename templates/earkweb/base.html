@@ -7,16 +7,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="E-ARK">
-    
 
     <title>E-ARK Integrated Prototype</title>
     
-    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
-    
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+
+    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script>
+
     <script type="text/javascript"
         src="{% static "js/base.js" %}">
     </script>
-    
+
     {% block stylesheets %} 
     <!-- main style sheet -->
     <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />
@@ -47,7 +49,17 @@
               <a class="navbar-brand" href="/earkweb/"><i class="icon-home icon-white"> </i> E-ARK Integrated Prototype</a>
             </div>
             <div class="collapse navbar-collapse navbar-ex1-collapse">
-                <ul class="nav navbar-nav"><!--li class="menu-item "><a href="/earkweb/admin">Administration</a></li-->
+                <ul class="nav navbar-nav">
+                {% if user.is_active and user.is_staff %}
+                <li class="menu-item "><a href="/earkweb/admin">Administration</a></li>
+                {% endif %}
+
+                <li class="menu-item dropdown"><a href="/sip2aip" class="dropdown-toggle" data-toggle="dropdown">SIP to AIP Conversion <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li class="menu-item"><a href="/earkweb/sip2aip/">SIP Reception</a></li>
+                        <li class="menu-item"><a href="/earkweb/sip2aip/progress">Run task</a></li>
+                    </ul>
+                </li>
 
                 <li class="menu-item dropdown"><a href="/search" class="dropdown-toggle" data-toggle="dropdown">Package search &amp; selection <b class="caret"></b></a>
                     <ul class="dropdown-menu">
@@ -66,7 +78,7 @@
 
                 <li class="menu-item dropdown"><a href="/earkweb/workflow" class="dropdown-toggle" data-toggle="dropdown">Workflow editor <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li class="menu-item"><a href="/earkweb/workflow">SIP to AIP conversion</a></li>
+                        <li class="menu-item"><a href="/earkweb/workflow">Workflow editor</a></li>
                     </ul>
                 </li>
                 </ul>
