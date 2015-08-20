@@ -83,7 +83,7 @@ Install fido:
 
 ### Prepare database and execute
 
-1. Prepare database
+1. Prepare databases
 
     A MySQL database is defined in `${EARKWEB}/settings.py`.
     Create the database first and grant access to user 'arkiv':
@@ -94,6 +94,13 @@ Install fido:
         Query OK, 1 row affected (0.00 sec)
 
         mysql> GRANT ALL ON eark.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+        
+    Create another database for Celery:
+    
+        mysql> create database celerydb;
+        Query OK, 1 row affected (0.00 sec)
+        
+        mysql> GRANT ALL ON celerydb.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
 
 2. Create database schema based on the model and apply initialise the database:
 
@@ -193,6 +200,14 @@ Further information on using Django with Apache and mod_wsgi:
 The deployed version is a copy from this Github repository, update is done by sending a pull request on the master branch:
 
     sudo -u www-data git pull origin master
+    
+If static files have been changed, run Django's 'collectstatic' command:
+
+    python manage.py collectstatic
+   
+If tasks have been changed, run the update script:
+
+    python ./workers/scantasks.py
 
 ## CAS server installation
 
