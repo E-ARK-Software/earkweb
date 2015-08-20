@@ -196,7 +196,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/tmp/earkweb.log',
+            'filename': '/var/log/earkweb/earkweb.log',
         },
         'console': {
             'class': 'logging.StreamHandler',
