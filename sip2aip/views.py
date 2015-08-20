@@ -1,7 +1,6 @@
 import os
 import functools
 import json
-import logging
 import tarfile
 from threading import Thread
 import traceback
@@ -42,6 +41,9 @@ import json
 
 from config.params import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
+
+import logging
+logger = logging.getLogger(__name__)
 
 @login_required
 @csrf_exempt
@@ -94,7 +96,7 @@ def working_area(request, uuid):
     print uuid
     context = RequestContext(request, {
         "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False)
+        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
     })
     return HttpResponse(template.render(context))
 
@@ -129,7 +131,7 @@ def progress(request):
 @login_required
 @csrf_exempt
 def apply_task(request):
-    data = {}
+    data = {"success": False, "errmsg": "Unknown error"}
     try:
         selected_ip = request.POST['selected_ip']
         print "selected_ip: " + request.POST['selected_ip']
@@ -148,7 +150,7 @@ def apply_task(request):
             data = {"success": False, "errmsg": "not ajax"}
     except:
         tb = traceback.format_exc()
-        print str(tb)
+        logger.error(str(tb))
         data = {"success": False, "errmsg": "an error occurred!"}
         return JsonResponse(data)
     return JsonResponse(data)
@@ -156,8 +158,8 @@ def apply_task(request):
 @login_required
 @csrf_exempt
 def poll_state(request):
+    data = {"success": False, "errmsg": "Change unknown error"}
     try:
-        data = {}
         if request.is_ajax():
             if 'task_id' in request.POST.keys() and request.POST['task_id']:
                 task_id = request.POST['task_id']
@@ -175,6 +177,7 @@ def poll_state(request):
     except Exception, err:
         data = {"success": False, "errmsg": err.message}
         tb = traceback.format_exc()
-        print str(tb)
+        logger.error(str(tb))
 
     return JsonResponse(data)
+

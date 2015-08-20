@@ -1,5 +1,5 @@
 from celery import Task, shared_task
-import time, logging, os
+import time, os
 from sip2aip.models import MyModel
 from time import sleep
 from config import params
@@ -9,6 +9,10 @@ from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
 from taskresult import TaskResult
 from earkcore.packaging.extraction import Extraction
+
+import logging
+logger = logging.getLogger(__name__)
+import traceback
 
 class SomeCreation(Task):
     def __init__(self):
@@ -111,19 +115,25 @@ class ExtractTar(Task):
         log = []
         try:
             log.append("ExtractTar task %s" % current_task.request.id)
+            logger.info("ExtractTar task %s" % current_task.request.id)
             ip = InformationPackage.objects.get(pk=pk_id)
             err = self.valid_state(ip)
             if len(err) > 0:
+                logger.error("Errors: "+(str(err)))
                 return TaskResult(False, log, err)
+            err = self.valid_state(ip)
             ip.statusprocess = 200
             ip.save()
             target_dir = os.path.join(params.config_path_work, ip.uuid)
             fileutils.mkdir_p(target_dir)
             extr = Extraction()
             result = extr.extract(ip.path, target_dir)
+            logger.info("ExtractTar result: %s %s %s" % (str(result.success), str(log+result.log), str(err+result.err)))
             return TaskResult(result.success, log+result.log, err+result.err)
         except Exception, err:
-            return TaskResult(False, [], err)
+	    tb = traceback.format_exc()
+	    logger.error(str(tb))
+            return TaskResult(False, [], ['An error occurred: '+str(tb)])
 
 class Reset(Task):
 
