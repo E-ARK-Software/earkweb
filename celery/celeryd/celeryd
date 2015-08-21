@@ -39,7 +39,7 @@ export APP_MOD=${APP_ROOT}/earkweb
 export PYTHONPATH=${APP_ROOT}:${APP_MOD}:${VIRT_PYTHON_PATH}/lib/python2.7/site-packages:${APP_MOD}/workers:${APP_MOD}/config:$PYTHONPATH
 export CELERY_USER='arch'
 
-export CELERY_CONFIG_FILE=/opt/python_wsgi_apps/earkweb/celery/etc/celeryd
+export CELERY_CONFIG_FILE=/etc/earkweb/celery/celeryd
 
 echo "celery init v${VERSION}."
 if [ $(id -u) -ne 0 ]; then

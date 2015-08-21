@@ -4,18 +4,15 @@ E-ARK integrated prototype web application
 
 ## Dependencies
 
-### Debian-based linux
-
-* [jhove](https://packages.debian.org/jessie/jhove)
-* [summain](https://packages.debian.org/jessie/summain)
-
-Install packages:
+### Debian packages
 
     sudo apt-get install summain jhove
 
 ### Python modules
 
-* [fido](https://github.com/openpreserve/fido) 
+#### fido
+
+[fido](https://github.com/openpreserve/fido) 
 
 Install fido:
 
@@ -37,7 +34,7 @@ Install fido:
         cd earkweb
         export EARKWEB=`pwd`
     
-    If the variable is set, it can be used to execute commands explained in this README.
+    If this variable is set, it can be used to execute commands explained further down in this README file.
 
 2. Create virtual environment (python)
 
@@ -141,11 +138,24 @@ Start the daemon from command line:
     
     celery --app=earkweb.celeryapp:app worker
 
-or use the daemon script as super user:
+Alternatively, adapt settings (e.g. user settings) in the config file:
+
+    celery/etc/celeryd
+
+Then create a celery config directory:
+
+    sudo mkdir -p /etc/earkweb/celery
+    sudo chown -R <user>:<group> /etc/earkweb
+
+Copy the script to the configuration directory:
+
+    cp celery/etc/celeryd /etc/earkweb/celery/
+   
+Then you can use the daemon script as super user:
 
     sudo ./celery/celeryd/celeryd start
     celery init v10.0.
-    Using config script: /opt/python_wsgi_apps/earkweb/celery/etc/celeryd
+    Using config script: /etc/earkweb/celery/celeryd
     celery multi v3.1.18 (Cipater)
     > Starting nodes...
 	> worker1@<machine>: OK

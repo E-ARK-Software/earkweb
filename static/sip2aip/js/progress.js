@@ -4,12 +4,15 @@ function updateProgressInfo(percent) {
     $('#st').html("In progress: "+percent+"%");
 }
 function updateStatusInfo(status, result, log, err) {
+    window.console.log(status)
+    window.console.log(result)
     if(status == 'SUCCESS') {
         window.document.getElementById("pg").style = 'width: 100%';
         $('#log').html(log)
         $('#err').html(err)
+        $("#st").visible();
         if(result)
-            $('#st').html("<span style=Finished successfully");
+            $('#st').html("Finished successfully");
         else
             $('#st').html("Finished with error");
     }

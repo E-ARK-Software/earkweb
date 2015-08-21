@@ -30,8 +30,17 @@ class Extraction(Processor):
             reload(sys)
             sys.setdefaultencoding('utf8')
             self.log.append("Extracting package %s to %s" % (package_file_path, extract_to))
-            tar_object = tarfile.open(name=package_file_path, mode='r')
-            tar_object.extractall(path=extract_to)
+            tar_object = tarfile.open(name=package_file_path, mode='r', encoding='utf-8')
+            members = tar_object.getmembers()
+            total = len(members)
+            print "Total: " + str(total)
+            i = 100; perc = 0
+            for member in members:
+                if i % 100 == 0:
+                    perc = (i*100)/total
+                    print "100 processed (item %d) ... (%d)" % (i,perc)
+                tar_object.extract(member, extract_to)
+                i += 1
             self.success = True
         except (ValueError, OSError, IOError, tarfile.TarError),why:
             self.err.append('Problem to extract %s, why: %s' % (package_file_path,str(why)))

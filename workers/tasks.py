@@ -9,7 +9,7 @@ from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
 from taskresult import TaskResult
 from earkcore.packaging.extraction import Extraction
-
+import tarfile
 import logging
 logger = logging.getLogger(__name__)
 import traceback
@@ -113,6 +113,7 @@ class ExtractTar(Task):
         @return:    Task result (success/failure, processing log, error log)
         """
         log = []
+        err = []
         try:
             log.append("ExtractTar task %s" % current_task.request.id)
             logger.info("ExtractTar task %s" % current_task.request.id)
@@ -126,10 +127,26 @@ class ExtractTar(Task):
             ip.save()
             target_dir = os.path.join(params.config_path_work, ip.uuid)
             fileutils.mkdir_p(target_dir)
-            extr = Extraction()
-            result = extr.extract(ip.path, target_dir)
-            logger.info("ExtractTar result: %s %s %s" % (str(result.success), str(log+result.log), str(err+result.err)))
-            return TaskResult(result.success, log+result.log, err+result.err)
+            #extr = Extraction()
+            #result = extr.extract(ip.path, target_dir)
+	    import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+	    tar_object = tarfile.open(name=ip.path, mode='r', encoding='utf-8')
+            members = tar_object.getmembers()
+            total = len(members)
+            i = 0; perc = 0
+            for member in members:
+                if i % 10 == 0:
+                    perc = (i*100)/total
+                    logger.info("Status: %s" % str(perc))
+                    self.update_state(state='PROGRESS',meta={'process_percent': perc})
+                tar_object.extract(member, target_dir)
+                i += 1
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            logger.info("Extraction of %d items finished" % total)
+            log.append("Extraction of %d items finished" % total)
+            return TaskResult(True, log, err)
         except Exception, err:
 	    tb = traceback.format_exc()
 	    logger.error(str(tb))
