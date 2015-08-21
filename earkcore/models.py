@@ -2,11 +2,12 @@ from django.db import models
 
 StatusProcess_CHOICES = (
     (0, 'New object'),
-    (100, 'Identifier assignment'),
-    (200, 'SIP extraction'),
-    (300, 'SIP validate'),
-    (310, 'SIP validate failed'),
-    (320, 'SIP validate OK'),
+    (100, 'SIP Delivery Validation'),
+    (190, 'SIP Delivery Validation Error'),
+    (200, 'Identifier assignment'),
+    (300, 'SIP extraction'),
+    (400, 'SIP validate'),
+    (490, 'SIP validate failed'),
     (400, 'Create AIP package'),
     (410, 'AIP create failed'),
     (420, 'AIP created OK'),

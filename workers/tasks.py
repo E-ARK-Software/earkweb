@@ -7,6 +7,8 @@ from celery import current_task
 from earkcore.utils import fileutils
 from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
+from earkcore.xml.validationresult import ValidationResult
+from earkcore.xml.deliveryvalidation import DeliveryValidation
 from taskresult import TaskResult
 from earkcore.packaging.extraction import Extraction
 import tarfile
@@ -14,30 +16,18 @@ import logging
 logger = logging.getLogger(__name__)
 import traceback
 
-class SomeCreation(Task):
-    def __init__(self):
-        self.ignore_result = False
-
-    def run(self, param1, *args, **kwargs):
-        """
-        This function creates something
-        @type       param1: string
-        @param      param1: First parameter
-        @rtype:     string
-        @return:    Parameter
-        """
-        return "Parameter: " + param1
-
 class SimulateLongRunning(Task):
 
     def __init__(self):
         self.ignore_result = False
 
-    def run(self, pk_id, *args, **kwargs):
+    def run(self, pk_id, tc, *args, **kwargs):
         """
         This function creates something
         @type       pk_id: int
-        @param      pk_id: Package id
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:-1,error_status:-1
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -60,17 +50,19 @@ class AssignIdentifier(Task):
     def __init__(self):
         self.ignore_result = False
 
-    def valid_state(self, ip):
+    def valid_state(self, ip, tc):
         err = []
-        if not (ip.statusprocess == 0):
-            err.append("Incorrect information package status")
+        if ip.statusprocess != tc.expected_status:
+            err.append("Incorrect information package status (must be %d)" % tc.expected_status)
         return  err
 
-    def run(self, pk_id, *args, **kwargs):
+    def run(self, pk_id, tc, *args, **kwargs):
         """
         Assign identifier
-        @type       package_path: int
-        @param      package_path: Primary key
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:100,success_status:200,error_status:290
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -78,10 +70,10 @@ class AssignIdentifier(Task):
         self.update_state(state='PROGRESS',meta={'process_percent': 50})
         log.append("AssignIdentifier task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
-        err = self.valid_state(ip)
+        err = self.valid_state(ip, tc)
         if len(err) > 0:
             return TaskResult(False, log, err)
-        ip.statusprocess=100
+        ip.statusprocess=tc.success_status
         ip.uuid=randomutils.getUniqueID()
         ip.save()
         log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
@@ -93,10 +85,10 @@ class ExtractTar(Task):
     def __init__(self):
         self.ignore_result = False
 
-    def valid_state(self, ip):
+    def valid_state(self, ip, tc):
         err = []
-        if not (ip.statusprocess == 100):
-            err.append("Incorrect information package status (must be 100)")
+        if ip.statusprocess != tc.expected_status:
+            err.append("Incorrect information package status (must be %d)" % tc.expected_status)
         if (ip.uuid is None or ""):
             err.append("UUID missing")
         target_dir = os.path.join(params.config_path_work, ip.uuid)
@@ -104,35 +96,33 @@ class ExtractTar(Task):
             err.append("Directory already exists in working area")
         return err
 
-    def run(self, pk_id, *args, **kwargs):
+    def run(self, pk_id, tc, *args, **kwargs):
         """
         Unpack tar file to destination directory
-        @type       package_path: int
-        @param      package_path: Primary key
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:200,success_status:300,error_status:390
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
         log = []
         err = []
+        ip = InformationPackage.objects.get(pk=pk_id)
         try:
             log.append("ExtractTar task %s" % current_task.request.id)
             logger.info("ExtractTar task %s" % current_task.request.id)
-            ip = InformationPackage.objects.get(pk=pk_id)
-            err = self.valid_state(ip)
+            err = self.valid_state(ip, tc)
             if len(err) > 0:
                 logger.error("Errors: "+(str(err)))
                 return TaskResult(False, log, err)
-            err = self.valid_state(ip)
-            ip.statusprocess = 200
-            ip.save()
+            err = self.valid_state(ip, tc)
             target_dir = os.path.join(params.config_path_work, ip.uuid)
             fileutils.mkdir_p(target_dir)
-            #extr = Extraction()
-            #result = extr.extract(ip.path, target_dir)
-	    import sys
+            import sys
             reload(sys)
             sys.setdefaultencoding('utf8')
-	    tar_object = tarfile.open(name=ip.path, mode='r', encoding='utf-8')
+            tar_object = tarfile.open(name=ip.path, mode='r', encoding='utf-8')
             members = tar_object.getmembers()
             total = len(members)
             i = 0; perc = 0
@@ -143,13 +133,17 @@ class ExtractTar(Task):
                     self.update_state(state='PROGRESS',meta={'process_percent': perc})
                 tar_object.extract(member, target_dir)
                 i += 1
+            ip.statusprocess = tc.success_status
+            ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
             logger.info("Extraction of %d items finished" % total)
             log.append("Extraction of %d items finished" % total)
             return TaskResult(True, log, err)
         except Exception, err:
-	    tb = traceback.format_exc()
-	    logger.error(str(tb))
+            ip.statusprocess = tc.error_status
+            ip.save()
+            tb = traceback.format_exc()
+            logger.error(str(tb))
             return TaskResult(False, [], ['An error occurred: '+str(tb)])
 
 class Reset(Task):
@@ -157,11 +151,13 @@ class Reset(Task):
     def __init__(self):
         self.ignore_result = False
 
-    def run(self, pk_id, *args, **kwargs):
+    def run(self, pk_id, tc, *args, **kwargs):
         """
         Reset identifier and package status
-        @type       package_path: int
-        @param      package_path: Primary key
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:0,error_status:90
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -171,11 +167,68 @@ class Reset(Task):
 
         log.append("ResetTask task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
-
-        ip.statusprocess = 0
+        ip.statusprocess = tc.success_status
         log.append("Setting statusprocess to 0")
         ip.uuid = ""
         log.append("Setting uuid to empty string")
         ip.save()
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, log, err)
+
+class SIPDeliveryValidation(Task):
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
+        err = []
+        # if ip.statusprocess != tc.expected_status:
+        #     err.append("Incorrect information package status (must be %d)" % tc.expected_status)
+        if not os.path.exists(delivery_file):
+            err.append("Delivery file does not exist: %s" % delivery_file)
+        if not os.path.exists(schema_file):
+            err.append("Schema file does not exist: %s" % schema_file)
+        if not os.path.exists(package_file):
+            err.append("Package file does not exist: %s" % package_file)
+        return  err
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Delivery Validation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:0,success_status:100,error_status:190
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []; err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("SIPDeliveryValidation task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+        filename, file_ext = os.path.splitext(ip.path)
+        delivery_dir = params.config_path_reception
+        delivery_file = "%s.xml" % filename
+        schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
+        package_file = ip.path
+
+        err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+
+        try:
+            sdv = DeliveryValidation()
+            validation_result = sdv.validate_delivery(delivery_dir, delivery_file, schema_file, package_file)
+            log = log + validation_result.log
+            err = err + validation_result.err
+            log.append("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
+            logger.info(str(validation_result))
+            ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status;
+            ip.save()
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            return TaskResult(validation_result.valid, log, err)
+        except Exception, err:
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return TaskResult(False, [], ['An error occurred: '+str(tb)])
+

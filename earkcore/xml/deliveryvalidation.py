@@ -53,33 +53,41 @@ class DeliveryValidation(object):
             # Parse the XML file, get the root element
             parsed_mets = ParsedMets(deliveryDir)
             parsed_mets.load_mets(delivery_xml_file)
-
             # If the XSD file wasn't found, extract location from the XML
             if schema_file == None:
                 schema_file = parsed_mets.get_mets_schema_from_schema_location()
-
             # Parse the XSD file
             parsed_sfile = lxml.etree.parse(schema_file)
-
             # Validate the delivery XML file
             xmlVal = XmlValidation()
             validation_result = xmlVal.validate_XML(parsed_mets.mets_tree, parsed_sfile)
-            valid_xml = validation_result.valid
+            valid_xml = validation_result
             # Checksum validation
             checksum_expected = ParsedMets.get_file_element_checksum(parsed_mets.get_first_file_element())
             checksum_algorithm = ParsedMets.get_file_element_checksum_algorithm(parsed_mets.get_first_file_element())
             csval = ChecksumValidation()
             valid_checksum = csval.validate_checksum(package_file, checksum_expected, ChecksumAlgorithm.get(checksum_algorithm))
-
             # Mets validation
             mval = MetsValidation(parsed_mets)
             valid_files_size = mval.validate_files_size()
 
-            valid = (valid_xml and valid_checksum and valid_files_size)
+            log += validation_result.log
+            err += validation_result.err
+
+            log += valid_files_size.log
+            err += valid_files_size.err
+
+            log.append("Checksum validity: \"%s\"" % str(valid_checksum))
+
+            valid = (valid_xml.valid and valid_checksum and valid_files_size.valid)
+
+            return ValidationResult(valid, log, err)
 
         except (XMLSyntaxError), why:
-            self._logger.error('Error validating delivery %s, why: %s' % (delivery_xml_file, str(why)))
-            return False
+            errmsg = 'Error validating delivery %s, why: %s' % (delivery_xml_file, str(why))
+            self._logger.error(errmsg)
+            err.append(errmsg)
+            return ValidationResult(False, log, err)
 
         return ValidationResult(valid, log, err)
 

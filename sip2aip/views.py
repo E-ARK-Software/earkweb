@@ -36,6 +36,7 @@ from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 import workers.tasks
+from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 import json
 
@@ -140,10 +141,11 @@ def apply_task(request):
         if not (selected_ip and selected_action):
             return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
         wfm = WorkflowModules.objects.get(pk=selected_action)
+        tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
         if request.is_ajax():
             taskClass = getattr(tasks, wfm.identifier)
             print "Executing task: %s" % wfm.identifier
-            job = taskClass().apply_async((selected_ip,), queue='default')
+            job = taskClass().apply_async((selected_ip, tc,), queue='default')
             print "Task identifier: %s" % job.id
             data = {"success": True, "id": job.id}
         else:
@@ -158,7 +160,7 @@ def apply_task(request):
 @login_required
 @csrf_exempt
 def poll_state(request):
-    data = {"success": False, "errmsg": "Change unknown error"}
+    data = {"success": False, "errmsg": "Unknown error"}
     try:
         if request.is_ajax():
             if 'task_id' in request.POST.keys() and request.POST['task_id']:

@@ -67,6 +67,7 @@ class MetsValidation(object):
                 err.append("Actual file size %d does not equal file size attribute value %d" % (
                     package_file_size, size_attr_value))
                 valid = False
+        log.append("File size validity: \"%s\"" % str(valid))
         return ValidationResult(valid, log, err)
 
 class TestMetsValidation(unittest.TestCase):

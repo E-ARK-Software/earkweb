@@ -1,5 +1,5 @@
 import os,sys
-import simplejson as json
+import json
 
 def path_to_dict(path):
     import sys
