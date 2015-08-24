@@ -13,6 +13,3 @@ def lstrip_substring(str, substr):
         return str[len_substr:]
     else:
         return str
-
-
-

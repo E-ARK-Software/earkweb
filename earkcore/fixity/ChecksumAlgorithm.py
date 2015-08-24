@@ -1,3 +1,4 @@
+
 class ChecksumAlgorithm:
     MD5, SHA256, NONE = range(3)
 
@@ -17,3 +18,12 @@ class ChecksumAlgorithm:
             return ChecksumAlgorithm.SHA256
         else:
             return ChecksumAlgorithm.NONE
+
+    @staticmethod
+    def str(alg):
+        if alg is ChecksumAlgorithm.MD5:
+            return "MD5"
+        elif alg is ChecksumAlgorithm.SHA256:
+            return "SHA256"
+        else:
+            return "NONE"

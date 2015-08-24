@@ -4,12 +4,14 @@ Created on June 15, 2015
 '''
 __author__ = 'shsdev'
 
+import os
 import lxml
 from lxml.etree import XMLSyntaxError
 import unittest
 from ChecksumAlgorithm import ChecksumAlgorithm
 import hashlib
 from config.config import root_dir
+from earkcore.utils.fileutils import remove_protocol
 
 def get_sha256_hash(file):
     blocksize = 65536
@@ -19,6 +21,11 @@ def get_sha256_hash(file):
         for block in iter(lambda: file.read(blocksize), ''):
             hash.update(block)
     return hash.hexdigest()
+
+def checksum(file_path, wd=None, alg=ChecksumAlgorithm.SHA256):
+    fp = remove_protocol(file_path)
+    path = fp if wd is None else os.path.join(wd,fp)
+    return ChecksumFile(path).get(alg)
 
 class ChecksumFile(object):
     """
@@ -38,9 +45,7 @@ class ChecksumFile(object):
 
     def get(self, checksum_algorithm):
         """
-        This function takes the object 'file', calculates the checksum according to the algorithm defined in checksum_algorithm and
-        compares it to checksum_expected, which contains the checksum stored in the meta data file.
-
+        This function calculates the checksum using the algorithm specified by the argument 'checksum_algorithm'.
         @type       checksum_algorithm:  ChecksumAlgorithm
         @param      checksum_algorithm: Algorithm used to create the checksum (taken from METS file)
         @rtype:     string

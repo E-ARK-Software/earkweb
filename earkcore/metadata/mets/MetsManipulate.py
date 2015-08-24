@@ -1,7 +1,11 @@
 from lxml import etree, objectify
+import os
 import string
 import uuid
 from earkcore.metadata.XmlHelper import q, XSI_NS
+from earkcore.utils.datetimeutils import get_file_ctime_iso_date_str as iso_date
+from earkcore.fixity.ChecksumFile import checksum
+from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 
 METS_NS = 'http://www.loc.gov/METS/'
 XLINK_NS = 'http://www.w3.org/1999/xlink'
@@ -14,7 +18,17 @@ M = objectify.ElementMaker(
 
 class Mets:
 
-    def __init__(self, f=None):
+    working_directory = '.'
+    checksum_algorithm = ChecksumAlgorithm.SHA256
+
+    def __init__(self, f=None, wd='./', alg=ChecksumAlgorithm.SHA256):
+        """
+        Constructor used to initialise METS from template or from empty METS object
+        @type       f: string
+        @param      f: Path to optional METS template file
+        @type       wd: string
+        @param      wd: Working directory (relative paths)
+        """
         if f is None:
             self.root = M.mets(
                 {q(XSI_NS, 'schemaLocation'): METS_NS + ' schemas/IP.xsd'},
@@ -26,6 +40,8 @@ class Mets:
             self.add_agent('ARCHIVIST', 'ORGANIZATION', 'Institution')
         else:
             self.root = objectify.parse(f).getroot()
+        self.working_directory = wd
+        self.checksum_algorithm = alg
 
     @staticmethod
     def generate_id():
@@ -124,7 +140,9 @@ class Mets:
         self.add_file_node(
             grp_uses,
             M.file(
-                {'ID': self.generate_id(), 'ADMID': string.join(adm_ids)},
+                {'ID': self.generate_id(), 'ADMID': string.join(adm_ids), 'CREATED': iso_date(file_path, wd=self.working_directory),
+                 'CHECKSUM': checksum(file_path, wd=self.working_directory, alg=self.checksum_algorithm),
+                 'CHECKSUMTYPE': ChecksumAlgorithm.str(self.checksum_algorithm)},
                 M.FLocat(self.xlink(file_path))
             )
         )
@@ -175,18 +193,19 @@ class Mets:
 
 
 def main():
-    with open('earkresources/AIP-test/AIP-compound/METS.xml', 'r') as mets_file:
-        my_mets = Mets()
+    with open('resources/METS_skeleton.xml', 'r') as mets_file:
+        my_mets = Mets(wd='resources/workingdir', alg=ChecksumAlgorithm.SHA256)
+    print my_mets.working_directory
     my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
     admids = []
     admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
     admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
     admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
     my_mets.add_file_grp(['submission'])
-    my_mets.add_file(['submission'], 'file://./content/data.sql', admids)
-    my_mets.root.set('TYPE', 'DIP')
+    my_mets.add_file(['submission'], 'file://./METS.xml', admids)
+    my_mets.root.set('TYPE', 'AIP')
     print my_mets
-    print my_mets.validate()
+    #print my_mets.validate()
 
 if __name__ == "__main__":
     main()

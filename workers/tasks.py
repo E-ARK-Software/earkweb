@@ -18,6 +18,7 @@ import traceback
 from workers.statusvalidation import StatusValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
+import shutil
 
 class SimulateLongRunning(Task):
 
@@ -48,6 +49,35 @@ class SimulateLongRunning(Task):
 
         return TaskResult(True, ['Long running process finished'], [])
 
+class Reset(Task):
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        Reset identifier and package status
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:0,error_status:90
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []
+        err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+
+        log.append("ResetTask task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+        ip.statusprocess = tc.success_status
+        log.append("Setting statusprocess to 0")
+        ip.uuid = ""
+        log.append("Setting uuid to empty string")
+        ip.save()
+        self.update_state(state='PROGRESS',meta={'process_percent': 100})
+        return TaskResult(True, log, err)
+
 class AssignIdentifier(Task, StatusValidation):
 
     def run(self, pk_id, tc, *args, **kwargs):
@@ -73,6 +103,65 @@ class AssignIdentifier(Task, StatusValidation):
         log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, log, err)
+
+class SIPDeliveryValidation(Task):
+
+    def __init__(self):
+        self.ignore_result = False
+
+    def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
+        err = []
+        # if ip.statusprocess != tc.expected_status:
+        #     err.append("Incorrect information package status (must be %d)" % tc.expected_status)
+        if not os.path.exists(delivery_file):
+            err.append("Delivery file does not exist: %s" % delivery_file)
+        if not os.path.exists(schema_file):
+            err.append("Schema file does not exist: %s" % schema_file)
+        if not os.path.exists(package_file):
+            err.append("Package file does not exist: %s" % package_file)
+        return  err
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Delivery Validation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:0,success_status:100,error_status:190
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []; err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("SIPDeliveryValidation task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+        filename, file_ext = os.path.splitext(ip.path)
+        delivery_dir = params.config_path_reception
+        delivery_file = "%s.xml" % filename
+        # package name is basename of delivery package
+        ip.packagename = os.path.basename(filename)
+        schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
+        package_file = ip.path
+
+        err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+
+        try:
+            sdv = DeliveryValidation()
+            validation_result = sdv.validate_delivery(delivery_dir, delivery_file, schema_file, package_file)
+            log = log + validation_result.log
+            err = err + validation_result.err
+            log.append("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
+            logger.info(str(validation_result))
+            ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status;
+            ip.save()
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            return TaskResult(validation_result.valid, log, err)
+        except Exception, err:
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return TaskResult(False, [], ['An error occurred: '+str(tb)])
 
 class ExtractTar(Task):
 
@@ -140,94 +229,6 @@ class ExtractTar(Task):
             logger.error(str(tb))
             return TaskResult(False, [], ['An error occurred: '+str(tb)])
 
-class Reset(Task):
-
-    def __init__(self):
-        self.ignore_result = False
-
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        Reset identifier and package status
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:0,error_status:90
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        log = []
-        err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-
-        log.append("ResetTask task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(pk=pk_id)
-        ip.statusprocess = tc.success_status
-        log.append("Setting statusprocess to 0")
-        ip.uuid = ""
-        log.append("Setting uuid to empty string")
-        ip.save()
-        self.update_state(state='PROGRESS',meta={'process_percent': 100})
-        return TaskResult(True, log, err)
-
-class SIPDeliveryValidation(Task):
-
-    def __init__(self):
-        self.ignore_result = False
-
-    def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
-        err = []
-        # if ip.statusprocess != tc.expected_status:
-        #     err.append("Incorrect information package status (must be %d)" % tc.expected_status)
-        if not os.path.exists(delivery_file):
-            err.append("Delivery file does not exist: %s" % delivery_file)
-        if not os.path.exists(schema_file):
-            err.append("Schema file does not exist: %s" % schema_file)
-        if not os.path.exists(package_file):
-            err.append("Package file does not exist: %s" % package_file)
-        return  err
-
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        SIP Delivery Validation
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: expected_status:0,success_status:100,error_status:190
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        log = []; err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("SIPDeliveryValidation task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(pk=pk_id)
-        filename, file_ext = os.path.splitext(ip.path)
-        delivery_dir = params.config_path_reception
-        delivery_file = "%s.xml" % filename
-        # package name is basename of delivery package
-        ip.packagename = os.path.basename(filename)
-        schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
-        package_file = ip.path
-
-        err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
-
-        try:
-            sdv = DeliveryValidation()
-            validation_result = sdv.validate_delivery(delivery_dir, delivery_file, schema_file, package_file)
-            log = log + validation_result.log
-            err = err + validation_result.err
-            log.append("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-            logger.info(str(validation_result))
-            ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status;
-            ip.save()
-            self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            return TaskResult(validation_result.valid, log, err)
-        except Exception, err:
-            tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, [], ['An error occurred: '+str(tb)])
-
 class SIPValidation(Task, StatusValidation):
 
     def run(self, pk_id, tc, *args, **kwargs):
@@ -236,7 +237,7 @@ class SIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @param      tc: expected_status:300,success_status:400,error_status:490
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -280,3 +281,53 @@ class SIPValidation(Task, StatusValidation):
             tb = traceback.format_exc()
             logger.error(str(tb))
             return TaskResult(False, log, ['An error occurred: '+str(tb)])
+
+class AIPStructure(Task, StatusValidation):
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Structure Validation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []; err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("SIPStructureValidation task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+
+        err = self.valid_state(ip, tc)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+
+        def checkFile(descr, f):
+            if os.path.exists(f):
+                log.append("%s found: %s" % (descr, os.path.abspath(f)))
+            else:
+                err.append("%s missing: %s" % (descr, os.path.abspath(f)) )
+
+        try:
+
+            ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+            src = os.path.join(ip_work_dir, ip.packagename)
+            dest = os.path.join(ip_work_dir, "submission", ip.packagename)
+            shutil.move(src, dst)
+
+            # create root mets
+
+
+
+            valid = True
+
+            ip.statusprocess = tc.success_status if valid else tc.error_status;
+            ip.save()
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            return TaskResult(valid, log, err)
+        except Exception, err:
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return TaskResult(False, log, ['An error occurred: '+str(tb)])
+
