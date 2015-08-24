@@ -10,6 +10,7 @@ import os
 from ParsedMets import ParsedMets
 from config.config import root_dir
 from earkcore.xml.validationresult import ValidationResult
+from earkcore.utils.stringutils import lstrip_substring
 
 class MetsValidation(object):
     """
@@ -53,10 +54,12 @@ class MetsValidation(object):
             if (len(fileloc) != 1):
                 err.append("Unable to determine file location reference in METS file")
                 valid = False
-            package_file_path = os.path.join(self.parsed_mets.root_dir, fileloc[0])
-            if not os.path.isfile(package_file_path):
-                err.append("Unable to find referenced file in delivery METS file")
-                valid = False
+            fitem = fileloc[0]
+            fitem = lstrip_substring(fitem, 'file:')
+            package_file_path = os.path.join(self.parsed_mets.root_dir, fitem)
+            if not os.path.exists(package_file_path):
+                err.append("Unable to find file referenced in delivery METS file")
+                return ValidationResult(False, log, err)
             size_elms = mets_file_elm.xpath('@SIZE', namespaces={'mets': 'http://www.loc.gov/METS/'})
             if not (len(size_elms) == 1 and size_elms[0].isdigit()):
                 err.append("SIZE attribute value is not a digit")

@@ -12,6 +12,10 @@
     		<td>{{ ip.path }}</td>
     	</tr>
     	<tr class="row2">
+    		<td>Package name</td>
+    		<td>{{ ip.packagename }}</td>
+    	</tr>
+    	<tr class="row2">
     		<td>UUID</td>
     		<td>{{ ip.uuid }}</td>
     	</tr>
@@ -19,7 +23,7 @@
     		<td>Status</td>
     		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
     	</tr>
-		{% if ip.statusprocess == 300 %}
+		{% if ip.statusprocess >= 300 %}
 		<tr class="row1">
 			<td>Working area path</td>
 			<td><a href="{% url 'sip2aip:working_area' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>

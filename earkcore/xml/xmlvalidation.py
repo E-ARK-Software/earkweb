@@ -62,7 +62,7 @@ class XmlValidation(object):
             # Validate parsed XML against schema returning a readable message on failure
             schema = lxml.etree.XMLSchema(parsed_schema)
             # Validate parsed XML against schema returning boolean value indicating success/failure
-            log.append('Schema validity: "%s".' % schema.validate(parsed_xml))
+            log.append('Schema validity: "%s"' % schema.validate(parsed_xml))
             schema.assertValid(parsed_xml)
             valid_xml = True
         except lxml.etree.XMLSchemaParseError, xspe:

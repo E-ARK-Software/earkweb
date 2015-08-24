@@ -17,3 +17,7 @@ label {
 #apply-task {
    margin-left:20px;
 }
+
+.pgsuccess {
+   background-color: green;
+}

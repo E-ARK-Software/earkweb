@@ -1,4 +1,6 @@
 $('#apply-task').click( function() {
+   $('#pg').css('width', '0%');
+   $('#pg').removeClass('pgsuccess');
    window.console.log("Send task application request for ip " +
         $("#id_ips option:selected").text() + ", selected action: " + $("#id_wfs option:selected").text());
    $.ajax({

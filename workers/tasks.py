@@ -15,6 +15,9 @@ import tarfile
 import logging
 logger = logging.getLogger(__name__)
 import traceback
+from workers.statusvalidation import StatusValidation
+from earkcore.metadata.mets.MetsValidation import MetsValidation
+from earkcore.metadata.mets.ParsedMets import ParsedMets
 
 class SimulateLongRunning(Task):
 
@@ -45,16 +48,7 @@ class SimulateLongRunning(Task):
 
         return TaskResult(True, ['Long running process finished'], [])
 
-class AssignIdentifier(Task):
-
-    def __init__(self):
-        self.ignore_result = False
-
-    def valid_state(self, ip, tc):
-        err = []
-        if ip.statusprocess != tc.expected_status:
-            err.append("Incorrect information package status (must be %d)" % tc.expected_status)
-        return  err
+class AssignIdentifier(Task, StatusValidation):
 
     def run(self, pk_id, tc, *args, **kwargs):
         """
@@ -209,6 +203,8 @@ class SIPDeliveryValidation(Task):
         filename, file_ext = os.path.splitext(ip.path)
         delivery_dir = params.config_path_reception
         delivery_file = "%s.xml" % filename
+        # package name is basename of delivery package
+        ip.packagename = os.path.basename(filename)
         schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
         package_file = ip.path
 
@@ -232,3 +228,55 @@ class SIPDeliveryValidation(Task):
             logger.error(str(tb))
             return TaskResult(False, [], ['An error occurred: '+str(tb)])
 
+class SIPValidation(Task, StatusValidation):
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Structure Validation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []; err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("SIPStructureValidation task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+
+        err = self.valid_state(ip, tc)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+
+        def checkFile(descr, f):
+            if os.path.exists(f):
+                log.append("%s found: %s" % (descr, os.path.abspath(f)))
+            else:
+                err.append("%s missing: %s" % (descr, os.path.abspath(f)) )
+
+        try:
+
+            ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+            checkFile("SIP METS file", os.path.join(ip_work_dir, ip.packagename, "IP.xml"))
+            checkFile("Content directory", os.path.join(ip_work_dir, ip.packagename, "Content"))
+            checkFile("Metadata directory", os.path.join(ip_work_dir, ip.packagename, "Metadata"))
+
+            mets_file = os.path.join(ip_work_dir, ip.packagename, "IP.xml")
+            parsed_mets = ParsedMets(os.path.join(ip_work_dir, ip.packagename))
+            parsed_mets.load_mets(mets_file)
+            mval = MetsValidation(parsed_mets)
+            size_val_result = mval.validate_files_size()
+            log += size_val_result.log
+            err += size_val_result.err
+
+            valid = (len(err) == 0)
+
+            ip.statusprocess = tc.success_status if valid else tc.error_status;
+            ip.save()
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            return TaskResult(valid, log, err)
+        except Exception, err:
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return TaskResult(False, log, ['An error occurred: '+str(tb)])
