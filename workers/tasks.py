@@ -344,7 +344,20 @@ class AIPCreation(Task, StatusValidation):
                     my_mets.add_file(['submission'], u_directory, u_filename)
 
             # retrieve files in /Metadata
-            # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
+                for filename in filenames:
+                    u_directory = unicode(directory[subdir_length:], 'utf-8')
+                    u_filename = unicode(filename, 'utf-8')
+                    # TODO: add to metadata sections
+                    if u_filename[:3].lower() == 'ead':
+                        break
+                    elif u_filename[:3].lower() == 'eac':
+                        break
+                    elif u_filename[:6].lower() == 'premis':
+                        break
+                    elif u_filename:
+                        # default
+                        break
 
 
             path_mets = os.path.join(submission_dir, "METS.xml")
