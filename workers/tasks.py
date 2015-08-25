@@ -331,7 +331,13 @@ class AIPCreation(Task, StatusValidation):
             my_mets.add_file_grp(['submission'])
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
             my_mets.add_file(['submission'], rel_path_mets, admids)
+
+            # retrieve METS header attributes
+            mets_header_attributes = params.mets_header_attributes
+
             my_mets.root.set('TYPE', 'AIP')
+            # TODO: set header with list of attributes
+
 
             # path length
             subdir_length = len(package_in_submission_dir)
