@@ -41,11 +41,7 @@ mets_header_attributes = {'OBJID': 'some identifier',
                           'LABEL': 'label goes here',
                           'PROFILE': 'profile goes here',
                           'ID': ip.uui,
-                          'xsi:schemaLocation': 'http://www.loc.gov/METS/ '
-                                                'schemas/IP.xsd ExtensionMETS '
-                                                'schemas/ExtensionMETS.xsd '
-                                                'http://www.w3.org/1999/xlink '
-                                                'schemas/xlink.xsd',
+                          'xsi:schemaLocation': 'http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd',
                           'xmlns:mets': 'http://www.loc.gov/METS/',
                           'xmlns:ext': 'ExtensionMETS',
                           'xmlns:xlink': 'http://www.w3.org/1999/xlink',
