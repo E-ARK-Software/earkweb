@@ -333,6 +333,20 @@ class AIPCreation(Task, StatusValidation):
             my_mets.add_file(['submission'], rel_path_mets, admids)
             my_mets.root.set('TYPE', 'AIP')
 
+            # path length
+            subdir_length = len(package_in_submission_dir)
+
+            # retrieve files in /Content
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Content'):
+                for filename in filenames:
+                    u_directory = unicode(directory[subdir_length:], 'utf-8')
+                    u_filename = unicode(filename, 'utf-8')
+                    my_mets.add_file(['submission'], u_directory, u_filename)
+
+            # retrieve files in /Metadata
+            # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
+
+
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:
                 output_file.write(my_mets.to_string())
