@@ -6,6 +6,7 @@ from earkcore.metadata.XmlHelper import q, XSI_NS
 from earkcore.utils.datetimeutils import get_file_ctime_iso_date_str as iso_date
 from earkcore.fixity.ChecksumFile import checksum
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.filesystem import fsinfo
 
 METS_NS = 'http://www.loc.gov/METS/'
 XLINK_NS = 'http://www.w3.org/1999/xlink'
@@ -28,6 +29,8 @@ class Mets:
         @param      f: Path to optional METS template file
         @type       wd: string
         @param      wd: Working directory (relative paths)
+        @type       alg: earkcore.fixity.ChecksumAlgorithm
+        @param      alg: Checksum algorighm
         """
         if f is None:
             self.root = M.mets(
@@ -68,7 +71,9 @@ class Mets:
         self.root.amdSec.addprevious(
             M.dmdSec(
                 {'ID': gen_id},
-                M.mdRef({'MDTYPE': md_type}, self.xlink(file_path))
+                M.mdRef({'MDTYPE': md_type, 'CREATED': iso_date(file_path, wd=self.working_directory),
+                 'CHECKSUM': checksum(file_path, wd=self.working_directory, alg=self.checksum_algorithm),
+                 'CHECKSUMTYPE': ChecksumAlgorithm.str(self.checksum_algorithm), "SIZE": str(fsinfo.fsize(file_path, self.working_directory))}, self.xlink(file_path))
             )
         )
         return gen_id
@@ -142,7 +147,7 @@ class Mets:
             M.file(
                 {'ID': self.generate_id(), 'ADMID': string.join(adm_ids), 'CREATED': iso_date(file_path, wd=self.working_directory),
                  'CHECKSUM': checksum(file_path, wd=self.working_directory, alg=self.checksum_algorithm),
-                 'CHECKSUMTYPE': ChecksumAlgorithm.str(self.checksum_algorithm)},
+                 'CHECKSUMTYPE': ChecksumAlgorithm.str(self.checksum_algorithm), "SIZE": str(fsinfo.fsize(file_path, self.working_directory))},
                 M.FLocat(self.xlink(file_path))
             )
         )
@@ -191,6 +196,10 @@ class Mets:
     def __str__(self):
         return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
+    def to_string(self):
+        return self.__str__()
+
+
 
 def main():
     with open('resources/METS_skeleton.xml', 'r') as mets_file:
@@ -205,6 +214,7 @@ def main():
     my_mets.add_file(['submission'], 'file://./METS.xml', admids)
     my_mets.root.set('TYPE', 'AIP')
     print my_mets
+
     #print my_mets.validate()
 
 if __name__ == "__main__":

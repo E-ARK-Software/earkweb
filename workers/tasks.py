@@ -3,6 +3,7 @@ import time, os
 from sip2aip.models import MyModel
 from time import sleep
 from config import params
+from config.config import root_dir
 from celery import current_task
 from earkcore.utils import fileutils
 from earkcore.models import InformationPackage
@@ -18,6 +19,8 @@ import traceback
 from workers.statusvalidation import StatusValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
+from earkcore.metadata.mets.MetsManipulate import Mets
+from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 import shutil
 
 class SimulateLongRunning(Task):
@@ -282,11 +285,11 @@ class SIPValidation(Task, StatusValidation):
             logger.error(str(tb))
             return TaskResult(False, log, ['An error occurred: '+str(tb)])
 
-class AIPStructure(Task, StatusValidation):
+class AIPCreation(Task, StatusValidation):
 
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        SIP Structure Validation
+        AIP Structure creation
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -312,13 +315,27 @@ class AIPStructure(Task, StatusValidation):
         try:
 
             ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
-            src = os.path.join(ip_work_dir, ip.packagename)
-            dest = os.path.join(ip_work_dir, "submission", ip.packagename)
-            shutil.move(src, dst)
+            package_dir = os.path.join(ip_work_dir, ip.packagename)
+            submission_dir = os.path.join(ip_work_dir, "submission")
+            package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
+            shutil.move(package_dir, package_in_submission_dir)
 
             # create root mets
+            with open(root_dir+'/earkresources/METS_skeleton.xml', 'r') as mets_file:
+                my_mets = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
+            #my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
+            admids = []
+            #admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+            #admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+            #admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+            my_mets.add_file_grp(['submission'])
+            rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
+            my_mets.add_file(['submission'], rel_path_mets, admids)
+            my_mets.root.set('TYPE', 'AIP')
 
-
+            path_mets = os.path.join(submission_dir, "METS.xml")
+            with open(path_mets, 'w') as output_file:
+                output_file.write(my_mets.to_string())
 
             valid = True
 

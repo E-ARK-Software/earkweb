@@ -23,7 +23,7 @@
     		<td>Status</td>
     		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
     	</tr>
-		{% if ip.statusprocess >= 300 %}
+		{% if ip.statusprocess >= 300 or ip.statusprocess == -1 %}
 		<tr class="row1">
 			<td>Working area path</td>
 			<td><a href="{% url 'sip2aip:working_area' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
