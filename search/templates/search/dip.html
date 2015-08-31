@@ -13,13 +13,16 @@
 
 {% block content %}
 
-<h1>{{ dip.name }}</h1>
+<h1>DIP creation process: {{ dip.name }}</h1>
 
 <form action="{% url 'search:acquire_aips' dip.name %}" method="post">
     {% csrf_token %}
+    <p>Selected AIPs:</p>
+    <ul>
     {% for aip in dip.aips.all %}
-        <p><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a></p>
+        <li><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a></li>
     {% endfor %}
+    </ul>
     <input type="submit" value="acquire AIPs" />
 </form>
 <br>
