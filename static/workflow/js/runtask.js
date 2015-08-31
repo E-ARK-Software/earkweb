@@ -4,7 +4,7 @@ $('#apply-task').click( function() {
    window.console.log("Send task application request for ip " +
         $("#id_ips option:selected").text() + ", selected action: " + $("#id_wfs option:selected").text());
    $.ajax({
-    url: "/earkweb/sip2aip/apply_task/",
+    url: "/earkweb/workflow/apply_task/",
     method: "POST",
     async: true,
     data: {'selected_ip': $( "#id_ips" ).val(),'selected_action': $( "#id_wfs" ).val()},
@@ -30,7 +30,7 @@ $('#apply-workflow').click( function() {
    window.console.log("Send task application request for ip " +
         $("#id_ips option:selected").text() + ", selected action: " + $("#id_wiref option:selected").text());
    $.ajax({
-    url: "/earkweb/sip2aip/apply_workflow/",
+    url: "/earkweb/workflow/apply_workflow/",
     method: "POST",
     async: true,
     data: {'selected_ip': $( "#id_ips" ).val(),'selected_action': $( "#id_wiref" ).val()},

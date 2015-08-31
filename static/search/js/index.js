@@ -51,6 +51,9 @@ function appendNewTextNode(parentElm, textContent) {
  * hierarchical result list is sorted and created.  
  */ 
 $(document).ready(function() {
+
+    $('[data-toggle="tooltip"]').tooltip();
+
     function block_form() {
         $("#loading").show();
         $('input').attr('disabled', 'disabled');

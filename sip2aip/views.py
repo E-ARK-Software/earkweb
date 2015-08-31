@@ -131,6 +131,37 @@ def progress(request):
 
 @login_required
 @csrf_exempt
+def apply_workflow(request):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        print "Workflow execution"
+        # selected_ip = request.POST['selected_ip']
+        # print "selected_ip: " + request.POST['selected_ip']
+        # selected_action = request.POST['selected_action']
+        # print "selected_action: " + request.POST['selected_action']
+        # if not (selected_ip and selected_action):
+        #     return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
+        # wfm = WorkflowModules.objects.get(pk=selected_action)
+        # tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
+        # if request.is_ajax():
+        #     taskClass = getattr(tasks, wfm.identifier)
+        #     print "Executing task: %s" % wfm.identifier
+        #     job = taskClass().apply_async((selected_ip, tc,), queue='default')
+        #     print "Task identifier: %s" % job.id
+        #     data = {"success": True, "id": job.id}
+        # else:
+        #     data = {"success": False, "errmsg": "not ajax"}
+        data = {"success": True, "id": "xyz", "myprop": "val"}
+    except:
+        tb = traceback.format_exc()
+        logger.error(str(tb))
+        data = {"success": False, "errmsg": "an error occurred!"}
+        return JsonResponse(data)
+    return JsonResponse(data)
+
+
+@login_required
+@csrf_exempt
 def apply_task(request):
     data = {"success": False, "errmsg": "Unknown error"}
     try:
