@@ -347,4 +347,3 @@ class AIPCreation(Task, StatusValidation):
             tb = traceback.format_exc()
             logger.error(str(tb))
             return TaskResult(False, log, ['An error occurred: '+str(tb)])
-

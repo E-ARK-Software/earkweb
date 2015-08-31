@@ -43,7 +43,7 @@
         <span id="load_text">loading...</span>
     </div>
     <div class="tree">
-        <select name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
+        DIP creation process: <select data-toggle="tooltip" title="Selected packages will be addded to the DIP creation process identified by this name" name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
         {% for dip in dips %}
             <option value="{{ dip.name }}">{{ dip.name }}</option>
         {% endfor %}
