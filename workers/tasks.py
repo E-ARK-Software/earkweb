@@ -23,6 +23,7 @@ from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
+from earkcore.utils.fileutils import increment_file_name_suffix
 
 class SimulateLongRunning(Task):
 
@@ -332,7 +333,7 @@ class AIPCreation(Task, StatusValidation):
         """
         log = []; err = []
         self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("SIPStructureValidation task %s" % current_task.request.id)
+        log.append("AIPCreation task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
 
         err = self.valid_state(ip, tc)
@@ -369,6 +370,68 @@ class AIPCreation(Task, StatusValidation):
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:
                 output_file.write(my_mets.to_string())
+
+            valid = True
+
+            ip.statusprocess = tc.success_status if valid else tc.error_status;
+            ip.save()
+            self.update_state(state='PROGRESS',meta={'process_percent': 100})
+            return TaskResult(valid, log, err)
+        except Exception, err:
+            tb = traceback.format_exc()
+            logger.error(str(tb))
+            return TaskResult(False, log, ['An error occurred: '+str(tb)])
+
+class AIPPackaging(Task, StatusValidation):
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        AIP Structure creation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        log = []; err = []
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        log.append("AIPPackaging task %s" % current_task.request.id)
+        ip = InformationPackage.objects.get(pk=pk_id)
+
+        err = self.valid_state(ip, tc)
+        if len(err) > 0:
+            return TaskResult(False, log, err)
+
+        try:
+
+            ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+            ip_storage_dir = os.path.join(params.config_path_storage, ip.uuid)
+
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
+            # append generation number to tar file; if tar file exists, the generation number is incremented
+            storage_tar_file = increment_file_name_suffix(ip_storage_dir, "tar")
+
+            tar = tarfile.open(storage_tar_file, "w:")
+
+            from os import walk
+            log.append("Packaging working directory: %s" % ip_work_dir)
+            total = sum([len(files) for (root, dirs, files) in walk(ip_work_dir)])
+            log.append("Total number of files in working directory %d" % total)
+            i = 0; perc = 0
+            for subdir, dirs, files in os.walk(ip_work_dir):
+                for file in files:
+                    entry = os.path.join(subdir, file)
+                    tar.add(entry)
+                    if i % 10 == 0:
+                        perc = (i*100)/total
+                        self.update_state(state='PROGRESS',meta={'process_percent': perc})
+                    i += 1
+            tar.close()
+            log.append("Package stored: %s" % storage_tar_file)
 
             valid = True
 
