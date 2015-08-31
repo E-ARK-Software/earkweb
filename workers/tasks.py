@@ -349,6 +349,8 @@ class AIPCreation(Task, StatusValidation):
                     u_filename = unicode(filename, 'utf-8')
                     my_mets.add_file(['submission'], u_directory, u_filename)
 
+            #md_type_list = ['ead', 'eac', 'premis', 'mets']
+
             # retrieve files in /Metadata
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
                 for filename in filenames:
@@ -370,10 +372,10 @@ class AIPCreation(Task, StatusValidation):
                         # TODO: define default - if it exists? (how to handle unknown .xml files)
                         # extract the name of the root tag and use it to identify metadata type
                         #xml_tag = MetaIdentification.MetaIdentification(u_directory + u_filename)
-                        #if xml_tag == 'ead' or 'eac':
+                        #if xml_tag.lower() in md_type_list:
                             # see above
                         #    pass
-                        #elif xml_tag != 'ead' and 'eac':
+                        #elif xml_tag.lower() not in md_type_list:
                             # custom metadata format?
                         #    pass
                         break
