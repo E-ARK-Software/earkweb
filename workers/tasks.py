@@ -22,6 +22,7 @@ from earkcore.metadata.mets.ParsedMets import ParsedMets
 from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 import shutil
+#from earkcore.metadata.identification import MetaIdentification
 
 class SimulateLongRunning(Task):
 
@@ -338,8 +339,6 @@ class AIPCreation(Task, StatusValidation):
             for item in mets_attributes.items():
                 my_mets.root.set(item[0], item[1])
 
-            #my_mets.root.set('TYPE', 'AIP')
-
             # path length
             subdir_length = len(package_in_submission_dir)
 
@@ -357,15 +356,26 @@ class AIPCreation(Task, StatusValidation):
                     u_filename = unicode(filename, 'utf-8')
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
-                    if (u_filename[:3].lower() or u_filename[-3:]) == 'ead':
+                    if (u_filename[:3].lower()  == 'ead' or 'eac') or (u_filename[-7:] == 'ead.xml' or 'eac.xml'):
+                        # descriptive metadata
                         break
-                    elif (u_filename[:3].lower() or u_filename[-3]) == 'eac':
-                        break
-                    elif (u_filename[:6].lower() or u_filename[-6:]) == 'premis':
+                    elif (u_filename[:6].lower() == 'premis' or u_filename[-10:] == 'premis.xml'):
+                        # techical metadata
                         # my_mets.add_tech_md(u_directory, admids)
                         break
+                    elif u_filename[-4] == '.xsd':
+                        # schema file
+                        break
                     elif u_filename:
-                        # TODO: define default - if it exists?
+                        # TODO: define default - if it exists? (how to handle unknown .xml files)
+                        # extract the name of the root tag and use it to identify metadata type
+                        #xml_tag = MetaIdentification.MetaIdentification(u_directory + u_filename)
+                        #if xml_tag == 'ead' or 'eac':
+                            # see above
+                        #    pass
+                        #elif xml_tag != 'ead' and 'eac':
+                            # custom metadata format?
+                        #    pass
                         break
 
             path_mets = os.path.join(submission_dir, "METS.xml")
