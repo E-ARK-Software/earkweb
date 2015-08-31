@@ -332,12 +332,13 @@ class AIPCreation(Task, StatusValidation):
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
             my_mets.add_file(['submission'], rel_path_mets, admids)
 
-            # retrieve METS header attributes
-            mets_header_attributes = params.mets_header_attributes
-
-            my_mets.root.set('TYPE', 'AIP')
             # TODO: set header with list of attributes
+            # retrieve METS root tag attributes
+            mets_attributes = params.mets_attributes
+            for item in mets_attributes.items():
+                my_mets.root.set(item[0], item[1])
 
+            #my_mets.root.set('TYPE', 'AIP')
 
             # path length
             subdir_length = len(package_in_submission_dir)
@@ -354,17 +355,18 @@ class AIPCreation(Task, StatusValidation):
                 for filename in filenames:
                     u_directory = unicode(directory[subdir_length:], 'utf-8')
                     u_filename = unicode(filename, 'utf-8')
-                    # TODO: add to metadata sections
-                    if u_filename[:3].lower() == 'ead':
+                    # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
+                    # TODO: different filegrp for schemas?
+                    if (u_filename[:3].lower() or u_filename[-3:]) == 'ead':
                         break
-                    elif u_filename[:3].lower() == 'eac':
+                    elif (u_filename[:3].lower() or u_filename[-3]) == 'eac':
                         break
-                    elif u_filename[:6].lower() == 'premis':
+                    elif (u_filename[:6].lower() or u_filename[-6:]) == 'premis':
+                        # my_mets.add_tech_md(u_directory, admids)
                         break
                     elif u_filename:
-                        # default
+                        # TODO: define default - if it exists?
                         break
-
 
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:

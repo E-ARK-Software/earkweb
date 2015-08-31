@@ -36,13 +36,7 @@ template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
 
 # METS header params
 # TODO: retrieve from db?
-mets_header_attributes = {'OBJID': 'some identifier',
-                          'TYPE': 'AIP',
-                          'LABEL': 'label goes here',
-                          'PROFILE': 'profile goes here',
-                          'ID': ip.uui,
-                          'xsi:schemaLocation': 'http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd',
-                          'xmlns:mets': 'http://www.loc.gov/METS/',
-                          'xmlns:ext': 'ExtensionMETS',
-                          'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-                          'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+mets_attributes = {'OBJID': 'some identifier',
+                    'TYPE': 'AIP',
+                    'LABEL': 'label goes here',
+                    'ID': '123'}
