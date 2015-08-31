@@ -21,6 +21,7 @@ from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
 from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
 
 class SimulateLongRunning(Task):
@@ -69,15 +70,27 @@ class Reset(Task):
         """
         log = []
         err = []
+        log.append("ResetTask task %s" % current_task.request.id)
         self.update_state(state='PROGRESS',meta={'process_percent': 50})
 
-        log.append("ResetTask task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
+
+        filename, file_ext = os.path.splitext(ip.path)
+        packagename = os.path.basename(filename)
+
+        temporary_working_dir = os.path.join(params.config_path_work, packagename)
+        if packagename != "" and os.path.exists(temporary_working_dir):
+            log.append("Temporary package directory removed from working directory: "+temporary_working_dir)
+            shutil.rmtree(temporary_working_dir)
+
         ip.statusprocess = tc.success_status
         log.append("Setting statusprocess to 0")
         ip.uuid = ""
         log.append("Setting uuid to empty string")
+        ip.packagename = ""
+        log.append("Setting packagename to empty string")
         ip.save()
+
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
         return TaskResult(True, log, err)
 
@@ -145,6 +158,26 @@ class SIPDeliveryValidation(Task):
         ip.packagename = os.path.basename(filename)
         schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
         package_file = ip.path
+
+
+
+        # temporary working directory identified by package name
+        temporary_working_dir = os.path.join(params.config_path_work, ip.packagename)
+        if os.path.exists(temporary_working_dir):
+            err.append("Temporary directory with the same package name already exists in working directory: "+temporary_working_dir)
+            return TaskResult(False, log, err)
+        os.mkdir(temporary_working_dir)
+
+        # create minimal premis file to record initial actions
+        # with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
+        #     my_premis = Premis(premis_file)
+        # my_premis.add_object(os.path.basename(ip.path))
+        # my_premis.add_agent('earkweb')
+        # my_premis.add_event('SIP Delivery Validation', 'earkweb')
+        #
+        # path_premis = os.path.join(temporary_working_dir,'PREMIS.xml')
+        # with open(path_premis, 'w') as output_file:
+        #     output_file.write(my_premis.to_string())
 
         err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
         if len(err) > 0:

@@ -71,6 +71,9 @@ class Premis:
     def __str__(self):
         return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
+    def to_string(self):
+        return self.__str__()
+
 
 def main():
     with open('earkresources/AIP-test/AIP-compound/aip-metadata/PREMIS.xml', 'r') as premis_file:
