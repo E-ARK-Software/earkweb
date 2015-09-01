@@ -13,8 +13,6 @@ from earkcore.xml.deliveryvalidation import DeliveryValidation
 from taskresult import TaskResult
 from earkcore.packaging.extraction import Extraction
 import tarfile
-import logging
-logger = logging.getLogger(__name__)
 import traceback
 from workers.statusvalidation import StatusValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
@@ -24,6 +22,8 @@ from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
 from earkcore.utils.fileutils import increment_file_name_suffix
+from tasklogger import TaskLogger
+from os import walk
 
 class SimulateLongRunning(Task):
 
@@ -69,9 +69,8 @@ class Reset(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []
-        err = []
-        log.append("ResetTask task %s" % current_task.request.id)
+        tl = TaskLogger(None)
+        tl.addinfo("ResetTask task %s" % current_task.request.id)
         self.update_state(state='PROGRESS',meta={'process_percent': 50})
 
         ip = InformationPackage.objects.get(pk=pk_id)
@@ -81,45 +80,20 @@ class Reset(Task):
 
         temporary_working_dir = os.path.join(params.config_path_work, packagename)
         if packagename != "" and os.path.exists(temporary_working_dir):
-            log.append("Temporary package directory removed from working directory: "+temporary_working_dir)
+            tl.addinfo("Temporary package directory removed from working directory: "+temporary_working_dir)
             shutil.rmtree(temporary_working_dir)
-
         ip.statusprocess = tc.success_status
-        log.append("Setting statusprocess to 0")
+        tl.addinfo("Setting statusprocess to 0")
         ip.uuid = ""
-        log.append("Setting uuid to empty string")
+        tl.addinfo("Setting uuid to empty string")
+        ip.identifier = ""
+        tl.addinfo("Setting identifier to empty string")
         ip.packagename = ""
-        log.append("Setting packagename to empty string")
+        tl.addinfo("Setting packagename to empty string")
         ip.save()
 
         self.update_state(state='PROGRESS',meta={'process_percent': 100})
-        return TaskResult(True, log, err)
-
-class AssignIdentifier(Task, StatusValidation):
-
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        Assign identifier
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: expected_status:100,success_status:200,error_status:290
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        log = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("AssignIdentifier task %s" % current_task.request.id)
-        ip = InformationPackage.objects.get(pk=pk_id)
-        err = self.valid_state(ip, tc)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
-        ip.statusprocess=tc.success_status
-        ip.uuid=randomutils.getUniqueID()
-        ip.save()
-        log.append("UUID %s assigned to package %s" % (ip.uuid, ip.path))
-        self.update_state(state='PROGRESS',meta={'process_percent': 100})
-        return TaskResult(True, log, err)
+        return tl.fin()
 
 class SIPDeliveryValidation(Task):
 
@@ -148,59 +122,86 @@ class SIPDeliveryValidation(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []; err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("SIPDeliveryValidation task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
-        filename, file_ext = os.path.splitext(ip.path)
-        delivery_dir = params.config_path_reception
-        delivery_file = "%s.xml" % filename
-        # package name is basename of delivery package
-        ip.packagename = os.path.basename(filename)
-        schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
-        package_file = ip.path
-
-
-
-        # temporary working directory identified by package name
-        temporary_working_dir = os.path.join(params.config_path_work, ip.packagename)
-        if os.path.exists(temporary_working_dir):
-            err.append("Temporary directory with the same package name already exists in working directory: "+temporary_working_dir)
-            return TaskResult(False, log, err)
-        os.mkdir(temporary_working_dir)
-
-        # create minimal premis file to record initial actions
-        # with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
-        #     my_premis = Premis(premis_file)
-        # my_premis.add_object(os.path.basename(ip.path))
-        # my_premis.add_agent('earkweb')
-        # my_premis.add_event('SIP Delivery Validation', 'earkweb')
-        #
-        # path_premis = os.path.join(temporary_working_dir,'PREMIS.xml')
-        # with open(path_premis, 'w') as output_file:
-        #     output_file.write(my_premis.to_string())
-
-        err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
-
+        if not ip.uuid:
+            ip.uuid = randomutils.getUniqueID()
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        # create working directory
+        if not os.path.exists(ip_work_dir):
+            os.mkdir(ip_work_dir)
+        tl = TaskLogger(task_log_file)
+        tl.addinfo(("SIPDeliveryValidation task %s" % current_task.request.id))
+        tl.addinfo(("New UUID assigned: %s" % ip.uuid))
         try:
+
+            self.update_state(state='PROGRESS',meta={'process_percent': 50})
+            filename, file_ext = os.path.splitext(ip.path)
+            delivery_dir = params.config_path_reception
+            delivery_file = "%s.xml" % filename
+            # package name is basename of delivery package
+            ip.packagename = os.path.basename(filename)
+            schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
+            package_file = ip.path
+
+            # create minimal premis file to record initial actions
+            # with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
+            #     my_premis = Premis(premis_file)
+            # my_premis.add_object(os.path.basename(ip.path))
+            # my_premis.add_agent('earkweb')
+            # my_premis.add_event('SIP Delivery Validation', 'earkweb')
+            #
+            # path_premis = os.path.join(temporary_working_dir,'PREMIS.xml')
+            # with open(path_premis, 'w') as output_file:
+            #     output_file.write(my_premis.to_string())
+
+            tl.err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
+            if len(tl.err) > 0:
+                return tl.fin()
+
             sdv = DeliveryValidation()
             validation_result = sdv.validate_delivery(delivery_dir, delivery_file, schema_file, package_file)
-            log = log + validation_result.log
-            err = err + validation_result.err
-            log.append("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-            logger.info(str(validation_result))
+            tl.log = tl.log + validation_result.log
+            tl.err = tl.err + validation_result.err
+            tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
             ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status;
             ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            return TaskResult(validation_result.valid, log, err)
+            return tl.fin()
         except Exception, err:
             tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, [], ['An error occurred: '+str(tb)])
+            tl.adderr("An error occurred: %s" % str(tb))
+            return tl.fin()
 
-class ExtractTar(Task):
+class IdentifierAssignment(Task, StatusValidation):
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        Assign identifier
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:100,success_status:200,error_status:290
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip = InformationPackage.objects.get(pk=pk_id)
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        tl = TaskLogger(task_log_file)
+        tl.addinfo("AssignIdentifier task %s" % current_task.request.id)
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        ip.statusprocess=tc.success_status
+        ip.identifier=randomutils.getUniqueID()
+        ip.save()
+        tl.addinfo("Identifier %s assigned to package %s" % (ip.identifier, ip.path))
+        self.update_state(state='PROGRESS',meta={'process_percent': 100})
+        return tl.fin()
+
+class SIPExtraction(Task):
 
     def __init__(self):
         self.ignore_result = False
@@ -212,8 +213,6 @@ class ExtractTar(Task):
         if (ip.uuid is None or ""):
             err.append("UUID missing")
         target_dir = os.path.join(params.config_path_work, ip.uuid)
-        if (os.path.exists(target_dir)):
-            err.append("Directory already exists in working area")
         return err
 
     def run(self, pk_id, tc, *args, **kwargs):
@@ -226,17 +225,16 @@ class ExtractTar(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []
-        err = []
         ip = InformationPackage.objects.get(pk=pk_id)
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        tl = TaskLogger(task_log_file)
+        tl.addinfo(("AssignIdentifier task %s" % current_task.request.id))
         try:
-            log.append("ExtractTar task %s" % current_task.request.id)
-            logger.info("ExtractTar task %s" % current_task.request.id)
-            err = self.valid_state(ip, tc)
-            if len(err) > 0:
-                logger.error("Errors: "+(str(err)))
-                return TaskResult(False, log, err)
-            err = self.valid_state(ip, tc)
+            tl.addinfo(("ExtractTar task %s" % current_task.request.id))
+            tl.err = self.valid_state(ip, tc)
+            if len(tl.err) > 0:
+                return tl.fin()
             target_dir = os.path.join(params.config_path_work, ip.uuid)
             fileutils.mkdir_p(target_dir)
             import sys
@@ -249,22 +247,21 @@ class ExtractTar(Task):
             for member in members:
                 if i % 10 == 0:
                     perc = (i*100)/total
-                    logger.info("Status: %s" % str(perc))
                     self.update_state(state='PROGRESS',meta={'process_percent': perc})
                 tar_object.extract(member, target_dir)
+                tl.addinfo(("File extracted: %s" % member.name), display=False)
                 i += 1
             ip.statusprocess = tc.success_status
             ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            logger.info("Extraction of %d items finished" % total)
-            log.append("Extraction of %d items finished" % total)
-            return TaskResult(True, log, err)
+            tl.addinfo(("Extraction of %d items finished" % total))
+            return tl.fin()
         except Exception, err:
             ip.statusprocess = tc.error_status
             ip.save()
             tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, [], ['An error occurred: '+str(tb)])
+            tl.adderr(("An error occurred: %s" % str(tb)))
+            return tl.fin()
 
 class SIPValidation(Task, StatusValidation):
 
@@ -278,46 +275,50 @@ class SIPValidation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []; err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("SIPStructureValidation task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        tl = TaskLogger(task_log_file)
+        tl.addinfo(("SIPStructureValidation task %s" % current_task.request.id))
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
 
-        err = self.valid_state(ip, tc)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return fin()
 
         def checkFile(descr, f):
             if os.path.exists(f):
-                log.append("%s found: %s" % (descr, os.path.abspath(f)))
+                tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
             else:
-                err.append("%s missing: %s" % (descr, os.path.abspath(f)) )
+                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f)) ))
 
         try:
 
             ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
-            checkFile("SIP METS file", os.path.join(ip_work_dir, ip.packagename, "IP.xml"))
+            checkFile("SIP METS file", os.path.join(ip_work_dir, ip.packagename, "METS.xml"))
             checkFile("Content directory", os.path.join(ip_work_dir, ip.packagename, "Content"))
             checkFile("Metadata directory", os.path.join(ip_work_dir, ip.packagename, "Metadata"))
 
-            mets_file = os.path.join(ip_work_dir, ip.packagename, "IP.xml")
+            mets_file = os.path.join(ip_work_dir, ip.packagename, "METS.xml")
             parsed_mets = ParsedMets(os.path.join(ip_work_dir, ip.packagename))
             parsed_mets.load_mets(mets_file)
             mval = MetsValidation(parsed_mets)
             size_val_result = mval.validate_files_size()
-            log += size_val_result.log
-            err += size_val_result.err
+            tl.log += size_val_result.log
+            tl.err += size_val_result.err
 
-            valid = (len(err) == 0)
+            valid = (len(tl.err) == 0)
 
             ip.statusprocess = tc.success_status if valid else tc.error_status;
             ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            return TaskResult(valid, log, err)
+            return tl.fin()
         except Exception, err:
+            ip.statusprocess = tc.error_status
+            ip.save()
             tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, log, ['An error occurred: '+str(tb)])
+            tl.adderr(("An error occurred: %s" % str(tb)))
+            return tl.fin()
 
 class AIPCreation(Task, StatusValidation):
 
@@ -327,60 +328,60 @@ class AIPCreation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @param      tc: expected_status:400,success_status:500,error_status:590
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []; err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("AIPCreation task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        tl = TaskLogger(task_log_file)
+        tl.addinfo("AIPCreation task %s" % current_task.request.id)
+        self.update_state(state='PROGRESS',meta={'process_percent': 50})
 
-        err = self.valid_state(ip, tc)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
-
-        def checkFile(descr, f):
-            if os.path.exists(f):
-                log.append("%s found: %s" % (descr, os.path.abspath(f)))
-            else:
-                err.append("%s missing: %s" % (descr, os.path.abspath(f)) )
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
 
         try:
 
-            ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
             package_dir = os.path.join(ip_work_dir, ip.packagename)
             submission_dir = os.path.join(ip_work_dir, "submission")
             package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
             shutil.move(package_dir, package_in_submission_dir)
+            tl.addinfo("Package directory %s moved to submission directory %s" % (package_dir, package_in_submission_dir))
 
-            # create root mets
-            with open(root_dir+'/earkresources/METS_skeleton.xml', 'r') as mets_file:
-                my_mets = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
+            # create submission mets
+            mets_skeleton_file = root_dir+'/earkresources/METS_skeleton.xml'
+            with open(mets_skeleton_file, 'r') as mets_file:
+                submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
             #my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
             admids = []
             #admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
             #admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
             #admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
-            my_mets.add_file_grp(['submission'])
+            submission_mets_file.add_file_grp(['submission'])
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
-            my_mets.add_file(['submission'], rel_path_mets, admids)
-            my_mets.root.set('TYPE', 'AIP')
-
+            submission_mets_file.add_file(['submission'], rel_path_mets, admids)
+            submission_mets_file.root.set('TYPE', 'AIP')
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:
-                output_file.write(my_mets.to_string())
+                output_file.write(submission_mets_file.to_string())
+            tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
 
             valid = True
 
             ip.statusprocess = tc.success_status if valid else tc.error_status;
             ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            return TaskResult(valid, log, err)
+            return tl.fin()
+
         except Exception, err:
+            ip.statusprocess = tc.error_status
+            ip.save()
             tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, log, ['An error occurred: '+str(tb)])
+            tl.adderr("An error occurred: %s" % str(tb))
+            return tl.fin()
 
 class AIPPackaging(Task, StatusValidation):
 
@@ -390,23 +391,24 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @param      tc: expected_status:500,success_status:600,error_status:690
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        log = []; err = []
-        self.update_state(state='PROGRESS',meta={'process_percent': 50})
-        log.append("AIPPackaging task %s" % current_task.request.id)
         ip = InformationPackage.objects.get(pk=pk_id)
+        ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+        task_log_file = os.path.join(ip_work_dir,'sip_to_aip_processing.log')
+        tl = TaskLogger(task_log_file)
+        self.update_state(state='PROGRESS',meta={'process_percent': 1})
+        tl.addinfo("AIPPackaging task %s" % current_task.request.id)
 
-        err = self.valid_state(ip, tc)
-        if len(err) > 0:
-            return TaskResult(False, log, err)
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
 
         try:
-
-            ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
-            ip_storage_dir = os.path.join(params.config_path_storage, ip.uuid)
+            # identifier (not uuid of the working directory) is used as first part of the tar file
+            ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
 
             import sys
             reload(sys)
@@ -417,10 +419,14 @@ class AIPPackaging(Task, StatusValidation):
 
             tar = tarfile.open(storage_tar_file, "w:")
 
-            from os import walk
-            log.append("Packaging working directory: %s" % ip_work_dir)
+            tl.addinfo("Packaging working directory: %s" % ip_work_dir)
             total = sum([len(files) for (root, dirs, files) in walk(ip_work_dir)])
-            log.append("Total number of files in working directory %d" % total)
+            tl.addinfo("Total number of files in working directory %d" % total)
+
+            # log file is closed at this point because it will be included in the package,
+            # subsequent log messages can only be shown in the gui
+            tl.fin()
+
             i = 0; perc = 0
             for subdir, dirs, files in os.walk(ip_work_dir):
                 for file in files:
@@ -431,15 +437,18 @@ class AIPPackaging(Task, StatusValidation):
                         self.update_state(state='PROGRESS',meta={'process_percent': perc})
                     i += 1
             tar.close()
-            log.append("Package stored: %s" % storage_tar_file)
+            tl.log.append("Package stored: %s" % storage_tar_file)
 
-            valid = True
+            result = tl.fin()
 
-            ip.statusprocess = tc.success_status if valid else tc.error_status;
+            ip.statusprocess = tc.success_status if result.success else tc.error_status;
             ip.save()
             self.update_state(state='PROGRESS',meta={'process_percent': 100})
-            return TaskResult(valid, log, err)
+            return result
+
         except Exception, err:
+            ip.statusprocess = tc.error_status
+            ip.save()
             tb = traceback.format_exc()
-            logger.error(str(tb))
-            return TaskResult(False, log, ['An error occurred: '+str(tb)])
+            tl.adderr(("An error occurred: %s" % str(tb)))
+            return tl.fin()

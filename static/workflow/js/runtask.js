@@ -17,6 +17,7 @@ $('#apply-task').click( function() {
      } else {
         $("#error").visible();
         $("#errmsg").html(resp_data.errmsg)
+        $("#err").html(resp_data.errdetail)
      }
     }
    });
@@ -43,6 +44,7 @@ $('#apply-workflow').click( function() {
      } else {
         $("#error").visible();
         $("#errmsg").html(resp_data.errmsg)
+        $("#err").html(resp_data.errdetail)
      }
     }
    });
