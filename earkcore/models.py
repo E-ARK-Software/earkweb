@@ -1,14 +1,20 @@
 from django.db import models
 
 StatusProcess_CHOICES = (
+
     (-1, 'Undefined'),
+
     (0, 'New object'),
+
     (100, 'SIP delivery validated'),
     (190, 'SIP delivery validation failed'),
+
     (200, 'Identifier assignment'),
     (290, 'Identifier assignment failed'),
+
     (300, 'SIP extracted'),
     (390, 'SIP extraction failed'),
+
     (400, 'SIP validated'),
     (490, 'SIP validation failed'),
 
@@ -17,6 +23,9 @@ StatusProcess_CHOICES = (
 
     (600, 'AIP package created'),
     (690, 'AIP packaging failed'),
+
+    (700, 'AIP HDFS upload successful'),
+    (790, 'AIP HDFS upload failed'),
 
 )
 

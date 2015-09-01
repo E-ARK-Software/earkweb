@@ -20,8 +20,17 @@ from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
 from earkcore.utils.fileutils import increment_file_name_suffix
+from earkcore.utils.fileutils import latest_aip
 from tasklogger import TaskLogger
 from os import walk
+import requests
+import logging
+
+SERVER_PROTOCOL_PREFIX = 'http://'
+SERVER_NAME = '81.189.135.189/dm-hdfs-storage'
+SERVER_HDFS = SERVER_PROTOCOL_PREFIX + SERVER_NAME + '/hsink/fileresource'
+FILE_RESOURCE = SERVER_HDFS + '/files/{0}'
+
 
 def init_task(pk_id, task_name, task_logfile_name):
     ip = InformationPackage.objects.get(pk=pk_id)
@@ -46,6 +55,7 @@ def handle_error(ip, tc, tl):
     ip.save()
     tb = traceback.format_exc()
     tl.adderr(("An error occurred: %s" % str(tb)))
+    logging.error(tb)
     return tl.fin()
 
 
@@ -74,6 +84,7 @@ class SimulateLongRunning(Task):
             sleep(0.1)
             self.update_state(state='PROGRESS', meta={'process_percent': process_percent})
         return TaskResult(True, ['Long running process finished'], [])
+
 
 class Reset(Task):
 
@@ -115,6 +126,7 @@ class Reset(Task):
 
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         return tl.fin()
+
 
 class SIPDeliveryValidation(Task):
 
@@ -166,17 +178,17 @@ class SIPDeliveryValidation(Task):
             if len(tl.err) > 0:
                 return tl.fin()
             sdv = DeliveryValidation()
-            self.update_state(state='PROGRESS', meta={'process_percent': 50})
+            self.update_state(state='PROGRESS', meta=dict(process_percent=50))
             validation_result = sdv.validate_delivery(delivery_dir, delivery_file, schema_file, package_file)
             self.update_state(state='PROGRESS', meta={'process_percent': 90})
             tl.log = tl.log + validation_result.log
             tl.err = tl.err + validation_result.err
             tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-            ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status;
+            ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             return tl.fin()
-        except Exception, err:
+        except Exception:
             return handle_error(ip, tc, tl)
 
 
@@ -211,7 +223,7 @@ class SIPExtraction(Task):
         err = []
         if ip.statusprocess != tc.expected_status:
             err.append("Incorrect information package status (must be %d)" % tc.expected_status)
-        if (ip.uuid is None or ""):
+        if ip.uuid is None or "":
             err.append("UUID missing")
         target_dir = os.path.join(params.config_path_work, ip.uuid)
         return err
@@ -240,7 +252,7 @@ class SIPExtraction(Task):
             tar_object = tarfile.open(name=ip.path, mode='r', encoding='utf-8')
             members = tar_object.getmembers()
             total = len(members)
-            i = 0;
+            i = 0
             perc = 0
             for member in members:
                 if i % 10 == 0:
@@ -342,11 +354,11 @@ class AIPCreation(Task, StatusValidation):
                 output_file.write(submission_mets_file.to_string())
             tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
             valid = True
-            ip.statusprocess = tc.success_status if valid else tc.error_status;
+            ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             return tl.fin()
-        except Exception, err:
+        except Exception:
             return handle_error(ip, tc, tl)
 
 
@@ -381,7 +393,7 @@ class AIPPackaging(Task, StatusValidation):
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
             tl.fin()
-            i = 0;
+            i = 0
             perc = 0
             for subdir, dirs, files in os.walk(ip_work_dir):
                 for file in files:
@@ -394,9 +406,53 @@ class AIPPackaging(Task, StatusValidation):
             tar.close()
             tl.log.append("Package stored: %s" % storage_tar_file)
             result = tl.fin()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status;
+            ip.statusprocess = tc.success_status if result.success else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             return result
         except Exception, err:
+            return handle_error(ip, tc, tl)
+
+class LilyHDFSUpload(Task, StatusValidation):
+
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        AIP Structure creation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl = init_task(pk_id, "LilyHDFSUpload", None)
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        try:
+            # identifier (not uuid of the working directory) is used as first part of the tar file
+            ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
+            aip_path = latest_aip(ip_storage_dir, 'tar')
+            if aip_path is not None:
+                hdfs_path = None
+                # with open(aip_path, 'r') as f:
+                #     filename = aip_path.rpartition('/')[2]
+                #     r = requests.put(FILE_RESOURCE.format(filename), data=f)
+                #     if r.status_code == 201:
+                #         hdfs_path = r.headers['location'].rpartition('/files/')[2]
+                #     else:
+                #         hdfs_path = None
+                if hdfs_path is not None:
+                    tl.log.append("AIP %s uploaded to Lily at HDFS path: %s" % (aip_path, hdfs_path))
+                else:
+                    tl.err.append("Upload of AIP %s to Lily failed" % aip_path)
+                result = tl.fin()
+                ip.statusprocess = tc.success_status if result.success else tc.error_status
+                ip.save()
+                self.update_state(state='PROGRESS', meta={'process_percent': 100})
+                return result
+            else:
+                tl.adderr("No AIP file found for identifier: %s" % ip.identifier)
+                return tl.fin()
+        except Exception:
             return handle_error(ip, tc, tl)

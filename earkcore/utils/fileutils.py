@@ -2,6 +2,8 @@ from shutil import copytree
 import os, errno
 from earkcore.utils.stringutils import lstrip_substring
 
+MAX_TRIES = 10000
+
 def copytree(self, origin_dir, target_dir):
     """
     Copy extracted SIP to working area
@@ -38,14 +40,32 @@ def increment_file_name_suffix(abspath_basename, extension):
         @return:    incremented file path
         """
         i = 1
-        while i > 0:
+        while i < MAX_TRIES:
                 suffix = '%05d' % i
                 inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
                 if not os.path.exists(inc_file_name):
                         return inc_file_name
-                        i = -1 # break condition
                 i+=1
 
+def latest_aip(abspath_basename, extension):
+        """
+        Get file with highest suffix
+        @type       abspath_basename: string
+        @param      abspath_basename: absolute path without extension
+        @type       extension: string
+        @param      extension: file extension
+        @rtype:     string
+        @return:    incremented file path
+        """
+        i = 1
+        file_candidate = None
+        while i < MAX_TRIES:
+                suffix = '%05d' % i
+                inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
+                if not os.path.exists(inc_file_name):
+                        return file_candidate
+                file_candidate = inc_file_name
+                i+=1
 
 def main():
     print remove_protocol("file://./test")
