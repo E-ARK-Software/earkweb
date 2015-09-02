@@ -27,6 +27,7 @@ import logging
 from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from functools import partial
+from statusvalidation import check_status
 
 
 
@@ -58,32 +59,6 @@ def handle_error(ip, tc, tl):
     return tl.fin()
 
 
-class SimulateLongRunning(Task):
-    def __init__(self):
-        self.ignore_result = False
-
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        This function creates something
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:-1,error_status:-1
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        factor = 1000
-        for i in range(1, factor):
-            fn = 'Fn %s' % i
-            ln = 'Ln %s' % i
-            my_model = MyModel(fn=fn, ln=ln)
-            my_model.save()
-            process_percent = int(100 * float(i) / float(factor))
-            sleep(0.1)
-            self.update_state(state='PROGRESS', meta={'process_percent': process_percent})
-        return TaskResult(True, ['Long running process finished'], [])
-
-
 class Reset(Task):
     def __init__(self):
         self.ignore_result = False
@@ -94,7 +69,7 @@ class Reset(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:0,error_status:90
+        @param      tc: order:0,expected_status:status!=-9999,success_status:0,error_status:90
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -126,10 +101,10 @@ class Reset(Task):
 
 
 class SIPDeliveryValidation(Task):
+
     def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
         err = []
-        # if ip.statusprocess != tc.expected_status:
-        #     err.append("Incorrect information package status (must be %d)" % tc.expected_status)
+        check_status(ip.statusprocess, tc.expected_status, err)
         if not os.path.exists(delivery_file):
             err.append("Delivery file does not exist: %s" % delivery_file)
         if not os.path.exists(schema_file):
@@ -144,7 +119,7 @@ class SIPDeliveryValidation(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:0,success_status:100,error_status:190
+        @param      tc: order:1,expected_status:status==0,success_status:100,error_status:190
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -195,7 +170,7 @@ class IdentifierAssignment(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:100,success_status:200,error_status:290
+        @param      tc: order:2,expected_status:status==100,success_status:200,error_status:290
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -215,8 +190,7 @@ class IdentifierAssignment(Task, StatusValidation):
 class SIPExtraction(Task):
     def valid_state(self, ip, tc):
         err = []
-        if ip.statusprocess != tc.expected_status:
-            err.append("Incorrect information package status (must be %d)" % tc.expected_status)
+        check_status(ip.statusprocess, tc.expected_status, err)
         if ip.uuid is None or "":
             err.append("UUID missing")
         target_dir = os.path.join(params.config_path_work, ip.uuid)
@@ -228,7 +202,7 @@ class SIPExtraction(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:200,success_status:300,error_status:390
+        @param      tc: order:3,expected_status:status==200,success_status:300,error_status:390
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -272,7 +246,7 @@ class SIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:300,success_status:400,error_status:490
+        @param      tc: order:4,expected_status:status>=300~and~status<400,success_status:400,error_status:490
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -315,7 +289,7 @@ class AIPCreation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:400,success_status:500,error_status:590
+        @param      tc: order:5,expected_status:status==400,success_status:500,error_status:590
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -356,6 +330,33 @@ class AIPCreation(Task, StatusValidation):
             return handle_error(ip, tc, tl)
 
 
+class AIPValidation(Task, StatusValidation):
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        AIPValidation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: order:6,expected_status:status>=500,success_status:600,error_status:690
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPValidation", "sip_to_aip_processing")
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+
+        try:
+            tl.addinfo("AIP is validates always, this task is not implemented yet")
+            valid = True # TODO: Implement AIP validation
+            ip.statusprocess = tc.success_status if valid else tc.error_status
+            ip.save()
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            return tl.fin()
+        except Exception, err:
+            return handle_error(ip, tc, tl)
+
+
 class AIPPackaging(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
@@ -363,7 +364,7 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:500,success_status:600,error_status:690
+        @param      tc: order:7,expected_status:status>=600,success_status:700,error_status:790
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -414,7 +415,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: expected_status:-1,success_status:-1,error_status:-1
+        @param      tc: order:8,expected_status:status>=700,success_status:800,error_status:890
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -449,6 +450,8 @@ class LilyHDFSUpload(Task, StatusValidation):
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - start_time, upload_result.status_code, upload_result.hdfs_path_id))
                 result = tl.fin()
+                ip.statusprocess = tc.success_status if result.success else tc.error_status
+                ip.save()
                 return result
             else:
                 tl.adderr("No AIP file found for identifier: %s" % ip.identifier)

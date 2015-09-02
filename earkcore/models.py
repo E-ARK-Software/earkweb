@@ -21,11 +21,14 @@ StatusProcess_CHOICES = (
     (500, 'AIP created'),
     (590, 'AIP creation failed'),
 
-    (600, 'AIP package created'),
-    (690, 'AIP packaging failed'),
+    (600, 'AIP validated'),
+    (690, 'AIP validation failed'),
 
-    (700, 'AIP HDFS upload successful'),
-    (790, 'AIP HDFS upload failed'),
+    (700, 'AIP container package created'),
+    (790, 'AIP container packaging failed'),
+
+    (800, 'AIP HDFS upload successful'),
+    (890, 'AIP HDFS upload failed'),
 
 )
 
