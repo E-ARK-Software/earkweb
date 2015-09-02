@@ -23,16 +23,15 @@ from earkcore.utils.fileutils import increment_file_name_suffix
 from earkcore.utils.fileutils import latest_aip
 from tasklogger import TaskLogger
 from os import walk
-import requests
 import logging
+from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.rest.hdfsrestclient import HDFSRestClient
+from functools import partial
 
-SERVER_PROTOCOL_PREFIX = 'http://'
-SERVER_NAME = '81.189.135.189/dm-hdfs-storage'
-SERVER_HDFS = SERVER_PROTOCOL_PREFIX + SERVER_NAME + '/hsink/fileresource'
-FILE_RESOURCE = SERVER_HDFS + '/files/{0}'
 
 
 def init_task(pk_id, task_name, task_logfile_name):
+    start_time = time.time()
     ip = InformationPackage.objects.get(pk=pk_id)
     if not ip.uuid:
         ip.uuid = randomutils.getUniqueID()
@@ -47,7 +46,7 @@ def init_task(pk_id, task_name, task_logfile_name):
         os.mkdir(task_log_file_dir)
     tl = TaskLogger(task_log_file)
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
-    return ip, ip_work_dir, tl
+    return ip, ip_work_dir, tl, start_time
 
 
 def handle_error(ip, tc, tl):
@@ -60,7 +59,6 @@ def handle_error(ip, tc, tl):
 
 
 class SimulateLongRunning(Task):
-
     def __init__(self):
         self.ignore_result = False
 
@@ -87,7 +85,6 @@ class SimulateLongRunning(Task):
 
 
 class Reset(Task):
-
     def __init__(self):
         self.ignore_result = False
 
@@ -129,7 +126,6 @@ class Reset(Task):
 
 
 class SIPDeliveryValidation(Task):
-
     def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
         err = []
         # if ip.statusprocess != tc.expected_status:
@@ -152,7 +148,7 @@ class SIPDeliveryValidation(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "SIPDeliveryValidation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPDeliveryValidation", "sip_to_aip_processing")
         tl.addinfo(("New UUID assigned: %s" % ip.uuid))
         try:
             self.update_state(state='PROGRESS', meta={'process_percent': 1})
@@ -193,7 +189,6 @@ class SIPDeliveryValidation(Task):
 
 
 class IdentifierAssignment(Task, StatusValidation):
-
     def run(self, pk_id, tc, *args, **kwargs):
         """
         Assign identifier
@@ -204,7 +199,7 @@ class IdentifierAssignment(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "IdentifierAssignment", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "IdentifierAssignment", "sip_to_aip_processing")
         self.update_state(state='PROGRESS', meta={'process_percent': 1})
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
@@ -218,7 +213,6 @@ class IdentifierAssignment(Task, StatusValidation):
 
 
 class SIPExtraction(Task):
-
     def valid_state(self, ip, tc):
         err = []
         if ip.statusprocess != tc.expected_status:
@@ -238,7 +232,7 @@ class SIPExtraction(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "SIPExtraction", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPExtraction", "sip_to_aip_processing")
         try:
             tl.addinfo(("ExtractTar task %s" % current_task.request.id))
             tl.err = self.valid_state(ip, tc)
@@ -247,6 +241,7 @@ class SIPExtraction(Task):
             target_dir = os.path.join(params.config_path_work, ip.uuid)
             fileutils.mkdir_p(target_dir)
             import sys
+
             reload(sys)
             sys.setdefaultencoding('utf8')
             tar_object = tarfile.open(name=ip.path, mode='r', encoding='utf-8')
@@ -271,7 +266,6 @@ class SIPExtraction(Task):
 
 
 class SIPValidation(Task, StatusValidation):
-
     def run(self, pk_id, tc, *args, **kwargs):
         """
         SIP Structure Validation
@@ -282,7 +276,7 @@ class SIPValidation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "SIPValidation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPValidation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -292,6 +286,7 @@ class SIPValidation(Task, StatusValidation):
                 tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
             else:
                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
+
         try:
             ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
             check_file("SIP METS file", os.path.join(ip_work_dir, ip.packagename, "METS.xml"))
@@ -314,7 +309,6 @@ class SIPValidation(Task, StatusValidation):
 
 
 class AIPCreation(Task, StatusValidation):
-
     def run(self, pk_id, tc, *args, **kwargs):
         """
         AIP Structure creation
@@ -325,7 +319,7 @@ class AIPCreation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -363,7 +357,6 @@ class AIPCreation(Task, StatusValidation):
 
 
 class AIPPackaging(Task, StatusValidation):
-
     def run(self, pk_id, tc, *args, **kwargs):
         """
         AIP Structure creation
@@ -374,7 +367,7 @@ class AIPPackaging(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "AIPPackaging", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPPackaging", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -382,6 +375,7 @@ class AIPPackaging(Task, StatusValidation):
             # identifier (not uuid of the working directory) is used as first part of the tar file
             ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
             import sys
+
             reload(sys)
             sys.setdefaultencoding('utf8')
             # append generation number to tar file; if tar file exists, the generation number is incremented
@@ -394,7 +388,6 @@ class AIPPackaging(Task, StatusValidation):
             # subsequent log messages can only be shown in the gui
             tl.fin()
             i = 0
-            perc = 0
             for subdir, dirs, files in os.walk(ip_work_dir):
                 for file in files:
                     entry = os.path.join(subdir, file)
@@ -413,8 +406,8 @@ class AIPPackaging(Task, StatusValidation):
         except Exception, err:
             return handle_error(ip, tc, tl)
 
-class LilyHDFSUpload(Task, StatusValidation):
 
+class LilyHDFSUpload(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
         AIP Structure creation
@@ -425,7 +418,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl = init_task(pk_id, "LilyHDFSUpload", None)
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "LilyHDFSUpload", None)
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -433,23 +426,29 @@ class LilyHDFSUpload(Task, StatusValidation):
             # identifier (not uuid of the working directory) is used as first part of the tar file
             ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
             aip_path = latest_aip(ip_storage_dir, 'tar')
+
+            tl.addinfo("Start uploading AIP %s from local path: %s" % (ip.identifier, aip_path))
+
             if aip_path is not None:
-                hdfs_path = None
-                # with open(aip_path, 'r') as f:
-                #     filename = aip_path.rpartition('/')[2]
-                #     r = requests.put(FILE_RESOURCE.format(filename), data=f)
-                #     if r.status_code == 201:
-                #         hdfs_path = r.headers['location'].rpartition('/files/')[2]
-                #     else:
-                #         hdfs_path = None
-                if hdfs_path is not None:
-                    tl.log.append("AIP %s uploaded to Lily at HDFS path: %s" % (aip_path, hdfs_path))
-                else:
-                    tl.err.append("Upload of AIP %s to Lily failed" % aip_path)
+
+                # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
+                # method where the actual reporting about the upload progress occurs.
+                def custom_progress_reporter(task, percent):
+                    task.update_state(state='PROGRESS', meta={'process_percent': percent})
+
+                rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
+                tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
+
+                # Partial application of the custom_progress_reporter function so that the task object
+                # is known to the FileBinaryDataChunks.chunks() method.
+                partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+                hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
+                rest_resource_path = "hsink/fileresource/files/{0}"
+
+                # uncomment to test this class
+                upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
+                tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - start_time, upload_result.status_code, upload_result.hdfs_path_id))
                 result = tl.fin()
-                ip.statusprocess = tc.success_status if result.success else tc.error_status
-                ip.save()
-                self.update_state(state='PROGRESS', meta={'process_percent': 100})
                 return result
             else:
                 tl.adderr("No AIP file found for identifier: %s" % ip.identifier)
