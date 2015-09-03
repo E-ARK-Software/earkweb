@@ -41,7 +41,7 @@ class TestFormatIdentification(unittest.TestCase):
        delivery_dir = root_dir + '/earkresources/Delivery-test'
        #delivery_dir = root_dir
        vsip = FormatIdentification()
-       
+
        for subdir, dirs, files in os.walk(delivery_dir):
             for file in files:
                 #print subdir
