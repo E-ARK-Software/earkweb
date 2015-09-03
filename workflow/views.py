@@ -38,10 +38,13 @@ import urllib2
 import workers.tasks
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
+from workflow.models import Wirings
 import json
 
 from config.params import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
+
+
 
 import logging
 
@@ -63,7 +66,6 @@ def workflow_language(request):
     })
     return HttpResponse(template.render(context), content_type='text/plain; charset=utf8')
 
-@login_required
 def backend(request):
     """
     Backend of the wiring editor for handling POST requests.

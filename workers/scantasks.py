@@ -113,7 +113,7 @@ class WireItLanguageModules(object):
             exp = 0; sxs = 0; err = 0;
             for module_param in module_params:
                 if isinstance(module_param, InputParam):
-                    descr = "Task configuration" if module_param.descr.startswith("expected_status") else module_param.descr;
+                    descr = "Task configuration" if module_param.descr.startswith("order") else module_param.descr;
                     input_params += self.language_module_inputs_template % { 'name': module_param.name, 'descr': descr, 'type': module_param.type}
                     if module_param.name == 'tc':
                         match = re.search('order:(?P<ord>.*),expected_status:(?P<exp>.*),success_status:(?P<sxs>.*),error_status:(?P<err>.*)',module_param.descr)
