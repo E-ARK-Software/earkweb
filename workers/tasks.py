@@ -347,7 +347,7 @@ class AIPValidation(Task, StatusValidation):
             return tl.fin()
 
         try:
-            tl.addinfo("AIP is validates always, this task is not implemented yet")
+            tl.addinfo("AIP always validates, this task is not implemented yet")
             valid = True # TODO: Implement AIP validation
             ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
@@ -446,7 +446,6 @@ class LilyHDFSUpload(Task, StatusValidation):
                 hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
                 rest_resource_path = "hsink/fileresource/files/{0}"
 
-                # uncomment to test this class
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - start_time, upload_result.status_code, upload_result.hdfs_path_id))
                 result = tl.fin()
