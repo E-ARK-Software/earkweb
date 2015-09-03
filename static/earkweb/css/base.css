@@ -49,7 +49,10 @@ color: gray;
 
 
 .release {
- position: absolute;
+    position: absolute;
     bottom:0;
-    margin-left: 10px
+    margin-left: 0;
+    left:10px;
+    bottom:7px
 }
+
