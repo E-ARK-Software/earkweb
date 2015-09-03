@@ -89,7 +89,7 @@ class InformationPackageList(ListView):
 def get_directory_json(request):
     uuid = request.POST['uuid']
     package_name = os.listdir('/var/data/earkweb/work/'+uuid+'/')[0]
-    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid+'/'+package_name) })
+    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid) })
 
 @login_required
 def working_area(request, uuid):
