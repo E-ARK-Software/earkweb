@@ -26,14 +26,14 @@ class Premis:
             self.root, P.object(
                 {q(XSI_NS, 'type'): 'file'},
                 P.objectIdentifier(
-                    P.objectIdentifierType('FILEPATH'),
+                    P.objectIdentifierType('LOCAL'),
                     P.objectIdentifierValue(identifier_value)
                 ),
                 P.objectCharacteristics(
                     P.compositionLevel(0),
                     P.format(
                         P.formatRegistry(
-                            P.formatRegistryName,
+                            P.formatRegistryName(),
                             P.formatRegistryKey
                         )
                     )
@@ -42,7 +42,7 @@ class Premis:
             self.premis_successor_sections
         )
 
-    def add_event(self, identifier_value, agent):
+    def add_event(self, identifier_value, linking_agent, linking_object=None):
         sequence_insert(
             self.root, P.event(
                 P.eventIdentifier(
@@ -53,8 +53,14 @@ class Premis:
                 P.eventDateTime(datetime.utcnow().isoformat()),
                 P.linkingAgentIdentifier(
                     P.linkingAgentIdentifierType('LOCAL'),
-                    P.linkingAgentIdentifierValue(agent)
+                    P.linkingAgentIdentifierValue(linking_agent)
+                ),
+
+                P.linkingAgentIdentifier(
+                    P.linkingAgentIdentifierType('LOCAL'),
+                    P.linkingAgentIdentifierValue(linking_object)
                 )
+                if linking_object is not None else None
             ),
             self.premis_successor_sections
         )
@@ -80,8 +86,10 @@ class Premis:
 
 
 class TestTaskLogger(unittest.TestCase):
+    import os
+    test_root = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 
-    with open('../../../earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
+    with open(os.path.join(test_root,'premis/resources/PREMIS_skeleton.xml'), 'r') as premis_file:
         my_premis = Premis(premis_file)
 
     def test_log(self):
