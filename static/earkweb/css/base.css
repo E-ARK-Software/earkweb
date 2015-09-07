@@ -76,3 +76,15 @@ label {
     font-weight: bold;
     background: #CA210E;
 }
+
+.error {
+color: red;
+}
+
+.existing {
+ color: green;
+}
+
+.missing {
+ color: red;
+}

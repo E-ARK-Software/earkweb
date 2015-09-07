@@ -23,16 +23,17 @@
     <p>Selected AIPs:</p>
     <ul>
     {% for aip in dip.aips.all %}
-        <li><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a></li>
+        <li><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a> {% if aip.source_available %}<span data-toggle="tooltip" title="AIP is accessible" class="glyphicon glyphicon-ok-sign"/>{% else %}<span data-toggle="tooltip" title="AIP is NOT accessible" class="glyphicon glyphicon-question-sign"/>{% endif %}</li>
     {% endfor %}
     </ul>
-    <input type="submit" value="acquire AIPs" />
 </form>
+
 <br>
+
 <form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ uploadFileForm.as_p }}
-    <input type="submit" value="attach local AIP" />
+    <input type="submit" value="Add local AIP" />
 </form>
 
 {% endblock %}

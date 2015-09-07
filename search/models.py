@@ -1,3 +1,4 @@
+import os
 from django.db import models
 
 class AIP(models.Model):
@@ -5,6 +6,10 @@ class AIP(models.Model):
     cleanid = models.CharField(max_length=200)
     source = models.CharField(max_length=200, default="file:///null")
     date_selected = models.DateTimeField('date/time when the package was selected')
+
+    def source_available(self):
+        return os.path.exists(self.source)
+
     def __str__(self):
         return self.identifier
 

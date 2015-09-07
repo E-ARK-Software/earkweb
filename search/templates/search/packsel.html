@@ -18,17 +18,20 @@
 
 {% block content %}
 
-<h1>Open DIP creation processes</h1>
+<h1>Active AIP to DIP conversion processes</h1>
 
 <form>
     {% csrf_token %}
     {% for dip in package_list %}
         <p><a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a></p>
         <ul>
-
-        {% for package in dip.aips.all %}
-            <li>{{ package.identifier }}</li>
-        {% endfor %}
+        {% if dip.aips.all %}
+            {% for package in dip.aips.all %}
+                <li>{{ package.identifier }} </li>
+            {% endfor %}
+        {% else %}
+            <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
+        {% endif %}
         </ul>
     {% endfor %}
 </form>

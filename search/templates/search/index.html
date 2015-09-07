@@ -22,7 +22,7 @@
 {% block content %}
 
 <h1>AIP Selection</h1>
-<p>Start DIP creation process by marking packages to </p>
+<p>File-based search for AIPs which can be added to an AIP to DIP conversion process.</p>
 {# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
 <form id="select-aip-form"  class="form-horizontal" action="{% url 'search:toggle_select_package' %}" method="post">
     {% csrf_token %}
@@ -48,10 +48,16 @@
         <span id="load_text">loading...</span>
     </div>
     <div class="tree">
-        DIP creation process: <select data-toggle="tooltip" title="Selected packages will be addded to the DIP creation process identified by this name" name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
+        DIP creation process: <select data-toggle="tooltip" title="Selected packages will be added to the DIP creation process identified by this name" name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
+
         {% for dip in dips %}
-            <option value="{{ dip.name }}">{{ dip.name }}</option>
+           <option value="{{ dip.name }}"
+               {% if dip.name|urlencode == procname %}selected="selected"{% endif %}>
+               {{ dip.name }}
+           </option>
         {% endfor %}
+
+
         </select><br>
         <span id="foundlabel"></span>
         <ul>

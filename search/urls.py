@@ -1,9 +1,13 @@
 from django.conf.urls import patterns, url
+from django.views.generic import RedirectView
 
 from search import views
  
 urlpatterns= patterns('',
-    url(r'^$', views.index, name='index'),
+    url(r'^$', RedirectView.as_view(url='selection'), name='index'),
+    url(r'^selection$', RedirectView.as_view(url='selection/default'), name='index'),
+    #url(r'^search$)', views.index, name='search'),
+    url(r'^selection/(?P<procname>.*)', views.index, name='search'),
     url(r'^start$', views.start, name='start'),
     url(r'^packsel$', views.packsel, name='packsel'),
     url(r'^demosearch$', views.demosearch, name='demosearch'),
