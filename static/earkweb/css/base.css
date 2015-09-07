@@ -46,3 +46,13 @@ color: gray;
 .logininfo a:focus { color: #FFFFFF; text-decoration:underline; }
 .logininfo a:hover { color: #FFFFFF; text-decoration:underline; }
 .logininfo a:active { color: #FFFFFF; text-decoration:underline; }
+
+
+.release {
+    position: absolute;
+    bottom:0;
+    margin-left: 0;
+    left:10px;
+    bottom:7px
+}
+

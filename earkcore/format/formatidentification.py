@@ -11,49 +11,45 @@ from config.config import root_dir
 
 import unittest
 import glob, os
-from subprocess import check_output
-
-def get_puid(file):
-    out = check_output(["python", "/usr/local/bin/fido", file])
-    return out.split(",")[2]
+import subprocess
+from fido.fido import Fido
 
 class FormatIdentification():
     """
     File Format Identification
     """
-    # TODO: Dependency to PREMIS! The JHOVE output must go into the PREMIS file.
-    # TODO: Element premis:object/premis:objectCharacteristics/premis:objectCharacteristicsExtension/premis:mdSecType/premis:mdWrap/premis:xmlData/jhove:jhove
+    def __init__(self):
+        self.fid = Fido()
+        self.fid.handle_matches = self.print_matches
+        self.lastFmt = None
 
-    def _identify_file(self, object):
+    def identify_file(self, entry):
         """
         This function identifies the file format of every file that is handed over.
         """
+        self.fid.identify_file(entry)
+        return self.lastFmt
 
-
-    def find_files(self, delivery_dir):
-        """
-        This function iterates the SIP and selects files where the format should be identified.
-        """
-        for object in os.listdir(delivery_dir):
-            # TODO: "stoplist" of directories: schemas, aip-metadata...?
-            # better: recieve correct folder name (=unpacked submission) from unpacking stage
-            # this is rather a workaround!
-            if object != "schemas":
-                if os.path.isdir(os.getcwd()+'/'+delivery_dir+'/'+object+'/content/data'):
-                    os.chdir(os.getcwd()+'/'+delivery_dir+'/'+object+'/content/data')
-                    for object in os.listdir(os.getcwd()):
-                        self._identify_file(object)
-
+    def print_matches(self, fullname, matches, delta_t, matchtype=''):
+        #print "####" + fullname
+        for (f, s) in matches:
+            self.lastFmt = self.fid.get_puid(f)
 
 
 class TestFormatIdentification(unittest.TestCase):
+    def testFido(self):
+       delivery_dir = root_dir + '/earkresources/Delivery-test'
+       #delivery_dir = root_dir
+       vsip = FormatIdentification()
 
-    def testValidateXML(self):
-        delivery_dir = root_dir + '/earkresources/Delivery-test/'
-        vsip = FormatIdentification()
-        actual = vsip.find_files(delivery_dir)
-        #self.assertTrue(actual)
+       for subdir, dirs, files in os.walk(delivery_dir):
+            for file in files:
+                #print subdir
+                if subdir != "schemas":
+                    fmt = vsip.identify_file(os.path.join(subdir, file))
+                    print fmt
 
+       # self.assertTrue(actual)
 
 if __name__ == '__main__':
     unittest.main()

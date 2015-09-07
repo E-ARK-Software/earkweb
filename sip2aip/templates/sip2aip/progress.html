@@ -4,8 +4,8 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-<script type="text/javascript" src="{% static 'sip2aip/js/progress.js' %}"></script>
-<link rel="stylesheet" href="{% static 'sip2aip/css/progress.css' %}" type="text/css" />
+<script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+<link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
 {% if task_id %}
 <!--script type="text/javascript">pollstate('{{ task_id }}');</script-->
 {% endif %}
@@ -42,7 +42,7 @@
     <h5>Error log</h5>
     <pre id="err"></pre>
 
-    <script type="text/javascript" src="{% static 'sip2aip/js/runtask.js' %}"></script>
+    <script type="text/javascript" src="{% static 'workflow/js/runtask.js' %}"></script>
 
  </div>
 {% endblock %}

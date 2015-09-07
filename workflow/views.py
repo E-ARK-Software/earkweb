@@ -38,10 +38,15 @@ import urllib2
 import workers.tasks
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
+from workflow.models import Wirings
 import json
 
 from config.params import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
+
+
+
+import logging
 
 @login_required
 def index(request):
@@ -61,7 +66,6 @@ def workflow_language(request):
     })
     return HttpResponse(template.render(context), content_type='text/plain; charset=utf8')
 
-@login_required
 def backend(request):
     """
     Backend of the wiring editor for handling POST requests.
@@ -73,7 +77,7 @@ def backend(request):
 
         try:
             data = json.loads(str(request.body))
-            logger.debug("Request (JSON):\n" + json.dumps(data, indent=2))
+            logging.debug("Request (JSON):\n" + json.dumps(data, indent=2))
             if data['method'] == "listWirings":
                 wirings = Wirings.objects.all()
                 wiringJsons = []
@@ -84,7 +88,7 @@ def backend(request):
                                        % { 'name': wiring.name, 'working': (wiring.working).replace('"', '\\"'), 'language': wiring.language, 'id': wiring.id })
                 jsonStr = """{"id": 1, "result": [ %(modules)s ], "error": null }""" % { 'modules': (",".join(wiringJsons)) }
                 jsonObj = json.loads(jsonStr)
-                logger.debug("Response (JSON):\n" + json.dumps(jsonObj, indent=2))
+                logging.debug("Response (JSON):\n" + json.dumps(jsonObj, indent=2))
                 return HttpResponse(jsonStr)
             if data['method'] == "saveWiring":
                 name = data['params']['name']
@@ -94,10 +98,10 @@ def backend(request):
                 wiring.save()
             if data['method'] == "deleteWiring":
                 name = data['params']['name']
-                logger.debug("Delete wiring: %s" % name)
+                logging.debug("Delete wiring: %s" % name)
                 u = Wirings.objects.get(name=name).delete()
         except Exception:
-            logger.error('test', exc_info=True)
+            logging.error('test', exc_info=True)
         return HttpResponse(status=200)
     else:
         pass
@@ -136,7 +140,7 @@ def apply_workflow(request):
         data = {"success": True, "id": "xyz", "myprop": "val"}
     except:
         tb = traceback.format_exc()
-        logger.error(str(tb))
+        logging.error(str(tb))
         data = {"success": False, "errmsg": "an error occurred!"}
         return JsonResponse(data)
     return JsonResponse(data)
@@ -156,17 +160,22 @@ def apply_task(request):
         wfm = WorkflowModules.objects.get(pk=selected_action)
         tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
         if request.is_ajax():
-            taskClass = getattr(tasks, wfm.identifier)
-            print "Executing task: %s" % wfm.identifier
-            job = taskClass().apply_async((selected_ip, tc,), queue='default')
-            print "Task identifier: %s" % job.id
-            data = {"success": True, "id": job.id}
+            try:
+                taskClass = getattr(tasks, wfm.identifier)
+                print "Executing task: %s" % wfm.identifier
+                job = taskClass().apply_async((selected_ip, tc,), queue='default')
+                print "Task identifier: %s" % job.id
+                data = {"success": True, "id": job.id}
+            except AttributeError, err:
+                errdetail = """The workflow module '%s' does not exist.
+It might be necessary to run 'python ./workers/scantasks.py' to register new or renamed tasks.""" % wfm.identifier
+                data = {"success": False, "errmsg": "Workflow module '%s' does not exist" % wfm.identifier, "errdetail": errdetail}
         else:
             data = {"success": False, "errmsg": "not ajax"}
-    except:
+    except Exception, err:
         tb = traceback.format_exc()
-        logger.error(str(tb))
-        data = {"success": False, "errmsg": "an error occurred!"}
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
         return JsonResponse(data)
     return JsonResponse(data)
 
@@ -192,7 +201,7 @@ def poll_state(request):
     except Exception, err:
         data = {"success": False, "errmsg": err.message}
         tb = traceback.format_exc()
-        logger.error(str(tb))
+        logging.error(str(tb))
 
     return JsonResponse(data)
 

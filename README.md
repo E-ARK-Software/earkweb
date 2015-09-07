@@ -12,7 +12,7 @@ E-ARK integrated prototype web application
 
 #### fido
 
-[fido](https://github.com/openpreserve/fido) 
+[fido](https://github.com/openpreserve/fido)
 
 Install fido:
 
@@ -20,6 +20,10 @@ Install fido:
     tar -xzvf 1.3.2-81.tar.gz
     cd fido-1.3.2-81
     sudo python setup.py install
+
+Update filetype signatures:
+    cd fido
+    python update_signatures.py
 
 ## Set up the development environment
 

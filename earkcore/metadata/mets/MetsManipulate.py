@@ -2,7 +2,7 @@ from lxml import etree, objectify
 import os
 import string
 import uuid
-from earkcore.metadata.XmlHelper import q, XSI_NS
+from earkcore.metadata.XmlHelper import sequence_insert, q, XSI_NS
 from earkcore.utils.datetimeutils import get_file_ctime_iso_date_str as iso_date
 from earkcore.fixity.ChecksumFile import checksum
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -79,20 +79,13 @@ class Mets:
         return gen_id
 
     def __insert_into_amd_sec(self, md_node, successor_sections, md_type, file_path, adm_id):
-        insert_function = self.root.amdSec.append
-        for section in successor_sections:
-            path = objectify.ObjectPath('amdSec.' + section)
-            if path.hasattr(self.root.amdSec):
-                insert_function = self.root.amdSec[section].addprevious
-                break
         if adm_id == '':
             adm_id = self.generate_id()
-        insert_function(
-            md_node(
-                {'ID': adm_id},
-                M.mdRef({'MDTYPE': md_type}, self.xlink(file_path))
-            )
+        child = md_node(
+            {'ID': adm_id},
+            M.mdRef({'MDTYPE': md_type}, self.xlink(file_path))
         )
+        sequence_insert(self.root.amdSec, child, successor_sections)
         return adm_id
 
     def add_tech_md(self, file_path, adm_id=''):

@@ -4,8 +4,9 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-<script type="text/javascript" src="{% static 'sip2aip/js/progress.js' %}"></script>
-<link rel="stylesheet" href="{% static 'sip2aip/css/progress.css' %}" type="text/css" />
+<script type="text/javascript" src="{% static 'sip2aip/js/detail.js' %}"></script>
+<script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+<link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
 {% endblock %}
 
 {% block content %}
@@ -46,7 +47,7 @@
     <script type="text/javascript">var current_ip="{{ ip.id }}";</script>
     <!-- current package is set by selecting the corresponding option in a hidden select box (reusing progress.html functionality) -->
 	<script type="text/javascript">$("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>
-	<script type="text/javascript" src="{% static 'sip2aip/js/runtask.js' %}"></script>
+	<script type="text/javascript" src="{% static 'workflow/js/runtask.js' %}"></script>
 
     </div>
 
