@@ -4,20 +4,25 @@
 
 {% block extra_head %}
 
-<script type="text/javascript" src="{% static 'earkweb/underscorejs/underscore-min.js' %}"></script>
+    <!-- AIP to DIP javascript -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
 
-<script type="text/javascript" src="{% static 'search/js/index.js' %}"></script>
-<link rel="stylesheet" href="{% static 'search/css/index.css' %}" type="text/css" />
+    <script type="text/javascript" src="{% static 'earkweb/underscorejs/underscore-min.js' %}"></script>
 
-<script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
-<link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
-<link rel="stylesheet" href="{% static 'earkweb/loadxml/XMLDisplay.css' %}" type="text/css" />
-<script type="text/javascript" src="{% static 'earkweb/loadxml/XMLDisplay.js' %}"></script>
+    <script type="text/javascript" src="{% static 'search/js/index.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'search/css/index.css' %}" type="text/css" />
+
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'earkweb/loadxml/XMLDisplay.css' %}" type="text/css" />
+    <script type="text/javascript" src="{% static 'earkweb/loadxml/XMLDisplay.js' %}"></script>
    
 {% endblock %}
 
 {% block content %}
 
+<h1>AIP Selection</h1>
+<p>Start DIP creation process by marking packages to </p>
 {# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
 <form id="select-aip-form"  class="form-horizontal" action="{% url 'search:toggle_select_package' %}" method="post">
     {% csrf_token %}

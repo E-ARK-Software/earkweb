@@ -49,36 +49,45 @@
               <a class="navbar-brand" href="/earkweb/"><i class="icon-home icon-white"> </i> E-ARK Integrated Prototype</a>
             </div>
             <div class="collapse navbar-collapse navbar-ex1-collapse">
+
+
+
                 <ul class="nav navbar-nav">
+
+                {% if user.is_authenticated %}
+
                 {% if user.is_active and user.is_staff %}
                 <li class="menu-item "><a href="/earkweb/admin">Administration</a></li>
                 {% endif %}
 
-                <li class="menu-item dropdown"><a href="/sip2aip" class="dropdown-toggle" data-toggle="dropdown">SIP to AIP <b class="caret"></b></a>
+                <li id="sip2aip" class="menu-item dropdown"><a href="/sip2aip" class="dropdown-toggle" data-toggle="dropdown">SIP to AIP <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li class="menu-item"><a href="/earkweb/sip2aip/">Information Packages</a></li>
                     </ul>
                 </li>
 
-                <li class="menu-item dropdown"><a href="/search" class="dropdown-toggle" data-toggle="dropdown">AIP to DIP <b class="caret"></b></a>
+                <li id="aip2dip" class="menu-item dropdown activemenu"><a href="/search" class="dropdown-toggle" data-toggle="dropdown">AIP to DIP <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li class="menu-item"><a href="/earkweb/search">File-based package search</a></li>
-                        <li class="menu-item"><a href="/earkweb/search/packsel">Current package selection</a></li>
+                        <li class="menu-item"><a href="/earkweb/search/start">Start new process</a></li>
+                        <li class="menu-item"><a href="/earkweb/search/packsel">Open DIP creation processes</a></li>
+                        <li class="menu-item"><a href="/earkweb/search">AIP Selection</a></li>
                     </ul>
                 </li>
 
-                <li class="menu-item dropdown"><a href="/earkweb/workflow" class="dropdown-toggle" data-toggle="dropdown">Workflow <b class="caret"></b></a>
+                <li id="workflow" class="menu-item dropdown"><a href="/earkweb/workflow" class="dropdown-toggle" data-toggle="dropdown">Workflow <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li class="menu-item"><a href="/earkweb/workflow">Workflow editor</a></li>
                         <li class="menu-item"><a href="/earkweb/workflow/execution">Task/Workflow execution</a></li>
                     </ul>
                 </li>
 
-                <li class="menu-item dropdown"><a href="/earkweb/search/demosearch" class="dropdown-toggle" data-toggle="dropdown">Public search <b class="caret"></b></a>
+                {% endif %}
+
+                <li id="pubsearch" class="menu-item dropdown"><a href="/earkweb/public" class="dropdown-toggle" data-toggle="dropdown">Public search <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li class="menu-item"><a href="/earkweb/search/demosearch/govdocs">Govdocs Corpus File Search</a></li>
-                        <li class="menu-item"><a href="/earkweb/search/demosearch/news">News Corpus File Search</a></li>
-                         <li class="menu-item"><a href="/earkweb/search/demosearch/package">Package File Search</a></li>
+                        <!--li class="menu-item"><a href="/earkweb/search/demosearch/govdocs">Govdocs Corpus File Search</a></li-->
+                        <!--li class="menu-item"><a href="/earkweb/search/demosearch/news">News Corpus File Search</a></li-->
+                        <li class="menu-item"><a href="/earkweb/public">Package File Search</a></li>
                     </ul>
                 </li>
 

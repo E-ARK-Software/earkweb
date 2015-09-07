@@ -3,25 +3,33 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-    
+
+    <!-- AIP to DIP javascript -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
+
     <script type="text/javascript"
         src="{% static 'search/js/packsel.js' %}">
     </script>
-    <link rel="stylesheet" href="{% static "search/css/packsel.css" %}" type="text/css" />  
+    <link rel="stylesheet" href="{% static "search/css/packsel.css" %}" type="text/css" />
+
+
       
 {% endblock %}
 
 {% block content %}
 
-<h1>Order Basket</h1>
+<h1>Open DIP creation processes</h1>
 
 <form>
     {% csrf_token %}
     {% for dip in package_list %}
-        <a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a><br>
+        <p><a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a></p>
+        <ul>
+
         {% for package in dip.aips.all %}
-            <p>{{ package.identifier }}</p>
+            <li>{{ package.identifier }}</li>
         {% endfor %}
+        </ul>
     {% endfor %}
 </form>
 <br>

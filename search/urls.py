@@ -4,6 +4,7 @@ from search import views
  
 urlpatterns= patterns('',
     url(r'^$', views.index, name='index'),
+    url(r'^start$', views.start, name='start'),
     url(r'^packsel$', views.packsel, name='packsel'),
     url(r'^demosearch$', views.demosearch, name='demosearch'),
     url(r'^demosearch/govdocs$', views.demosearch_govdocs, name='demosearch_govdocs'),

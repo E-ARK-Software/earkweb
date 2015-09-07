@@ -1,0 +1,47 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+    
+    <!-- AIP to DIP javascript/css -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<h1>Start new process</h1>
+
+<p>Select a name for the DIP creation process:</p>
+
+
+<div class="standard-form-container">
+
+    <form action="{% url 'search:create_dip' %}" method="post" class="form-horizontal">
+        {% csrf_token %}
+
+            <div class="form-group">
+
+                <label for="name" class="control-label col-xs-3">Process name</label>
+                <div class="col-xs-6">
+                    <input type="text" class="form-control" id="name" placeholder="DIP creation process name">
+                </div>
+
+            </div>
+
+            <div class="form-group">
+                <div class="col-xs-offset-3 col-xs-10">
+                    <button type="submit" class="btn btn-primary">Start new process</button>
+                </div>
+            </div>
+
+    </form>
+
+
+
+</div>
+
+<p>In the next step the AIPs for creating the DIP must be selected.</p>
+
+{% endblock %}

@@ -56,3 +56,23 @@ color: gray;
     bottom:7px
 }
 
+.standard-form-container {
+    width: 600px;
+    margin: 20px;
+}
+
+label {
+    font-weight: bold;
+}
+
+.navbar .navbar-nav > .active{
+    color: #000;
+    background: #CA210E;
+}
+.navbar .navbar-nav > .active > a,
+.navbar .navbar-nav > .active > a:hover,
+.navbar .navbar-nav > .active > a:focus {
+    color: #ffffff;
+    font-weight: bold;
+    background: #CA210E;
+}

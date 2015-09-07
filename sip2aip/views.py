@@ -76,6 +76,7 @@ class InformationPackageList(ListView):
     context_object_name='ips'
     queryset=InformationPackage.objects.all()
 
+    @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(InformationPackageList, self).dispatch( *args, **kwargs)
 

@@ -6,10 +6,14 @@
 {% block extra_head %}
 
 
-<link rel="stylesheet" href="{% static 'sip2aip/css/workingarea.css' %}" type="text/css" />
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
 
-<link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
-<script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'sip2aip/css/workingarea.css' %}" type="text/css" />
+
+    <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
+    <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
 
 {% endblock %}
 

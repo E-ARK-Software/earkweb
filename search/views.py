@@ -45,6 +45,17 @@ def packsel(request):
     })
     return HttpResponse(template.render(context))
 
+
+@login_required
+def start(request):
+    print request.user
+    dips = DIP.objects.all()
+    template = loader.get_template('search/start.html')
+    context = RequestContext(request, {
+        'package_list': dips
+    })
+    return HttpResponse(template.render(context))
+
 @login_required
 def dip(request, name):
     dip = DIP.objects.get(name=name)

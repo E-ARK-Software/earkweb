@@ -4,9 +4,14 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-<script type="text/javascript" src="{% static 'sip2aip/js/detail.js' %}"></script>
-<script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
-<link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'sip2aip/js/detail.js' %}"></script>
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
 {% endblock %}
 
 {% block content %}
