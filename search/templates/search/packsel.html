@@ -49,11 +49,5 @@
         </div>
     {% endfor %}
 </form>
-<br>
-<form action="{% url 'search:create_dip' %}" method="post">
-    {% csrf_token %}
-    <input type="text" name="name" />
-    <input type="submit" value="new DIP" />
-</form>
 
 {% endblock %}
