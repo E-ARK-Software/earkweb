@@ -28,7 +28,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from earkcore.utils.stringutils import lstrip_substring
 from sip2aip.forms import PackageWorkflowModuleSelectForm
-
+from earkcore.models import InformationPackage
+from earkcore.utils.randomutils import getUniqueID
 logger = logging.getLogger(__name__)
 
 @login_required
@@ -127,6 +128,10 @@ def remproc(request):
         dip_name = lstrip_substring(request.POST['remproc'], "remproc")
         dip = DIP.objects.get(name=dip_name)
         dip.delete()
+
+        ip = InformationPackage.objects.get(packagename=dip_name)
+        if ip:
+            ip.delete()
 
         incls = Inclusion.objects.filter(dip=dip)
         for incl in incls:
@@ -300,6 +305,8 @@ def create_dip(request):
             return HttpResponse(template.render(context))
         else:
             DIP.objects.create(name=dip_creation_process_name)
+            uuid = getUniqueID()
+            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10000, packagename=dip_creation_process_name)
             return HttpResponseRedirect(reverse('search:packsel'))
     else:
         pass

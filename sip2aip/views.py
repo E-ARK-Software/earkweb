@@ -74,7 +74,7 @@ class InformationPackageList(ListView):
     model = InformationPackage
     template_name='sip2aip/reception.html'
     context_object_name='ips'
-    queryset=InformationPackage.objects.all()
+    queryset=InformationPackage.objects.filter(statusprocess__lt = 9999)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
