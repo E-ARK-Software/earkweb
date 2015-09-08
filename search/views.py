@@ -24,6 +24,10 @@ from query import get_query_string
 from config.params import config_path_work
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p
+from django.views.decorators.csrf import csrf_exempt
+
+from earkcore.utils.stringutils import lstrip_substring
+
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +117,26 @@ def demosearch_package(request):
 
     })
     return HttpResponse(template.render(context))
+
+@login_required
+@csrf_exempt
+def remproc(request):
+    try:
+        dip_name = lstrip_substring(request.POST['remproc'], "remproc")
+        dip = DIP.objects.get(name=dip_name)
+        dip.delete()
+
+        incls = Inclusion.objects.filter(dip=dip)
+        for incl in incls:
+            incl.delete()
+
+        resultDict = {'success': True}
+        docsjson = json.dumps(resultDict, indent=4)
+        return HttpResponse(docsjson)
+    except Exception:
+        error = {'success': False, "error": "Error processing request"}
+        logger.error(traceback.format_exc())
+        return HttpResponseServerError(json.dumps(error))
 
 @login_required
 def search_form(request):

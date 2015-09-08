@@ -1,6 +1,8 @@
 import os
 from django.db import models
 
+from earkcore.utils.stringutils import safe_path_string
+
 class AIP(models.Model):
     identifier = models.CharField(max_length=200)
     cleanid = models.CharField(max_length=200)
@@ -16,6 +18,10 @@ class AIP(models.Model):
 class DIP(models.Model):
     name = models.CharField(max_length=200, primary_key=True)
     aips = models.ManyToManyField(AIP, through='Inclusion')
+
+    def safe_path_string(self):
+        return safe_path_string(self.name)
+
     def __str__(self):
         return self.name
 

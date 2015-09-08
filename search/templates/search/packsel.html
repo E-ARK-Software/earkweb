@@ -7,12 +7,9 @@
     <!-- AIP to DIP javascript -->
     <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
 
-    <script type="text/javascript"
-        src="{% static 'search/js/packsel.js' %}">
-    </script>
+    <!-- packsel.html javascript -->
+    <script type="text/javascript" src="{% static 'search/js/packsel.js' %}"></script>
     <link rel="stylesheet" href="{% static "search/css/packsel.css" %}" type="text/css" />
-
-
       
 {% endblock %}
 
@@ -23,16 +20,26 @@
 <form>
     {% csrf_token %}
     {% for dip in package_list %}
-        <p><a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a></p>
-        <ul>
-        {% if dip.aips.all %}
-            {% for package in dip.aips.all %}
-                <li>{{ package.identifier }} </li>
-            {% endfor %}
-        {% else %}
-            <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
-        {% endif %}
-        </ul>
+        <div id="{{ dip.safe_path_string }}">
+
+            <p><a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a>
+
+                <a id="remproc{{ dip.safe_path_string }}" title="remproc{{ dip.name }}"  href="#">
+                <span data-toggle="tooltip" title="Remove this process" class="glyphicon glyphicon-remove"></span>
+                </a>
+            </p>
+
+            <ul>
+            {% if dip.aips.all %}
+                {% for package in dip.aips.all %}
+                    <li>{{ package.identifier }} </li>
+                {% endfor %}
+            {% else %}
+                <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
+            {% endif %}
+            </ul>
+
+        </div>
     {% endfor %}
 </form>
 <br>
