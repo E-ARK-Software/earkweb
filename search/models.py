@@ -9,6 +9,9 @@ class AIP(models.Model):
     source = models.CharField(max_length=200, default="file:///null")
     date_selected = models.DateTimeField('date/time when the package was selected')
 
+    def safe_string(self):
+        return safe_path_string(self.identifier)
+
     def source_available(self):
         return os.path.exists(self.source)
 

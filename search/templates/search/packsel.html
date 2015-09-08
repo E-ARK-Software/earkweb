@@ -31,13 +31,20 @@
 
             <ul>
             {% if dip.aips.all %}
-                {% for package in dip.aips.all %}
-                    <li>{{ package.identifier }} </li>
+                {% for aip in dip.aips.all %}
+                    <li id="{{ dip.safe_path_string }}{{ aip.safe_string }}">{{ aip.identifier }}
+
+                        <a id="remaip{{ aip.safe_string }}" title="remaip{{ dip.name }}~{{ aip.identifier }}"  href="#">
+                        <span data-toggle="tooltip" title="Remove this package" class="glyphicon glyphicon-remove" style="color:gray"></span>
+                        </a>
+                    </li>
                 {% endfor %}
+
             {% else %}
                 <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
             {% endif %}
             </ul>
+            <p style="margin-left: 2em"><a href="{% url 'search:search' dip.name|urlencode %}">Modify selection</a></p>
 
         </div>
     {% endfor %}

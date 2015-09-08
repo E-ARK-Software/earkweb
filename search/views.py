@@ -138,6 +138,29 @@ def remproc(request):
         logger.error(traceback.format_exc())
         return HttpResponseServerError(json.dumps(error))
 
+
+@login_required
+@csrf_exempt
+def remaip(request):
+    try:
+        remaip = lstrip_substring(request.POST['remaip'], "remaip").split("~")
+        if len(remaip) == 2:
+            dip_name = remaip[0]
+            dip = DIP.objects.get(name=dip_name)
+            aip_identifier = remaip[1]
+            aip = AIP.objects.get(identifier=aip_identifier)
+            incl = Inclusion.objects.get(aip=aip, dip=dip)
+            incl.delete()
+            resultDict = {'success': True, "dip_name": dip.safe_path_string(), "aip_identifier": aip.safe_string()}
+        else:
+            resultDict = {'success': False, "error": "Invalid request parameters"}
+        docsjson = json.dumps(resultDict, indent=4)
+        return HttpResponse(docsjson)
+    except Exception:
+        error = {'success': False, "error": "Error processing request", "detail": traceback.format_exc()}
+        logger.error(traceback.format_exc())
+        return HttpResponseServerError(json.dumps(error))
+
 @login_required
 def search_form(request):
     if request.POST:
