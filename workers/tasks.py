@@ -325,9 +325,9 @@ class AIPCreation(Task, StatusValidation):
                 submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
             # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
             admids = []
-            # admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-            # admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-            # admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+            # admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+            # admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+            # admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
             submission_mets_file.add_file_grp(['submission'])
             submission_mets_file.add_file_grp(['schemas'])
             # TODO: rel_path_mets has to be changed according to how the METS file is named
