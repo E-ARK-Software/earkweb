@@ -35,6 +35,9 @@ from statusvalidation import check_status
 
 def init_task(pk_id, task_name, task_logfile_name):
     start_time = time.time()
+    # add PREMIS event for new task:
+    # TODO: make this functional by creating the PREMIS file as eary as possible
+    # package_premis_file.add_event(task_name, 'unsure', 'unsure')
     ip = InformationPackage.objects.get(pk=pk_id)
     if not ip.uuid:
         ip.uuid = randomutils.getUniqueID()
@@ -297,6 +300,16 @@ class AIPCreation(Task, StatusValidation):
         """
         ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
+
+        ##############
+        # PREMIS dummy
+        premis_skeleton_file = root_dir + '/earkresources/PREMIS_skeleton.xml'
+        with open(premis_skeleton_file, 'r') as premis_file:
+            package_premis_file = Premis(premis_file)
+        package_premis_file.add_agent('eark-aip-creation')
+        package_premis_file.add_event('AIPCreation', 'unsure', 'unsure')
+        ##############
+
         if len(tl.err) > 0:
             return tl.fin()
         try:
@@ -346,15 +359,21 @@ class AIPCreation(Task, StatusValidation):
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
                 for filename in filenames:
                     rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
+                    # create METS entry:
                     submission_mets_file.add_file(['submission'], rel_path_file, admids)
+                    # create PREMIS object entry:
+                    package_premis_file.add_object(rel_path_file)
 
             # retrieve files in /Metadata
             md_type_list = ['ead', 'eac', 'premis', 'mets']
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
                 for filename in filenames:
                     rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
+                    # create PREMIS object entry:
+                    package_premis_file.add_object(rel_path_file)
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
+                    # create METS entry:
                     if filename[-3:] == 'xsd':
                         submission_mets_file.add_file(['schemas'], rel_path_file, admids)
                     elif filename[-3:] == 'xml':
@@ -382,6 +401,15 @@ class AIPCreation(Task, StatusValidation):
             with open(path_mets, 'w') as output_file:
                 output_file.write(submission_mets_file.to_string())
             tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
+
+            ##############
+            # PREMIS dummy
+            path_premis = os.path.join(submission_dir, "PREMIS.xml")
+            with open(path_premis, 'w') as output_file:
+                output_file.write(package_premis_file.to_string())
+            tl.addinfo('PREMIS file updated: %s' % path_premis)
+            ##############
+
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
