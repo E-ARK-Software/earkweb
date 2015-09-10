@@ -56,15 +56,15 @@ class MetsValidation(object):
                 valid = False
             fitem = fileloc[0]
             fitem = lstrip_substring(fitem, 'file:')
-            package_file_path = os.path.join(self.parsed_mets.root_dir, fitem)
-            if not os.path.exists(package_file_path):
-                err.append("Unable to find file referenced in delivery METS file")
+            file_path = os.path.join(self.parsed_mets.root_dir, fitem).replace('\\', '/')
+            if not os.path.exists(file_path):
+                err.append("Unable to find file referenced in delivery METS file: %s" % file_path)
                 return ValidationResult(False, log, err)
             size_elms = mets_file_elm.xpath('@SIZE', namespaces={'mets': 'http://www.loc.gov/METS/'})
             if not (len(size_elms) == 1 and size_elms[0].isdigit()):
                 err.append("SIZE attribute value is not a digit")
                 valid = False
-            package_file_size = os.path.getsize(package_file_path)
+            package_file_size = os.path.getsize(file_path)
             size_attr_value = int(size_elms[0])
             if not package_file_size == size_attr_value:
                 err.append("Actual file size %d does not equal file size attribute value %d" % (
