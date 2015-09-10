@@ -316,6 +316,7 @@ class AIPCreation(Task, StatusValidation):
             # admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
             # admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
             submission_mets_file.add_file_grp(['submission'])
+            submission_mets_file.add_file_grp(['schemas'])
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
 
             submission_mets_file.add_file(['submission'], rel_path_mets, admids)
@@ -341,9 +342,8 @@ class AIPCreation(Task, StatusValidation):
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
                     if filename[-3:] == 'xsd':
-                        pass
+                        submission_mets_file.add_file(['schemas'], directory + '/' + filename, admids)
                     elif filename[-3:] == 'xml':
-                        # print 'found xml file: '  + filename
                         if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
                             submission_mets_file.add_digiprov_md(directory + '/' + filename, 'ead')
                         elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
