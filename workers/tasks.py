@@ -19,7 +19,7 @@ from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
-#from earkcore.metadata.identification import MetaIdentification
+from earkcore.metadata.identification import MetaIdentification
 
 from earkcore.utils.fileutils import increment_file_name_suffix
 from earkcore.utils.fileutils import latest_aip
@@ -334,34 +334,30 @@ class AIPCreation(Task, StatusValidation):
                 for filename in filenames:
                     submission_mets_file.add_file(['submission'], directory + '/' + filename, admids)
 
-            #md_type_list = ['ead', 'eac', 'premis', 'mets']
-
             # retrieve files in /Metadata
+            md_type_list = ['ead', 'eac', 'premis', 'mets']
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
                 for filename in filenames:
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
-                    if (filename[:3].lower()  == 'ead' or 'eac') or (filename[-7:] == 'ead.xml' or 'eac.xml'):
-                        # descriptive metadata
-                        break
-                    elif (filename[:6].lower() == 'premis' or filename[-10:] == 'premis.xml'):
-                        # techical metadata
-                        # my_mets.add_tech_md(u_directory, admids)
-                        break
-                    elif filename[-4] == '.xsd':
-                        # schema file
-                        break
-                    elif filename:
-                        # TODO: define default - if it exists? (how to handle unknown .xml files)
-                        # extract the name of the root tag and use it to identify metadata type
-                        #xml_tag = MetaIdentification.MetaIdentification(u_directory + u_filename)
-                        #if xml_tag.lower() in md_type_list:
+                    if filename[-3:] == 'xsd':
+                        pass
+                    elif filename[-3:] == 'xml':
+                        # print 'found xml file: '  + filename
+                        if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
+                            submission_mets_file.add_digiprov_md(directory + '/' + filename, 'ead')
+                        elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
+                            submission_mets_file.add_digiprov_md(directory + '/' + filename, 'eac')
+                        elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
+                            submission_mets_file.add_tech_md(directory + '/' + filename, 'premis')
+                        elif filename:
+                            xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
+                            if xml_tag.lower() in md_type_list:
                             # see above
-                        #    pass
-                        #elif xml_tag.lower() not in md_type_list:
+                                submission_mets_file.add_tech_md(directory + '/' + filename, xml_tag)
+                            elif xml_tag.lower() not in md_type_list:
                             # custom metadata format?
-                        #    pass
-                        break
+                                print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
 
 
             submission_mets_file.add_file(['submission'], rel_path_mets, admids)
