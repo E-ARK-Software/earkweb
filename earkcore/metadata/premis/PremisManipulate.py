@@ -19,7 +19,13 @@ class Premis:
     premis_successor_sections = ['object', 'event', 'agent', 'right']
 
     def __init__(self, f=None):
-        self.root = objectify.parse(f).getroot()
+        if f is None:
+            self.root = P.premis(
+                {q(XSI_NS, 'schemaLocation'): PREMIS_NS + ' ../schemas/premis-v2-2.xsd'},
+            )
+            self.root.set('version', '2.0')
+        else:
+            self.root = objectify.parse(f).getroot()
 
     def add_object(self, identifier_value):
         sequence_insert(
@@ -79,7 +85,7 @@ class Premis:
         )
 
     def __str__(self):
-        return etree.tostring(self.root, encoding='UTF-8', pretty_print=False, xml_declaration=True)
+        return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
     def to_string(self):
         return self.__str__()
