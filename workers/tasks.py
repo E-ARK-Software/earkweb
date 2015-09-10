@@ -331,15 +331,27 @@ class AIPCreation(Task, StatusValidation):
             # path length
             workdir_length = len(ip_work_dir)
 
+            # cover uppercase/lowercase in sub directories
+            directory_list =  os.listdir(package_in_submission_dir)
+            content_directory = ''
+            metadata_directory = ''
+            for subdir in directory_list:
+                print subdir
+                if os.path.isdir(package_in_submission_dir + '/' + subdir):
+                    if subdir.lower() == 'content':
+                        content_directory = '/' + subdir
+                    elif subdir.lower() == 'metadata':
+                        metadata_directory = '/' + subdir
+
             # retrieve files in /Content
-            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Content'):
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
                 for filename in filenames:
                     rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
                     submission_mets_file.add_file(['submission'], rel_path_file, admids)
 
             # retrieve files in /Metadata
             md_type_list = ['ead', 'eac', 'premis', 'mets']
-            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
                 for filename in filenames:
                     rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
