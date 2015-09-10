@@ -318,13 +318,13 @@ class AIPCreation(Task, StatusValidation):
             submission_mets_file.add_file_grp(['submission'])
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
 
-            my_mets.add_file(['submission'], rel_path_mets, admids)
+            submission_mets_file.add_file(['submission'], rel_path_mets, admids)
 
             # TODO: set header with list of attributes
             # retrieve METS root tag attributes
             mets_attributes = params.mets_attributes
             for item in mets_attributes.items():
-                my_mets.root.set(item[0], item[1])
+                submission_mets_file.root.set(item[0], item[1])
 
             # path length
             subdir_length = len(package_in_submission_dir)
@@ -332,30 +332,26 @@ class AIPCreation(Task, StatusValidation):
             # retrieve files in /Content
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Content'):
                 for filename in filenames:
-                    u_directory = unicode(directory[subdir_length:], 'utf-8')
-                    u_filename = unicode(filename, 'utf-8')
-                    my_mets.add_file(['submission'], u_directory, u_filename)
+                    submission_mets_file.add_file(['submission'], directory + '/' + filename, admids)
 
             #md_type_list = ['ead', 'eac', 'premis', 'mets']
 
             # retrieve files in /Metadata
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
                 for filename in filenames:
-                    u_directory = unicode(directory[subdir_length:], 'utf-8')
-                    u_filename = unicode(filename, 'utf-8')
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
-                    if (u_filename[:3].lower()  == 'ead' or 'eac') or (u_filename[-7:] == 'ead.xml' or 'eac.xml'):
+                    if (filename[:3].lower()  == 'ead' or 'eac') or (filename[-7:] == 'ead.xml' or 'eac.xml'):
                         # descriptive metadata
                         break
-                    elif (u_filename[:6].lower() == 'premis' or u_filename[-10:] == 'premis.xml'):
+                    elif (filename[:6].lower() == 'premis' or filename[-10:] == 'premis.xml'):
                         # techical metadata
                         # my_mets.add_tech_md(u_directory, admids)
                         break
-                    elif u_filename[-4] == '.xsd':
+                    elif filename[-4] == '.xsd':
                         # schema file
                         break
-                    elif u_filename:
+                    elif filename:
                         # TODO: define default - if it exists? (how to handle unknown .xml files)
                         # extract the name of the root tag and use it to identify metadata type
                         #xml_tag = MetaIdentification.MetaIdentification(u_directory + u_filename)
