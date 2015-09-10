@@ -336,7 +336,6 @@ class AIPCreation(Task, StatusValidation):
             content_directory = ''
             metadata_directory = ''
             for subdir in directory_list:
-                print subdir
                 if os.path.isdir(package_in_submission_dir + '/' + subdir):
                     if subdir.lower() == 'content':
                         content_directory = '/' + subdir
@@ -377,6 +376,7 @@ class AIPCreation(Task, StatusValidation):
 
             submission_mets_file.add_file(['submission'], rel_path_mets, admids)
             submission_mets_file.root.set('TYPE', 'AIP')
+            submission_mets_file.root.set('ID', ip.uuid)
 
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:
