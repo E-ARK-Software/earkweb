@@ -317,6 +317,7 @@ class AIPCreation(Task, StatusValidation):
             # admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
             submission_mets_file.add_file_grp(['submission'])
             submission_mets_file.add_file_grp(['schemas'])
+            # TODO: rel_path_mets has to be changed according to how the METS file is named
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
 
             submission_mets_file.add_file(['submission'], rel_path_mets, admids)
@@ -347,16 +348,16 @@ class AIPCreation(Task, StatusValidation):
                         submission_mets_file.add_file(['schemas'], rel_path_file, admids)
                     elif filename[-3:] == 'xml':
                         if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-                            submission_mets_file.add_digiprov_md(rel_path_file, 'ead')
+                            submission_mets_file.add_digiprov_md(rel_path_file, '')
                         elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-                            submission_mets_file.add_digiprov_md(rel_path_file, 'eac')
+                            submission_mets_file.add_digiprov_md(rel_path_file, '')
                         elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
-                            submission_mets_file.add_tech_md(rel_path_file, 'premis')
+                            submission_mets_file.add_tech_md(rel_path_file, '')
                         elif filename:
                             xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
                             if xml_tag.lower() in md_type_list:
                             # TODO see rules above, and add accordingly
-                                submission_mets_file.add_tech_md(rel_path_file, xml_tag)
+                                submission_mets_file.add_tech_md(rel_path_file, '')
                             elif xml_tag.lower() not in md_type_list:
                             # custom metadata format?
                                 print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
