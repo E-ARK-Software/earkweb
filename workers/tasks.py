@@ -328,33 +328,35 @@ class AIPCreation(Task, StatusValidation):
                 submission_mets_file.root.set(item[0], item[1])
 
             # path length
-            subdir_length = len(package_in_submission_dir)
+            workdir_length = len(ip_work_dir)
 
             # retrieve files in /Content
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Content'):
                 for filename in filenames:
-                    submission_mets_file.add_file(['submission'], directory + '/' + filename, admids)
+                    rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
+                    submission_mets_file.add_file(['submission'], rel_path_file, admids)
 
             # retrieve files in /Metadata
             md_type_list = ['ead', 'eac', 'premis', 'mets']
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + '/Metadata'):
                 for filename in filenames:
+                    rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
                     # TODO: different filegrp for schemas?
                     if filename[-3:] == 'xsd':
-                        submission_mets_file.add_file(['schemas'], directory + '/' + filename, admids)
+                        submission_mets_file.add_file(['schemas'], rel_path_file, admids)
                     elif filename[-3:] == 'xml':
                         if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-                            submission_mets_file.add_digiprov_md(directory + '/' + filename, 'ead')
+                            submission_mets_file.add_digiprov_md(rel_path_file, 'ead')
                         elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-                            submission_mets_file.add_digiprov_md(directory + '/' + filename, 'eac')
+                            submission_mets_file.add_digiprov_md(rel_path_file, 'eac')
                         elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
-                            submission_mets_file.add_tech_md(directory + '/' + filename, 'premis')
+                            submission_mets_file.add_tech_md(rel_path_file, 'premis')
                         elif filename:
                             xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
                             if xml_tag.lower() in md_type_list:
-                            # see above
-                                submission_mets_file.add_tech_md(directory + '/' + filename, xml_tag)
+                            # TODO see rules above, and add accordingly
+                                submission_mets_file.add_tech_md(rel_path_file, xml_tag)
                             elif xml_tag.lower() not in md_type_list:
                             # custom metadata format?
                                 print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
