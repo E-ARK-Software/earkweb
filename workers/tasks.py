@@ -325,9 +325,9 @@ class AIPCreation(Task, StatusValidation):
                 submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
             # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
             admids = []
-            # admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-            # admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-            # admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+            admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+            admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+            admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
             submission_mets_file.add_file_grp(['submission'])
             submission_mets_file.add_file_grp(['schemas'])
             # add a file group for metadata files that are not classified
@@ -359,7 +359,7 @@ class AIPCreation(Task, StatusValidation):
             # retrieve files in /Content
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
                 for filename in filenames:
-                    rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
+                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
                     # create METS entry:
                     submission_mets_file.add_file(['submission'], rel_path_file, admids)
                     # create PREMIS object entry:
@@ -369,7 +369,7 @@ class AIPCreation(Task, StatusValidation):
             md_type_list = ['ead', 'eac', 'premis', 'mets']
             for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
                 for filename in filenames:
-                    rel_path_file = 'file:/' + directory[workdir_length:] + '/' + filename
+                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
                     # create PREMIS object entry:
                     package_premis_file.add_object(rel_path_file)
                     # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
@@ -379,9 +379,9 @@ class AIPCreation(Task, StatusValidation):
                         submission_mets_file.add_file(['schemas'], rel_path_file, admids)
                     elif filename[-3:] == 'xml':
                         if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-                            submission_mets_file.add_dmd_sec(rel_path_file, '')
+                            submission_mets_file.add_dmd_sec('ead', rel_path_file)
                         elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-                            submission_mets_file.add_dmd_sec(rel_path_file, '')
+                            submission_mets_file.add_dmd_sec('eac', rel_path_file)
                         elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
                             submission_mets_file.add_tech_md(rel_path_file, '')
                         elif filename:
