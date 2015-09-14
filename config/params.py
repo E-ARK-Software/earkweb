@@ -36,7 +36,7 @@ template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
 
 # METS header params
 # TODO: retrieve from db?
-mets_attributes = {'OBJID': 'some identifier',
+mets_attributes = {'OBJID': '',
                     'TYPE': 'AIP',
-                    'LABEL': 'label goes here',
-                    'ID': '123'}
+                    'LABEL': '',
+                    'ID': ''}
