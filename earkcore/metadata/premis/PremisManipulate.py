@@ -4,7 +4,7 @@ from earkcore.metadata.XmlHelper import q, XSI_NS, sequence_insert
 from earkcore.utils.xmlutils import pretty_xml_string
 from earkcore.xml.xmlvalidation import XmlValidation
 import unittest
-
+import os
 
 PREMIS_NS = 'info:lc/xmlns/premis-v2'
 PREMIS_NSMAP = {None: PREMIS_NS}
@@ -86,13 +86,11 @@ class Premis:
 
 
 class TestTaskLogger(unittest.TestCase):
-    import os
-    test_root = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
-
-    with open(os.path.join(test_root,'premis/resources/PREMIS_skeleton.xml'), 'r') as premis_file:
-        my_premis = Premis(premis_file)
 
     def test_log(self):
+        self.test_root = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+        with open(os.path.join(self.test_root,'../../earkresources/PREMIS_skeleton.xml'), 'r') as premis_file:
+            self.my_premis = Premis(premis_file)
 
         self.my_premis.add_agent('Aip2Dip')
         self.my_premis.add_event('Migration01', 'Aip2Dip')
