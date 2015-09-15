@@ -1,3 +1,4 @@
+import os
 import functools
 import json
 import logging
@@ -20,18 +21,27 @@ from forms import SearchForm, UploadFileForm
 from models import AIP, DIP, Inclusion
 from query import get_query_string
 
+from config.params import config_path_work
+from earkcore.utils.stringutils import safe_path_string
+from earkcore.utils.fileutils import mkdir_p
+from django.views.decorators.csrf import csrf_exempt
+
+from earkcore.utils.stringutils import lstrip_substring
+from sip2aip.forms import PackageWorkflowModuleSelectForm
+from earkcore.models import InformationPackage
+from earkcore.utils.randomutils import getUniqueID
 logger = logging.getLogger(__name__)
 
 @login_required
-def index(request):
-    print request.user
+def index(request, procname):
     if DIP.objects.count() == 0:
         DIP.objects.create(name='DIP 1')
     template = loader.get_template('search/index.html')
     form = SearchForm()
     context = RequestContext(request, {
         'form':form,
-        'dips':DIP.objects.all()
+        'dips':DIP.objects.all(),
+        'procname': procname
     })
     return HttpResponse(template.render(context))
 
@@ -45,11 +55,25 @@ def packsel(request):
     })
     return HttpResponse(template.render(context))
 
+
+@login_required
+def start(request):
+    print request.user
+    dips = DIP.objects.all()
+    template = loader.get_template('search/start.html')
+    context = RequestContext(request, {
+        'package_list': dips
+    })
+    return HttpResponse(template.render(context))
+
 @login_required
 def dip(request, name):
     dip = DIP.objects.get(name=name)
     template = loader.get_template('search/dip.html')
-    context = RequestContext(request, {'dip': dip, 'uploadFileForm': UploadFileForm()})
+
+    workflow_form = PackageWorkflowModuleSelectForm()
+
+    context = RequestContext(request, {'dip': dip, 'uploadFileForm': UploadFileForm(), 'workflow_form': workflow_form})
     return HttpResponse(template.render(context))
     #return render_to_response('search/dip.html', {'dip': dip, 'uploadFileForm': UploadFileForm()})
 
@@ -96,6 +120,53 @@ def demosearch_package(request):
 
     })
     return HttpResponse(template.render(context))
+
+@login_required
+@csrf_exempt
+def remproc(request):
+    try:
+        dip_name = lstrip_substring(request.POST['remproc'], "remproc")
+        dip = DIP.objects.get(name=dip_name)
+        dip.delete()
+
+        ip = InformationPackage.objects.get(packagename=dip_name)
+        if ip:
+            ip.delete()
+
+        incls = Inclusion.objects.filter(dip=dip)
+        for incl in incls:
+            incl.delete()
+
+        resultDict = {'success': True}
+        docsjson = json.dumps(resultDict, indent=4)
+        return HttpResponse(docsjson)
+    except Exception:
+        error = {'success': False, "error": "Error processing request"}
+        logger.error(traceback.format_exc())
+        return HttpResponseServerError(json.dumps(error))
+
+
+@login_required
+@csrf_exempt
+def remaip(request):
+    try:
+        remaip = lstrip_substring(request.POST['remaip'], "remaip").split("~")
+        if len(remaip) == 2:
+            dip_name = remaip[0]
+            dip = DIP.objects.get(name=dip_name)
+            aip_identifier = remaip[1]
+            aip = AIP.objects.get(identifier=aip_identifier)
+            incl = Inclusion.objects.get(aip=aip, dip=dip)
+            incl.delete()
+            resultDict = {'success': True, "dip_name": dip.safe_path_string(), "aip_identifier": aip.safe_string()}
+        else:
+            resultDict = {'success': False, "error": "Invalid request parameters"}
+        docsjson = json.dumps(resultDict, indent=4)
+        return HttpResponse(docsjson)
+    except Exception:
+        error = {'success': False, "error": "Error processing request", "detail": traceback.format_exc()}
+        logger.error(traceback.format_exc())
+        return HttpResponseServerError(json.dumps(error))
 
 @login_required
 def search_form(request):
@@ -224,8 +295,19 @@ def get_file_content(request, lily_id):
 @login_required
 def create_dip(request):
     if request.method == "POST":
-        DIP.objects.create(name=request.POST['name'])
-        return HttpResponseRedirect(reverse('search:packsel'))
+        dip_creation_process_name = request.POST['dip_creation_process_name']
+        if DIP.objects.filter(name = dip_creation_process_name).count() > 0:
+            template = loader.get_template('search/start.html')
+            context = RequestContext(request, {
+                'procname': dip_creation_process_name,
+                'error': "Process already exists!"
+            })
+            return HttpResponse(template.render(context))
+        else:
+            DIP.objects.create(name=dip_creation_process_name)
+            uuid = getUniqueID()
+            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10000, packagename=dip_creation_process_name)
+            return HttpResponseRedirect(reverse('search:packsel'))
     else:
         pass
 
@@ -247,22 +329,40 @@ def attach_aip(request, dip_name):
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
             upload_aip(dip, request.FILES['local_aip'])
-            return HttpResponseRedirect(reverse('search:packsel'))
+            #return HttpResponseRedirect(reverse('search:packsel'))
         else:
             if form.errors:
                 for error in form.errors:
                     print(str(error) + str(form.errors[error]))
-            return HttpResponseRedirect(reverse('search:packsel'))
+            #return HttpResponseRedirect(reverse('search:packsel'))
+
+        url = reverse('search:dip', args={dip_name})
+        return HttpResponseRedirect(url)
     else:
         pass
 
 def upload_aip(dip, f):
-    with open('working_area/' + f.name, 'wb+') as destination:
+    dip_name_dir = safe_path_string(dip.name)
+    dip_name_work_dir = os.path.join(config_path_work,dip_name_dir)
+    print "Upload file '%s' to working directory: %s" % (f, dip_name_work_dir)
+    if not os.path.exists(dip_name_work_dir):
+        mkdir_p(dip_name_work_dir)
+    destination_file = os.path.join(dip_name_work_dir,f.name)
+    with open(destination_file, 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
-    extractTar(f.name)
-    aip = AIP.objects.create(identifier=f.name.rpartition('.')[0], cleanid="unused", source="local", date_selected=timezone.now())
-    Inclusion(aip=aip, dip=dip, stored=True).save()
+
+    identifier = f.name.rpartition('.')[0]
+
+    aip = AIP.objects.filter(identifier=identifier)
+
+    incl = Inclusion.objects.filter(aip=aip, dip=dip)
+
+    if aip.count() == 0 or incl.count() == 0:
+        aip = AIP.objects.create(identifier=identifier, cleanid="unused", source=destination_file, date_selected=timezone.now())
+        Inclusion(aip=aip, dip=dip, stored=True).save()
+    else:
+        print "Object not added, already exists"
 
 def copy_to_local(aips):
     for aip in aips:

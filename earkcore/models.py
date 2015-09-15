@@ -30,6 +30,8 @@ StatusProcess_CHOICES = (
     (800, 'AIP HDFS upload successful'),
     (890, 'AIP HDFS upload failed'),
 
+    (10000, 'New DIP creation process'),
+
 )
 
 class InformationPackage(models.Model):

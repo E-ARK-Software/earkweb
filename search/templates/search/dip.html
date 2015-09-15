@@ -3,7 +3,10 @@
 {% load staticfiles %}
 
 {% block extra_head %}
-    
+
+    <!-- AIP to DIP javascript -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
+
     <script type="text/javascript"
         src="{% static 'search/js/packsel.js' %}">
     </script>
@@ -15,21 +18,61 @@
 
 <h1>DIP creation process: {{ dip.name }}</h1>
 
-<form action="{% url 'search:acquire_aips' dip.name %}" method="post">
+<div id="ip-detail-table">
+    {% include "search/diptable.html" %}
+</div>
+
+<div class="standard-form-container">
+<form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data" class="form-horizontal">
     {% csrf_token %}
-    <p>Selected AIPs:</p>
-    <ul>
-    {% for aip in dip.aips.all %}
-        <li><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a></li>
-    {% endfor %}
-    </ul>
-    <input type="submit" value="acquire AIPs" />
+    <div class="form-group">
+        {{ uploadFileForm.as_p }}
+    </div>
+    <div class="form-group">
+        <div class="col-xs-offset-0 col-xs-0">
+            <button type="submit">Add selected AIP</button>
+        </div>
+    </div>
 </form>
-<br>
-<form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ uploadFileForm.as_p }}
-    <input type="submit" value="attach local AIP" />
-</form>
+
+</div>
+
+<hr/>
+<div id="container">
+  	<div id="action" class="form-group">
+      <form method="POST" onsubmit="return false">
+    		{% csrf_token %}
+    		<ul>{{ workflow_form.as_ul }}</ul>
+    		<br/>
+    		<button id="apply-task">Apply task!</button>
+            <button id="apply-workflow">Apply workflow!</button>
+  		</form>
+  </div>
+  <div class="progress_container">
+
+   <div class="current-task">
+    <h4 id="taskheadline"></h4>
+       <p id="error" style="color: red; visibility: hidden"><span>An error occurred: </span><span id="errmsg"></span></p>
+   </div>
+
+    <div id="st" class="status"></div>
+    <div class="progress">
+      <div id="pg" class="progress-bar" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+    </div>
+
+    <h5>Process log</h5>
+    <pre id="log"></pre>
+    <h5>Error log</h5>
+    <pre id="err"></pre>
+
+    <!-- current_ip variable used in subsequent scripts -->
+    <script type="text/javascript">var current_ip="{{ ip.id }}";</script>
+    <!-- current package is set by selecting the corresponding option in a hidden select box (reusing progress.html functionality) -->
+	<script type="text/javascript">$("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>
+	<script type="text/javascript" src="{% static 'workflow/js/runtask.js' %}"></script>
+
+    </div>
+
+    <p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
 
 {% endblock %}

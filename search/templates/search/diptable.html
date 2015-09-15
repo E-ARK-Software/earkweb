@@ -1,0 +1,24 @@
+{% load dictionary_extras %}
+<table  class="table table-striped table-bordered table-condensed">
+    <tbody>
+        <tr>
+            <td>Selected AIPs</td>
+            <td>
+                <table>
+                {% for aip in dip.aips.all %}
+                    <tr>
+                        <td style="padding:3px"><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a> </td>
+                        <td style="padding-left:10px">
+                            {% if aip.source_available %}
+                            <span data-toggle="tooltip" title="AIP is accessible" class="glyphicon glyphicon-ok-sign"/>
+                            {% else %}
+                            <span data-toggle="tooltip" title="AIP is NOT accessible" class="glyphicon glyphicon-question-sign"/>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </table>
+            </td>
+        </tr>
+    </tbody>
+  </table>
