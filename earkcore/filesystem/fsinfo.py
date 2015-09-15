@@ -21,7 +21,6 @@ def fsize(file_path, wd=None):
 
 def main():
     print json.dumps(path_to_dict('.'), indent=4, sort_keys=False)
-    print fsinfo
 
 if __name__ == "__main__":
     main()

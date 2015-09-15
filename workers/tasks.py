@@ -28,8 +28,14 @@ from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from functools import partial
 from statusvalidation import check_status
+from search.models import DIP, AIP, Inclusion
+from earkcore.filesystem.chunked import FileBinaryDataChunks
+from earkcore.filesystem.fsinfo import fsize
+from earkcore.fixity.ChecksumFile import ChecksumFile
+from earkcore.fixity.tasklib import check_transfer
 
-
+def custom_progress_reporter(task, percent):
+    task.update_state(state='PROGRESS', meta={'process_percent': percent})
 
 def init_task(pk_id, task_name, task_logfile_name):
     start_time = time.time()
@@ -434,8 +440,7 @@ class LilyHDFSUpload(Task, StatusValidation):
 
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                def custom_progress_reporter(task, percent):
-                    task.update_state(state='PROGRESS', meta={'process_percent': percent})
+
 
                 rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
@@ -457,3 +462,55 @@ class LilyHDFSUpload(Task, StatusValidation):
                 return tl.fin()
         except Exception:
             return handle_error(ip, tc, tl)
+
+
+class DIPAcquireAIPs(Task, StatusValidation):
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        AIP Structure creation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: order:9,expected_status:status==10000,success_status:10000,error_status:10000
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl, start_time = init_task(pk_id, "DIPAcquireAIPs", "sip_to_aip_processing")
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        try:
+            # create dip working directory
+            if not os.path.exists(ip_work_dir):
+                os.mkdir(ip_work_dir)
+
+            # packagename is identifier of the DIP creation process
+            dip = DIP.objects.get(name=ip.packagename)
+
+            total_bytes_read = 0
+            if dip.all_aips_available():
+                dip_aips_total_size = dip.aips_total_size()
+                tl.addinfo("DIP: %s, total size: %d" % (ip.packagename, dip_aips_total_size))
+                for aip in dip.aips.all():
+
+                    partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+                    package_extension = aip.source.rpartition('.')[2]
+                    aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
+                    tl.addinfo("Source: %s (%d)" % (aip.source, aip.source_size()))
+                    tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
+                    with open(aip_in_dip_work_dir, 'wb') as target_file:
+                        for chunk in FileBinaryDataChunks(aip.source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, dip_aips_total_size):
+                            target_file.write(chunk)
+                        if len(tl.err) > 0:
+                            return tl.fin()
+                        total_bytes_read += aip.source_size()
+                        target_file.close()
+                    check_transfer(aip.source, aip_in_dip_work_dir, tl)
+                self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            result = tl.fin()
+            ip.statusprocess = tc.success_status if result.success else tc.error_status
+            ip.save()
+            return result
+        except Exception:
+            return handle_error(ip, tc, tl)
+

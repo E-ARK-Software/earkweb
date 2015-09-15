@@ -1,7 +1,7 @@
 import requests
 from earkcore.rest.restendpoint import RestEndpoint
-from earkcore.filesystem.filebinarydatachunks import FileBinaryDataChunks
-from earkcore.filesystem.filebinarydatachunks import default_reporter
+from earkcore.filesystem.chunked import FileBinaryDataChunks
+from earkcore.filesystem.chunked import default_reporter
 from earkcore.rest.restresponsewrapper import ResponseWrapper
 
 

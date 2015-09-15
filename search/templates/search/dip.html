@@ -7,9 +7,13 @@
     <!-- AIP to DIP javascript -->
     <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
 
-    <script type="text/javascript"
-        src="{% static 'search/js/packsel.js' %}">
-    </script>
+    <script type="text/javascript" src="{% static 'search/js/dip.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
+    <script type="text/javascript"  src="{% static 'search/js/packsel.js' %}"></script>
+
     <link rel="stylesheet" href="{% static "search/css/packsel.css" %}" type="text/css" />  
       
 {% endblock %}
@@ -18,7 +22,7 @@
 
 <h1>DIP creation process: {{ dip.name }}</h1>
 
-<div id="ip-detail-table">
+<div id="dip-detail-table">
     {% include "search/diptable.html" %}
 </div>
 

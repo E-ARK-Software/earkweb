@@ -49,10 +49,11 @@ color: gray;
 
 
 .release {
-    position: absolute;
+    position:relative;
+    margin-top:50px;
     bottom:0;
     margin-left: 0;
-    left:10px;
+    left:0px;
     bottom:7px
 }
 
@@ -87,4 +88,11 @@ color: red;
 
 .missing {
  color: red;
+}
+
+.container {
+}
+
+#content {
+    min-height: 600px;
 }

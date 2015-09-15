@@ -25,4 +25,5 @@ urlpatterns= patterns('',
     url(r'^dip/([^/]+)/acquire_aips$', views.acquire_aips, name='acquire_aips'),
     url(r'^dip/([^/]+)/attach_aip$', views.attach_aip, name='attach_aip'),
     url(r'^dip/([^/]+)/aip/([^/]+)$', views.aip, name='aip'),
+    url(r'^dip_detail_table$', views.dip_detail_table, name='dip_detail_table'),
 )

@@ -31,6 +31,8 @@ from sip2aip.forms import PackageWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
 logger = logging.getLogger(__name__)
+from django.shortcuts import render_to_response
+from earkcore.models import StatusProcess_CHOICES
 
 @login_required
 def index(request, procname):
@@ -69,11 +71,12 @@ def start(request):
 @login_required
 def dip(request, name):
     dip = DIP.objects.get(name=name)
+    ip = InformationPackage.objects.get(packagename=name)
     template = loader.get_template('search/dip.html')
 
     workflow_form = PackageWorkflowModuleSelectForm()
 
-    context = RequestContext(request, {'dip': dip, 'uploadFileForm': UploadFileForm(), 'workflow_form': workflow_form})
+    context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'workflow_form': workflow_form})
     return HttpResponse(template.render(context))
     #return render_to_response('search/dip.html', {'dip': dip, 'uploadFileForm': UploadFileForm()})
 
@@ -378,3 +381,15 @@ def extractTar(filename):
     with tarfile.open('working_area/' + filename) as tar:
         tar.extractall('working_area/')
 
+@login_required
+@csrf_exempt
+def dip_detail_table(request):
+    pkg_id = request.POST['pkg_id']
+    print pkg_id
+    print config_path_work
+    context = RequestContext(request, {
+        "ip": InformationPackage.objects.get(pk=pkg_id),
+        "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
+        "config_path_work": config_path_work
+    })
+    return render_to_response('search/diptable.html', locals(), context_instance=context)

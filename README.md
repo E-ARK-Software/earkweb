@@ -126,7 +126,7 @@ Update filetype signatures:
     
 ### Create directories
 
-    sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest}
+    sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
     sudo chown -R <user>:www-data /var/data/earkweb/
     sudo chmod -R g+w /var/data/earkweb/
 

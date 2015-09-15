@@ -1,4 +1,5 @@
 import os
+from earkcore.filesystem.fsinfo import fsize
 
 
 def default_reporter(percent):
@@ -19,14 +20,16 @@ class FileBinaryDataChunks(object):
         self.filepath = filepath
         self.chunksize = chunksize
         self.progress_reporter = progress_reporter
-        self.totalsize = os.path.getsize(filepath)
+        self.current_file_size = os.path.getsize(filepath)
         self.bytesread = 0
 
-    def chunks(self):
+    def chunks(self, total_bytes_read=0, bytes_total=-1):
         """
         Chunk generator, returns data chunks which can be iterated in a for loop.
         :return: generator with data chunks
         """
+        if bytes_total == -1:
+            bytes_total = self.current_file_size
         f = open(self.filepath, 'rb')
 
         def readchunk():
@@ -34,6 +37,14 @@ class FileBinaryDataChunks(object):
 
         for chunk in iter(readchunk, ''):
             self.bytesread += len(chunk)
-            percent = self.bytesread * 100 / self.totalsize
+            percent = (total_bytes_read+self.bytesread) * 100 / bytes_total
             self.progress_reporter(percent)
             yield chunk
+
+def copy_file(source, target, progress_reporter=default_reporter, total_bytes_read=0, bytes_total=-1):
+    with open(target, 'wb') as target_file:
+        for chunk in FileBinaryDataChunks(source, 65536, progress_reporter).chunks(total_bytes_read, total_bytes_read):
+            target_file.write(chunk)
+        target_file.close()
+        total_bytes_read += fsize(source)
+    return total_bytes_read
