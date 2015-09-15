@@ -405,7 +405,7 @@ class AIPCreation(Task, StatusValidation):
 
             ##############
             # PREMIS dummy
-            path_premis = os.path.join(submission_dir, "PREMIS.xml")
+            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
             with open(path_premis, 'w') as output_file:
                 output_file.write(package_premis_file.to_string())
             tl.addinfo('PREMIS file updated: %s' % path_premis)
