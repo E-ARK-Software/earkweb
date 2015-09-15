@@ -48,7 +48,7 @@ class Premis:
             self.premis_successor_sections
         )
 
-    def add_event(self, identifier_value, linking_agent, linking_object=None):
+    def add_event(self, identifier_value, outcome, linking_agent, linking_object=None):
         sequence_insert(
             self.root, P.event(
                 P.eventIdentifier(
@@ -57,6 +57,9 @@ class Premis:
                 ),
                 P.eventType,
                 P.eventDateTime(datetime.utcnow().isoformat()),
+                P.eventOutcomeInformation(
+                    P.eventOutcome(outcome)
+                ),
                 P.linkingAgentIdentifier(
                     P.linkingAgentIdentifierType('LOCAL'),
                     P.linkingAgentIdentifierValue(linking_agent)
@@ -101,7 +104,7 @@ class TestTaskLogger(unittest.TestCase):
     def test_log(self):
 
         self.my_premis.add_agent('Aip2Dip')
-        self.my_premis.add_event('Migration01', 'Aip2Dip')
+        self.my_premis.add_event('Migration01', 'success', 'Aip2Dip')
         self.my_premis.add_object('file.txt')
         premis_xml = pretty_xml_string(self.my_premis.to_string())
         print premis_xml

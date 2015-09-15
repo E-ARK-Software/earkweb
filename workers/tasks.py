@@ -47,17 +47,15 @@ def init_task(pk_id, task_name, task_logfile_name):
     # create log directory
     if not os.path.exists(task_log_file_dir):
         os.mkdir(task_log_file_dir)
-    # create PREMIS file or add an event for the current task
+    # create PREMIS file or return handle to task
     if os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
         with open(task_log_file_dir + '/PREMIS.xml', 'rw') as premis_file:
             package_premis_file = Premis(premis_file)
-        package_premis_file.add_event(task_name, 'unsure', 'unsure')
     elif not os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
         premis_skeleton_file = root_dir + '/earkresources/PREMIS_skeleton.xml'
         with open(premis_skeleton_file, 'r') as premis_file:
             package_premis_file = Premis(premis_file)
         package_premis_file.add_agent('eark-aip-creation')
-        package_premis_file.add_event(task_name, 'unsure', 'unsure')
     tl = TaskLogger(task_log_file)
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return ip, ip_work_dir, tl, start_time, package_premis_file
@@ -70,6 +68,18 @@ def handle_error(ip, tc, tl):
     tl.adderr(("An error occurred: %s" % str(tb)))
     logging.error(tb)
     return tl.fin()
+
+
+def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
+                     tl, ip_work_dir):
+    '''
+    Add an event to the PREMIS file and update it afterwards.
+    '''
+    package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
+    path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
+    with open(path_premis, 'w') as output_file:
+        output_file.write(package_premis_file.to_string())
+    tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 
 class Reset(Task):
@@ -172,15 +182,11 @@ class SIPDeliveryValidation(Task):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception:
+            add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -206,13 +212,8 @@ class IdentifierAssignment(Task, StatusValidation):
         tl.addinfo("Identifier %s assigned to package %s" % (ip.identifier, ip.path))
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-        # update the PREMIS file at the end of the task
-        # TODO: add event for failed task?
-        path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-        with open(path_premis, 'w') as output_file:
-            output_file.write(package_premis_file.to_string())
-        tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+        # update the PREMIS file at the end of the task - SUCCESS
+        add_PREMIS_event('IdentifierAssignment', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
         return tl.fin()
 
 
@@ -264,15 +265,11 @@ class SIPExtraction(Task):
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             tl.addinfo(("Extraction of %d items finished" % total))
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPExtraction', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            add_PREMIS_event('SIPExtraction', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -315,15 +312,11 @@ class SIPValidation(Task, StatusValidation):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            add_PREMIS_event('SIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -442,15 +435,12 @@ class AIPCreation(Task, StatusValidation):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPCreation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPCreation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -477,15 +467,12 @@ class AIPValidation(Task, StatusValidation):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -536,15 +523,12 @@ class AIPPackaging(Task, StatusValidation):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
-            # update the PREMIS file at the end of the task
-            # TODO: add event for failed task?
-            path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-            with open(path_premis, 'w') as output_file:
-                output_file.write(package_premis_file.to_string())
-            tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return result
         except Exception, err:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -592,16 +576,14 @@ class LilyHDFSUpload(Task, StatusValidation):
                 ip.statusprocess = tc.success_status if result.success else tc.error_status
                 ip.save()
 
-                # update the PREMIS file at the end of the task
-                # TODO: add event for failed task?
-                path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-                with open(path_premis, 'w') as output_file:
-                    output_file.write(package_premis_file.to_string())
-                tl.addinfo('PREMIS file updated: %s' % path_premis)
-
+                # update the PREMIS file at the end of the task - SUCCESS
+                add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 return result
             else:
                 tl.adderr("No AIP file found for identifier: %s" % ip.identifier)
+                add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 return tl.fin()
         except Exception:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
