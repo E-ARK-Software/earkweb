@@ -388,7 +388,10 @@ class AIPCreation(Task, StatusValidation):
                             xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
                             if xml_tag.lower() in md_type_list:
                             # TODO see rules above, and add accordingly
-                                submission_mets_file.add_tech_md(rel_path_file, '')
+                                if xml_tag.lower() == 'eac' or xml_tag.lower() == 'ead':
+                                    submission_mets_file.add_dmd_sec(xml_tag.lower(), rel_path_file)
+                                elif xml_tag:
+                                    submission_mets_file.add_tech_md(rel_path_file, '')
                             elif xml_tag.lower() not in md_type_list:
                             # custom metadata format?
                                 submission_mets_file.add_file(['customMD'], rel_path_file, admids)
