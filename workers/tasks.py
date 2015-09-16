@@ -19,6 +19,8 @@ from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 import shutil
+from earkcore.metadata.identification import MetaIdentification
+
 from earkcore.utils.fileutils import increment_file_name_suffix
 from earkcore.utils.fileutils import latest_aip
 from tasklogger import TaskLogger
@@ -51,9 +53,18 @@ def init_task(pk_id, task_name, task_logfile_name):
     # create log directory
     if not os.path.exists(task_log_file_dir):
         os.mkdir(task_log_file_dir)
+    # create PREMIS file or return handle to task
+    if os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
+        with open(task_log_file_dir + '/PREMIS.xml', 'rw') as premis_file:
+            package_premis_file = Premis(premis_file)
+    elif not os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
+        premis_skeleton_file = root_dir + '/earkresources/PREMIS_skeleton.xml'
+        with open(premis_skeleton_file, 'r') as premis_file:
+            package_premis_file = Premis(premis_file)
+        package_premis_file.add_agent('eark-aip-creation')
     tl = TaskLogger(task_log_file)
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
-    return ip, ip_work_dir, tl, start_time
+    return ip, ip_work_dir, tl, start_time, package_premis_file
 
 
 def handle_error(ip, tc, tl):
@@ -63,6 +74,18 @@ def handle_error(ip, tc, tl):
     tl.adderr(("An error occurred: %s" % str(tb)))
     logging.error(tb)
     return tl.fin()
+
+
+def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
+                     tl, ip_work_dir):
+    '''
+    Add an event to the PREMIS file and update it afterwards.
+    '''
+    package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
+    path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
+    with open(path_premis, 'w') as output_file:
+        output_file.write(package_premis_file.to_string())
+    tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 
 class Reset(Task):
@@ -129,7 +152,7 @@ class SIPDeliveryValidation(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPDeliveryValidation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "SIPDeliveryValidation", "sip_to_aip_processing")
         tl.addinfo(("New UUID assigned: %s" % ip.uuid))
         try:
             self.update_state(state='PROGRESS', meta={'process_percent': 1})
@@ -164,8 +187,12 @@ class SIPDeliveryValidation(Task):
             ip.statusprocess = tc.success_status if validation_result.valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception:
+            add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -180,7 +207,7 @@ class IdentifierAssignment(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "IdentifierAssignment", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "IdentifierAssignment", "sip_to_aip_processing")
         self.update_state(state='PROGRESS', meta={'process_percent': 1})
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
@@ -190,6 +217,9 @@ class IdentifierAssignment(Task, StatusValidation):
         ip.save()
         tl.addinfo("Identifier %s assigned to package %s" % (ip.identifier, ip.path))
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+        # update the PREMIS file at the end of the task - SUCCESS
+        add_PREMIS_event('IdentifierAssignment', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
         return tl.fin()
 
 
@@ -212,7 +242,7 @@ class SIPExtraction(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPExtraction", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "SIPExtraction", "sip_to_aip_processing")
         try:
             tl.addinfo(("ExtractTar task %s" % current_task.request.id))
             tl.err = self.valid_state(ip, tc)
@@ -240,8 +270,12 @@ class SIPExtraction(Task):
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             tl.addinfo(("Extraction of %d items finished" % total))
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPExtraction', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            add_PREMIS_event('SIPExtraction', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -256,7 +290,7 @@ class SIPValidation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "SIPValidation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "SIPValidation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -283,8 +317,12 @@ class SIPValidation(Task, StatusValidation):
             ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('SIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            add_PREMIS_event('SIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -299,8 +337,9 @@ class AIPCreation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
+
         if len(tl.err) > 0:
             return tl.fin()
         try:
@@ -316,23 +355,98 @@ class AIPCreation(Task, StatusValidation):
                 submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
             # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
             admids = []
-            # admids.append(my_mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-            # admids.append(my_mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-            # admids.append(my_mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+            admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+            admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+            admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
             submission_mets_file.add_file_grp(['submission'])
+            submission_mets_file.add_file_grp(['schemas'])
+            # add a file group for metadata files that are not classified
+            submission_mets_file.add_file_grp(['customMD'])
+            # TODO: rel_path_mets has to be changed according to how the METS file is named
             rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
+
+            submission_mets_file.add_file(['submission'], rel_path_mets, admids)
+            # TODO: set header with list of attributes
+            # retrieve METS root tag attributes
+            mets_attributes = params.mets_attributes
+            for item in mets_attributes.items():
+                submission_mets_file.root.set(item[0], item[1])
+
+            # path length
+            workdir_length = len(ip_work_dir)
+
+            # cover uppercase/lowercase in sub directories
+            directory_list =  os.listdir(package_in_submission_dir)
+            content_directory = ''
+            metadata_directory = ''
+            for subdir in directory_list:
+                if os.path.isdir(package_in_submission_dir + '/' + subdir):
+                    if subdir.lower() == 'content':
+                        content_directory = '/' + subdir
+                    elif subdir.lower() == 'metadata':
+                        metadata_directory = '/' + subdir
+
+            # retrieve files in /Content
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
+                for filename in filenames:
+                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+                    # create METS entry:
+                    submission_mets_file.add_file(['submission'], rel_path_file, admids)
+                    # create PREMIS object entry:
+                    package_premis_file.add_object(rel_path_file)
+
+            # retrieve files in /Metadata
+            md_type_list = ['ead', 'eac', 'premis', 'mets']
+            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
+                for filename in filenames:
+                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+                    # create PREMIS object entry:
+                    package_premis_file.add_object(rel_path_file)
+                    # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
+                    # TODO: different filegrp for schemas?
+                    # create METS entry:
+                    if filename[-3:] == 'xsd':
+                        submission_mets_file.add_file(['schemas'], rel_path_file, admids)
+                    elif filename[-3:] == 'xml':
+                        if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
+                            submission_mets_file.add_dmd_sec('ead', rel_path_file)
+                        elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
+                            submission_mets_file.add_dmd_sec('eac', rel_path_file)
+                        elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
+                            submission_mets_file.add_tech_md(rel_path_file, '')
+                        elif filename:
+                            xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
+                            if xml_tag.lower() in md_type_list:
+                            # TODO see rules above, and add accordingly
+                                if xml_tag.lower() == 'eac' or xml_tag.lower() == 'ead':
+                                    submission_mets_file.add_dmd_sec(xml_tag.lower(), rel_path_file)
+                                elif xml_tag:
+                                    submission_mets_file.add_tech_md(rel_path_file, '')
+                            elif xml_tag.lower() not in md_type_list:
+                            # custom metadata format?
+                                submission_mets_file.add_file(['customMD'], rel_path_file, admids)
+                                # print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
+
             submission_mets_file.add_file(['submission'], rel_path_mets, admids)
             submission_mets_file.root.set('TYPE', 'AIP')
+            submission_mets_file.root.set('ID', ip.uuid)
+
             path_mets = os.path.join(submission_dir, "METS.xml")
             with open(path_mets, 'w') as output_file:
                 output_file.write(submission_mets_file.to_string())
             tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
+
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPCreation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPCreation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -347,7 +461,7 @@ class AIPValidation(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPValidation", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPValidation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -358,8 +472,13 @@ class AIPValidation(Task, StatusValidation):
             ip.statusprocess = tc.success_status if valid else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return tl.fin()
         except Exception, err:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -374,7 +493,7 @@ class AIPPackaging(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "AIPPackaging", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPPackaging", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -409,8 +528,13 @@ class AIPPackaging(Task, StatusValidation):
             ip.statusprocess = tc.success_status if result.success else tc.error_status
             ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+            # update the PREMIS file at the end of the task - SUCCESS
+            add_PREMIS_event('AIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return result
         except Exception, err:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 
@@ -425,7 +549,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "LilyHDFSUpload", None)
+        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "LilyHDFSUpload", None)
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -456,11 +580,17 @@ class LilyHDFSUpload(Task, StatusValidation):
                 result = tl.fin()
                 ip.statusprocess = tc.success_status if result.success else tc.error_status
                 ip.save()
+
+                # update the PREMIS file at the end of the task - SUCCESS
+                add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 return result
             else:
                 tl.adderr("No AIP file found for identifier: %s" % ip.identifier)
+                add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 return tl.fin()
         except Exception:
+            # update the PREMIS file at the end of the task - FAILURE
+            add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             return handle_error(ip, tc, tl)
 
 

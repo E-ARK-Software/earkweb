@@ -22,7 +22,7 @@ def init_param(model_obj, name, default):
         param = model_obj.objects.get(entity=name)
         return param.value
     except model_obj.DoesNotExist:
-         return default
+        return default
 
 
 config_path_reception = init_param(Path, "path_reception", "/var/data/earkweb/reception")
@@ -33,4 +33,11 @@ config_path_access = init_param(Path, "path_access", "/var/data/earkweb/access")
 
 
 # location of METS Template
-template_METS_path = root_dir+'/lib/metadata/mets/template_METS.xml'
+template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
+
+# METS header params
+# TODO: retrieve from db?
+mets_attributes = {'OBJID': '',
+                    'TYPE': 'AIP',
+                    'LABEL': '',
+                    'ID': ''}

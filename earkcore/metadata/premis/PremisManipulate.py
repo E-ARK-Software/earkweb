@@ -19,7 +19,13 @@ class Premis:
     premis_successor_sections = ['object', 'event', 'agent', 'right']
 
     def __init__(self, f=None):
-        self.root = objectify.parse(f).getroot()
+        if f is None:
+            self.root = P.premis(
+                {q(XSI_NS, 'schemaLocation'): PREMIS_NS + ' ../schemas/premis-v2-2.xsd'},
+            )
+            self.root.set('version', '2.0')
+        else:
+            self.root = objectify.parse(f).getroot()
 
     def add_object(self, identifier_value):
         sequence_insert(
@@ -42,7 +48,7 @@ class Premis:
             self.premis_successor_sections
         )
 
-    def add_event(self, identifier_value, linking_agent, linking_object=None):
+    def add_event(self, identifier_value, outcome, linking_agent, linking_object=None):
         sequence_insert(
             self.root, P.event(
                 P.eventIdentifier(
@@ -51,6 +57,9 @@ class Premis:
                 ),
                 P.eventType,
                 P.eventDateTime(datetime.utcnow().isoformat()),
+                P.eventOutcomeInformation(
+                    P.eventOutcome(outcome)
+                ),
                 P.linkingAgentIdentifier(
                     P.linkingAgentIdentifierType('LOCAL'),
                     P.linkingAgentIdentifierValue(linking_agent)
@@ -79,7 +88,7 @@ class Premis:
         )
 
     def __str__(self):
-        return etree.tostring(self.root, encoding='UTF-8', pretty_print=False, xml_declaration=True)
+        return etree.tostring(self.root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
     def to_string(self):
         return self.__str__()
@@ -93,7 +102,7 @@ class TestTaskLogger(unittest.TestCase):
             self.my_premis = Premis(premis_file)
 
         self.my_premis.add_agent('Aip2Dip')
-        self.my_premis.add_event('Migration01', 'Aip2Dip')
+        self.my_premis.add_event('Migration01', 'success', 'Aip2Dip')
         self.my_premis.add_object('file.txt')
         premis_xml = pretty_xml_string(self.my_premis.to_string())
         print premis_xml
