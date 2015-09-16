@@ -96,3 +96,12 @@ color: red;
 #content {
     min-height: 600px;
 }
+
+#container fieldset {
+    border: 1px solid #dddddd;
+
+    background-color: #F9F9F9;
+    padding-top:1em;
+    padding-bottom: 1em;
+}
+

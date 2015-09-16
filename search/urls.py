@@ -5,7 +5,7 @@ from search import views
  
 urlpatterns= patterns('',
     url(r'^$', RedirectView.as_view(url='selection'), name='index'),
-    url(r'^selection$', RedirectView.as_view(url='selection/default'), name='index'),
+    url(r'^selection$', RedirectView.as_view(url='selection/default'), name='selection'),
     #url(r'^search$)', views.index, name='search'),
     url(r'^selection/(?P<procname>.*)', views.index, name='search'),
     url(r'^start$', views.start, name='start'),

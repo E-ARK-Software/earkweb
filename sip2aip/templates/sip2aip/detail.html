@@ -16,47 +16,17 @@
 
 {% block content %}
 
-  <div id="ip-detail-table">
+<div id="ip-detail-table">
     {% include "sip2aip/iptable.html" %}
-  </div>
-  <div id="container">
-  	<div id="action" class="form-group">
-      <form method="POST" onsubmit="return false">
-    		{% csrf_token %}
-    		<ul>{{ form.as_ul }}</ul>
-    		<br/>
-    		<button id="apply-task">Apply task!</button>
-            <button id="apply-workflow">Apply workflow!</button>
-  		</form>
-  </div>
+</div>
 
-	  <hr/>
-  <div class="progress_container">
+{% include "workflow/execution_form.html" %}
 
-   <div class="current-task">
-    <h4 id="taskheadline"></h4>
-       <p id="error" style="color: red; visibility: hidden"><span>An error occurred: </span><span id="errmsg"></span></p>
-   </div>
+<!-- current_ip variable used in subsequent scripts (as the IP is selected, the corresponding form field is hidden) -->
+<script type="text/javascript">var current_ip="{{ ip.id }}"; $("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>
 
-    <div id="st" class="status"></div>
-    <div class="progress">
-      <div id="pg" class="progress-bar" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
-    </div>
+{% include "workflow/progress_module.html" %}
 
-    <h5>Process log</h5>
-    <pre id="log"></pre>
-    <h5>Error log</h5>
-    <pre id="err"></pre>
-
-    <!-- current_ip variable used in subsequent scripts -->
-    <script type="text/javascript">var current_ip="{{ ip.id }}";</script>
-    <!-- current package is set by selecting the corresponding option in a hidden select box (reusing progress.html functionality) -->
-	<script type="text/javascript">$("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>
-	<script type="text/javascript" src="{% static 'workflow/js/runtask.js' %}"></script>
-
-    </div>
-
-    <p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
-
+<p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
 
 {% endblock %}

@@ -5,5 +5,5 @@ from workflow.models import Wirings
 
 class PackageWorkflowModuleSelectForm(forms.Form):
     ips = forms.ModelChoiceField(label="Information package", queryset=InformationPackage.objects.all())
-    wfs = forms.ModelChoiceField(label="Workflow module", queryset=WorkflowModules.objects.all().order_by('ordval'))
-    wiref = forms.ModelChoiceField(label="Workflows", queryset=Wirings.objects.all())
+    wfs = forms.ModelChoiceField(label="Task", queryset=WorkflowModules.objects.all().order_by('ordval'))
+    wiref = forms.ModelChoiceField(label="Workflow", queryset=Wirings.objects.all())
