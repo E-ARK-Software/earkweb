@@ -95,7 +95,7 @@ class TestXmlValidation(unittest.TestCase):
 
     test_directory = root_dir + '/earkcore/xml/resources/'
     schema_file = test_directory + 'schema.xsd'
-    print schema_file
+    #print schema_file
 
     xmlval = XmlValidation()
 
