@@ -47,16 +47,6 @@ color: gray;
 .logininfo a:hover { color: #FFFFFF; text-decoration:underline; }
 .logininfo a:active { color: #FFFFFF; text-decoration:underline; }
 
-
-.release {
-    position:relative;
-    margin-top:50px;
-    bottom:0;
-    margin-left: 0;
-    left:0px;
-    bottom:7px
-}
-
 .standard-form-container {
     width: 600px;
     margin: 20px;

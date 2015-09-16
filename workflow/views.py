@@ -182,7 +182,7 @@ It might be necessary to run 'python ./workers/scantasks.py' to register new or 
 @login_required
 @csrf_exempt
 def poll_state(request):
-    data = {"success": False, "errmsg": "Unknown error"}
+    data = {"success": False, "errmsg": "undefined"}
     try:
         if request.is_ajax():
             if 'task_id' in request.POST.keys() and request.POST['task_id']:
@@ -192,7 +192,7 @@ def poll_state(request):
                     aggr_log = '\n'.join(task.result.log)
                     aggr_err = '\n'.join(task.result.err)
                     data = {"success": True, "result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
-                elif task.state == "PROGRESS":
+                else:
                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}
             else:
                 data = {"success": False, "errmsg": "No task_id in the request"}

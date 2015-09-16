@@ -29,7 +29,7 @@ function callback(data) {
   for (doc of data.response.docs) {
     var fileAdress = lilyEndpoint + encodeURIComponent(doc['lily.id']) +
         '/field/n$' + blobField + '/data?ns.n=' + lilyNamespace;
-    var link = '<a href="' + fileAdress + '">' + doc[titleField] + '</a>';
+    var link = '<a href="' + fileAdress + '" target="_blank">' + doc[titleField] + '</a>';
     var bytes = doc[bytesField];
     var filesize;
     if (bytes < 1024)

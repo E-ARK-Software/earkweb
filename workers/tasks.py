@@ -443,15 +443,11 @@ class AIPCreation(Task, StatusValidation):
 
             # update the PREMIS file at the end of the task - SUCCESS
             add_PREMIS_event('AIPCreation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            result = tl.fin()
-            print result
-            tl.addinfo("OK!")
-            return result
+            return tl.fin()
         except Exception, e:
             # update the PREMIS file at the end of the task - FAILURE
             tl.error("ERROR:"+str(e))
             add_PREMIS_event('AIPCreation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-
             return handle_error(ip, tc, tl)
 
 
