@@ -42,6 +42,11 @@ Update filetype signatures:
 
 2. Create virtual environment (python)
 
+    Create a directory for your virtual environments and set the environment variable (e.g. in your ~/.bashrc):
+    
+        export WORKON_HOME=~/Envs
+        source /usr/local/bin/virtualenvwrapper.sh
+
     Create a virtual environment (e.g. named earkweb) to install additional python packages separately from the default python installation.
 
         sudo pip install virtualenv
