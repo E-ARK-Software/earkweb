@@ -42,17 +42,20 @@ Update filetype signatures:
 
 2. Create virtual environment (python)
 
+    Install virtual environment python packages (requires pip: https://pypi.python.org/pypi/pip):
+
+        sudo pip install virtualenv
+        sudo pip install virtualenvwrapper
+
+    Create a virtual environment (e.g. named earkweb) to install additional python packages separately from the default python installation.
+    
+        mkvirtualenv earkweb
+        workon earkweb
+
     Create a directory for your virtual environments and set the environment variable (e.g. in your ~/.bashrc):
     
         export WORKON_HOME=~/Envs
         source /usr/local/bin/virtualenvwrapper.sh
-
-    Create a virtual environment (e.g. named earkweb) to install additional python packages separately from the default python installation.
-
-        sudo pip install virtualenv
-        sudo pip install virtualenvwrapper
-        mkvirtualenv earkweb
-        workon earkweb
         
     If the virtual environment is active, this is shown by a prefix in the console:
     
@@ -68,7 +71,12 @@ Update filetype signatures:
 
 3. Install additional libraries
 
-        pip install -r ${EARKWEB}/requirements.txt
+        pip install -r ${EARKWEB}/requirements.txtlib
+        
+   Common errors that might occur during python package installation are missing linux package dependencies, 
+   therefore it might be necessary to install following packages:
+        
+        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev
 
 4. Enable CAS in Django
 
@@ -91,15 +99,28 @@ Update filetype signatures:
 
 1. Prepare databases
 
+    Install mysql database if not available on your system:
+    
+        sudo apt-get install mysql-server
+    
     A MySQL database is defined in `${EARKWEB}/settings.py`.
-    Create the database first and grant access to user 'arkiv':
+    Create the database first and 
+    
+    Login to mysql:
     
         mysql -u root -p<rootpassword>
         
+    Create user 'arkiv':
+    
+        CREATE USER 'jeffrey'@'localhost' IDENTIFIED BY 'mypass';
+        
+    Create database 'eark':
+        
         mysql> create database eark;
-        Query OK, 1 row affected (0.00 sec)
+        
+    Grant access to user 'arkiv':
 
-        mysql> GRANT ALL ON eark.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+        GRANT ALL ON eark.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
         
     Create another database for Celery:
     
