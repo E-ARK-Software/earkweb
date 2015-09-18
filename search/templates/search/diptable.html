@@ -24,5 +24,15 @@
                 </table>
             </td>
         </tr>
+        {% if ip.statusprocess > 10000 %}
+		<tr class="row1">
+			<td>Working area path</td>
+			<td><a href="{% url 'search:working_area' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+		</tr>
+		{% endif %}
+        <tr class="row1">
+    		<td>IP processing status</td>
+    		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
+    	</tr>
     </tbody>
   </table>

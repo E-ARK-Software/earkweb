@@ -32,6 +32,14 @@ StatusProcess_CHOICES = (
 
     (10000, 'New DIP creation process'),
 
+    (10100, 'AIPs aquired'),
+
+    (10190, 'Acquisition of AIPs failed'),
+
+    (10200, 'AIPs extracted'),
+
+    (10290, 'Extraction of AIPs failed'),
+
 )
 
 class InformationPackage(models.Model):

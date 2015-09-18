@@ -115,12 +115,17 @@ class Reset(Task):
         if packagename != "" and os.path.exists(temporary_working_dir):
             tl.addinfo("Temporary package directory removed from working directory: " + temporary_working_dir)
             shutil.rmtree(temporary_working_dir)
-        ip.statusprocess = tc.success_status
-        tl.addinfo("Setting statusprocess to 0")
+        status = int(ip.statusprocess)
+        if status > 9999:
+            tl.addinfo("AIP to DIP process")
+            ip.statusprocess = 10000
+        else:
+            ip.statusprocess = 0
+        tl.addinfo("Setting statusprocess to %s" % ip.statusprocess)
         ip.uuid = randomutils.getUniqueID()
         tl.addinfo("New uuid assigned: %s" % ip.uuid)
         ip.identifier = ""
-        tl.addinfo("Setting identifier to empty string")
+        tl.addinfo("Setting package identifier to empty string")
         ip.save()
 
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
@@ -600,11 +605,11 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:9,type:2,expected_status:status==10000,success_status:10000,error_status:10000
+        @param      tc: order:9,type:2,expected_status:status==10000,success_status:10100,error_status:10190
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time = init_task(pk_id, "DIPAcquireAIPs", "sip_to_aip_processing")
+        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPAcquireAIPs", "aip_to_dip_processing")
         tl.err = self.valid_state(ip, tc)
         if len(tl.err) > 0:
             return tl.fin()
@@ -643,3 +648,75 @@ class DIPAcquireAIPs(Task, StatusValidation):
         except Exception:
             return handle_error(ip, tc, tl)
 
+
+
+class DIPExtractAIPs(Task, StatusValidation):
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        AIP Structure creation
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: order:10,type:2,expected_status:status==10100,success_status:10100,error_status:10100
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPExtractAIPs", "aip_to_dip_processing")
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        try:
+            # create dip working directory
+            if not os.path.exists(ip_work_dir):
+                os.mkdir(ip_work_dir)
+
+            # packagename is identifier of the DIP creation process
+            dip = DIP.objects.get(name=ip.packagename)
+
+            def get_tar_object(aip):
+                import sys
+                reload(sys)
+                sys.setdefaultencoding('utf8')
+                package_extension = aip.source.rpartition('.')[2]
+                aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
+                return tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
+
+            if dip.all_aips_available():
+                total_members = 0
+                for aip in dip.aips.all():
+                    tar_obj = get_tar_object(aip)
+                    members = tar_obj.getmembers()
+                    total_members += len(members)
+                    tar_obj.close()
+
+                tl.addinfo("DIP: %s, total number of entries: %d" % (ip.packagename, total_members))
+                total_processed_members = 0
+                perc = 0
+                for aip in dip.aips.all():
+                    package_extension = aip.source.rpartition('.')[2]
+                    aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
+                    tl.addinfo("Extracting: %s" % aip_in_dip_work_dir)
+                    tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
+                    members = tar_obj.getmembers()
+                    current_package_total_members = 0
+                    for member in members:
+                        if total_processed_members % 10 == 0:
+                            perc = (total_processed_members * 100) / total_members
+                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                        tar_obj.extract(member, ip_work_dir)
+                        tl.addinfo(("File extracted: %s" % member.name), display=False)
+                        total_processed_members += 1
+                        current_package_total_members += 1
+                    ip.statusprocess = tc.success_status
+                    ip.save()
+                    tl.addinfo("Extraction of %d items from package %s finished" % (current_package_total_members, aip.identifier))
+                tl.addinfo(("Extraction of %d items in total finished" % total_processed_members))
+                self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            else:
+                tl.addinfo("All AIPs must be accessible to perform this task")
+            result = tl.fin()
+            ip.statusprocess = tc.success_status if result.success else tc.error_status
+            ip.save()
+            return result
+        except Exception:
+            return handle_error(ip, tc, tl)
