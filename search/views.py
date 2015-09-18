@@ -384,10 +384,13 @@ def extractTar(filename):
 @csrf_exempt
 def dip_detail_table(request):
     pkg_id = request.POST['pkg_id']
-    print pkg_id
-    print config_path_work
+
+    ip = InformationPackage.objects.get(pk=pkg_id)
+    dip = DIP.objects.get(name=ip.packagename)
+
     context = RequestContext(request, {
-        "ip": InformationPackage.objects.get(pk=pkg_id),
+        "ip": ip,
+        "dip": dip,
         "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
         "config_path_work": config_path_work
     })

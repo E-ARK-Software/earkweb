@@ -117,12 +117,10 @@ class Reset(Task):
             shutil.rmtree(temporary_working_dir)
         ip.statusprocess = tc.success_status
         tl.addinfo("Setting statusprocess to 0")
-        ip.uuid = ""
-        tl.addinfo("Setting uuid to empty string")
+        ip.uuid = randomutils.getUniqueID()
+        tl.addinfo("New uuid assigned: %s" % ip.uuid)
         ip.identifier = ""
         tl.addinfo("Setting identifier to empty string")
-        ip.packagename = ""
-        tl.addinfo("Setting packagename to empty string")
         ip.save()
 
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
