@@ -27,7 +27,7 @@ from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt
 
 from earkcore.utils.stringutils import lstrip_substring
-from sip2aip.forms import PackageWorkflowModuleSelectForm
+from sip2aip.forms import DIPPackageWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
 logger = logging.getLogger(__name__)
@@ -73,8 +73,7 @@ def dip(request, name):
     dip = DIP.objects.get(name=name)
     ip = InformationPackage.objects.get(packagename=name)
     template = loader.get_template('search/dip.html')
-
-    form = PackageWorkflowModuleSelectForm()
+    form = DIPPackageWorkflowModuleSelectForm()
 
     context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'form': form})
     return HttpResponse(template.render(context))

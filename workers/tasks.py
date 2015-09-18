@@ -98,7 +98,7 @@ class Reset(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:0,expected_status:status!=-9999,success_status:0,error_status:90
+        @param      tc: order:0,type:3,expected_status:status!=-9999,success_status:0,error_status:90
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -148,7 +148,7 @@ class SIPDeliveryValidation(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:1,expected_status:status==0,success_status:100,error_status:190
+        @param      tc: order:1,type:1,expected_status:status==0,success_status:100,error_status:190
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -203,7 +203,7 @@ class IdentifierAssignment(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:2,expected_status:status==100,success_status:200,error_status:290
+        @param      tc: order:2,type:1,expected_status:status==100,success_status:200,error_status:290
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -238,7 +238,7 @@ class SIPExtraction(Task):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:3,expected_status:status==200,success_status:300,error_status:390
+        @param      tc: order:3,type:1,expected_status:status==200,success_status:300,error_status:390
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -286,7 +286,7 @@ class SIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:4,expected_status:status>=300~and~status<400,success_status:400,error_status:490
+        @param      tc: order:4,type:1,expected_status:status>=300~and~status<400,success_status:400,error_status:490
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -333,7 +333,7 @@ class AIPCreation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:5,expected_status:status==400,success_status:500,error_status:590
+        @param      tc: order:5,type:1,expected_status:status==400,success_status:500,error_status:590
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -458,7 +458,7 @@ class AIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:6,expected_status:status>=500,success_status:600,error_status:690
+        @param      tc: order:6,type:1,expected_status:status>=500,success_status:600,error_status:690
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -490,7 +490,7 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:7,expected_status:status>=600,success_status:700,error_status:790
+        @param      tc: order:7,type:1,expected_status:status>=600,success_status:700,error_status:790
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -546,7 +546,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:8,expected_status:status>=700,success_status:800,error_status:890
+        @param      tc: order:8,type:1,expected_status:status>=700,success_status:800,error_status:890
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -602,7 +602,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:9,expected_status:status==10000,success_status:10000,error_status:10000
+        @param      tc: order:9,type:2,expected_status:status==10000,success_status:10000,error_status:10000
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """

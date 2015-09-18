@@ -8,6 +8,7 @@ class WorkflowModules(models.Model):
     success_status = models.IntegerField(default=0)
     error_status = models.IntegerField(default=0)
     ordval = models.IntegerField(default=0)
+    ttype = models.IntegerField(default=0)
     def __str__(self):
         return self.identifier
 

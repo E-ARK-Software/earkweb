@@ -117,7 +117,7 @@ class InformationPackageDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
-        context['form'] = forms.PackageWorkflowModuleSelectForm()
+        context['form'] = forms.SIPPackageWorkflowModuleSelectForm()
         context['config_path_work'] = config_path_work
         return context
 
