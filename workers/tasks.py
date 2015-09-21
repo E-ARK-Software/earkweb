@@ -786,4 +786,6 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
         tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
     else:
         tl.adderr("An error occurred while trying to extract package %s extracted to %s" % (package_file_path, target_directory))
+    # delete file after extraction
+    os.remove(package_file_path)
     return proc_res.success

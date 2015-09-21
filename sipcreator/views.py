@@ -65,38 +65,45 @@ def sipcreation(request):
     return HttpResponse(template.render(context))
 
 @login_required
-def add_file(request, uuid, folder):
-    work_dir = os.path.join(config_path_work,uuid)
-    folder_path = os.path.join(config_path_work,uuid,folder)
-    if not os.path.exists(folder_path):
-        mkdir_p(folder_path)
+def add_file(request, uuid, subfolder, datafolder):
+    if subfolder == "_root_":
+        subfolder = "./"
+    print "UUID: %s" % uuid
+    print "SUBFOLDER: %s" % subfolder
+    print "DATAFOLDER: %s" % datafolder
+    ip_work_dir = os.path.join(config_path_work,uuid)
+    upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
+    print ip_work_dir
+    print upload_path
+
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
     if request.method == 'POST':
         form = TinyUploadFileForm(request.POST, request.FILES)
         if form.is_valid():
-            upload_aip(work_dir, folder, request.FILES['content_file'])
+            upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
         else:
             if form.errors:
                 for error in form.errors:
                     print(str(error) + str(form.errors[error]))
 
-        url = reverse('sipcreator:index')
-        return HttpResponseRedirect(url)
-    else:
-        pass
+    url = reverse('sipcreator:index')
+    return HttpResponseRedirect(url)
+    # else:
+    #     pass
 
-def upload_aip(work_dir, folder, f):
-    folder_path = os.path.join(work_dir, folder)
-    print "Upload file '%s' to working directory: %s" % (f, folder)
-    if not os.path.exists(folder_path):
-        mkdir_p(folder_path)
-    destination_file = os.path.join(folder_path,f.name)
+def upload_aip(ip_work_dir, upload_path, f):
+    print "Upload file '%s' to working directory: %s" % (f, upload_path)
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
+    destination_file = os.path.join(upload_path,f.name)
     with open(destination_file, 'wb+') as destination:
         for chunk in f.chunks():
             destination.write(chunk)
     destination.close()
     if f.name.endswith(".tar"):
-        async_res = extract_and_remove_package.delay(destination_file, folder_path, os.path.join(work_dir, 'metadata/sip_creation.log'))
-        print "Package extraction task '%s' to extract package '%s' to working directory: %s" % (async_res.id, f.name, folder)
+        async_res = extract_and_remove_package.delay(destination_file, upload_path, os.path.join(ip_work_dir, 'metadata/sip_creation.log'))
+        print "Package extraction task '%s' to extract package '%s' to working directory: %s" % (async_res.id, f.name, upload_path)
 
 @login_required
 @csrf_exempt

@@ -38,7 +38,7 @@
         </td>
         <td id="content-folder">
             <div class="directorytree" id="dirtree-content"></div>
-            <form action="{% url 'sipcreator:add_file' uuid 'data/content' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' uuid 'data' 'content' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
@@ -48,7 +48,7 @@
       <tr>
         <td id="documentation-folder">
             <div class="directorytree" id="dirtree-documentation"></div>
-            <form action="{% url 'sipcreator:add_file' uuid 'data/documentation' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' uuid 'data' 'documentation' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
@@ -58,7 +58,7 @@
       <tr>
         <td id="metadata-folder" colspan="2">
             <div class="directorytree" id="dirtree-metadata"></div>
-            <form action="{% url 'sipcreator:add_file' uuid 'metadata' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' uuid '_root_' 'metadata' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
