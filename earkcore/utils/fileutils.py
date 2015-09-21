@@ -1,4 +1,5 @@
 from shutil import copytree
+from shutil import rmtree
 import os, errno
 from earkcore.utils.stringutils import lstrip_substring
 
@@ -24,6 +25,9 @@ def mkdir_p(path):
             pass
         else: raise
 
+def removeDir(path):
+    if os.path.isdir(path):
+        rmtree(path)
 
 def remove_protocol(path_with_protocol):
     return lstrip_substring(path_with_protocol, 'file://')

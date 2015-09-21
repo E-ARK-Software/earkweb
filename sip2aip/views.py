@@ -74,7 +74,7 @@ class InformationPackageList(ListView):
     model = InformationPackage
     template_name='sip2aip/reception.html'
     context_object_name='ips'
-    queryset=InformationPackage.objects.filter(statusprocess__lt = 9999)
+    queryset=InformationPackage.objects.filter(statusprocess__lt = 9999).filter(statusprocess__gt = 99)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -89,7 +89,13 @@ class InformationPackageList(ListView):
 @csrf_exempt
 def get_directory_json(request):
     uuid = request.POST['uuid']
-    package_name = os.listdir('/var/data/earkweb/work/'+uuid+'/')[0]
+    directory = '/var/data/earkweb/work/'+uuid+'/'
+    print "List directory: %s" % directory
+    dirlist = os.listdir(directory)
+    if len(dirlist) > 0:
+        package_name = dirlist[0]
+    else:
+        package_name = dirlist
     return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid) })
 
 @login_required

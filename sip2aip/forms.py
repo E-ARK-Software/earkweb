@@ -22,3 +22,9 @@ class SIPPackageWorkflowModuleSelectForm(PackageWorkflowModuleSelectForm):
     ips = forms.ModelChoiceField(label="Information package", queryset=InformationPackage.objects.all())
     wfs = forms.ModelChoiceField(label="Task", queryset=WorkflowModules.objects.extra(where=["ttype & %d" % ttype]).order_by('ordval'))
     wiref = forms.ModelChoiceField(label="Workflow", queryset=Wirings.objects.all())
+
+class SIPCreationPackageWorkflowModuleSelectForm(PackageWorkflowModuleSelectForm):
+    ttype = 4
+    ips = forms.ModelChoiceField(label="Information package", queryset=InformationPackage.objects.all())
+    wfs = forms.ModelChoiceField(label="Task", queryset=WorkflowModules.objects.extra(where=["ttype & %d" % ttype]).order_by('ordval'))
+    wiref = forms.ModelChoiceField(label="Workflow", queryset=Wirings.objects.all())

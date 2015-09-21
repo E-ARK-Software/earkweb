@@ -1,0 +1,17 @@
+<table id="headtable">
+    {% if uuid %}
+    <tr class="row1">
+        <td class="fn">Process ID:</td>
+        <td class="fv">{{ uuid }}</td>
+    </tr>
+    <tr>
+        <td class="fn">Package name:</td>
+        <td class="fv">{{ packagename }}</td>
+    </tr>
+    {% else %}
+    <tr>
+        <td class="fn"><label for="packagename" style="float: left; font-weight: bold">Package name</label></td>
+        <td class="fv"><input type="text" style="float: left;width: 30em" class="form-control" id="packagename" name="packagename" placeholder="PACKAGE.NAME.000" value="{{ packagename }}"> <span class="errmsg" id="msgpackagename"></span></td>
+    </tr>
+    {% endif %}
+</table>

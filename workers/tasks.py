@@ -1,5 +1,6 @@
 from celery import Task, shared_task
 import time, os
+from earkcore.packaging.extraction import Extraction
 from sip2aip.models import MyModel
 from time import sleep
 from config import params
@@ -94,7 +95,7 @@ class Reset(Task):
 
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        Reset identifier and package status
+        Reset
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -202,7 +203,7 @@ class SIPDeliveryValidation(Task):
 class IdentifierAssignment(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        Assign identifier
+        Identifier Assignment
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -237,7 +238,7 @@ class SIPExtraction(Task):
 
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        Unpack tar file to destination directory
+        SIP Extraction
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -285,7 +286,7 @@ class SIPExtraction(Task):
 class SIPValidation(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        SIP Structure Validation
+        SIP Validation
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -332,7 +333,7 @@ class SIPValidation(Task, StatusValidation):
 class AIPCreation(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIP Structure creation
+        AIP Creation
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -457,7 +458,7 @@ class AIPCreation(Task, StatusValidation):
 class AIPValidation(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIPValidation
+        AIP Validation
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -489,7 +490,7 @@ class AIPValidation(Task, StatusValidation):
 class AIPPackaging(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIP Structure creation
+        AIP Packaging
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -545,7 +546,7 @@ class AIPPackaging(Task, StatusValidation):
 class LilyHDFSUpload(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIP Structure creation
+        Lily HDFS Upload
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -601,7 +602,7 @@ class LilyHDFSUpload(Task, StatusValidation):
 class DIPAcquireAIPs(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIP Structure creation
+        DIP Acquire AIPs
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -653,7 +654,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
 class DIPExtractAIPs(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
-        AIP Structure creation
+        DIP Extract AIPs
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
@@ -720,3 +721,69 @@ class DIPExtractAIPs(Task, StatusValidation):
             return result
         except Exception:
             return handle_error(ip, tc, tl)
+
+
+class SIPPackageMetadataCreation(Task, StatusValidation):
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Packaging
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: order:11,type:4,expected_status:10,success_status:10,error_status:10
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "SIPPackageMetadataCreation", "sip_creation")
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        try:
+            add_PREMIS_event('SIPPackageMetadataCreation', 'SUCCESS', 'identifier', 'agent', package_premisfile, tl, ip_work_dir)
+            tl.addinfo("SIP package metadata creation completed")
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            result = tl.fin()
+            ip.statusprocess = tc.success_status if result.success else tc.error_status
+            ip.save()
+            return result
+        except Exception:
+            return handle_error(ip, tc, tl)
+
+class SIPPackaging(Task, StatusValidation):
+    def run(self, pk_id, tc, *args, **kwargs):
+        """
+        SIP Packaging
+        @type       pk_id: int
+        @param      pk_id: Primary key
+        @type       tc: TaskConfig
+        @param      tc: order:12,type:4,expected_status:10,success_status:10,error_status:10
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "SIPPackaging", "sip_creation")
+        tl.err = self.valid_state(ip, tc)
+        if len(tl.err) > 0:
+            return tl.fin()
+        try:
+            add_PREMIS_event('SIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premisfile, tl, ip_work_dir)
+            tl.addinfo("SIPPackaging completed")
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            result = tl.fin()
+            ip.statusprocess = tc.success_status if result.success else tc.error_status
+            ip.save()
+            return result
+        except Exception:
+            return handle_error(ip, tc, tl)
+
+from earkweb.celeryapp import app
+
+@app.task(bind=True)
+def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
+    tl = TaskLogger(proc_logfile)
+    extr = Extraction()
+    proc_res = extr.extract(package_file_path, target_directory)
+    if proc_res.success:
+        tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
+    else:
+        tl.adderr("An error occurred while trying to extract package %s extracted to %s" % (package_file_path, target_directory))
+    return proc_res.success
