@@ -397,12 +397,12 @@ def dip_detail_table(request):
     })
     return render_to_response('search/diptable.html', locals(), context_instance=context)
 
-@login_required
-def working_area(request, uuid):
-    template = loader.get_template('search/workingarea.html')
-    print uuid
-    context = RequestContext(request, {
-        "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
-    })
-    return HttpResponse(template.render(context))
+# @login_required
+# def working_area(request, uuid):
+#     template = loader.get_template('search/workingarea.html')
+#     print uuid
+#     context = RequestContext(request, {
+#         "uuid": uuid,
+#         "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
+#     })
+#     return HttpResponse(template.render(context))

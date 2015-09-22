@@ -57,7 +57,7 @@
  */
 (function(){
     $.ajax({
-        url: "/earkweb/sip2aip/get_directory_json",
+        url: "/earkweb/earkcore/get_directory_json",
         type: "POST",
         data: "uuid="+uuid,
     }).success(function(dir_as_json){
@@ -90,7 +90,7 @@ $('#dirtree-content').bind("dblclick.jstree", function (event) {
  */
 (function(){
     $.ajax({
-        url: "/earkweb/sip2aip/get_directory_json",
+        url: "/earkweb/earkcore/get_directory_json",
         type: "POST",
         data: "uuid="+uuidcontent,
     }).success(function(dir_as_json){
@@ -114,7 +114,7 @@ $('#dirtree-content').bind("dblclick.jstree", function (event) {
  */
 (function(){
     $.ajax({
-        url: "/earkweb/sip2aip/get_directory_json",
+        url: "/earkweb/earkcore/get_directory_json",
         type: "POST",
         data: "uuid="+uuidmetadata,
     }).success(function(dir_as_json){

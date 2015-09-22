@@ -13,7 +13,7 @@
         {% if ip.statusprocess > 0 %}
 		<tr class="row1">
 			<td>Working area path</td>
-			<td><a href="{% url 'sipcreator:working_area' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+			<td><a href="{% url 'sipcreator:working_area' 'sipcreation' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
 		</tr>
 		{% endif %}
         <tr class="row1">

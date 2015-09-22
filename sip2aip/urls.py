@@ -2,6 +2,8 @@ from django.conf.urls import patterns, url
 
 from sip2aip import views
 
+import earkcore
+
 from earkcore.views import InformationPackageDetailView
 
 urlpatterns= patterns('',
@@ -20,8 +22,8 @@ urlpatterns= patterns('',
 
     url(r'^ip_detail_table$', views.ip_detail_table, name='ip_detail_table'),
 
-    url(r'^working_area/(?P<uuid>[a-z0-9-]{36,36})/$', views.working_area, name='working_area'),
+    url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9-]{36,36})/$', earkcore.views.working_area, name='working_area'),
 
-    url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
+    url(r'^get_directory_json$', earkcore.views.get_directory_json, name='get_directory_json'),
 
 )

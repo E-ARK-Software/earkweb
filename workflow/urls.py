@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, url
 
 from workflow import views
+import earkcore.views
 
 from django.views.decorators.csrf import csrf_exempt
  
@@ -19,5 +20,5 @@ urlpatterns= patterns('',
 
     url(r'^poll_state$', views.poll_state, name='poll_state'),
 
-    url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
+    url(r'^get_directory_json$', earkcore.views.get_directory_json, name='get_directory_json'),
 )

@@ -61,6 +61,7 @@ def ip_detail_table(request):
 
 @login_required
 def index(request):
+    del request.session['uuid']
     template = loader.get_template('sip2aip/index.html')
     context = RequestContext(request, {
 
@@ -71,6 +72,7 @@ class InformationPackageList(ListView):
     """
     List IngestQueue
     """
+
     model = InformationPackage
     template_name='sip2aip/reception.html'
     context_object_name='ips'
@@ -85,28 +87,26 @@ class InformationPackageList(ListView):
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
         return context
 
-@login_required
-@csrf_exempt
-def get_directory_json(request):
-    uuid = request.POST['uuid']
-    directory = '/var/data/earkweb/work/'+uuid+'/'
-    print "List directory: %s" % directory
-    dirlist = os.listdir(directory)
-    if len(dirlist) > 0:
-        package_name = dirlist[0]
-    else:
-        package_name = dirlist
-    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid) })
+# @login_required
+# @csrf_exempt
+# def get_directory_json(request):
+#     uuid = request.POST['uuid']
+#     directory = '/var/data/earkweb/work/'+uuid+'/'
+#     dirlist = os.listdir(directory)
+#     if len(dirlist) > 0:
+#         package_name = dirlist[0]
+#     else:
+#         package_name = dirlist
+#     return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/') })
 
-@login_required
-def working_area(request, uuid):
-    template = loader.get_template('sip2aip/workingarea.html')
-    print uuid
-    context = RequestContext(request, {
-        "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
-    })
-    return HttpResponse(template.render(context))
+# @login_required
+# def working_area(request, uuid):
+#     template = loader.get_template('sip2aip/workingarea.html')
+#     context = RequestContext(request, {
+#         "uuid": uuid,
+#         "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/'), indent=4, sort_keys=False, encoding="utf-8")
+#     })
+#     return HttpResponse(template.render(context))
 
 class InformationPackageDetail(DetailView):
     """
@@ -115,6 +115,8 @@ class InformationPackageDetail(DetailView):
     model = InformationPackage
     context_object_name='ip'
     template_name='sip2aip/detail.html'
+
+
 
 
     def dispatch(self, *args, **kwargs):

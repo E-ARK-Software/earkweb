@@ -68,9 +68,6 @@ def sipcreation(request):
 def add_file(request, uuid, subfolder, datafolder):
     if subfolder == "_root_":
         subfolder = "./"
-    print "UUID: %s" % uuid
-    print "SUBFOLDER: %s" % subfolder
-    print "DATAFOLDER: %s" % datafolder
     ip_work_dir = os.path.join(config_path_work,uuid)
     upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
     print ip_work_dir
@@ -114,7 +111,6 @@ def initialize(request, packagename):
     sip_struct_work_dir = os.path.join(config_path_work,uuid)
     print "package name: %s" % packagename
     print "working directory: %s" % sip_struct_work_dir
-
     print "uuid (session): %s" % request.session['uuid']
     print "package name (session): %s" % request.session['packagename']
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
@@ -123,15 +119,15 @@ def initialize(request, packagename):
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10, packagename=packagename)
     return HttpResponse(str(True).lower())
 
-@login_required
-def working_area(request, uuid):
-    template = loader.get_template('sipcreator/workingarea.html')
-    print uuid
-    context = RequestContext(request, {
-        "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
-    })
-    return HttpResponse(template.render(context))
+# @login_required
+# def working_area(request, uuid):
+#     template = loader.get_template('sipcreator/workingarea.html')
+#     request.session['uuid'] = uuid
+#     context = RequestContext(request, {
+#         "uuid": uuid,
+#         "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
+#     })
+#     return HttpResponse(template.render(context))
 
 @login_required
 def delete(request, uuid):
