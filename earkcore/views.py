@@ -56,34 +56,29 @@ def working_area(request, section, uuid):
 @login_required
 @csrf_exempt
 def read_ipfc(request, ip_sub_file_path):
-    uuid = request.session['uuid']
     # only allow reading from session working directory (ip_sub_file_path must begin with uuid)
-    if uuid and ip_sub_file_path.startswith(uuid):
-        file_path = os.path.join(config_path_work, ip_sub_file_path)
-        if not os.path.exists(file_path):
-            return HttpResponseNotFound("File not found %s vs %s" % (ip_sub_file_path, file_path))
-        elif not os.path.isfile(file_path):
-            return HttpResponseBadRequest("Not a file")
-        else:
-            file_size = fsize(file_path)
-            if file_size <= config_max_filesize_viewer:
-                file_content = read_file_content(file_path)
-                if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
-                    file_content = "data:image/png;base64,"+base64.b64encode(file_content)
-                return HttpResponse(file_content)
-            else:
-                return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
+    file_path = os.path.join(config_path_work, ip_sub_file_path)
+    if not os.path.exists(file_path):
+        return HttpResponseNotFound("File not found %s vs %s" % (ip_sub_file_path, file_path))
+    elif not os.path.isfile(file_path):
+        return HttpResponseBadRequest("Not a file")
     else:
-        return HttpResponseForbidden("Unauthorized access")
+        file_size = fsize(file_path)
+        if file_size <= config_max_filesize_viewer:
+            file_content = read_file_content(file_path)
+            mime = get_mime_type(file_path)
+            if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
+                file_content = "data:"+mime+";base64,"+base64.b64encode(file_content)
+            return HttpResponse(file_content)
+        else:
+            return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
 
 
 @login_required
 @csrf_exempt
 def get_directory_json(request):
     uuid = request.POST['uuid']
-    print "UUID (get directory): "+uuid
     directory = '/var/data/earkweb/work/'+uuid+'/'
-    print "DIRECTORY: "+directory
     dirlist = os.listdir(directory)
     if len(dirlist) > 0:
         package_name = dirlist[0]

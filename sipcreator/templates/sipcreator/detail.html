@@ -28,21 +28,14 @@
           <form>
             {% csrf_token %}
             <table id="headtable">
-                {% if ip.uuid %}
+                <tr>
+                    <td class="fn emph">Package name:</td>
+                    <td class="fv emph">{{ ip.packagename }}</td>
+                </tr>
                 <tr class="row1">
                     <td class="fn">Process ID:</td>
                     <td class="fv">{{ ip.uuid }}</td>
                 </tr>
-                <tr>
-                    <td class="fn">Package name:</td>
-                    <td class="fv">{{ ip.packagename }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td class="fn"><label for="packagename" style="float: left; font-weight: bold">Package name</label></td>
-                    <td class="fv"><input type="text" style="float: left;width: 30em" class="form-control" id="packagename" name="packagename" placeholder="PACKAGE.NAME.000" value="{{ ip.packagename }}"> <span class="errmsg" id="msgpackagename"></span></td>
-                </tr>
-                {% endif %}
             </table>
             </form>
       </td></tr>
@@ -84,15 +77,13 @@
       </tr>
       {% endif %}
     </table>
-    {% if ip.uuid %}
-    <a class="btn btn-primary" type="button" href="{% url 'sipcreator:sipcreation' %}">Proceed</a>
+
+    <a class="btn btn-primary" type="button" href="{% url 'sipcreator:sipcreation' ip.id %}">Proceed</a>
 
     <button style="margin-left: 30px" class="btn btn-default" data-href="{% url 'sipcreator:delete' ip.id %}" data-toggle="modal" data-target="#confirm-delete">
         Delete
     </button>
-    {% else %}
-    <button id="initialize" type="submit" class="btn btn-primary">Initialize</button>
-    {% endif %}
+
     <script src="{% static 'sipcreator/js/workingarea.js' %}"></script>
     <!-- modal delete confirmation -->
     <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">

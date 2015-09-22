@@ -19,9 +19,9 @@ urlpatterns= patterns('',
 
     url(r'^initialize/(?P<packagename>.*)', views.initialize, name='initialize'),
 
-    url(r'^sipcreation$', views.sipcreation, name='sipcreation'),
+    url(r'^sipcreation/(?P<pk>\d+)/$', views.SIPCreationDetail.as_view(), name='sipcreation'),
 
-    url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9-]{36,36})/$', earkcore.views.working_area, name='working_area'),
+    url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9\-]{36,36})/$', earkcore.views.working_area, name='working_area'),
 
     url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
 )

@@ -95,3 +95,6 @@ color: red;
     padding-bottom: 1em;
 }
 
+.emph {
+    font-weight: bold;
+}

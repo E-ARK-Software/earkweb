@@ -88,7 +88,26 @@ class InformationPackageDetail(DetailView):
         context['config_path_work'] = config_path_work
         uploadFileForm = TinyUploadFileForm()
         context['uploadFileForm'] = uploadFileForm
+        return context
 
+class SIPCreationDetail(DetailView):
+    """
+    Submit and View result from checkout to work area
+    """
+    model = InformationPackage
+    context_object_name='ip'
+    template_name='sipcreator/sipcreation.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(SIPCreationDetail, self).dispatch( *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(SIPCreationDetail, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] =  dict(StatusProcess_CHOICES)
+        context['config_path_work'] = config_path_work
+        form = SIPCreationPackageWorkflowModuleSelectForm()
+        context['form'] = form
         return context
 
 @login_required
