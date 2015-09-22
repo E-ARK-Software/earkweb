@@ -24,12 +24,14 @@ import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package
 
+
 @login_required
 def start(request):
     template = loader.get_template('sipcreator/start.html')
     context = RequestContext(request, {
     })
     return HttpResponse(template.render(context))
+
 
 @login_required
 def index(request):
@@ -51,11 +53,11 @@ def index(request):
     })
     return HttpResponse(template.render(context))
 
+
 class InformationPackageList(ListView):
     """
-    List IngestQueue
+    Information Package List View
     """
-
     model = InformationPackage
     template_name='sipcreator/index.html'
     context_object_name='ips'
@@ -70,9 +72,10 @@ class InformationPackageList(ListView):
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
         return context
 
+
 class InformationPackageDetail(DetailView):
     """
-    Submit and View result from checkout to work area
+    Information Package Detail View
     """
     model = InformationPackage
     context_object_name='ip'
@@ -110,22 +113,6 @@ class SIPCreationDetail(DetailView):
         context['form'] = form
         return context
 
-@login_required
-def sipcreation(request):
-    template = loader.get_template('sipcreator/sipcreation.html')
-    uuid = ""
-    packagename = ""
-    ip = None
-    form = SIPCreationPackageWorkflowModuleSelectForm()
-    context = RequestContext(request, {
-        "ip": ip,
-        "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
-        "config_path_work": config_path_work,
-        'uuid': uuid,
-        'packagename': packagename,
-        'form': form
-    })
-    return HttpResponse(template.render(context))
 
 @login_required
 def add_file(request, uuid, subfolder, datafolder):
@@ -179,15 +166,6 @@ def initialize(request, packagename):
     ip = InformationPackage.objects.get(uuid=uuid)
     return HttpResponse(str(ip.id))
 
-# @login_required
-# def working_area(request, uuid):
-#     template = loader.get_template('sipcreator/workingarea.html')
-#     request.session['uuid'] = uuid
-#     context = RequestContext(request, {
-#         "uuid": uuid,
-#         "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
-#     })
-#     return HttpResponse(template.render(context))
 
 @login_required
 def delete(request, pk):
