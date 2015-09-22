@@ -6,7 +6,13 @@ E-ARK integrated prototype web application
 
 ### Debian packages
 
+There are no debian package dependencies for running the earkweb application, specific tasks, however, have the following dependencies:
+
+1. summain - used to create a package manifest using the linux tool summain
+2. libgeos - required to install the python package shapely (gml/geo/gis tasks)
+
     sudo apt-get install summain jhove
+    sudo apt-get install libgeos-dev
 
 ### Python modules
 

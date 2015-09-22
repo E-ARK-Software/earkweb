@@ -1,18 +1,19 @@
-def lstrip_substring(str, substr):
+def lstrip_substring(strval, substr):
     """
     Remove substring from string at the beginning
-    @type       str: string
-    @param      str: String
+    @type       strval: string
+    @param      strval: String
     @type       substr: string
     @param      substr: Sub-string
     @rtype:     bool
     @return:    Result string
     """
-    if str.startswith(substr):
+    if strval.startswith(substr):
         len_substr = len(substr)
-        return str[len_substr:]
+        return strval[len_substr:]
     else:
-        return str
+        return strval
+
 
 def safe_path_string(value):
     """
