@@ -15,12 +15,21 @@ from django.core.urlresolvers import reverse
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
 from earkcore.utils.fileutils import rmtree
-
+from django.views.generic.list import ListView
+from django.utils.decorators import method_decorator
+from django.views.generic.detail import DetailView
 from earkcore.models import StatusProcess_CHOICES
 from sip2aip.forms import SIPCreationPackageWorkflowModuleSelectForm
 import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package
+
+@login_required
+def start(request):
+    template = loader.get_template('sipcreator/start.html')
+    context = RequestContext(request, {
+    })
+    return HttpResponse(template.render(context))
 
 @login_required
 def index(request):
@@ -42,17 +51,52 @@ def index(request):
     })
     return HttpResponse(template.render(context))
 
+class InformationPackageList(ListView):
+    """
+    List IngestQueue
+    """
+
+    model = InformationPackage
+    template_name='sipcreator/index.html'
+    context_object_name='ips'
+    queryset=InformationPackage.objects.filter(statusprocess__lt = 20).filter(statusprocess__gt = 0)
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageList, self).dispatch( *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageList, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        return context
+
+class InformationPackageDetail(DetailView):
+    """
+    Submit and View result from checkout to work area
+    """
+    model = InformationPackage
+    context_object_name='ip'
+    template_name='sipcreator/detail.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageDetail, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] =  dict(StatusProcess_CHOICES)
+        context['config_path_work'] = config_path_work
+        uploadFileForm = TinyUploadFileForm()
+        context['uploadFileForm'] = uploadFileForm
+
+        return context
+
 @login_required
 def sipcreation(request):
     template = loader.get_template('sipcreator/sipcreation.html')
     uuid = ""
     packagename = ""
     ip = None
-    if 'uuid' in request.session:
-        uuid = request.session['uuid']
-        ip = InformationPackage.objects.get(uuid=uuid)
-    if 'packagename' in request.session:
-        packagename = request.session['packagename']
     form = SIPCreationPackageWorkflowModuleSelectForm()
     context = RequestContext(request, {
         "ip": ip,
@@ -68,11 +112,8 @@ def sipcreation(request):
 def add_file(request, uuid, subfolder, datafolder):
     if subfolder == "_root_":
         subfolder = "./"
-    ip_work_dir = os.path.join(config_path_work,uuid)
+    ip_work_dir = os.path.join(config_path_work, uuid)
     upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
-    print ip_work_dir
-    print upload_path
-
     if not os.path.exists(upload_path):
         mkdir_p(upload_path)
     if request.method == 'POST':
@@ -83,11 +124,10 @@ def add_file(request, uuid, subfolder, datafolder):
             if form.errors:
                 for error in form.errors:
                     print(str(error) + str(form.errors[error]))
-
-    url = reverse('sipcreator:index')
+    ip = InformationPackage.objects.get(uuid=uuid)
+    url = '/earkweb/sipcreator/detail/' + str(ip.id)
     return HttpResponseRedirect(url)
-    # else:
-    #     pass
+
 
 def upload_aip(ip_work_dir, upload_path, f):
     print "Upload file '%s' to working directory: %s" % (f, upload_path)
@@ -117,7 +157,8 @@ def initialize(request, packagename):
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata'))
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10, packagename=packagename)
-    return HttpResponse(str(True).lower())
+    ip = InformationPackage.objects.get(uuid=uuid)
+    return HttpResponse(str(ip.id))
 
 # @login_required
 # def working_area(request, uuid):
@@ -130,13 +171,15 @@ def initialize(request, packagename):
 #     return HttpResponse(template.render(context))
 
 @login_required
-def delete(request, uuid):
+def delete(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('sipcreator/deleted.html')
-    del request.session['uuid']
-    del request.session['packagename']
-    if uuid:
-        rmtree(os.path.join(config_path_work, uuid))
+    if ip.uuid:
+        path = os.path.join(config_path_work, ip.uuid)
+        if os.path.exists(path):
+            rmtree(path)
     context = RequestContext(request, {
-        'uuid': uuid,
+        'uuid': ip.uuid,
     })
+    ip.delete()
     return HttpResponse(template.render(context))

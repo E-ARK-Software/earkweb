@@ -116,9 +116,7 @@ class InformationPackageDetail(DetailView):
     context_object_name='ip'
     template_name='sip2aip/detail.html'
 
-
-
-
+    @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
         return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
 
