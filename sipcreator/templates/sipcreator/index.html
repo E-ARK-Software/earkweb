@@ -1,107 +1,46 @@
 {% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
 
 {% load staticfiles %}
 
 {% block extra_head %}
 
-    <!-- AIP to DIP javascript -->
+    <!-- SIP to AIP javascript -->
     <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
-    <link rel="stylesheet" href="{% static "sipcreator/css/sipcreator.css" %}" type="text/css" />
 
-    <!-- index.html javascript -->
-    <script type="text/javascript" src="{% static 'search/js/index.js' %}"></script>
-    <link rel="stylesheet" href="{% static "sipcreator/css/index.css" %}" type="text/css" />
-
-     <link rel="stylesheet" href="{% static 'sipcreator/css/workingarea.css' %}" type="text/css" />
-
-    <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
-    <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
-
-    <script language="javascript">var uuid='{{ uuid }}/data/content'; var uuidcontent='{{ uuid }}/data/documentation'; var uuidmetadata='{{ uuid }}/metadata';</script>
 {% endblock %}
 
 {% block content %}
-    <h1>SIP Creation</h1>
 
-    <table id="tblsc" class="table table-striped table-bordered table-condensed">
-      <tr><td colspan="2">
-          <form>
-            {% csrf_token %}
-            {% include "sipcreator/headtable.html" %}
-            </form>
-      </td></tr>
-      {% if uuid %}
-      <tr>
-        <td rowspan="2" style="vertical-align: middle; width: 170px">
-            <span>data</span>
+    {% include "sipcreator/about_module.html" %}
 
-        </td>
-        <td id="content-folder">
-            <div class="directorytree" id="dirtree-content"></div>
-            <form action="{% url 'sipcreator:add_file' uuid 'data' 'content' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
-            </form>
-        </td>
-      </tr>
-      <tr>
-        <td id="documentation-folder">
-            <div class="directorytree" id="dirtree-documentation"></div>
-            <form action="{% url 'sipcreator:add_file' uuid 'data' 'documentation' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
-            </form>
-        </td>
-      </tr>
-      <tr>
-        <td id="metadata-folder" colspan="2">
-            <div class="directorytree" id="dirtree-metadata"></div>
-            <form action="{% url 'sipcreator:add_file' uuid '_root_' 'metadata' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
-            </form>
-        </td>
+    <p>The following table gives an overview about open SIP creation processes. Each package is identified by the package name (column 'Package name') which was provided in the first step of the
+    SIP creation process and an internal process identifier (column 'Process ID'). The process identifier is also used as the name of the working directory where information package
+    transformations take place (column 'SIP creation working directory').</p>
 
+    <p>Depending on the information package status (column 'IP processing status') certain transformation tasks can be applied.</p>
+
+    <table class="table table-striped table-bordered table-condensed">
+    <thead>
+      <tr>
+        <th>SIP package name</th>
+        <th>Process ID</th>
+        <th>SIP creation working directory</th>
+        <th>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></th>
       </tr>
-      {% endif %}
+    </thead>
+    <tbody>
+        {% for ip in ips %}
+            <tr>
+                <td><a href="{% url 'sipcreator:ip_detail' ip.pk %}" title='Detail information'>{{ ip.packagename }}</a></td>
+                <td>{{ ip.uuid }}</td>
+                <td>{{ ip.path }}</td>
+                <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
     </table>
-    {% if uuid %}
-    <a class="btn btn-primary" type="button" href="{% url 'sipcreator:sipcreation' %}">Proceed</a>
 
-    <button style="margin-left: 30px" class="btn btn-default" data-href="{% url 'sipcreator:delete' uuid %}" data-toggle="modal" data-target="#confirm-delete">
-        Delete
-    </button>
-    {% else %}
-    <button id="initialize" type="submit" class="btn btn-primary">Initialize</button>
-    {% endif %}
-    <script src="{% static 'sipcreator/js/workingarea.js' %}"></script>
-    <!-- modal delete confirmation -->
-    <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    Delete confirmation
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete this process?</p>
-                    <p>The package including all uploaded data will be removed.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-danger btn-ok">Delete</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        $('#confirm-delete').on('show.bs.modal', function(e) {
-        $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
-    });
-    </script>
-
-
+    <p>Proceed to the next step by clicking on the corresponding package name (column 'SIP package name') link which is where transformation tasks can be executed.</p>
 
 {% endblock %}

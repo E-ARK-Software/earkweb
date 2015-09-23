@@ -1,8 +1,11 @@
+h1 {
+
+}
+
 body {
   padding-top: 50px;
 }
 .content-wrapper {
-  padding-top: 10px;
   text-align: left;
 }
 
@@ -93,5 +96,9 @@ color: red;
     background-color: #F9F9F9;
     padding-top:1em;
     padding-bottom: 1em;
+}
+
+.emph {
+    font-weight: bold;
 }
 

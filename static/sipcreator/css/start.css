@@ -1,0 +1,35 @@
+.directorytree{
+    overflow-y: scroll;
+    height: 130px;
+    border: 1px solid gray;
+    background-color: white;
+}
+
+#content-folder #j1_1_anchor {
+}
+
+#documentation-folder #j2_1_anchor {
+}
+
+
+#metadata-folder #j3_1_anchor {
+}
+
+.error {
+    border: 2px solid red;
+}
+
+
+.ok {
+    border: 1px solid green;
+}
+
+.errmsg {
+    color: red;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+#tblsc td {
+    vertical-align: middle;
+}

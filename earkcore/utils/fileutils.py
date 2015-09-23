@@ -71,6 +71,11 @@ def latest_aip(abspath_basename, extension):
                 file_candidate = inc_file_name
                 i+=1
 
+def read_file_content(file_path):
+    fh = open(file_path,'r')
+    file_content = fh.read()
+    return file_content
+
 def main():
     print remove_protocol("file://./test")
 

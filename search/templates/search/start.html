@@ -11,10 +11,9 @@
 
 {% block content %}
 
-<h1>AIP to DIP conversion</h1>
-<h2>Start new DIP creation process</h2>
+{% include "search/about_module.html" %}
 
-<p>Select a name for the DIP creation process:</p>
+<p>The following procedure allows creating a DIP from a selection of AIPs. In the first step, please provide a package name for the DIP:</p>
 
 {% if error %}
 <p class="error">Error: {{ error }}</p>
@@ -28,7 +27,7 @@
 
             <div class="form-group">
 
-                <label for="dip_creation_process_name" class="control-label col-xs-3">Process name</label>
+                <label for="dip_creation_process_name" class="control-label col-xs-3">DIP package name</label>
                 <div class="col-xs-6">
                     <input type="text" class="form-control" id="dip_creation_process_name" name="dip_creation_process_name" placeholder="{{ procname }}"{% if procname %} value="{{ procname }}"{% endif %}>
                 </div>
@@ -43,10 +42,9 @@
 
     </form>
 
-
-
 </div>
 
 <p>In the next step the AIPs for creating the DIP must be selected.</p>
+
 
 {% endblock %}

@@ -21,11 +21,31 @@
 
 {% block content %}
 
-    {% if uuid %}
     <h1>SIP Creation</h1>
 
     <div id="dip-detail-table">
-        {% include "sipcreator/sipcrtable.html" %}
+        <table  class="table table-striped table-bordered table-condensed">
+            <tbody>
+                <tr>
+                    <td class="emph">Package name</td>
+                    <td class="emph">{{ ip.packagename }}</td>
+                </tr>
+                <tr>
+                    <td>Process ID</td>
+                    <td>{{ ip.uuid }}</td>
+                </tr>
+                {% if ip.statusprocess > 0 %}
+                <tr class="row1">
+                    <td>Working area path</td>
+                    <td><a href="{% url 'sipcreator:working_area' 'sipcreation' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+                </tr>
+                {% endif %}
+                <tr class="row1">
+                    <td>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></td>
+                    <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     {% include "workflow/execution_form.html" %}
@@ -36,8 +56,6 @@
     {% include "workflow/progress_module.html" %}
 
     <p><a href="{% url 'sipcreator:index' %}" title='Back to overview'>back</a></p>
-
-    {% endif %}
 
 
 {% endblock %}
