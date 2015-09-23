@@ -15,8 +15,8 @@ def get_file_ctime_iso_date_str(file_path, fmt=DT_ISO_FORMAT, wd=None):
     dt = pytz.timezone('Europe/Vienna').localize(datetime.datetime.fromtimestamp(os.path.getctime(path)).replace(microsecond=0))
     return dt.strftime(fmt)
 
-def ts_date():
-    return datetime.datetime.fromtimestamp(time.time()).strftime(TS_FORMAT)
+def ts_date(fmt = TS_FORMAT):
+    return datetime.datetime.fromtimestamp(time.time()).strftime(fmt)
 
 def measuretime(fn):
     @wraps(fn)
