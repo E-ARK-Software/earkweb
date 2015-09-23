@@ -14,20 +14,36 @@
 
 {% block content %}
 
-    <h1>SIP Creation</h1>
+    {% include "sipcreator/about_module.html" %}
 
-    <form>
-    {% csrf_token %}
-    <table id="headtable">
-        <tr>
-            <td class="fn"><label for="packagename" style="float: left; font-weight: bold">Package name</label></td>
-            <td class="fv"><input type="text" style="float: left;width: 30em" class="form-control" id="packagename" name="packagename" placeholder="PACKAGE.NAME.000" value="{{ ip.packagename }}"> <span class="errmsg" id="msgpackagename"></span></td>
-        </tr>
-    </table>
-    </form>
+    <p>In this step it is required to provide a package name for the SIP:</p>
 
-    <button id="initialize" type="submit" class="btn btn-primary">Initialize</button>
+    <div class="standard-form-container">
+
+        <form class="form-horizontal">
+            {% csrf_token %}
+
+                <div class="form-group">
+
+                    <label for="packagename" class="control-label col-xs-3">SIP package name</label>
+                    <div class="col-xs-6">
+                        <input type="text" style="float: left;width: 30em" class="form-control" id="packagename" name="packagename" placeholder="PACKAGE.NAME.000" value="{{ ip.packagename }}"> <span class="errmsg" id="msgpackagename"></span>
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <div class="col-xs-offset-3 col-xs-10">
+                        <button id="initialize" type="submit" class="btn btn-primary">Proceed</button>
+                    </div>
+                </div>
+
+        </form>
+
+    </div>
 
     <script type="text/javascript" src="{% static 'sipcreator/js/start.js' %}"></script>
+
+    <p>In the next step files can be uploaded to the  SIP's corresponding data and metadata containers.</p>
 
 {% endblock %}

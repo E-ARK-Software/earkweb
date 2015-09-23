@@ -22,18 +22,22 @@
 
 {% block content %}
 
-<h1>AIP to DIP conversion</h1>
-<h2>DIP {{ dip.name }}</h2>
+{% include "search/about_module.html" %}
+
+<p>The following table gives an overview about the information package.</p>
 
 <div id="dip-detail-table">
     {% include "search/diptable.html" %}
 </div>
+
+
 
 <div id="file-upload">
 
     <form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data" class="form-horizontal">
         <fieldset>
             <legend>File upload</legend>
+            <p>Additional files can be uploaded into the working area of this DIP creation process:</p>
             {% csrf_token %}
             {{ uploadFileForm.as_p }}
             <p><button type="submit">Add selected AIP</button></p>
@@ -43,6 +47,8 @@
 </div>
 
 {% include "workflow/execution_form.html" %}
+
+<p>The progress of task/workflow execution can be observed in the following progress bar. When leaving this page, task execution is continued, but progress is not shown any more.</p>
 
 <!-- current_ip variable used in subsequent scripts (as the IP is selected, the corresponding form field is hidden) -->
 <script type="text/javascript">var current_ip="{{ ip.id }}"; $("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>

@@ -1,3 +1,4 @@
+import os
 import traceback
 from django.template import loader
 from django.views.generic.detail import DetailView
@@ -19,7 +20,7 @@ from workflow.models import WorkflowModules
 from config.params import config_path_work
 import logging
 logger = logging.getLogger(__name__)
-
+from operator import itemgetter, attrgetter, methodcaller
 
 @login_required
 @csrf_exempt
@@ -48,6 +49,10 @@ class InformationPackageList(ListView):
     """
     Information Package List View
     """
+    status_lower_limit = 100
+    status_upper_limit = 10000
+    filter_divisor = 20 # used with modulo operator to filter status values
+
     model = InformationPackage
     template_name = 'sip2aip/reception.html'
     context_object_name = 'ips'
@@ -57,11 +62,44 @@ class InformationPackageList(ListView):
     def dispatch(self, *args, **kwargs):
         return super(InformationPackageList, self).dispatch(*args, **kwargs)
 
+    def get_success_status_set(self, status_model, filter_func):
+        for tuple in status_model:
+            if (self.status_lower_limit < tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
+
     def get_context_data(self, **kwargs):
         context = super(InformationPackageList, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
+        error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
+        context['success_status_set'] = success_status_set
+        context['error_status_set'] = error_status_set
+        context['config_path_work'] = config_path_work
+        context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
         return context
 
+@login_required
+def help_processing_status(request):
+
+    status_lower_limit = 100
+    status_upper_limit = 10000
+    filter_divisor = 20 # used with modulo operator to filter status values
+
+    template = loader.get_template('sip2aip/help_processing_status.html')
+
+    def get_success_status_set(status_model, filter_func):
+        for tuple in status_model:
+            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
+
+    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
+    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
+
+    context = RequestContext(request, {
+        'success_status_set': success_status_set,
+        'error_status_set': error_status_set,
+    })
+    return HttpResponse(template.render(context))
 
 class InformationPackageDetail(DetailView):
     """

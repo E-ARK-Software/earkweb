@@ -1,0 +1,21 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- AIP to DIP javascript/css -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+{% include "search/about_module.html" %}
+
+{% include "earkcore/list_processing_status.html" %}
+
+<p><a href="javascript:history.back()" title='Back to overview'>back</a></p>
+
+
+{% endblock %}

@@ -41,7 +41,7 @@
                 </tr>
                 {% endif %}
                 <tr class="row1">
-                    <td>IP processing status</td>
+                    <td>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></td>
                     <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
                 </tr>
             </tbody>

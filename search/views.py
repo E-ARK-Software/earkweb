@@ -50,18 +50,57 @@ def index(request, procname):
 
 @login_required
 def packsel(request):
-    print request.user
+
+    status_lower_limit = 0
+    status_upper_limit = 100
+    filter_divisor = 2 # used with modulo operator to filter status values
+
     dips = DIP.objects.all()
     template = loader.get_template('search/packsel.html')
+
+    def get_success_status_set(status_model, filter_func):
+        for tuple in status_model:
+            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
+
+    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
+    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
+
     context = RequestContext(request, {
-        'package_list': dips
+        'package_list': dips,
+        'success_status_set': success_status_set,
+        'error_status_set': error_status_set,
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
+def help_processing_status(request):
+
+    status_lower_limit = 10000
+    status_upper_limit = 100000
+    filter_divisor = 100 # used with modulo operator to filter status values
+
+    dips = DIP.objects.all()
+    template = loader.get_template('search/help_processing_status.html')
+
+    def get_success_status_set(status_model, filter_func):
+        for tuple in status_model:
+            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
+
+    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
+    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
+
+    context = RequestContext(request, {
+        'package_list': dips,
+        'success_status_set': success_status_set,
+        'error_status_set': error_status_set,
     })
     return HttpResponse(template.render(context))
 
 
 @login_required
 def start(request):
-    print request.user
     dips = DIP.objects.all()
     template = loader.get_template('search/start.html')
     context = RequestContext(request, {
@@ -79,7 +118,6 @@ def aip(request, dip_name, identifier):
 
 @login_required
 def demosearch(request):
-    print request.user
     template = loader.get_template('search/demosearch.html')
     context = RequestContext(request, {
         
@@ -88,7 +126,6 @@ def demosearch(request):
 
 @login_required
 def demosearch_govdocs(request):
-    print request.user
     template = loader.get_template('search/demosearch_govdocs.html')
     context = RequestContext(request, {
 
@@ -97,7 +134,6 @@ def demosearch_govdocs(request):
 
 @login_required
 def demosearch_news(request):
-    print request.user
     template = loader.get_template('search/demosearch_news.html')
     context = RequestContext(request, {
 
@@ -106,7 +142,6 @@ def demosearch_news(request):
 
 @login_required
 def demosearch_package(request):
-    print request.user
     template = loader.get_template('search/demosearch_package.html')
     context = RequestContext(request, {
 
@@ -198,8 +233,7 @@ def search_form(request):
                         documents.append(responseObj)
                 resultDict = {'numFound':numFound, 'start': start, 'rows': rows, 'documents': documents}
                 docsjson = json.dumps(resultDict, indent=4)
-                #logger.debug("RESULT:\n" + docsjson)
-            except Exception:                
+            except Exception:
                 error = {"error":"Error processing request"}
                 logger.error(traceback.format_exc())
                 return HttpResponseServerError(json.dumps(error))
@@ -263,10 +297,6 @@ def get_file_content(request, lily_id):
         contentType = r.headers['content-type']
         response_content = r.text
         response_content_utf8 = response_content.encode("utf-8")
-        #if contentType == 'image/jpeg': 
-        #    with open('/home/shs/test.jpeg', 'wb') as f:
-        #        for chunk in r.iter_content(1024):
-        #            f.write(chunk)
         if contentType == 'application/xml': 
             try:
                 tree = etree.fromstring(response_content_utf8)
@@ -396,13 +426,3 @@ def dip_detail_table(request):
         "config_path_work": config_path_work
     })
     return render_to_response('search/diptable.html', locals(), context_instance=context)
-
-# @login_required
-# def working_area(request, uuid):
-#     template = loader.get_template('search/workingarea.html')
-#     print uuid
-#     context = RequestContext(request, {
-#         "uuid": uuid,
-#         "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
-#     })
-#     return HttpResponse(template.render(context))

@@ -19,7 +19,7 @@
     <script type="text/javascript" src="{% static 'earkweb/bootbox-4.4.0/bootbox.js' %}"></script>
 
     <!-- xml display javascript/css -->
-    <<link rel="stylesheet" href="{% static 'earkweb/loadxml/XMLDisplay.css' %}" type="text/css" />
+    <link rel="stylesheet" href="{% static 'earkweb/loadxml/XMLDisplay.css' %}" type="text/css" />
     <script type="text/javascript" src="{% static 'earkweb/loadxml/XMLDisplay.js' %}"></script>
 
 {% endblock %}
@@ -28,7 +28,9 @@
 
 <h1>{{ title }}</h1>
 
-<p>Working directory of process: {{ uuid }}</p>
+<p>The working area shows the content of an information package and allows to display files if the display component is implemented for file format of the selected file.</p>
+
+<p>This working directory shows the content of process: {{ uuid }}</p>
 
 <div id="directorytree"></div>
 

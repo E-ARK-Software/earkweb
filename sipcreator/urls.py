@@ -23,5 +23,7 @@ urlpatterns= patterns('',
 
     url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9\-]{36,36})/$', earkcore.views.working_area, name='working_area'),
 
+    url(r'^help_processing_status$', views.help_processing_status, name='help_processing_status'),
+
     url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
 )

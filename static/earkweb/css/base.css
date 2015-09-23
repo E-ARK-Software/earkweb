@@ -1,8 +1,11 @@
+h1 {
+
+}
+
 body {
   padding-top: 50px;
 }
 .content-wrapper {
-  padding-top: 10px;
   text-align: left;
 }
 
@@ -98,3 +101,4 @@ color: red;
 .emph {
     font-weight: bold;
 }
+
