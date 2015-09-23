@@ -30,7 +30,7 @@ python manage.py migrate
 update_rights ${STATIC_DIR}
 
 echo "Collectstic ..."
-python manage.py collectstatic
+echo "yes" | python manage.py collectstatic
 
 update_rights ${STATIC_DIR}
 

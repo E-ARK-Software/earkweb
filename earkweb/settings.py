@@ -103,7 +103,7 @@ CELERYBEAT_SCHEDULE = {
         "task": "monitoring.tasks.CheckProcFilesTask",
         "schedule": timedelta(seconds=60),
         "kwargs": {
-                'proc_log_path':"/var/log/ESSArch/log/proc",
+                'proc_log_path':"/var/log/earkweb/log/proc",
         }
     },
     "CheckStorageMediums-everyday-07:00": {
