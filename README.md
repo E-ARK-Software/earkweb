@@ -95,7 +95,14 @@ Update filetype signatures:
         cd django-cas
         python setup.py install
 
-### Prepare database and execute
+### Create directories
+
+    sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
+    sudo chown -R <user>:<group> /var/data/earkweb/
+    sudo mkdir -p /var/earkweb/log/
+    sudo chown <user>:<group> /var/earkweb/log/
+    
+### Create and initialize database
 
 1. Prepare databases
 
@@ -125,15 +132,19 @@ Update filetype signatures:
     Create another database for Celery:
     
         mysql> create database celerydb;
-        Query OK, 1 row affected (0.00 sec)
-        
+
+    And grant rights to use datase celery for user 'arkiv':
+    
         mysql> GRANT ALL ON celerydb.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+
 
 2. Create database schema based on the model and apply initialise the database:
 
         python manage.py makemigrations
         python manage.py migrate
     
+### Run web application (development mode)
+
 3. Start web application
 
     Start the web application from the command line using the command:
@@ -150,23 +161,22 @@ Update filetype signatures:
         
     Open web browser at http://127.0.0.1:8000/
     
-### Create directories
-
-    sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
-    sudo chown -R <user>:www-data /var/data/earkweb/
-    sudo chmod -R g+w /var/data/earkweb/
 
 ## Celery services
 
-### Start daemon
+### Start daemon in development mode
 
-make sure the virtual environment "earkweb" is active (prefix "earkweb" in terminal) and change to the earkweb directory:
+Make sure the virtual environment "earkweb" is active (prefix "earkweb" in terminal) and change to the earkweb directory:
 
     (earkweb)<user>@<machine>:~/$ cd ${EARKWEB}    
 
 Start the daemon from command line:
     
     celery --app=earkweb.celeryapp:app worker
+
+### Celery service on server
+
+In development mode, the service is running as long as the terminal is open.
 
 Alternatively, adapt settings (e.g. user settings) in the config file:
 
@@ -190,6 +200,12 @@ Then you can use the daemon script as super user:
     > Starting nodes...
 	> worker1@<machine>: OK
 
+### Task registration
+
+Tasks need to be registered in the database. To do so run the following script:
+
+    python ./workers/scantasks.py
+    
 ### Check registered tasks
 
     celery -A earkweb.celeryapp:app inspect registered

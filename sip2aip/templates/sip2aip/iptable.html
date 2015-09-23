@@ -12,7 +12,7 @@
     		<td>{{ ip.path }}</td>
     	</tr>
     	<tr class="row2">
-    		<td data-toggle="tooltip" title="Internal identifier">UUID</td>
+    		<td data-toggle="tooltip" title="Internal identifier">Process ID</td>
     		<td>{{ ip.uuid }}</td>
     	</tr>
     	<tr class="row2">
@@ -20,7 +20,7 @@
     		<td>{{ ip.packagename }}</td>
     	</tr>
     	<tr class="row2">
-    		<td data-toggle="tooltip" title="Public identifier">Identifier</td>
+    		<td data-toggle="tooltip" title="Public identifier">Package Identifier</td>
     		<td>{{ ip.identifier }}</td>
     	</tr>
 		{% if ip.statusprocess >= 300 or ip.statusprocess == -1 %}
@@ -30,7 +30,7 @@
 		</tr>
 		{% endif %}
 	    <tr class="row1">
-    		<td>Status</td>
+    		<td>IP processing status</td>
     		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
     	</tr>
 

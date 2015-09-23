@@ -1,0 +1,26 @@
+{% extends "earkweb/base.html" %}
+
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- AIP to DIP javascript -->
+    <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% if uuid %}
+    <h1>SIP Creation</h1>
+
+    <p>Confirmation: Process '{{ uuid }}' was deleted!</p>
+
+    <p><a href="{% url 'sipcreator:index' %}" title='Back to overview'>back</a></p>
+
+    {% endif %}
+
+
+{% endblock %}

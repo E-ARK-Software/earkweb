@@ -126,6 +126,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'djcelery',
     'earkcore',
+    'sipcreator',
     'search',
     'workers',
     'workflow',
@@ -219,6 +220,18 @@ LOGGING = {
     },
     'loggers': {
         'django.request': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'sipcreator.views': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'sipcreator.query': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,

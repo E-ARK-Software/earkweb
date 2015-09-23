@@ -5,8 +5,9 @@
 
 {% block extra_head %}
 
+
     <!-- SIP to AIP javascript -->
-    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
 
 
     <link rel="stylesheet" href="{% static 'sip2aip/css/workingarea.css' %}" type="text/css" />
@@ -18,9 +19,9 @@
 
 {% block content %}
 
-<h1>SIP to AIP conversion</h1>
 
-<p>Working directory of process: {{ uuid }}</p>
+<h1>AIP to DIP conversion</h1>
+<h2>Working directory</h2>
 
 <div id="directorytree"></div>
 

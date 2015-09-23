@@ -16,7 +16,8 @@
 
 {% block content %}
 
-<h1><a href="{% url 'search:dip' dip.name %}">{{ dip.name }}</a> > {{ aip.identifier }}</h1>
+<h1>AIP to DIP conversion</h1>
+<h2><a href="{% url 'search:dip' dip.name %}">{{ dip.name }}</a> > {{ aip.identifier }}</h2>
 
 <p>TODO: list TAR entries</p>
 

@@ -24,7 +24,6 @@ def init_param(model_obj, name, default):
     except model_obj.DoesNotExist:
         return default
 
-
 config_path_reception = init_param(Path, "path_reception", "/var/data/earkweb/reception")
 config_path_ingest = init_param(Path, "path_ingest", "/var/data/earkweb/ingest")
 config_path_work = init_param(Path, "path_work", "/var/data/earkweb/work")

@@ -43,11 +43,14 @@ function pollstate(in_task_id) {
                       data: "task_id=" + task_id,
                   }).success(function(resp_data){
                       if(resp_data.success) {
-                          if(resp_data.state == 'PROGRESS') {
-                              updateProgressInfo(resp_data.info.process_percent);
-                          } else {
+                          if(resp_data.state == 'SUCCESS') {
                               updateStatusInfo(resp_data.state, resp_data.result, resp_data.log, resp_data.err);
                               ready = true;
+                          } else if(resp_data.state == 'PENDING') {
+                                // check again if task still pending
+                                setTimeout(function(){ pollstate(task_id) }, 3000);
+                          } else {
+                            updateProgressInfo(resp_data.info.process_percent);
                           }
                       } else {
                         reportError(resp_data.errmsg)

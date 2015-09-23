@@ -27,12 +27,13 @@ from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt
 
 from earkcore.utils.stringutils import lstrip_substring
-from sip2aip.forms import PackageWorkflowModuleSelectForm
+from sip2aip.forms import DIPPackageWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
 logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
+from earkcore.filesystem.fsinfo import path_to_dict
 
 @login_required
 def index(request, procname):
@@ -67,18 +68,6 @@ def start(request):
         'package_list': dips
     })
     return HttpResponse(template.render(context))
-
-@login_required
-def dip(request, name):
-    dip = DIP.objects.get(name=name)
-    ip = InformationPackage.objects.get(packagename=name)
-    template = loader.get_template('search/dip.html')
-
-    form = PackageWorkflowModuleSelectForm()
-
-    context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'form': form})
-    return HttpResponse(template.render(context))
-    #return render_to_response('search/dip.html', {'dip': dip, 'uploadFileForm': UploadFileForm()})
 
 @login_required
 def aip(request, dip_name, identifier):
@@ -382,14 +371,38 @@ def extractTar(filename):
         tar.extractall('working_area/')
 
 @login_required
+def dip(request, name):
+    dip = DIP.objects.get(name=name)
+    ip = InformationPackage.objects.get(packagename=name)
+    template = loader.get_template('search/dip.html')
+    form = DIPPackageWorkflowModuleSelectForm()
+    stat_proc_choices = dict(StatusProcess_CHOICES),
+    context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'form': form,  "StatusProcess_CHOICES": stat_proc_choices[0], "config_path_work": config_path_work})
+    return HttpResponse(template.render(context))
+    #return render_to_response('search/dip.html', {'dip': dip, 'uploadFileForm': UploadFileForm()})
+
+@login_required
 @csrf_exempt
 def dip_detail_table(request):
     pkg_id = request.POST['pkg_id']
-    print pkg_id
-    print config_path_work
+
+    ip = InformationPackage.objects.get(pk=pkg_id)
+    dip = DIP.objects.get(name=ip.packagename)
+
     context = RequestContext(request, {
-        "ip": InformationPackage.objects.get(pk=pkg_id),
+        "ip": ip,
+        "dip": dip,
         "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
         "config_path_work": config_path_work
     })
     return render_to_response('search/diptable.html', locals(), context_instance=context)
+
+@login_required
+def working_area(request, uuid):
+    template = loader.get_template('search/workingarea.html')
+    print uuid
+    context = RequestContext(request, {
+        "uuid": uuid,
+        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
+    })
+    return HttpResponse(template.render(context))

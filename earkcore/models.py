@@ -6,6 +6,18 @@ StatusProcess_CHOICES = (
 
     (0, 'New object'),
 
+    (10, 'SIP structure initialized'),
+    (19, 'SIP structure initialization failed'),
+
+    (20, 'SIP package metadata created'),
+    (29, 'SIP  package metadata creation failed'),
+
+    (30, 'SIP packaged'),
+    (39, 'SIP packaging failed'),
+
+    (40, 'SIP delivery created'),
+    (49, 'SIP delivery creation failed'),
+
     (100, 'SIP delivery validated'),
     (190, 'SIP delivery validation failed'),
 
@@ -31,6 +43,12 @@ StatusProcess_CHOICES = (
     (890, 'AIP HDFS upload failed'),
 
     (10000, 'New DIP creation process'),
+
+    (10100, 'AIPs aquired'),
+    (10190, 'Acquisition of AIPs failed'),
+
+    (10200, 'AIPs extracted'),
+    (10290, 'Extraction of AIPs failed'),
 
 )
 
