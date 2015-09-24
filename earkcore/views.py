@@ -31,9 +31,12 @@ def check_folder_exists(request, folder):
 @login_required
 @csrf_exempt
 def check_submission_exists(request, packagename):
-    # submission already exists, if a delivery XML is in the reception folder
-    path = os.path.join(config_path_reception, ("%s.xml" % packagename))
-    return HttpResponse(str(os.path.exists(path)).lower())
+    try:
+        ip = InformationPackage.objects.get(packagename=packagename)
+        exists = ip and os.path.exists(os.path.join(config_path_work, ip.uuid))
+        return HttpResponse(str(exists).lower())
+    except:
+        return HttpResponse("false")
 
 @login_required
 def working_area(request, section, uuid):

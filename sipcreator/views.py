@@ -189,13 +189,9 @@ def upload_aip(ip_work_dir, upload_path, f):
 @csrf_exempt
 def initialize(request, packagename):
     uuid = getUniqueID()
-    request.session['uuid'] = uuid
-    request.session['packagename'] = packagename
     sip_struct_work_dir = os.path.join(config_path_work,uuid)
     print "package name: %s" % packagename
     print "working directory: %s" % sip_struct_work_dir
-    print "uuid (session): %s" % request.session['uuid']
-    print "package name (session): %s" % request.session['packagename']
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata'))
