@@ -1,5 +1,9 @@
-h1 {
+h1.main {
+    font-size: 2em;
+}
 
+h2.main {
+    font-size: 1.3em;
 }
 
 body {

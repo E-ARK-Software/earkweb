@@ -16,7 +16,9 @@
 
 {% block content %}
 
-<h1>SIP to AIP conversion</h1>
+{% include "sip2aip/about_module.html" %}
+
+<h2 class="main">SIP to AIP task/workflow execution</h2>
 
 <div id="ip-detail-table">
     {% include "sip2aip/iptable.html" %}
