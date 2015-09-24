@@ -570,7 +570,6 @@ class LilyHDFSUpload(Task, StatusValidation):
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
 
-
                 rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
 
@@ -582,6 +581,16 @@ class LilyHDFSUpload(Task, StatusValidation):
 
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - start_time, upload_result.status_code, upload_result.hdfs_path_id))
+
+                checksum_resource_uri = "hsink/fileresource/files/%s/digest/sha-256" % upload_result.hdfs_path_id
+                tl.addinfo("Verifying checksum at %s" % (checksum_resource_uri))
+                hdfs_sha256_checksum = hdfs_rest_client.get_string(checksum_resource_uri)
+
+                if ChecksumFile(aip_path).get(ChecksumAlgorithm.SHA256) == hdfs_sha256_checksum:
+                    tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
+                else:
+                    tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+
                 result = tl.fin()
                 ip.statusprocess = tc.success_status if result.success else tc.error_status
                 ip.save()
