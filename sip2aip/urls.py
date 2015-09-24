@@ -14,6 +14,10 @@ urlpatterns= patterns('',
 
     url(r'^progress$', views.progress, name='progress'),
 
+    url(r'^upload_sip$', views.upload_sip, name='upload_sip'),
+
+    url(r'^upload_sip_delivery$', views.upload_sip_delivery, name='upload_sip_delivery'),
+
     url(r'^help_processing_status$', views.help_processing_status, name='help_processing_status'),
 
     url(r'^apply_task', views.apply_task, name='apply_task'),

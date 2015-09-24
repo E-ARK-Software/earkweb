@@ -9,18 +9,23 @@ from earkcore.models import StatusProcess_CHOICES
 from earkcore.models import InformationPackage
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
+from earkcore.utils.randomutils import getUniqueID
+from sip2aip.forms import UploadSIPDeliveryForm
+from sipcreator.forms import TinyUploadFileForm
 from workers import tasks
 from django.http import JsonResponse
 from sip2aip import forms
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
-from config.params import config_path_work
+from config.params import config_path_work, config_path_reception
 import logging
 logger = logging.getLogger(__name__)
 from operator import itemgetter, attrgetter, methodcaller
+from earkcore.utils.fileutils import mkdir_p
+from django.core.urlresolvers import reverse
 
 @login_required
 @csrf_exempt
@@ -43,6 +48,65 @@ def index(request):
 
     })
     return HttpResponse(template.render(context))
+
+
+@login_required
+def upload_sip(request):
+    template = loader.get_template('sip2aip/upload_sip.html')
+    form = UploadSIPDeliveryForm()
+    context = RequestContext(request, {
+        'form': form
+    })
+    return HttpResponse(template.render(context))
+
+
+@login_required
+def upload_sip_delivery(request):
+    reception_dir = os.path.join(config_path_reception)
+    print "reception dir: %s" % reception_dir
+    if request.method == 'POST':
+        form = UploadSIPDeliveryForm(request.POST, request.FILES)
+        if form.is_valid():
+            sip_tar_package_file = request.FILES['sip_tar_package']
+            packagename, _ = os.path.splitext(os.path.basename(sip_tar_package_file.name))
+            sip_delivery_xml = request.FILES['sip_delivery_xml']
+            deliveryname, _ = os.path.splitext(os.path.basename(sip_delivery_xml.name))
+            form = UploadSIPDeliveryForm()
+            if packagename != deliveryname:
+                context = RequestContext(request, {
+                    'error': 'File name without extension must be equal',
+                    'form': form
+                })
+                template = loader.get_template('sip2aip/upload_sip.html')
+                return HttpResponse(template.render(context))
+            else:
+                upload_file(reception_dir, sip_tar_package_file)
+                upload_file(reception_dir, sip_delivery_xml)
+                uuid = getUniqueID()
+                path = os.path.join(reception_dir, sip_tar_package_file.name)
+                print uuid
+                print packagename
+                print path
+                ip = InformationPackage.objects.create(uuid=uuid, packagename=packagename, path=path, statusprocess=0)
+                ip.save()
+                url = reverse('sip2aip:ip_detail', args=(ip.id,))
+                return HttpResponseRedirect(url)
+        else:
+            if form.errors:
+                for error in form.errors:
+                    print(str(error) + str(form.errors[error]))
+            return HttpResponseServerError("Upload error")
+
+
+def upload_file(upload_path, f):
+    print "Upload file '%s' to working directory: %s" % (f.name, upload_path)
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
+    destination_file = os.path.join(upload_path, f.name)
+    with open(destination_file, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+    destination.close()
 
 
 class InformationPackageList(ListView):

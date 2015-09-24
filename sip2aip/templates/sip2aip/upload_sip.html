@@ -1,0 +1,54 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "sip2aip/about_module.html" %}
+
+    <p>Upload an SIP tar file together with the SIP delivery XML document from the local file system to the SIP reception area:</p>
+
+    {% if error %}
+    <p>
+        An error occurred: {{ error }}
+    </p>
+    {% endif %}
+
+    <div class="standard-form-container">
+
+        <form class="form-horizontal" action="{% url 'sip2aip:upload_sip_delivery' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+                <div class="form-group">
+
+                    <label class="control-label col-xs-3">SIP package name</label>
+                    <div class="col-xs-6">
+
+                        {% csrf_token %}
+                        <span>{{ form.as_p }}</span>
+
+                    </div>
+
+                </div>
+
+                <div class="form-group">
+                    <div class="col-xs-offset-3 col-xs-10">
+                        <button id="upload_btn" type="submit" class="btn btn-primary">Upload SIP Delivery</button>
+                    </div>
+                </div>
+
+        </form>
+
+    </div>
+
+    <p>Note: The package must be in TAR format and the basenames of the package file and delivery XML (METS format) file must be equal (e.g. PACKAGE.tar and PACKAGE.xml).</p>
+
+{% endblock %}
