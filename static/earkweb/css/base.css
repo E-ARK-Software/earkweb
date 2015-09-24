@@ -79,6 +79,9 @@ label {
 color: red;
 }
 
+.errmsg {
+color: red;
+}
 .existing {
  color: green;
 }

@@ -55,7 +55,9 @@
                     <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
                     {% endif %}
                 </ul>
+                {% if dip.aips.all %}
                 <p style="margin-left: 2em"><a href="{% url 'search:search' dip.name|urlencode %}">Modify selection</a></p>
+                {% endif %}
             </td>
         </tr>
 

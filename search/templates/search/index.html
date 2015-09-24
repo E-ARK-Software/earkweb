@@ -23,7 +23,7 @@
 
 {% include "search/about_module.html" %}
 
-<h2 class="main">AIP Selection</h2>
+<h2 class="main">AIP Selection{% if procname %} for package <a href="{% url 'search:dip' procname|urlencode %}">{{ procname }}</a>{% endif %}</h2>
 
 <p>In the following, a search can be performed in order to find files contained in an AIP. The purpose of this search interface is to enable selection of AIPs for a DIP creation
     process. The pull-down menu ' DIP creation process' is used to determine for which DIP the a selected AIP is chosen. First a search is executed and then an AIP can be

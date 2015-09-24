@@ -37,14 +37,22 @@
             </div>
 
             <div class="form-group">
+                    <div style="height:1em" class="col-xs-offset-3 col-xs-10">
+                        <span class="errmsg" id="msgpackagename"></span>
+                    </div>
+            </div>
+
+            <div class="form-group">
                 <div class="col-xs-offset-3 col-xs-10">
-                    <button type="submit" class="btn btn-primary">Start new process</button>
+                    <button id="startbtn" type="submit" class="btn btn-primary">Start new process</button>
                 </div>
             </div>
 
     </form>
 
 </div>
+
+<script type="text/javascript" src="{% static 'search/js/start.js' %}"></script>
 
 <p>In the next step the AIPs for creating the DIP must be selected.</p>
 

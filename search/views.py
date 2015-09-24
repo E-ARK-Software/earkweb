@@ -326,10 +326,11 @@ def create_dip(request):
             })
             return HttpResponse(template.render(context))
         else:
-            DIP.objects.create(name=dip_creation_process_name)
+            dip = DIP.objects.create(name=dip_creation_process_name)
             uuid = getUniqueID()
             InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10000, packagename=dip_creation_process_name)
-            return HttpResponseRedirect(reverse('search:packsel'))
+            url = reverse('search:dip', args=(dip.name,))
+            return HttpResponseRedirect(url)
     else:
         pass
 
