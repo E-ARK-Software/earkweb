@@ -128,7 +128,7 @@ class InformationPackageList(ListView):
 
     def get_success_status_set(self, status_model, filter_func):
         for tuple in status_model:
-            if (self.status_lower_limit < tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
+            if (self.status_lower_limit <= tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
                 yield tuple[0], tuple[1]
 
     def get_context_data(self, **kwargs):
@@ -153,7 +153,7 @@ def help_processing_status(request):
 
     def get_success_status_set(status_model, filter_func):
         for tuple in status_model:
-            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
+            if (status_lower_limit <= tuple[0] < status_upper_limit) and filter_func(tuple[0]):
                 yield tuple[0], tuple[1]
 
     success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)

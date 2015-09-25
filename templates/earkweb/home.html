@@ -1,0 +1,39 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+
+    <!-- override style of h1.main to include the module description in h2 style -->
+    <style type="text/css" media=screen>
+        h1.title { font-size: 2em; }
+       h1.main { font-size: 1.3em; }
+    </style>
+
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="title"><i>earkweb</i></h1>
+
+    <p><i>earkweb</i> is the E-ARK Integrated Prototype implementation of the <a href="http://eark-project.com/" target="_blank">E-ARK project</a>.</p>
+
+    {% include "sipcreator/about_module.html" %}
+
+    <p>The SIP creator allows uploading files in the corresponding IP container sections.</p>
+
+    <p><a href="{% url 'sipcreator:start' %}">Create SIP</a></p>
+
+    {% include "sip2aip/about_module.html" %}
+
+    <p><a href="{% url 'sip2aip:upload_sip' %}">Convert SIP to AIP</a></p>
+
+    {% include "search/about_module.html" %}
+
+    <p><a href="{% url 'search:start' %}">Convert AIP to DIP</a></p>
+
+{% endblock %}

@@ -16,8 +16,9 @@ urlpatterns = patterns('',
 
 
     url(r'^public', views.public_search, name='public_search'),
-    
-    url(r'^$', RedirectView.as_view(url='search/selection/default')),
+
+    url(r'^home/$', views.home, name='home'),
+    #url(r'^$', RedirectView.as_view(url='search/selection/default')),
     url(r'^earkcore/', include('earkcore.urls', namespace="earkcore")),
     url(r'^search/', include('search.urls', namespace="search")),
     url(r'^sipcreator/', include('sipcreator.urls', namespace="sipcreator")),
