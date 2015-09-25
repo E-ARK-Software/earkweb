@@ -120,8 +120,12 @@ class Reset(Task):
         if status > 9999:
             tl.addinfo("AIP to DIP process")
             ip.statusprocess = 10000
-        else:
-            ip.statusprocess = 0
+        elif 9999 > status >= 50:
+            tl.addinfo("SIP to AIP process")
+            ip.statusprocess = 50
+	else:
+            tl.addinfo("SIP creation")
+            ip.statusprocess = 10
         tl.addinfo("Setting statusprocess to %s" % ip.statusprocess)
         ip.uuid = randomutils.getUniqueID()
         tl.addinfo("New uuid assigned: %s" % ip.uuid)

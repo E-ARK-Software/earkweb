@@ -120,7 +120,7 @@ class InformationPackageList(ListView):
     model = InformationPackage
     template_name = 'sip2aip/reception.html'
     context_object_name = 'ips'
-    queryset = InformationPackage.objects.filter(statusprocess__lt=9999).filter(statusprocess__gt=99)
+    queryset = InformationPackage.objects.filter(statusprocess__lt=9999).filter(statusprocess__gt=49)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
