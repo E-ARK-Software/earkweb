@@ -18,6 +18,7 @@ urlpatterns = patterns('',
     url(r'^public', views.public_search, name='public_search'),
 
     url(r'^home/$', views.home, name='home'),
+    url(r'^version/$', views.version, name='version'),
     #url(r'^$', RedirectView.as_view(url='search/selection/default')),
     url(r'^earkcore/', include('earkcore.urls', namespace="earkcore")),
     url(r'^search/', include('search.urls', namespace="search")),

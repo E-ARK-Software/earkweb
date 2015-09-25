@@ -18,3 +18,13 @@ def home(request):
 
     })
     return HttpResponse(template.render(context))
+
+
+@login_required
+def version(request):
+    print request.user
+    template = loader.get_template('earkweb/version.html')
+    context = RequestContext(request, {
+
+    })
+    return HttpResponse(template.render(context))
