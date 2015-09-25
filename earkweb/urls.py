@@ -10,16 +10,10 @@ from sip2aip.watchdir import watchdir
 from earkweb import views
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'earkweb.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-
-
-    url(r'^public', views.public_search, name='public_search'),
-
+    url(r'^$', RedirectView.as_view(url='home')),
     url(r'^home/$', views.home, name='home'),
     url(r'^version/$', views.version, name='version'),
-    #url(r'^$', RedirectView.as_view(url='search/selection/default')),
+    url(r'^public', views.public_search, name='public_search'),
     url(r'^earkcore/', include('earkcore.urls', namespace="earkcore")),
     url(r'^search/', include('search.urls', namespace="search")),
     url(r'^sipcreator/', include('sipcreator.urls', namespace="sipcreator")),
