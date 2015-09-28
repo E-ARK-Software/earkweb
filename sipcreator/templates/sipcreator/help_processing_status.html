@@ -1,0 +1,24 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- AIP to DIP javascript/css -->
+    <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+
+{% include "sipcreator/about_module.html" %}
+
+<h2 class="main">SIP creation status values</h2>
+
+{% include "earkcore/list_processing_status.html" %}
+
+<p><a href="javascript:history.back()" title='Back to overview'>back</a></p>
+
+
+{% endblock %}

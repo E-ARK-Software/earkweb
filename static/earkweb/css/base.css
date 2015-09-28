@@ -1,8 +1,15 @@
+h1.main {
+    font-size: 2em;
+}
+
+h2.main {
+    font-size: 1.3em;
+}
+
 body {
   padding-top: 50px;
 }
 .content-wrapper {
-  padding-top: 10px;
   text-align: left;
 }
 
@@ -72,6 +79,9 @@ label {
 color: red;
 }
 
+.errmsg {
+color: red;
+}
 .existing {
  color: green;
 }
@@ -93,5 +103,9 @@ color: red;
     background-color: #F9F9F9;
     padding-top:1em;
     padding-bottom: 1em;
+}
+
+.emph {
+    font-weight: bold;
 }
 

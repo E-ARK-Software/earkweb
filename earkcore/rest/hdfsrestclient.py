@@ -1,3 +1,4 @@
+import urllib2
 import requests
 from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.filesystem.chunked import FileBinaryDataChunks
@@ -44,6 +45,14 @@ class HDFSRestClient(object):
         else:
             return ResponseWrapper(success=False)
 
+    def get_string(self, rest_resource_path):
+        """
+        Read string from REST resource URI
+        :param rest_resource_path: Rest path (part after base+api of the endpoint)
+        :return: string response
+        """
+        resource_uri = self.rest_endpoint.get_resource_uri(rest_resource_path)
+        return urllib2.urlopen(resource_uri).read()
 
 def main():
 

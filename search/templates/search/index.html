@@ -21,10 +21,16 @@
 
 {% block content %}
 
-<h1>AIP to DIP conversion</h1>
-<h2>AIP Selection</h2>
+{% include "search/about_module.html" %}
 
-<p>File-based search for AIPs which can be added to an AIP to DIP conversion process.</p>
+<h2 class="main">AIP Selection{% if procname and procname != 'default' %} for package <a href="{% url 'search:dip' procname|urlencode %}">{{ procname }}</a>{% endif %}</h2>
+
+<p>In the following, a search can be performed in order to find files contained in an AIP. The purpose of this search interface is to enable selection of AIPs for a DIP creation
+    process. The pull-down menu ' DIP creation process' is used to determine for which DIP the a selected AIP is chosen. First a search is executed and then an AIP can be
+    selected by clicking on the 'plus' icon, the background will be green if an AIP is added.
+    It is also possible to remove a selected AIP from the selected DIP creation process by clicking on the 'minus' icon.</p>
+<p>By clicking on the bounding boxes in the search result, the hierarchical result list can be folded and unfolded.</p>
+
 {# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
 <form id="select-aip-form"  class="form-horizontal" action="{% url 'search:toggle_select_package' %}" method="post">
     {% csrf_token %}

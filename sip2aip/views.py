@@ -1,50 +1,31 @@
 import os
-import functools
-import json
-import tarfile
-from threading import Thread
 import traceback
-import urllib
-
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
-from django.shortcuts import render
-from django.template import RequestContext, loader
-from django.utils import timezone
-from lxml import etree
-import requests
+from django.template import loader
 from django.views.generic.detail import DetailView
 from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
-from django.contrib.auth.decorators import permission_required, login_required
+from django.contrib.auth.decorators import login_required
 from earkcore.models import StatusProcess_CHOICES
-from django.views.decorators.csrf import csrf_exempt
-
 from earkcore.models import InformationPackage
-
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-
 from celery.result import AsyncResult
+from earkcore.utils.randomutils import getUniqueID
+from sip2aip.forms import UploadSIPDeliveryForm
+from sipcreator.forms import TinyUploadFileForm
 from workers import tasks
 from django.http import JsonResponse
-from django.forms import ModelChoiceField
 from sip2aip import forms
-import urllib2
-import workers.tasks
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
-import json
-
-from config.params import config_path_work
-from earkcore.filesystem.fsinfo import path_to_dict
-
+from config.params import config_path_work, config_path_reception
 import logging
 logger = logging.getLogger(__name__)
+from operator import itemgetter, attrgetter, methodcaller
+from earkcore.utils.fileutils import mkdir_p
+from django.core.urlresolvers import reverse
 
 @login_required
 @csrf_exempt
@@ -59,6 +40,7 @@ def ip_detail_table(request):
     })
     return render_to_response('sip2aip/iptable.html', locals(), context_instance=context)
 
+
 @login_required
 def index(request):
     template = loader.get_template('sip2aip/index.html')
@@ -67,58 +49,133 @@ def index(request):
     })
     return HttpResponse(template.render(context))
 
+
+@login_required
+def upload_sip(request):
+    template = loader.get_template('sip2aip/upload_sip.html')
+    form = UploadSIPDeliveryForm()
+    context = RequestContext(request, {
+        'form': form
+    })
+    return HttpResponse(template.render(context))
+
+
+@login_required
+def upload_sip_delivery(request):
+    reception_dir = os.path.join(config_path_reception)
+    print "reception dir: %s" % reception_dir
+    if request.method == 'POST':
+        form = UploadSIPDeliveryForm(request.POST, request.FILES)
+        if form.is_valid():
+            sip_tar_package_file = request.FILES['sip_tar_package']
+            packagename, _ = os.path.splitext(os.path.basename(sip_tar_package_file.name))
+            sip_delivery_xml = request.FILES['sip_delivery_xml']
+            deliveryname, _ = os.path.splitext(os.path.basename(sip_delivery_xml.name))
+            form = UploadSIPDeliveryForm()
+            if packagename != deliveryname:
+                context = RequestContext(request, {
+                    'error': 'File name without extension must be equal',
+                    'form': form
+                })
+                template = loader.get_template('sip2aip/upload_sip.html')
+                return HttpResponse(template.render(context))
+            else:
+                upload_file(reception_dir, sip_tar_package_file)
+                upload_file(reception_dir, sip_delivery_xml)
+                uuid = getUniqueID()
+                path = os.path.join(reception_dir, sip_tar_package_file.name)
+                print uuid
+                print packagename
+                print path
+                ip = InformationPackage.objects.create(uuid=uuid, packagename=packagename, path=path, statusprocess=0)
+                ip.save()
+                url = reverse('sip2aip:ip_detail', args=(ip.id,))
+                return HttpResponseRedirect(url)
+        else:
+            if form.errors:
+                for error in form.errors:
+                    print(str(error) + str(form.errors[error]))
+            return HttpResponseServerError("Upload error")
+
+
+def upload_file(upload_path, f):
+    print "Upload file '%s' to working directory: %s" % (f.name, upload_path)
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
+    destination_file = os.path.join(upload_path, f.name)
+    with open(destination_file, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+    destination.close()
+
+
 class InformationPackageList(ListView):
     """
-    List IngestQueue
+    Information Package List View
     """
+    status_lower_limit = 100
+    status_upper_limit = 10000
+    filter_divisor = 20 # used with modulo operator to filter status values
+
     model = InformationPackage
-    template_name='sip2aip/reception.html'
-    context_object_name='ips'
-    queryset=InformationPackage.objects.filter(statusprocess__lt = 9999).filter(statusprocess__gt = 99)
+    template_name = 'sip2aip/reception.html'
+    context_object_name = 'ips'
+    queryset = InformationPackage.objects.filter(statusprocess__lt=9999).filter(statusprocess__gt=49)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(InformationPackageList, self).dispatch( *args, **kwargs)
+        return super(InformationPackageList, self).dispatch(*args, **kwargs)
+
+    def get_success_status_set(self, status_model, filter_func):
+        for tuple in status_model:
+            if (self.status_lower_limit <= tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
 
     def get_context_data(self, **kwargs):
         context = super(InformationPackageList, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
+        error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
+        context['success_status_set'] = success_status_set
+        context['error_status_set'] = error_status_set
+        context['config_path_work'] = config_path_work
+        context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
         return context
 
 @login_required
-@csrf_exempt
-def get_directory_json(request):
-    uuid = request.POST['uuid']
-    directory = '/var/data/earkweb/work/'+uuid+'/'
-    print "List directory: %s" % directory
-    dirlist = os.listdir(directory)
-    if len(dirlist) > 0:
-        package_name = dirlist[0]
-    else:
-        package_name = dirlist
-    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid) })
+def help_processing_status(request):
 
-@login_required
-def working_area(request, uuid):
-    template = loader.get_template('sip2aip/workingarea.html')
-    print uuid
+    status_lower_limit = 100
+    status_upper_limit = 10000
+    filter_divisor = 20 # used with modulo operator to filter status values
+
+    template = loader.get_template('sip2aip/help_processing_status.html')
+
+    def get_success_status_set(status_model, filter_func):
+        for tuple in status_model:
+            if (status_lower_limit <= tuple[0] < status_upper_limit) and filter_func(tuple[0]):
+                yield tuple[0], tuple[1]
+
+    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
+    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
+
     context = RequestContext(request, {
-        "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid), indent=4, sort_keys=False, encoding="utf-8")
+        'success_status_set': success_status_set,
+        'error_status_set': error_status_set,
     })
     return HttpResponse(template.render(context))
 
 class InformationPackageDetail(DetailView):
     """
-    Submit and View result from checkout to work area
+    Information Package Detail View
     """
     model = InformationPackage
-    context_object_name='ip'
-    template_name='sip2aip/detail.html'
+    context_object_name = 'ip'
+    template_name = 'sip2aip/detail.html'
 
-
+    @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
-        return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
+        return super(InformationPackageDetail, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
@@ -127,19 +184,21 @@ class InformationPackageDetail(DetailView):
         context['config_path_work'] = config_path_work
         return context
 
+
 @login_required
 def progress(request):
-    if 'task_id' in request.session.keys() and request.session['task_id']:
-        task_id = request.session['task_id']
     context = RequestContext(request, {
         'form': forms.PackageWorkflowModuleSelectForm()
     })
     return render_to_response('sip2aip/progress.html', locals(), context_instance=context)
 
+
 @login_required
 @csrf_exempt
 def apply_workflow(request):
+    print request
     data = {"success": False, "errmsg": "Unknown error"}
+    print data
     try:
         print "Workflow execution"
         # selected_ip = request.POST['selected_ip']
@@ -170,8 +229,8 @@ def apply_workflow(request):
 @login_required
 @csrf_exempt
 def apply_task(request):
-    data = {"success": False, "errmsg": "Unknown error"}
     try:
+        data = {"success": False, "errmsg": "Unknown error"}
         selected_ip = request.POST['selected_ip']
         print "selected_ip: " + request.POST['selected_ip']
         selected_action = request.POST['selected_action']
@@ -194,6 +253,7 @@ def apply_task(request):
         data = {"success": False, "errmsg": "an error occurred!"}
         return JsonResponse(data)
     return JsonResponse(data)
+
 
 @login_required
 @csrf_exempt
@@ -218,6 +278,4 @@ def poll_state(request):
         data = {"success": False, "errmsg": err.message}
         tb = traceback.format_exc()
         logger.error(str(tb))
-
     return JsonResponse(data)
-

@@ -14,9 +14,13 @@
 {% block content %}
 
     {% if uuid %}
-    <h1>SIP Creation</h1>
 
-    <p>Confirmation: Process '{{ uuid }}' was deleted!</p>
+
+    {% include "sipcreator/about_module.html" %}
+
+    <h2 class="main">Delete confirmation</h2>
+
+    <p>Process '{{ uuid }}' was deleted!</p>
 
     <p><a href="{% url 'sipcreator:index' %}" title='Back to overview'>back</a></p>
 

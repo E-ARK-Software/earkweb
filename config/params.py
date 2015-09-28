@@ -30,6 +30,8 @@ config_path_work = init_param(Path, "path_work", "/var/data/earkweb/work")
 config_path_storage = init_param(Path, "path_storage", "/var/data/earkweb/storage")
 config_path_access = init_param(Path, "path_access", "/var/data/earkweb/access")
 
+config_max_filesize_viewer = 2097152
+
 
 # location of METS Template
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'

@@ -11,10 +11,11 @@
 
 {% block content %}
 
-<h1>AIP to DIP conversion</h1>
-<h2>Start new DIP creation process</h2>
+{% include "search/about_module.html" %}
 
-<p>Select a name for the DIP creation process:</p>
+<h2 class="main">Start new AIP to DIP conversion</h2>
+
+<p>The following procedure allows creating a DIP from a selection of AIPs. In the first step, please provide a package name for the DIP:</p>
 
 {% if error %}
 <p class="error">Error: {{ error }}</p>
@@ -28,7 +29,7 @@
 
             <div class="form-group">
 
-                <label for="dip_creation_process_name" class="control-label col-xs-3">Process name</label>
+                <label for="dip_creation_process_name" class="control-label col-xs-3">DIP package name</label>
                 <div class="col-xs-6">
                     <input type="text" class="form-control" id="dip_creation_process_name" name="dip_creation_process_name" placeholder="{{ procname }}"{% if procname %} value="{{ procname }}"{% endif %}>
                 </div>
@@ -36,17 +37,24 @@
             </div>
 
             <div class="form-group">
+                    <div style="height:1em" class="col-xs-offset-3 col-xs-10">
+                        <span class="errmsg" id="msgpackagename"></span>
+                    </div>
+            </div>
+
+            <div class="form-group">
                 <div class="col-xs-offset-3 col-xs-10">
-                    <button type="submit" class="btn btn-primary">Start new process</button>
+                    <button id="startbtn" type="submit" class="btn btn-primary">Start new process</button>
                 </div>
             </div>
 
     </form>
 
-
-
 </div>
 
+<script type="text/javascript" src="{% static 'search/js/start.js' %}"></script>
+
 <p>In the next step the AIPs for creating the DIP must be selected.</p>
+
 
 {% endblock %}

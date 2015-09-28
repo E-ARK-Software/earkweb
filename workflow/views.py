@@ -205,9 +205,9 @@ def poll_state(request):
 
     return JsonResponse(data)
 
-@login_required
-@csrf_exempt
-def get_directory_json(request):
-    uuid = request.POST['uuid']
-    package_name = os.listdir('/var/data/earkweb/work/'+uuid+'/')[0]
-    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid+'/'+package_name) })
+# @login_required
+# @csrf_exempt
+# def get_directory_json(request):
+#     uuid = request.POST['uuid']
+#     package_name = os.listdir('/var/data/earkweb/work/'+uuid+'/')[0]
+#     return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid+'/'+package_name) })

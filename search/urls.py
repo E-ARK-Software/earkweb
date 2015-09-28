@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 from django.views.generic import RedirectView
-
+import earkcore.views
 from search import views
  
 urlpatterns= patterns('',
@@ -10,6 +10,7 @@ urlpatterns= patterns('',
     url(r'^selection/(?P<procname>.*)', views.index, name='search'),
     url(r'^start$', views.start, name='start'),
     url(r'^packsel$', views.packsel, name='packsel'),
+    url(r'^help_processing_status$', views.help_processing_status, name='help_processing_status'),
     url(r'^remproc$', views.remproc, name='remproc'),
     url(r'^remaip$', views.remaip, name='rempaip'),
     url(r'^demosearch$', views.demosearch, name='demosearch'),
@@ -26,5 +27,5 @@ urlpatterns= patterns('',
     url(r'^dip/([^/]+)/attach_aip$', views.attach_aip, name='attach_aip'),
     url(r'^dip/([^/]+)/aip/([^/]+)$', views.aip, name='aip'),
     url(r'^dip_detail_table$', views.dip_detail_table, name='dip_detail_table'),
-    url(r'^working_area/(?P<uuid>[a-z0-9-]{36,36})/$', views.working_area, name='working_area'),
+    url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9-]{36,36})/$', earkcore.views.working_area, name='working_area'),
 )

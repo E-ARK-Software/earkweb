@@ -1,0 +1,15 @@
+<p>The following list shows possible information package status values if processing was successful:</p>
+
+<ul>
+    {% for status in success_status_set %}
+        <li>{{ status.0 }} - {{ status.1 }} </li>
+    {% endfor %}
+</ul>
+
+<p>And the following list shows possible information package status values if the corresponding process failed:</p>
+
+<ul>
+    {% for status in error_status_set %}
+        <li>{{ status.0 }} - {{ status.1 }} </li>
+    {% endfor %}
+</ul>
