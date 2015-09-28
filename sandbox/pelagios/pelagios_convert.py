@@ -51,7 +51,7 @@ if __name__ == '__main__':
             graph_slovenian_districts.add((district, dcterms_ns['isPartOf'], slovenia))
             graph_slovenian_districts.add((district, dcterms_ns['temporal'], Literal(str(district_wkt["year"]))))
             graph_slovenian_districts.add((district, gn_ns['countryCode'], Literal(u'SI')))
-            graph_slovenian_districts.add((district, dcterms_ns['label'], Literal(district_wkt["name"], lang=u'si')))
+            graph_slovenian_districts.add((district, rdfs_ns['label'], Literal(district_wkt["name"], lang=u'si')))
             polygons = BNode()
             graph_slovenian_districts.add((district, geosparql_ns['hasGeometry'], polygons))
             g.add((polygons, geosparql_ns['asWKT'], Literal(district_wkt["linearring"])))
