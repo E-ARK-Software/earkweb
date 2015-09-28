@@ -1,6 +1,7 @@
 from celery import Task, shared_task
 import time, os
 from earkcore.packaging.extraction import Extraction
+from sandbox.task_execution_xml import TaskExecutionXml
 from sip2aip.models import MyModel
 from time import sleep
 from config import params
@@ -36,6 +37,7 @@ from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumFile import ChecksumFile
 from earkcore.fixity.tasklib import check_transfer
+from earkcore.utils.fileutils import mkdir_p
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -67,6 +69,33 @@ def init_task(pk_id, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return ip, ip_work_dir, tl, start_time, package_premis_file
 
+def init_task2(ted, task_name, task_logfile_name):
+    start_time = time.time()
+    #ip = InformationPackage.objects.get(pk=pk_id)
+    #if not ip.uuid:
+    #    ip.uuid = randomutils.getUniqueID()
+    uuid = ted.get_uuid()
+    ip_work_dir = ted.get_path()
+    task_log_file_dir = os.path.join(ip_work_dir, 'metadata')
+    task_log_file = os.path.join(task_log_file_dir, "%s.log" % task_logfile_name)
+    # create working directory
+    if not os.path.exists(ip_work_dir):
+        os.mkdir(ip_work_dir)
+    # create log directory
+    if not os.path.exists(task_log_file_dir):
+        os.mkdir(task_log_file_dir)
+    # create PREMIS file or return handle to task
+    if os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
+        with open(task_log_file_dir + '/PREMIS.xml', 'rw') as premis_file:
+            package_premis_file = Premis(premis_file)
+    elif not os.path.isfile(task_log_file_dir + '/PREMIS.xml'):
+        premis_skeleton_file = root_dir + '/earkresources/PREMIS_skeleton.xml'
+        with open(premis_skeleton_file, 'r') as premis_file:
+            package_premis_file = Premis(premis_file)
+        package_premis_file.add_agent('eark-aip-creation')
+    tl = TaskLogger(task_log_file)
+    tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
+    return uuid, ip_work_dir, tl, start_time, package_premis_file
 
 def handle_error(ip, tc, tl):
     ip.statusprocess = tc.error_status
@@ -93,7 +122,8 @@ class Reset(Task):
     def __init__(self):
         self.ignore_result = False
 
-    def run(self, pk_id, tc, *args, **kwargs):
+    #def run(self, pk_id, tc, *args, **kwargs):
+    def run(self, ted, *args, **kwargs):
         """
         Reset
         @type       pk_id: int
@@ -107,41 +137,36 @@ class Reset(Task):
         tl.addinfo("ResetTask task %s" % current_task.request.id)
         self.update_state(state='PROGRESS', meta={'process_percent': 1})
 
-        ip = InformationPackage.objects.get(pk=pk_id)
+        tl.addinfo("Processing package %s" % ted.get_uuid())
 
-        filename, file_ext = os.path.splitext(ip.path)
-        packagename = os.path.basename(filename)
-
-        temporary_working_dir = os.path.join(params.config_path_work, packagename)
-        if packagename != "" and os.path.exists(temporary_working_dir):
-            tl.addinfo("Temporary package directory removed from working directory: " + temporary_working_dir)
-            shutil.rmtree(temporary_working_dir)
-        status = int(ip.statusprocess)
+        status = 50
+        task_doc_path = os.path.join(ted.get_path(), "task.xml")
+        if os.path.exists(task_doc_path):
+            ted_state = TaskExecutionXml.from_path(task_doc_path)
+            status = ted_state.get_state()
         if status > 9999:
             tl.addinfo("AIP to DIP process")
-            ip.statusprocess = 10000
+            ted.set_state(10000)
         elif 9999 > status >= 50:
             tl.addinfo("SIP to AIP process")
-            ip.statusprocess = 50
-	else:
+            ted.set_state(50)
+        else:
             tl.addinfo("SIP creation")
-            ip.statusprocess = 10
-        tl.addinfo("Setting statusprocess to %s" % ip.statusprocess)
-        ip.uuid = randomutils.getUniqueID()
-        tl.addinfo("New uuid assigned: %s" % ip.uuid)
-        ip.identifier = ""
-        tl.addinfo("Setting package identifier to empty string")
-        ip.save()
+            ted.set_state(10)
+        tl.addinfo("Setting statusprocess to %s" % status)
 
+        tl.addinfo("Writing task document to %s" % task_doc_path)
+        ted.write_doc(task_doc_path)
+        ted.write_doc(os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id))
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         return tl.fin()
 
 
 class SIPDeliveryValidation(Task):
 
-    def valid_state(self, ip, tc, delivery_file, schema_file, package_file):
+    def valid_state(self, ted, delivery_file, schema_file, package_file):
         err = []
-        check_status(ip.statusprocess, tc.expected_status, err)
+        check_status(ted.get_state(), ted.get_task_config().expected_status, err)
         if not os.path.exists(delivery_file):
             err.append("Delivery file does not exist: %s" % delivery_file)
         if not os.path.exists(schema_file):
@@ -150,27 +175,27 @@ class SIPDeliveryValidation(Task):
             err.append("Package file does not exist: %s" % package_file)
         return err
 
-    def run(self, pk_id, tc, *args, **kwargs):
+    def run(self, ted, *args, **kwargs):
         """
         SIP Delivery Validation
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:1,type:1,expected_status:status==0,success_status:100,error_status:190
+        @param      tc: order:1,type:1,expected_status:status==50,success_status:100,error_status:190
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "SIPDeliveryValidation", "sip_to_aip_processing")
-        tl.addinfo(("New UUID assigned: %s" % ip.uuid))
+        uuid, ip_work_dir, tl, start_time, package_premis_file = init_task2(ted, "SIPDeliveryValidation", "sip_to_aip_processing")
+        tl.addinfo(("New UUID assigned: %s" % uuid))
         try:
             self.update_state(state='PROGRESS', meta={'process_percent': 1})
-            filename, file_ext = os.path.splitext(ip.path)
+            filename, file_ext = os.path.splitext(ted.get_path)
             delivery_dir = params.config_path_reception
             delivery_file = "%s.xml" % filename
             # package name is basename of delivery package
-            ip.packagename = os.path.basename(filename)
+            #ip.packagename = os.path.basename(filename)
             schema_file = os.path.join(delivery_dir, 'IP_CS_mets.xsd')
-            package_file = ip.path
+            package_file = ted.get_path
             self.update_state(state='PROGRESS', meta={'process_percent': 10})
             # create minimal premis file to record initial actions
             # with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
@@ -182,7 +207,7 @@ class SIPDeliveryValidation(Task):
             # path_premis = os.path.join(temporary_working_dir,'PREMIS.xml')
             # with open(path_premis, 'w') as output_file:
             #     output_file.write(my_premis.to_string())
-            tl.err = self.valid_state(ip, tc, delivery_file, schema_file, package_file)
+            tl.err = self.valid_state(ted, delivery_file, schema_file, package_file)
             if len(tl.err) > 0:
                 return tl.fin()
             sdv = DeliveryValidation()

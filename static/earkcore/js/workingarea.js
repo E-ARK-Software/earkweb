@@ -34,14 +34,17 @@ function show(id, value) {
                              $('#XmlPreview').html("<p>JPEG viewer is not  implemented</p>")
                             break;
                         case 'image/tiff':
-                             $('#XmlPreview').html("<p>TIFF viewer is not  implemented</p>")
+                             $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
+                             document.getElementById("displayimage").src = data;
                             break;
                         case 'image/png':
                              $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
                              document.getElementById("displayimage").src = data;
                             break;
                         case 'application/pdf':
-                             $('#XmlPreview').html("<p>PDF viewer is not implemented</p>")
+//                             $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
+//                             document.getElementById("displayimage").src = data;
+                             $('#XmlPreview').html(data)
                             break;
                         case 'text/plain':
                              $('#XmlPreview').html("<pre>"+data+"</pre>")
@@ -68,6 +71,27 @@ function show(id, value) {
             $('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-open');
          }).on('close_node.jstree', function (e, data) {
             $('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-close');
-         }).jstree({ 'core' : dir_as_json });
+         }).on('move_node.jstree', function (e, data) {
+            origin_path = data.node.data.path;
+            target_path = $('#directorytree').jstree().get_node(data.parent).data.path
+            console.log("Original path: "+origin_path);
+            console.log("Target path: "+target_path);
+         }).jstree({ 'core' : dir_as_json, "plugins" : [
+            //"checkbox",
+            "contextmenu",
+            "dnd",
+            //"massload",
+            //"search",
+            //"sort",
+            //"state",
+            //"types",
+            //"unique",
+            //"wholerow",
+            "changed",
+            //"conditionalselect"
+        ] });
+        $(document).on('dnd_start.vakata', function (e, data) {
+            console.log(data);
+        });
     });
 })();

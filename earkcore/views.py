@@ -16,7 +16,9 @@ from django.template import RequestContext, loader
 import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from django.http import JsonResponse
-
+from earkcore.utils import randomutils
+from earkcore.process.cli.CliCommand import CliCommand
+from subprocess import check_output
 
 class InformationPackageDetailView(DetailView):
     model = InformationPackage
@@ -68,10 +70,27 @@ def read_ipfc(request, ip_sub_file_path):
     else:
         file_size = fsize(file_path)
         if file_size <= config_max_filesize_viewer:
-            file_content = read_file_content(file_path)
             mime = get_mime_type(file_path)
+            print "MIME" + mime
+            file_content = None
             if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
+                file_content = read_file_content(file_path)
                 file_content = "data:"+mime+";base64,"+base64.b64encode(file_content)
+            elif get_mime_type(file_path) == "image/tiff":
+                from pgmagick.api import Image
+                img = Image(file_path)
+                uuid = randomutils.getUniqueID()
+                img.write('/tmp/%s.png' % uuid)
+                file_content = "data:"+mime+";base64,"+base64.b64encode(read_file_content('/tmp/%s.png' % uuid))
+            elif get_mime_type(file_path) == "application/pdf":
+                uuid = randomutils.getUniqueID()
+                html_file = ('/tmp/%s.html' % uuid)
+                print html_file
+                pdftohtml_cmd = CliCommand.get("pdftohtml", {'pdf_file': file_path, 'html_file': html_file})
+                out = check_output(pdftohtml_cmd)
+                file_content = read_file_content(html_file)
+            else:
+                file_content = read_file_content(file_path)
             return HttpResponse(file_content)
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
@@ -87,4 +106,4 @@ def get_directory_json(request):
         package_name = dirlist[0]
     else:
         package_name = dirlist
-    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/') })
+    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/'), "check_callback" : "true" })

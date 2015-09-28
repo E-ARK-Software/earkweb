@@ -30,6 +30,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from celery.result import AsyncResult
+from sandbox.task_execution_xml import TaskExecutionXml
 from workers import tasks
 from django.http import JsonResponse
 from django.forms import ModelChoiceField
@@ -159,11 +160,16 @@ def apply_task(request):
             return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
         wfm = WorkflowModules.objects.get(pk=selected_action)
         tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
+
+        ip = InformationPackage.objects.get(pk=selected_ip)
+        ted = TaskExecutionXml.from_parameters(ip.uuid, os.path.join(config_path_work, ip.uuid), tc)
+
         if request.is_ajax():
             try:
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task: %s" % wfm.identifier
-                job = taskClass().apply_async((selected_ip, tc,), queue='default')
+                #job = taskClass().apply_async((selected_ip, tc,), queue='default')
+                job = taskClass().apply_async((ted,), queue='default')
                 print "Task identifier: %s" % job.id
                 data = {"success": True, "id": job.id}
             except AttributeError, err:

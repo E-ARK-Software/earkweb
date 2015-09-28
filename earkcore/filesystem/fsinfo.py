@@ -13,6 +13,8 @@ def path_to_dict(path, strip_path_part=None):
     if os.path.isdir(unicode(path).encode('utf-8')):
         d['icon'] = "glyphicon glyphicon-folder-close"
         d['children'] = [path_to_dict(os.path.join(unicode(path).encode('utf-8'),x), strip_path_part) for x in os.listdir(unicode(path).encode('utf-8'))]
+        path_metadata = path if strip_path_part is None else path.replace(strip_path_part, "")
+        d['data'] = {"path": unicode(path_metadata).encode('utf-8')}
     else:
         d['icon'] = "glyphicon glyphicon-file"
         path_metadata = path if strip_path_part is None else path.replace(strip_path_part, "")
