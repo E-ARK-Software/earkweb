@@ -15,6 +15,8 @@ from workers.tasklogger import TaskLogger
 from earkcore.models import InformationPackage
 from earkcore.metadata.premis.PremisManipulate import Premis
 
+from sipgenerator.sipgenerator import SIPGenerator
+
 def init_task(pk_id, task_name, task_logfile_name):
     start_time = time.time()
     ip = InformationPackage.objects.get(pk=pk_id)
@@ -33,44 +35,20 @@ def init_task(pk_id, task_name, task_logfile_name):
     return ip, ip_work_dir, tl, start_time
 
 
-ip, ip_work_dir, tl, start_time = init_task(11, "Test task", "test")
+ip, ip_work_dir, tl, start_time = init_task(5, "Test task", "test")
 
-# initial version of PREMIS
-with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
-    my_premis = Premis(premis_file)
-my_premis.add_agent('earkweb')
-my_premis.add_event('AIP Creation', 'earkweb')
-my_premis.add_object('file://./submission/PACKAGENAME/METS.xml')
-path_premis = os.path.join('/tmp/','PREMIS.xml')
-print pretty_xml_string(my_premis.to_string())
-with open(path_premis, 'w') as output_file:
-    output_file.write(my_premis.to_string())
+print "Working in rootdir %s" % root_dir
+os.chdir(ip_work_dir)
+print "Working in rootdir %s" % os.getcwd()
+sipgen = SIPGenerator()
+sipgen.createMets()
 
-#print "First version created, now file format identification event"
-time.sleep(2)
-
-with open('/tmp/PREMIS.xml', 'r') as premis_file:
-    my_premis = Premis(premis_file)
-my_premis.add_event('File format identification (PRONOM/fido)', 'earkweb', 'file://./submission/PACKAGENAME/METS.xml')
-for obj in my_premis.root.object:
-    print obj.objectIdentifier.objectIdentifierValue
-    # File format The Pronom Unique Identifier is provided as a as a descendant of the
-    # <objectCharacteristics> element in form Persistent Unique Identifier (PUID) 18 based
-    # on the PRONOM technical registry. 19 An example is shown in figure 11.
-    # <format>
-    # <formatRegistry>
-    # <formatRegistryName>PRONOM</formatRegistryName>
-    # <formatRegistryKey>fmt/101</formatRegistryKey>
-    # <formatRegistryRole>identification</formatRegistryRole>
-    # </formatRegistry>
-    # </format>
-    # add pronom identifier (PUID) here to /premis/object/objectCharacteristics/format/formatRegistryKey
-    # /premis/object/objectCharacteristics/format/formatRegistryName is always PRONOM
-my_premis.add_object('file://./submission/PACKAGENAME/metadata/ead.xml')
-path_premis = os.path.join('/tmp/','PREMIS.xml')
-
-with open(path_premis, 'w') as output_file:
-    output_file.write(pretty_xml_string(my_premis.to_string()))
+#with open('/tmp/PREMIS.xml', 'r') as premis_file:
+#    my_premis = Premis(premis_file)
+#my_premis.add_event('File format identification (PRONOM/fido)', 'earkweb', 'file://./submission/PACKAGENAME/METS.xml')
+#path_premis = os.path.join('/tmp/','PREMIS.xml')
+#with open(path_premis, 'w') as output_file:
+#    output_file.write(pretty_xml_string(my_premis.to_string()))
 
 
 

@@ -38,7 +38,7 @@ M = objectify.ElementMaker(
     namespace=METS_NS,
     nsmap=METS_NSMAP)
 
-class testFormatIdentification(unittest.TestCase):
+class SIPGenerator(object):
     fid = FormatIdentification()
     mime = MimeTypes()
 
@@ -49,14 +49,66 @@ class testFormatIdentification(unittest.TestCase):
                 hash.update(chunk)
         return hash.hexdigest()
 
-    def createPremis(self, enable_jhove = False):
-        #load PREMIS skeleton
-        with open(root_dir+'/earkresources/PREMIS_skeleton.xml', 'r') as premis_file:
-            my_premis = objectify.parse(premis_file).getroot()
+    def createAgent(self,role, type, other_type, name, note):
+        agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+        return agent
 
-        jhove_parser = etree.XMLParser(remove_blank_text=True)
+    def runCommand(self, program, stdin = PIPE, stdout = PIPE, stderr = PIPE):
+        result, res_stdout, res_stderr = None, None, None
+        try:
+            # quote the executable otherwise we run into troubles
+            # when the path contains spaces and additional arguments
+            # are presented as well.
+            # special: invoking bash as login shell here with
+            # an unquoted command does not execute /etc/profile
+
+            print 'Launching: '+ ' '.join(program)
+            process = Popen( program, stdin = stdin, stdout = stdout, stderr = stderr, shell = False)
+
+            res_stdout, res_stderr = process.communicate()
+            result = process.returncode
+            print 'Finished: '+ ' '.join(program)
+
+        except Exception as ex:
+            res_stderr = ''.join(str(ex.args))
+            result = 1
+
+        if result != 0:
+            print 'Command failed:' + ''.join(res_stderr)
+            raise Exception('Command failed:' + ''.join(res_stderr))
+
+        return result, res_stdout, res_stderr
+
+    def addFiles(self, folder, mets_filegroup):
+        ids = []
+        for top, dirs, files in os.walk(folder):
+            for fn in files:
+                file_name = os.path.join(top, fn)
+                file_url = unicode(os.path.join("file://",file_name), "utf-8")
+                file_mimetype,_ = self.mime.guess_type(file_url)
+                file_checksum = self.sha256(file_name)
+                file_size = os.path.getsize(file_name)
+                #file_cdate = datetime.fromtimestamp(os.path.getctime(file_name)).strftime('%Y-%m-%dT%H:%M:%S%z')
+                file_cdate = get_file_ctime_iso_date_str(file_name)
+                file_id = "ID"+uuid.uuid1().__str__()
+                mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
+                mets_filegroup.append(mets_file)
+                mets_FLocat = M.FLocat({q(XLINK_NS, 'href'): file_url,"LOCTYPE":"URL", q(XLINK_NS, 'type'): 'simple'})
+                mets_file.append(mets_FLocat)
+                ids.append(file_id)
+        return ids
+
+    def createPremis(self, enable_jhove = False):
+        jhove_parser = None
+        if enable_jhove == True:
+            jhove_parser = etree.XMLParser(remove_blank_text=True)
+
+        PREMIS_ATTRIBUTES = {"version" : "2.0"}
+        premis = P.premis(PREMIS_ATTRIBUTES)
+        premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../schemas/premis-v2-2.xsd"
+
         premis_ids = []
-        for top, dirs, files in os.walk('./content'):
+        for top, dirs, files in os.walk('./data/content'):
             for nm in files:
                 file_name = os.path.join(top,nm)
                 hash = self.sha256(file_name)
@@ -74,9 +126,9 @@ class testFormatIdentification(unittest.TestCase):
                 size = os.path.getsize(file_name)
                 premis_id = uuid.uuid1()
                 premis_ids.append(premis_id)
-                my_premis.append(
+                premis.append(
                     P.object(
-                        {q(XSI_NS, 'type'): 'file'},
+                        {q(XSI_NS, 'type'): 'file', "xmlID":premis_id},
                         P.objectIdentifier(
                             P.objectIdentifierType('LOCAL'),
                             P.objectIdentifierValue(premis_id)
@@ -114,7 +166,7 @@ class testFormatIdentification(unittest.TestCase):
                 )
 
         identifier_value = 'earkweb'
-        my_premis.append(P.agent(
+        premis.append(P.agent(
                 P.agentIdentifier(
                     P.agentIdentifierType('LOCAL'),
                     P.agentIdentifierValue(identifier_value)
@@ -125,7 +177,7 @@ class testFormatIdentification(unittest.TestCase):
         identifier_value = 'AIP Creation'
         linking_agent = 'earkweb'
         linking_object=None
-        my_premis.append(P.event(
+        premis.append(P.event(
                 P.eventIdentifier(
                     P.eventIdentifierType('LOCAL'),
                     P.eventIdentifierValue(identifier_value)
@@ -144,57 +196,21 @@ class testFormatIdentification(unittest.TestCase):
                 if linking_object is not None else None
             ))
 
-        str = etree.tostring(my_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        print str
-        path_premis = os.path.join('/tmp/','PREMIS.xml')
+        str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+        path_premis = os.path.join('./metadata/','premis.xml')
         with open(path_premis, 'w') as output_file:
             output_file.write(str)
 
         return premis_ids
 
-    def createAgent(self,role, type, other_type, name, note):
-        agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
-        return agent
-
-    def runCommand(self, program, stdin = PIPE, stdout = PIPE, stderr = PIPE):
-        result, res_stdout, res_stderr = None, None, None
-        try:
-            # quote the executable otherwise we run into troubles
-            # when the path contains spaces and additional arguments
-            # are presented as well.
-            # special: invoking bash as login shell here with
-            # an unquoted command does not execute /etc/profile
-
-            print 'Launching: '+ ' '.join(program)
-            process = Popen( program, stdin = stdin, stdout = stdout, stderr = stderr, shell = False)
-
-            res_stdout, res_stderr = process.communicate()
-            result = process.returncode
-            print 'Finished: '+ ' '.join(program)
-
-        except Exception as ex:
-            res_stderr = ''.join(str(ex.args))
-            result = 1
-
-        if result != 0:
-            print 'Command failed:' + ''.join(res_stderr)
-            raise Exception('Command failed:' + ''.join(res_stderr))
-
-        return result, res_stdout, res_stderr
-
-    def testCreateMets(self):
-        print "Working in rootdir %s" % root_dir
-        os.chdir(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
-        print "Working in rootdir %s" % os.getcwd()
-
-        premis_ids = self.createPremis()
+    def createMets(self, premis_ids = None):
+        if premis_ids == None:
+            premis_ids = self.createPremis()
 
         #create METS skeleton
         METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
-
-
 
         mets_hdr = M.metsHdr({"CREATEDATE": ts_date(DT_ISO_FORMAT), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
         root.append(mets_hdr)
@@ -222,9 +238,8 @@ class testFormatIdentification(unittest.TestCase):
         mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
         mets_amdSec.append(mets_techmd)
         for id in premis_ids:
-            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/PREMIS.xml#"+id.__str__()})
+            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./Metadata/PREMIS.xml#"+id.__str__()})
             mets_techmd.append(mets_mdref)
-
 
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
@@ -232,7 +247,7 @@ class testFormatIdentification(unittest.TestCase):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
         mets_fileSec.append(mets_filegroup)
 
-        content_ids = self.addFiles("./content", mets_filegroup)
+        content_ids = self.addFiles("./data/content", mets_filegroup)
         metadata_ids = self.addFiles("./metadata", mets_filegroup)
 
         mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
@@ -260,27 +275,18 @@ class testFormatIdentification(unittest.TestCase):
         #mets_xsd = etree.XMLSchema(mets_schema)
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        print str
 
+        path_mets = os.path.join('./','METS.xml')
+        with open(path_mets, 'w') as output_file:
+            output_file.write(str)
 
-    def addFiles(self, folder, mets_filegroup):
-        ids = []
-        for top, dirs, files in os.walk(folder):
-            for fn in files:
-                file_name = os.path.join(top, fn)
-                file_url = unicode(os.path.join("file://",file_name), "utf-8")
-                file_mimetype,_ = self.mime.guess_type(file_url)
-                file_checksum = self.sha256(file_name)
-                file_size = os.path.getsize(file_name)
-                #file_cdate = datetime.fromtimestamp(os.path.getctime(file_name)).strftime('%Y-%m-%dT%H:%M:%S%z')
-                file_cdate = get_file_ctime_iso_date_str(file_name)
-                file_id = "ID"+uuid.uuid1().__str__()
-                mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
-                mets_filegroup.append(mets_file)
-                mets_FLocat = M.FLocat({q(XLINK_NS, 'href'): file_url,"LOCTYPE":"URL", q(XLINK_NS, 'type'): 'simple'})
-                mets_file.append(mets_FLocat)
-                ids.append(file_id)
-        return ids
+class testFormatIdentification(unittest.TestCase):
+    def testCreateMetsAndPremis(self):
+        print "Working in rootdir %s" % root_dir
+        os.chdir(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
+        print "Working in rootdir %s" % os.getcwd()
+        sipgen = SIPGenerator()
+        sipgen.createMets()
 
 
 if __name__ == '__main__':
