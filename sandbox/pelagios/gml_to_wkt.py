@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 from shapely.geometry.polygon import LinearRing
 from gml_to_wkt_helper import *
-
+from pyproj import Proj, transform
 
 def flat_pos_list_to_coord_tuples(flat_pos_list):
     """
@@ -18,9 +18,13 @@ def flat_pos_list_to_coord_tuples(flat_pos_list):
     if flat_pos_list[0] != flat_pos_list[len(flat_pos_list)-2] or flat_pos_list[1] != flat_pos_list[len(flat_pos_list)-1]:
         raise ValueError("Not a closed polygon (first tuple must equal last tuple)")
     coordinate_tuples = []
+    inProj = Proj(init='epsg:3912')
+    outProj = Proj(init='epsg:4326')
     if flat_pos_list >= 6 and len(flat_pos_list) % 2 == 0:
         for x, y in pairwise(flat_pos_list):
-            coordinate_tuples.append((float(x), float(y)))
+            # transform
+            x_t, y_t = transform(inProj, outProj, x, y)
+            coordinate_tuples.append((float(x_t), float(y_t)))
     else:
         raise ValueError("even number of coordinate tuples required")
     return coordinate_tuples
