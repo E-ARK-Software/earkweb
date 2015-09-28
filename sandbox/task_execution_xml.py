@@ -102,9 +102,8 @@ class TaskExecutionXml(object):
         uuid_elm = SubElement(parameters, 'uuid')
         uuid_elm.text = uuid
         ip_path_elm = SubElement(parameters, 'path')
-        packagename = SubElement(parameters, 'packagename')
-        identifier = SubElement(parameters, 'identifier')
-        reception = SubElement(parameters, 'reception')
+        SubElement(parameters, 'packagename')
+        SubElement(parameters, 'identifier')
         ip_path_elm.text = ip_path_elm
         task_config_elm = SubElement(parameters, 'config')
         expected_status = SubElement(task_config_elm, "expected_status")
@@ -116,16 +115,49 @@ class TaskExecutionXml(object):
         ip_path_elm.text = ip_path
         return task_execution
 
-    def get_task_config(self):
+    def get_state(self):
         """
-        Get task configuration object
+        Get state value.
 
-        @rtype: TaskConfig
-        @return: TaskConfig object
+        @rtype: int
+        @return: state value
         """
-        return TaskConfig(self.ted.find('.//parameters/config/expected_status').text,
-                          int(self.ted.find(".//parameters/config/success_status").text),
-                          int(self.ted.find(".//parameters/config/error_status").text))
+        return int(self.ted.find('.//state').text)
+
+    def set_state(self, state):
+        """
+        Set state value
+
+        @type outcome: Boolean
+        @param outcome: Result success (True/False)
+        """
+        state_elm = self.ted.find('.//state')
+        if not state_elm:
+            parent = self.ted.find('..//task_execution')
+            state_elm = SubElement(parent, 'state')
+        state_elm.text = str(state)
+
+    def get_uuid(self):
+        """
+        Get uuid (identifier) task execution document
+
+        @rtype: str
+        @return: uuid (identifier)
+        """
+        return self.ted.find('.//parameters/uuid').text
+
+    def set_uuid(self, uui):
+        """
+        Set uui
+
+        @type outcome: str
+        @param outcome: identifier
+        """
+        uui_elm = self.ted.find('.//parameters/uui')
+        if not uui_elm:
+            parent = self.ted.find('.//parameters')
+            uui_elm = SubElement(parent, 'uui')
+        uui_elm.text = uui
 
     def get_path(self):
         """
@@ -135,6 +167,19 @@ class TaskExecutionXml(object):
         @return: Path
         """
         return self.ted.find('.//parameters/path').text
+
+    def set_path(self, path):
+        """
+        Set path
+
+        @type path: str
+        @param path: path
+        """
+        path_elm = self.ted.find('.//parameters/path')
+        if not path_elm:
+            parent = self.ted.find('.//parameters')
+            path_elm = SubElement(parent, 'path')
+        path_elm.text = path
 
     def get_packagename(self):
         """
@@ -152,7 +197,11 @@ class TaskExecutionXml(object):
         @type packagename: str
         @param packagename: packagename
         """
-        self.ted.find('.//parameters/packagename').text = packagename
+        packagename_elm = self.ted.find('.//parameters/packagename')
+        if not packagename_elm:
+            parent = self.ted.find('.//parameters')
+            packagename_elm = SubElement(parent, 'packagename')
+        packagename_elm.text = packagename
 
     def get_identifier(self):
         """
@@ -167,55 +216,25 @@ class TaskExecutionXml(object):
         """
         Set identifier
 
-        @type outcome: str
-        @param outcome: identifier
+        @type identifier: str
+        @param identifier: identifier
         """
-        self.ted.find('.//parameters/identifier').text = identifier
+        identifier_elm = self.ted.find('.//parameters/identifier')
+        if not identifier_elm:
+            parent = self.ted.find('.//parameters')
+            identifier_elm = SubElement(parent, 'identifier')
+        identifier_elm.text = identifier
 
-    def set_reception(self, reception):
+    def get_task_config(self):
         """
-        Set reception
+        Get task configuration object
 
-        @type reception: str
-        @param reception: reception
+        @rtype: TaskConfig
+        @return: TaskConfig object
         """
-        self.ted.find('.//parameters/reception').text = reception
-
-    def get_reception(self):
-        """
-        Get reception
-
-        @rtype: str
-        @return: reception
-        """
-        return self.ted.find('.//parameters/reception').text
-
-    def get_uuid(self):
-        """
-        Get uuid (identifier) task execution document
-
-        @rtype: str
-        @return: uuid (identifier)
-        """
-        return self.ted.find('.//parameters/uuid').text
-
-    def set_state(self, state):
-        """
-        Set success result element value
-
-        @type outcome: Boolean
-        @param outcome: Result success (True/False)
-        """
-        self.ted.find('.//state').text = str(state)
-
-    def get_state(self):
-        """
-        Get success value of result element.
-
-        @rtype: Boolean
-        @return: Result success (True/False)
-        """
-        return int(self.ted.find('.//state').text)
+        return TaskConfig(self.ted.find('.//parameters/config/expected_status').text,
+                          int(self.ted.find(".//parameters/config/success_status").text),
+                          int(self.ted.find(".//parameters/config/error_status").text))
 
     def get_updated_doc_content(self):
         """

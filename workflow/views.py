@@ -162,6 +162,7 @@ def apply_task(request):
         tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
 
         ip = InformationPackage.objects.get(pk=selected_ip)
+        # uuid, path, identifier, packagename, state, and task_config
         ted = TaskExecutionXml.from_parameters(ip.uuid, os.path.join(config_path_work, ip.uuid), tc)
 
         if request.is_ajax():
