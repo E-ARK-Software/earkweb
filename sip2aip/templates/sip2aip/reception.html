@@ -35,7 +35,7 @@
                 <td><a href="{% url 'sip2aip:ip_detail' ip.pk %}" title='Detail information'>{{ ip.packagename }}</a></td>
                 <td>{{ ip.uuid }}</td>
                 <td>
-                    {% if ip.statusprocess >= 300 %}
+                    {% if ip.statusprocess >= 50 %}
                     <a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a>
                     {% else %}
                     -

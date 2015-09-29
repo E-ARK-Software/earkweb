@@ -34,6 +34,29 @@ class TaskScanner(object):
 
     task_modules = dict()
 
+    def register_method(self, method_name, c, item):
+        runmethod = getattr(c, method_name)
+        rundoc = runmethod.__doc__
+        params = []
+        doclist = rundoc.split('\n')
+        paramline = ""
+        for dlitem in doclist:
+            paramline += dlitem
+            if "@param" in dlitem:
+                match = re.search('@type (?P<tpname>.*): (?P<datatype>.*)@param (?P<ppname>.*): (?P<description>.*)', paramline)
+                type = match.group('datatype').strip()
+                name = match.group('tpname').strip()
+                descr = match.group('description').strip()
+                params.append(InputParam(type, name, descr))
+                paramline = ""
+            elif "@return:" in dlitem:
+                match = re.search('@rtype:\s*(?P<rtype>.*)@return:\s*(?P<descr>.*)', paramline)
+                type = match.group('rtype').strip()
+                descr = match.group('descr').strip()
+                params.append(ReturnParam(type, None, descr))
+                paramline = ""
+        self.task_modules[str(item)] = params
+
     def __init__(self, taskmodule):
         """
         Scanning celery tasks and parsing run method documentation is done here in the constructor.
@@ -41,30 +64,11 @@ class TaskScanner(object):
         self.taskmodule = taskmodule
         methodList = [item for item in dir(taskmodule)]
         for item in methodList:
-            if inspect.isclass(getattr(tasks, item)) and str(item) != "Task":
+            if inspect.isclass(getattr(tasks, item)) and str(item) != "Task" and str(item) != "DefaultTask":
                 c = getattr(tasks, item)
                 try:
-                    runmethod = getattr(c, "run")
-                    rundoc = runmethod.__doc__
-                    params = []
-                    doclist = rundoc.split('\n')
-                    paramline = ""
-                    for dlitem in doclist:
-                        paramline += dlitem
-                        if "@param" in dlitem:
-                            match = re.search('@type (?P<tpname>.*): (?P<datatype>.*)@param (?P<ppname>.*): (?P<description>.*)', paramline)
-                            type = match.group('datatype').strip()
-                            name = match.group('tpname').strip()
-                            descr = match.group('description').strip()
-                            params.append(InputParam(type, name, descr))
-                            paramline = ""
-                        elif "@return:" in dlitem:
-                            match = re.search('@rtype:\s*(?P<rtype>.*)@return:\s*(?P<descr>.*)', paramline)
-                            type = match.group('rtype').strip()
-                            descr = match.group('descr').strip()
-                            params.append(ReturnParam(type, None, descr))
-                            paramline = ""
-                    self.task_modules[str(item)] = params
+                    self.register_method("run", c, item)
+                    self.register_method("run_task", c, item)
                 except AttributeError:
                     pass
 
@@ -131,6 +135,8 @@ class WireItLanguageModules(object):
 
 def main():
     task_modules = TaskScanner(tasks).task_modules
+    for module_name, module_params in task_modules.iteritems():
+        print "Registering task %s" % module_name
     wirelangmod = WireItLanguageModules(task_modules)
     wirelangmod.register_language_modules()
 

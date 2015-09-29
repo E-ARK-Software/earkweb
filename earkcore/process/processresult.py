@@ -15,3 +15,4 @@ class ProcessResult(object):
     success = False
     log = []
     err = []
+    state = 0

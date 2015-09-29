@@ -6,7 +6,16 @@ E-ARK integrated prototype web application
 
 ### Debian packages
 
-    sudo apt-get install summain jhove
+    sudo apt-get install summain jhove pdftohtml 
+    
+Python image conversion (pgmagick) requires (image display):    
+    
+    sudo apt-get install graphicsmagick
+    sudo apt-get install libgraphicsmagick++1-dev libboost-python-dev
+    
+PDF to HTML conversion:
+
+    pdftohtml
 
 ### Python modules
 

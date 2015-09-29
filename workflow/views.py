@@ -30,6 +30,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from celery.result import AsyncResult
+from sandbox.task_execution_xml import TaskExecutionXml
 from workers import tasks
 from django.http import JsonResponse
 from django.forms import ModelChoiceField
@@ -149,22 +150,36 @@ def apply_workflow(request):
 @login_required
 @csrf_exempt
 def apply_task(request):
+    """
+    Execute selected task using selected information package as input. Task modules are registered in WorkflowModules.
+    The identifier of a workflow module corresponds with the task's class name. The task is executed using celery's
+    'apply_async' method.
+
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task execution metadata)
+    """
     data = {"success": False, "errmsg": "Unknown error"}
     try:
         selected_ip = request.POST['selected_ip']
-        print "selected_ip: " + request.POST['selected_ip']
         selected_action = request.POST['selected_action']
-        print "selected_action: " + request.POST['selected_action']
         if not (selected_ip and selected_action):
             return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
+        # Get module description of the task to be executed from the database
         wfm = WorkflowModules.objects.get(pk=selected_action)
-        tc = TaskConfig(wfm.expected_status,  wfm.success_status, wfm.error_status)
+        # Get the selected information package from the database
+        ip = InformationPackage.objects.get(pk=selected_ip)
         if request.is_ajax():
             try:
+                # Get task class from module identifier
                 taskClass = getattr(tasks, wfm.identifier)
-                print "Executing task: %s" % wfm.identifier
-                job = taskClass().apply_async((selected_ip, tc,), queue='default')
-                print "Task identifier: %s" % job.id
+                print "Executing task %s" % taskClass
+                # additional input parameters for the task can be injected by this dictionary
+                additional_params = {}
+                # Execute task
+                job = taskClass().apply_async((ip.uuid, ip.path, additional_params,), queue='default')
                 data = {"success": True, "id": job.id}
             except AttributeError, err:
                 errdetail = """The workflow module '%s' does not exist.
@@ -182,6 +197,12 @@ It might be necessary to run 'python ./workers/scantasks.py' to register new or 
 @login_required
 @csrf_exempt
 def poll_state(request):
+    """
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task state metadata)
+    """
     data = {"success": False, "errmsg": "undefined"}
     try:
         if request.is_ajax():
@@ -192,6 +213,18 @@ def poll_state(request):
                     aggr_log = '\n'.join(task.result.log)
                     aggr_err = '\n'.join(task.result.err)
                     data = {"success": True, "result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
+                    # Update specific properties in database; The result is returned as a TaskResult object.
+                    # Main properties are uuid (internal information package identifier) and ip_state (state of the information package).
+                    # Additional properties are returned by the dictionary add_res_parms.
+                    if task.result.uuid and task.result.ip_state:
+                        ip = InformationPackage.objects.get(uuid=task.result.uuid)
+                        ip.statusprocess = task.result.ip_state
+                        ip.save()
+                    if task.result.uuid and task.result.add_res_parms and 'identifier' in task.result.add_res_parms:
+                        print "updating identifier: %s" % task.result.add_res_parms['identifier']
+                        ip = InformationPackage.objects.get(uuid=task.result.uuid)
+                        ip.identifier = task.result.add_res_parms['identifier']
+                        ip.save()
                 else:
                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}
             else:
