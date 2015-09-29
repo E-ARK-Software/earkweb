@@ -9,6 +9,7 @@ from earkcore.metadata.premis.PremisManipulate import Premis
 from workflow.ip_state import IpState
 import glob
 from tasklogger import TaskLogger
+import traceback
 
 def init_task2(ip_work_dir, task_name, task_logfile_name):
     start_time = time.time()
@@ -44,7 +45,7 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
     path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
     with open(path_premis, 'w') as output_file:
         output_file.write(package_premis_file.to_string())
-    tl.addinfo('PREMIS file updated: %s' % path_premis)
+    tl.addinfo('PREMIS file updated: %s (%s)' % (path_premis, outcome))
 
 
 class DefaultTask(Task, StatusValidation):
@@ -54,8 +55,6 @@ class DefaultTask(Task, StatusValidation):
     error_status = 0
 
     task_name = "DefaultTask"
-
-    add_result_params = {}
 
     def run_task(self, uuid, path, tl, additional_params):
         """
@@ -77,10 +76,12 @@ class DefaultTask(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log, additional parameters)
         """
-        # task name is name of instantiating class
+        add_result_params = {}
+        # task name is name of instantiating class (concrete task implementation)
         self.task_name = str(self.__name__)
         # initialize task
-        tl, start_time, package_premis_file = init_task2(path, self.task_name, "sip_to_aip_processing")
+        tl, start_time, package_premis_file = init_task2(path, self.task_name, "earkweb")
+        tl.addinfo("Processing package %s" % uuid)
         self.update_state(state='PROGRESS', meta={'process_percent': 1})
         try:
             # state
@@ -94,7 +95,7 @@ class DefaultTask(Task, StatusValidation):
             if len(tl.err) > 0:
                 return tl.finalize(uuid, self.error_status)
 
-            self.add_result_params = self.run_task(uuid, path, tl, additional_params)
+            add_result_params = self.run_task(uuid, path, tl, ip_state, additional_params)
 
             if len(tl.err) > 0:
                 return tl.finalize(uuid, self.error_status)
@@ -105,7 +106,8 @@ class DefaultTask(Task, StatusValidation):
             ip_state.write_doc(ip_state_doc_path)
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-            return tl.finalize(uuid, self.success_status, self.add_result_params)
+            return tl.finalize(uuid, self.success_status, add_result_params)
         except Exception:
+            traceback.print_exc()
             add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
             return tl.finalize(uuid, self.error_status)
