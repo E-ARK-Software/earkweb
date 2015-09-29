@@ -76,6 +76,8 @@ function show(id, value) {
             target_path = $('#directorytree').jstree().get_node(data.parent).data.path
             console.log("Original path: "+origin_path);
             console.log("Target path: "+target_path);
+         }).on('loaded.jstree', function() {
+            $('#directorytree').jstree('open_all');
          }).jstree({ 'core' : dir_as_json, "plugins" : [
             //"checkbox",
             "contextmenu",

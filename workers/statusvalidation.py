@@ -1,11 +1,9 @@
 class StatusValidation(object):
 
-    def valid_state(self, ip, tc):
+    def valid_state(self, status, expected_status):
         err = []
         # logical expression in variable 'expected_status' uses 'status' as the variable for the current information package status
-        status = ip.statusprocess
-        expected_status = tc.expected_status
-        if not eval(tc.expected_status):
+        if not eval(expected_status):
             _append_err_msg(err, status, expected_status)
         return err
 

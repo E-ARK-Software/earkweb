@@ -59,7 +59,7 @@ class TaskExecutionXml(object):
         return cls(doc_content, ted)
 
     @classmethod
-    def from_parameters(cls, uuid, path, task_config):
+    def from_parameters(cls, path, uuid, packagename, identifier, state, task_config):
         """
         Alternative constructor (initialise from parameters)
 
