@@ -188,6 +188,28 @@ class Reset(Task):
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         return tl.finalize(uuid, new_status, {})
 
+class SIPMetadataGenerator(DefaultTask):
+
+    expected_status = "status==50"
+    success_status = 0
+    error_status = 90
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Metadata Generator run task method overrides the DefaultTask's run_task method.
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:3,type:1,expected_status:status==200~or~status==390,success_status:300,error_status:390
+        """
+        os.chdir(path)
+        tl.addinfo("Working in rootdir %s" % os.getcwd())
+        sipgen = SIPGenerator()
+        sipgen.createMets()
+
+        ip_state_doc_path = os.path.join(path, "state.xml")
+        ip_state = IpState.from_parameters(50, False)
+        if os.path.exists(ip_state_doc_path):
+            ip_state = IpState.from_path(ip_state_doc_path)
+        status = ip_state.get_state()
 
 class SIPDeliveryValidation(Task):
 
@@ -307,6 +329,7 @@ class IdentifierAssignment(Task, StatusValidation):
         add_PREMIS_event('IdentifierAssignment', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
         return tl.finalize(uuid, self.success_status, {'identifier': identifier})
 
+from sandbox.sipgenerator.sipgenerator import SIPGenerator
 
 class SIPExtraction(DefaultTask):
 
