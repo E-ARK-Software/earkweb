@@ -12,15 +12,19 @@ from tasklogger import TaskLogger
 import traceback
 
 def init_task2(ip_work_dir, task_name, task_logfile_name):
+
     start_time = time.time()
+
     # create working directory
     if not os.path.exists(ip_work_dir):
         os.mkdir(ip_work_dir)
     metadata_dir = os.path.join(ip_work_dir, 'metadata')
     task_log_file = os.path.join(metadata_dir, "%s.log" % task_logfile_name)
+
     # create log directory
     if not os.path.exists(metadata_dir):
         os.mkdir(metadata_dir)
+
     # create PREMIS file or return handle to task
     if os.path.isfile(metadata_dir + '/PREMIS.xml'):
         with open(metadata_dir + '/PREMIS.xml', 'rw') as premis_file:
@@ -31,6 +35,8 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
         with open(premis_skeleton_file, 'r') as premis_file:
             package_premis_file = Premis(premis_file)
         package_premis_file.add_agent('eark-aip-creation')
+
+    # task logger
     tl = TaskLogger(task_log_file)
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
@@ -47,24 +53,14 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s (%s)' % (path_premis, outcome))
 
-def finalize_task(uuid, tl, state_code, ip_state_xml, add_result_params={}):
-    """
-    Finalize logging task. Can be called several times to get an updated result object.
-    @rtype:     TaskResult
-    @return:    Task result (success/failure, processing log, error log)
-    """
-    if tl.path is not None and not tl.task_logfile.closed:
-        tl.task_logfile.close()
-    ip_state_xml.write_doc(ip_state_xml.get_doc_path())
-    # TaskResult:           (uuid, state_code, success,          log,    err,    additional_result_params)
-    task_result = TaskResult(uuid, state_code, len(tl.err) == 0, tl.log, tl.err, add_result_params)
-    return task_result
+
 
 class DefaultTask(Task, StatusValidation):
 
-    expected_status = "status!=-9999"
-    success_status = 0
-    error_status = 0
+    # task status variables (values set in concrete implementation)
+    expected_status = ""
+    success_status = -1
+    error_status = -1
 
     task_name = "DefaultTask"
 
@@ -80,7 +76,8 @@ class DefaultTask(Task, StatusValidation):
 
     def run(self, uuid, path, additional_params, *args, **kwargs):
         """
-        Default task
+        Run method of celery task. This method will be executed by celery.
+        This method calls the 'run_task' method which is overridden by the concrete task implementation.
 
         @type       uuid: str
         @param      uuid: Internal identifier
@@ -113,7 +110,7 @@ class DefaultTask(Task, StatusValidation):
             # check state
             tl.err = self.valid_state(ip_state_xml.get_state(), self.expected_status)
             if len(tl.err) > 0:
-                return finalize_task(uuid, tl, self.error_status, ip_state_xml)
+                return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
 
             # executing actual task implementation; can return additional result parameters
             # in the dictionary returned. This dictionary is stored as part of the celery result
@@ -122,16 +119,26 @@ class DefaultTask(Task, StatusValidation):
 
             # set status to error status of the task if errors occurred during task execution.
             if len(tl.err) > 0:
-                return finalize_task(uuid, tl, self.error_status, ip_state_xml)
+                return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
 
             # finalize task
             ip_state_xml.set_state(self.success_status)
             ip_state_xml.write_doc(ip_state_doc_path)
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-            print "Default task: set status to: %s" % self.success_status
-            return finalize_task(uuid, tl, self.success_status, ip_state_xml, add_result_params)
+            return self.finalize_task(uuid, tl, self.success_status, ip_state_xml, add_result_params)
         except Exception:
             traceback.print_exc()
-            add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
-            return finalize_task(uuid, tl, self.error_status, ip_state_xml)
+            add_PREMIS_event(self.task_name, 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
+            return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
+
+    def finalize_task(self, uuid, tl, state_code, ip_state_xml, add_result_params={}):
+        """
+        Finalize logging task. Can be called several times to get an updated result object.
+        @rtype:     TaskResult
+        @return:    Task result (success/failure, processing log, error log)
+        """
+        if tl.path is not None and not tl.task_logfile.closed:
+            tl.task_logfile.close()
+        ip_state_xml.write_doc(ip_state_xml.get_doc_path())
+        task_result = TaskResult(uuid, state_code, len(tl.err) == 0, tl.log, tl.err, add_result_params)
+        return task_result

@@ -176,7 +176,7 @@ def apply_task(request):
                 # Get task class from module identifier
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task %s" % taskClass.name
-                # additional input parameters for the task can be injected by this dictionary
+                # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
                 additional_params = {}
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_params,), queue='default')
@@ -217,13 +217,11 @@ def poll_state(request):
                     # Main properties are uuid (internal information package identifier) and state_code (state of the information package).
                     # Additional properties are returned by the dictionary add_res_parms.
                     print "DEBUG: state_code view poll_state task end: %d" % task.result.state_code
-                    if task.result.uuid and task.result.state_code:
-                        print "uuid: %s, state: %d" % (task.result.uuid, task.result.state_code)
+                    if task.result.uuid and task.result.state_code >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.state_code
                         ip.save()
                     if task.result.uuid and task.result.add_res_parms and 'identifier' in task.result.add_res_parms:
-                        print "updating identifier: %s" % task.result.add_res_parms['identifier']
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.identifier = task.result.add_res_parms['identifier']
                         ip.save()

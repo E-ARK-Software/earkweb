@@ -118,7 +118,7 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
 
 class Reset(DefaultTask):
 
-    expected_status = "status!=-9999"
+    expected_status = "status!=-1"
     success_status = 0
     error_status = 90
 
@@ -126,7 +126,7 @@ class Reset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,expected_status:status>=300~and~status<=400,success_status:400,error_status:490
+        @param      tc: order:1,type:1,expected_status:status>=300~and~status<=400,success_status:400,error_status:490
         """
         # create working directory if it does not exist
         if not os.path.exists(path):
@@ -140,13 +140,10 @@ class Reset(DefaultTask):
         status = ip_state.get_state()
         print "Reset task: current status (state.xml): %s" % status
 
-        if status == 0:
-            tl.addinfo("State is 0 setting state to 50")
-            ip_state.set_state(50)
-        elif status > 9999:
+        if status > 9999:
             tl.addinfo("AIP to DIP process")
             ip_state.set_state(10000)
-        elif 9999 > status >= 50:
+        elif 9999 > status >= 50 or status == 0:
             tl.addinfo("SIP to AIP process")
             if uuid in path:
                 # remove and recreate empty directories
@@ -172,201 +169,71 @@ class Reset(DefaultTask):
             tl.addinfo("SIP creation")
             ip_state.set_state(10)
         new_status = ip_state.get_state()
+        # change success status of this task to new_status
+        self.success_status = new_status
         print "Reset task: new status: %s" % new_status
         tl.addinfo("Setting task status to: %s" % new_status)
-        return {}
+        return {'identifier': ""}
 
 
-# class Reset(Task):
-#
-#     def __init__(self):
-#         self.ignore_result = False
-#
-#     expected_status = "status!=-9999"
-#     success_status = 0
-#     error_status = 90
-#
-#     def run(self, uuid, path, additional_params, *args, **kwargs):
-#         """
-#         Reset
-#         @type       pk_id: int
-#         @param      pk_id: Primary key
-#         @type       tc: TaskConfig
-#         @param      tc: order:0,type:3,expected_status:status!=-9999,success_status:0,error_status:90
-#         @rtype:     TaskResult
-#         @return:    Task result (success/failure, processing log, error log)
-#         """
-#         tl = TaskLogger(None)
-#         tl.addinfo("ResetTask task %s" % current_task.request.id)
-#         self.update_state(state='PROGRESS', meta={'process_percent': 1})
-#
-#
-#
-#         # create working directory if it does not exist
-#         if not os.path.exists(path):
-#             fileutils.mkdir_p(path)
-#
-#         ip_state_doc_path = os.path.join(path, "state.xml")
-#
-#         ip_state = IpState.from_parameters(50, False)
-#         if os.path.exists(ip_state_doc_path):
-#             ip_state = IpState.from_path(ip_state_doc_path)
-#         status = ip_state.get_state()
-#
-#         if status > 9999:
-#             tl.addinfo("AIP to DIP process")
-#             ip_state.set_state(10000)
-#         elif 9999 > status >= 50:
-#             tl.addinfo("SIP to AIP process")
-#             if uuid in path:
-#                 # remove and recreate empty directories
-#                 data_path = os.path.join(path, "data")
-#                 if os.path.exists(data_path):
-#                     shutil.rmtree(data_path)
-#                 mkdir_p(data_path)
-#                 tl.addinfo("New empty 'data' directory created")
-#                 metadata_path = os.path.join(path, "metadata")
-#                 if os.path.exists(metadata_path):
-#                     shutil.rmtree(metadata_path)
-#                 mkdir_p(metadata_path)
-#                 tl.addinfo("New empty 'metadata' directory created")
-#                 # remove extracted sips
-#                 tar_files = glob.glob("%s/*.tar" % path)
-#                 for tar_file in tar_files:
-#                     tar_base_name, _ = os.path.splitext(tar_file)
-#                     if os.path.exists(tar_base_name):
-#                         shutil.rmtree(tar_base_name)
-#                     tl.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
-#             ip_state.set_state(50)
-#         else:
-#             tl.addinfo("SIP creation")
-#             ip_state.set_state(10)
-#         new_status = ip_state.get_state()
-#         tl.addinfo("Setting task status to: %s" % new_status)
-#
-#         tl.addinfo("Task status document: %s" % ip_state_doc_path)
-#         ip_state.write_doc(ip_state_doc_path)
-#         self.update_state(state='PROGRESS', meta={'process_percent': 100})
-#         return tl.finalize(uuid, new_status, {})
-
-
-class SIPDeliveryValidation(Task):
+class SIPDeliveryValidation(DefaultTask):
 
     expected_status = "status==50 or status==190"
     success_status = 100
     error_status = 190
 
-    def valid_state(self, ip_state_val):
-        err = []
-        check_status(ip_state_val, self.expected_status, err)
-        return err
-
-    def run(self, uuid, path, additional_params, *args, **kwargs):
+    def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Delivery Validation
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: order:1,type:1,expected_status:status==50,success_status:100,error_status:190
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
+        SIP delivery validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:2,type:1,expected_status:status==50,success_status:100,error_status:190
         """
-        # initialize task
-        tl, start_time, package_premis_file = init_task2(path, "SIPDeliveryValidation", "sip_to_aip_processing")
-        self.update_state(state='PROGRESS', meta={'process_percent': 1})
-        try:
-            # state
-            ip_state_doc_path = os.path.join(path, "state.xml")
-            ip_state = IpState.from_parameters(self.error_status, False)
-            if os.path.exists(ip_state_doc_path):
-                ip_state = IpState.from_path(ip_state_doc_path)
-
-            # check state
-            tl.err = self.valid_state(ip_state.get_state())
-            if len(tl.err) > 0:
-                return tl.finalize(uuid, self.error_status)
-
-            # delivery validation
-            tar_files = glob.glob("%s/*.tar" % path)
-            deliveries = {}
-            for tar_file in tar_files:
-                tar_base_name, _ = os.path.splitext(tar_file)
-                delivery_file = "%s.xml" % tar_base_name
-                if os.path.exists(delivery_file):
-                    deliveries[tar_base_name] = {"delivery_xml": delivery_file, "tar_file": tar_file}
-            if len(deliveries) == 0:
-                tl.adderr("No delivery found in working directory")
-                return tl.finalize(uuid, self.error_status)
-            for delivery in deliveries:
-                tar_file = deliveries[delivery]['tar_file']
-                delivery_file = deliveries[delivery]['delivery_xml']
-                tl.addinfo("Package file: %s" % delivery_file)
-                tl.addinfo("Delivery XML file: %s" % delivery_file)
-                schema_file = os.path.join(path, 'IP_CS_mets.xsd')
-                tl.addinfo("Schema file: %s" % schema_file)
-                sdv = DeliveryValidation()
-                validation_result = sdv.validate_delivery(path, delivery_file, schema_file, tar_file)
-                tl.log = tl.log + validation_result.log
-                tl.err = tl.err + validation_result.err
-                tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-                if not validation_result.valid:
-                    tl.adderr("Delivery invalid: %s" % delivery)
-                    return tl.finalize(uuid, self.error_status)
-
-            # finalize task
-            ip_state.set_state(self.success_status)
-            ip_state.write_doc(ip_state_doc_path)
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-            return tl.finalize(uuid, self.success_status, {})
-        except Exception:
-            add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
+        # delivery validation
+        tar_files = glob.glob("%s/*.tar" % path)
+        deliveries = {}
+        for tar_file in tar_files:
+            tar_base_name, _ = os.path.splitext(tar_file)
+            delivery_file = "%s.xml" % tar_base_name
+            if os.path.exists(delivery_file):
+                deliveries[tar_base_name] = {"delivery_xml": delivery_file, "tar_file": tar_file}
+        if len(deliveries) == 0:
+            tl.adderr("No delivery found in working directory")
             return tl.finalize(uuid, self.error_status)
+        for delivery in deliveries:
+            tar_file = deliveries[delivery]['tar_file']
+            delivery_file = deliveries[delivery]['delivery_xml']
+            tl.addinfo("Package file: %s" % delivery_file)
+            tl.addinfo("Delivery XML file: %s" % delivery_file)
+            schema_file = os.path.join(path, 'IP_CS_mets.xsd')
+            tl.addinfo("Schema file: %s" % schema_file)
+            sdv = DeliveryValidation()
+            validation_result = sdv.validate_delivery(path, delivery_file, schema_file, tar_file)
+            tl.log = tl.log + validation_result.log
+            tl.err = tl.err + validation_result.err
+            tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
+            if not validation_result.valid:
+                tl.adderr("Delivery invalid: %s" % delivery)
+                return tl.finalize(uuid, self.error_status)
+        return {}
 
 
-class IdentifierAssignment(Task, StatusValidation):
+class IdentifierAssignment(DefaultTask):
 
     expected_status = "status==100"
     success_status = 200
     error_status = 290
 
-    def run(self, uuid, path, additional_params, *args, **kwargs):
+    def run_task(self, uuid, path, tl, additional_params):
         """
-        Identifier Assignment
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: order:2,type:1,expected_status:status==100,success_status:200,error_status:290
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
+        Identifier assignment
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:3,type:1,expected_status:status==100,success_status:200,error_status:290
         """
-        # initialize task
-        tl, start_time, package_premis_file = init_task2(path, "IdentifierAssignment", "sip_to_aip_processing")
-        self.update_state(state='PROGRESS', meta={'process_percent': 1})
-
-        # state
-        ip_state_doc_path = os.path.join(path, "state.xml")
-        ip_state = IpState.from_parameters(self.error_status, False)
-        if os.path.exists(ip_state_doc_path):
-            ip_state = IpState.from_path(ip_state_doc_path)
-
-        # check state
-        tl.err = self.valid_state(ip_state.get_state(), self.expected_status)
-        if len(tl.err) > 0:
-            return tl.finalize(uuid, self.error_status)
-
         # set new identifier
         # TODO: set identifier in METS file
         identifier = randomutils.getUniqueID()
-
         tl.addinfo("New identifier assigned: %s" % identifier)
-
-        # finalize task
-        ip_state.set_state(self.success_status)
-        ip_state.write_doc(ip_state_doc_path)
-        self.update_state(state='PROGRESS', meta={'process_percent': 100})
-        add_PREMIS_event('IdentifierAssignment', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-        return tl.finalize(uuid, self.success_status, {'identifier': identifier})
+        return {'identifier': identifier}
 
 
 class SIPExtraction(DefaultTask):
@@ -377,15 +244,13 @@ class SIPExtraction(DefaultTask):
 
     def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Validation run task method overrides the DefaultTask's run_task method.
+        SIP extraction
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,expected_status:status==200~or~status==390,success_status:300,error_status:390
+        @param      tc: order:4,type:1,expected_status:status==200~or~status==390,success_status:300,error_status:390
         """
         # sip extraction
         tar_files = glob.glob("%s/*.tar" % path)
-
         tl.addinfo("Tar files found: %s" % tar_files)
-
         deliveries = {}
         for tar_file in tar_files:
             tar_base_name, _ = os.path.splitext(tar_file)
@@ -410,147 +275,76 @@ class SIPExtraction(DefaultTask):
                     perc = (i * 100) / total
                     self.update_state(state='PROGRESS', meta={'process_percent': perc})
                 tar_object.extract(member, path)
-                tl.addinfo(("File extracted: %s" % member.name), display=False)
+                tl.addinfo(("File extracted: %s" % member.name), display=True) # TODO: Switch display to false later (large packages!)
                 i += 1
             tl.addinfo(("Extraction of %d items from tar file %s finished" % (total, tar_file)))
+        return {}
 
-# class SIPExtraction(Task, StatusValidation):
-#
-#     expected_status = "status==200 or status==390"
-#     success_status = 300
-#     error_status = 390
-#
-#     def run(self, uuid, path, additional_params, *args, **kwargs):
-#         """
-#         SIP Extraction
-#         @type       pk_id: int
-#         @param      pk_id: Primary key
-#         @type       tc: TaskConfig
-#         @param      tc: order:3,type:1,expected_status:status==200~or~status==390,success_status:300,error_status:390
-#         @rtype:     TaskResult
-#         @return:    Task result (success/failure, processing log, error log)
-#         """
-#         # initialize task
-#
-#         tl, start_time, package_premis_file = init_task2(path, "SIPExtraction", "sip_to_aip_processing")
-#         self.update_state(state='PROGRESS', meta={'process_percent': 1})
-#         try:
-#             # state
-#             ip_state_doc_path = os.path.join(path, "state.xml")
-#             ip_state = IpState.from_parameters(self.error_status, False)
-#             if os.path.exists(ip_state_doc_path):
-#                 ip_state = IpState.from_path(ip_state_doc_path)
-#
-#             # check state
-#             tl.err = self.valid_state(ip_state.get_state(), self.expected_status)
-#             if len(tl.err) > 0:
-#                 return tl.finalize(uuid, self.error_status)
-#
-#             # sip extraction
-#             tar_files = glob.glob("%s/*.tar" % path)
-#
-#             tl.addinfo("Tar files found: %s" % tar_files)
-#
-#             deliveries = {}
-#             for tar_file in tar_files:
-#                 tar_base_name, _ = os.path.splitext(tar_file)
-#                 delivery_file = "%s.xml" % tar_base_name
-#                 if os.path.exists(delivery_file):
-#                     deliveries[tar_base_name] = {"delivery_xml": delivery_file, "tar_file": tar_file}
-#             if len(deliveries) == 0:
-#                 tl.adderr("No delivery found in working directory")
-#                 return tl.finalize(uuid, self.error_status)
-#             for delivery in deliveries:
-#                 tar_file = deliveries[delivery]['tar_file']
-#                 import sys
-#                 reload(sys)
-#                 sys.setdefaultencoding('utf8')
-#                 tar_object = tarfile.open(name=tar_file, mode='r', encoding='utf-8')
-#                 members = tar_object.getmembers()
-#                 total = len(members)
-#                 i = 0
-#                 perc = 0
-#                 for member in members:
-#                     if i % 10 == 0:
-#                         perc = (i * 100) / total
-#                         self.update_state(state='PROGRESS', meta={'process_percent': perc})
-#                     tar_object.extract(member, path)
-#                     tl.addinfo(("File extracted: %s" % member.name), display=False)
-#                     i += 1
-#                 tl.addinfo(("Extraction of %d items from tar file %s finished" % (total, tar_file)))
-#
-#             # finalize task
-#             ip_state.set_state(self.success_status)
-#             ip_state.write_doc(ip_state_doc_path)
-#             self.update_state(state='PROGRESS', meta={'process_percent': 100})
-#             add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-#             return tl.finalize(uuid, self.success_status, {})
-#         except Exception:
-#             add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
-#             return tl.finalize(uuid, self.error_status)
+class SIPRestructuring(DefaultTask):
 
-
-class SIPValidation(DefaultTask):
-
-    expected_status = "status>=300 and status<=400"
+    expected_status = "status>=300 and status<500"
     success_status = 400
     error_status = 490
 
     def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Validation
+        Identifier assignment
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,expected_status:status>=300~and~status<=400,success_status:400,error_status:490
+        @param      tc: order:5,type:1,expected_status:status==status==300~or~status==400,success_status:400,error_status:490
         """
-        tl.addinfo("It is actually more interesting what is going on here!")
-        tl.addinfo("Expected status: %s" % self.expected_status)
+        # sip extraction
+        tar_files = glob.glob("%s/*.tar" % path)
+        tl.addinfo("Tar files found: %s" % tar_files)
+        deliveries = {}
+        for tar_file in tar_files:
+            tar_path_base, _ = os.path.splitext(tar_file)
+            delivery_file_path = "%s.xml" % tar_path_base
+            if os.path.exists(delivery_file_path):
+                deliveries[tar_path_base] = {"delivery_xml": delivery_file_path, "tar_file": tar_file}
+        if len(deliveries) == 0:
+            tl.adderr("No delivery found in working directory")
+            return tl.finalize(uuid, self.error_status)
+        for tar_path_base in deliveries:
+            tl.addinfo("Do something with %s" % tar_path_base)
+            # tl.addinfo("Moving package content to SIP root:" % tar_path_base)
+            # for sub_directory in os.listdir(tar_path_base):
+            #     shutil.move(os.path.join(tar_path_base, sub_directory), path)
+            #     tl.addinfo("Moved %s to %s" % (os.path.join(tar_path_base, sub_directory), path))
+            # os.removedirs(tar_path_base)
         return {}
 
-# class SIPValidation(Task, StatusValidation):
-#     def run(self, pk_id, tc, *args, **kwargs):
-#         """
-#         SIP Validation
-#         @type       pk_id: int
-#         @param      pk_id: Primary key
-#         @type       tc: TaskConfig
-#         @param      tc: order:4,type:1,expected_status:status>=300~and~status<400,success_status:400,error_status:490
-#         @rtype:     TaskResult
-#         @return:    Task result (success/failure, processing log, error log)
-#         """
-#         ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "SIPValidation", "sip_to_aip_processing")
-#         tl.err = self.valid_state(ip, tc)
-#         if len(tl.err) > 0:
-#             return tl.fin()
-#
-#         def check_file(descr, f):
-#             if os.path.exists(f):
-#                 tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
-#             else:
-#                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
-#
-#         try:
-#             ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
-#             check_file("SIP METS file", os.path.join(ip_work_dir, ip.packagename, "METS.xml"))
-#             check_file("Content directory", os.path.join(ip_work_dir, ip.packagename, "Content"))
-#             check_file("Metadata directory", os.path.join(ip_work_dir, ip.packagename, "Metadata"))
-#             mets_file = os.path.join(ip_work_dir, ip.packagename, "METS.xml")
-#             parsed_mets = ParsedMets(os.path.join(ip_work_dir, ip.packagename))
-#             parsed_mets.load_mets(mets_file)
-#             mval = MetsValidation(parsed_mets)
-#             size_val_result = mval.validate_files_size()
-#             tl.log += size_val_result.log
-#             tl.err += size_val_result.err
-#             valid = (len(tl.err) == 0)
-#             ip.statusprocess = tc.success_status if valid else tc.error_status
-#             ip.save()
-#             self.update_state(state='PROGRESS', meta={'process_percent': 100})
-#
-#             # update the PREMIS file at the end of the task - SUCCESS
-#             add_PREMIS_event('SIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-#             return tl.fin()
-#         except Exception, err:
-#             add_PREMIS_event('SIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-#             return handle_error(ip, tc, tl)
+
+class SIPValidation(DefaultTask):
+
+    expected_status = "status>=400 and status<=590"
+    success_status = 500
+    error_status = 590
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:1,expected_status:status>=400~and~status<=590,success_status:500,error_status:590
+        """
+        def check_file(descr, f):
+            if os.path.exists(f):
+                tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
+            else:
+                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
+        check_file("SIP METS file", os.path.join(path, "METS.xml"))
+        check_file("Data directory", os.path.join(path, "data"))
+        check_file("Content directory", os.path.join(path, "data/content"))
+        check_file("Documentation directory", os.path.join(path, "data/documentation"))
+        check_file("Metadata directory", os.path.join(path, "metadata"))
+        # mets_file = os.path.join(path, "METS.xml")
+        # parsed_mets = ParsedMets(os.path.join(path))
+        # parsed_mets.load_mets(mets_file)
+        # mval = MetsValidation(parsed_mets)
+        # size_val_result = mval.validate_files_size()
+        # tl.log += size_val_result.log
+        # tl.err += size_val_result.err
+        # valid = (len(tl.err) == 0)
+        return {}
 
 
 class AIPCreation(Task, StatusValidation):
@@ -560,7 +354,7 @@ class AIPCreation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:5,type:1,expected_status:status==400,success_status:500,error_status:590
+        @param      tc: order:7,type:1,expected_status:status==500,success_status:600,error_status:690
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -685,7 +479,7 @@ class AIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:6,type:1,expected_status:status>=500,success_status:600,error_status:690
+        @param      tc: order:8,type:1,expected_status:status>=600,success_status:700,error_status:790
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -717,7 +511,7 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:7,type:1,expected_status:status>=600,success_status:700,error_status:790
+        @param      tc: order:9,type:1,expected_status:status>=700,success_status:800,error_status:890
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -773,7 +567,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:8,type:1,expected_status:status>=700,success_status:800,error_status:890
+        @param      tc: order:10,type:1,expected_status:status>=800,success_status:900,error_status:990
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -838,7 +632,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:9,type:2,expected_status:status==10000,success_status:10100,error_status:10190
+        @param      tc: order:11,type:2,expected_status:status==10000,success_status:10100,error_status:10190
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -890,7 +684,7 @@ class DIPExtractAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:10,type:2,expected_status:status==10100,success_status:10100,error_status:10100
+        @param      tc: order:12,type:2,expected_status:status==10100,success_status:10100,error_status:10100
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -955,64 +749,44 @@ class DIPExtractAIPs(Task, StatusValidation):
             return handle_error(ip, tc, tl)
 
 
-class SIPPackageMetadataCreation(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        SIP Packaging
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: order:11,type:4,expected_status:10,success_status:10,error_status:10
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "SIPPackageMetadataCreation", "sip_creation")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
-        try:
-            add_PREMIS_event('SIPPackageMetadataCreation', 'SUCCESS', 'identifier', 'agent', package_premisfile, tl, ip_work_dir)
-            tl.addinfo("SIP package metadata creation completed")
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            result = tl.fin()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status
-            ip.save()
-            return result
-        except Exception:
-            return handle_error(ip, tc, tl)
+class SIPPackageMetadataCreation(DefaultTask):
 
-class SIPPackaging(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        SIP Packaging
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: order:12,type:4,expected_status:10,success_status:10,error_status:10
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "SIPPackaging", "sip_creation")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
-        try:
-            add_PREMIS_event('SIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premisfile, tl, ip_work_dir)
-            tl.addinfo("SIPPackaging completed")
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            result = tl.fin()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status
-            ip.save()
-            return result
-        except Exception:
-            return handle_error(ip, tc, tl)
+    expected_status = "status >=10 and status < 30"
+    success_status = 20
+    error_status = 29
 
-def finalize_task(tl, ted):
-    task_doc_path = os.path.join(ted.get_path(), "task.xml")
-    task_doc_task_id_path = os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id)
-    ted.write_doc(task_doc_path)
-    ted.write_doc(task_doc_task_id_path)
-    return tl.fin()
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Package metadata creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:13,type:4,expected_status:10,success_status:10,error_status:10
+        """
+        # implementation
+        return {}
+
+class SIPPackaging(DefaultTask):
+
+    expected_status = "status == 20"
+    success_status = 30
+    error_status = 39
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Package metadata creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:14,type:4,expected_status:10,success_status:10,error_status:10
+        """
+        # implementation
+        return {}
+
+
+# def finalize_task(tl, ted):
+#     task_doc_path = os.path.join(ted.get_path(), "task.xml")
+#     task_doc_task_id_path = os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id)
+#     ted.write_doc(task_doc_path)
+#     ted.write_doc(task_doc_task_id_path)
+#     return tl.fin()
+
 
 from earkweb.celeryapp import app
 
