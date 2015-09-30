@@ -160,3 +160,6 @@ class DefaultTask(Task):
             err.append("Current task state does not comply with provided output from the previous task (last task: %s, accepted inputs: %s)" % (last_task, str(self.accept_input_from)))
         # logical expression in variable 'expected_status' uses 'status' as the variable for the current information package status
         return err
+
+    def can_connect(self, task):
+        return task in self.accept_input_from
