@@ -122,7 +122,7 @@ class Reset(DefaultTask):
     success_status = 0
     error_status = 90
 
-    def run_task(self, uuid, path, tl, ip_state, additional_params):
+    def run_task(self, uuid, path, tl, additional_params):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
@@ -132,10 +132,18 @@ class Reset(DefaultTask):
         if not os.path.exists(path):
             fileutils.mkdir_p(path)
 
-        status = ip_state.get_state()
-        print "current status: %s" % status
+        ip_state_doc_path = os.path.join(path, "state.xml")
+        ip_state = IpState.from_parameters(self.error_status, False)
+        if os.path.exists(ip_state_doc_path):
+            ip_state = IpState.from_path(ip_state_doc_path)
 
-        if status > 9999:
+        status = ip_state.get_state()
+        print "Reset task: current status (state.xml): %s" % status
+
+        if status == 0:
+            tl.addinfo("State is 0 setting state to 50")
+            ip_state.set_state(50)
+        elif status > 9999:
             tl.addinfo("AIP to DIP process")
             ip_state.set_state(10000)
         elif 9999 > status >= 50:
@@ -164,6 +172,7 @@ class Reset(DefaultTask):
             tl.addinfo("SIP creation")
             ip_state.set_state(10)
         new_status = ip_state.get_state()
+        print "Reset task: new status: %s" % new_status
         tl.addinfo("Setting task status to: %s" % new_status)
         return {}
 
@@ -366,7 +375,7 @@ class SIPExtraction(DefaultTask):
     success_status = 300
     error_status = 390
 
-    def run_task(self, uuid, path, tl, ip_state, additional_params):
+    def run_task(self, uuid, path, tl, additional_params):
         """
         SIP Validation run task method overrides the DefaultTask's run_task method.
         @type       tc: task configuration line (used to insert read task properties in database table)
@@ -487,7 +496,7 @@ class SIPValidation(DefaultTask):
     success_status = 400
     error_status = 490
 
-    def run_task(self, uuid, path, tl, ip_state, additional_params):
+    def run_task(self, uuid, path, tl, additional_params):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)

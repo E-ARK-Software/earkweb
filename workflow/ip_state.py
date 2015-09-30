@@ -15,6 +15,8 @@ class IpState(object):
     doc_content = None
     ted = None
 
+    doc_path = None
+
     def __init__(self, doc_content, ted):
         self.doc_content = doc_content
         self.ted = ted
@@ -89,6 +91,24 @@ class IpState(object):
         locked_elm = SubElement(ip_state, 'locked')
         locked_elm.text = str(locked_val)
         return ip_state
+
+    def get_doc_path(self):
+        """
+        Get document path
+
+        @rtype: str
+        @return: document path
+        """
+        return self.doc_path
+
+    def set_doc_path(self, doc_path):
+        """
+        Set document path
+
+        @type doc_path: str
+        @param doc_path: document path
+        """
+        self.doc_path = doc_path
 
     def get_state(self):
         """

@@ -47,6 +47,18 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s (%s)' % (path_premis, outcome))
 
+def finalize_task(uuid, tl, state_code, ip_state_xml, add_result_params={}):
+    """
+    Finalize logging task. Can be called several times to get an updated result object.
+    @rtype:     TaskResult
+    @return:    Task result (success/failure, processing log, error log)
+    """
+    if tl.path is not None and not tl.task_logfile.closed:
+        tl.task_logfile.close()
+    ip_state_xml.write_doc(ip_state_xml.get_doc_path())
+    # TaskResult:           (uuid, state_code, success,          log,    err,    additional_result_params)
+    task_result = TaskResult(uuid, state_code, len(tl.err) == 0, tl.log, tl.err, add_result_params)
+    return task_result
 
 class DefaultTask(Task, StatusValidation):
 
@@ -69,10 +81,16 @@ class DefaultTask(Task, StatusValidation):
     def run(self, uuid, path, additional_params, *args, **kwargs):
         """
         Default task
+
         @type       uuid: str
         @param      uuid: Internal identifier
+
         @type       path: str
         @param      path: Path where the IP is stored
+
+        @type       path: additional_params
+        @param      path: Additional parameters dictionary (passed throuh from actual task implementation to celery result)
+
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log, additional parameters)
         """
@@ -84,30 +102,36 @@ class DefaultTask(Task, StatusValidation):
         tl.addinfo("Processing package %s" % uuid)
         self.update_state(state='PROGRESS', meta={'process_percent': 1})
         try:
-            # state
+            # get state, try reading current state from state.xml, otherwise set default to is error state,
+            # which must then be set to success state explicitely.
             ip_state_doc_path = os.path.join(path, "state.xml")
-            ip_state = IpState.from_parameters(self.error_status, False)
+            ip_state_xml = IpState.from_parameters(self.error_status, False)
             if os.path.exists(ip_state_doc_path):
-                ip_state = IpState.from_path(ip_state_doc_path)
+                ip_state_xml = IpState.from_path(ip_state_doc_path)
+            ip_state_xml.set_doc_path(ip_state_doc_path)
 
             # check state
-            tl.err = self.valid_state(ip_state.get_state(), self.expected_status)
+            tl.err = self.valid_state(ip_state_xml.get_state(), self.expected_status)
             if len(tl.err) > 0:
-                return tl.finalize(uuid, self.error_status)
+                return finalize_task(uuid, tl, self.error_status, ip_state_xml)
 
-            add_result_params = self.run_task(uuid, path, tl, ip_state, additional_params)
+            # executing actual task implementation; can return additional result parameters
+            # in the dictionary returned. This dictionary is stored as part of the celery result
+            # and is stored in the result backend (AsyncResult(task_id).result.add_res_parms).
+            add_result_params = self.run_task(uuid, path, tl, additional_params)
 
+            # set status to error status of the task if errors occurred during task execution.
             if len(tl.err) > 0:
-                return tl.finalize(uuid, self.error_status)
+                return finalize_task(uuid, tl, self.error_status, ip_state_xml)
 
             # finalize task
-            ip_state.set_state(self.success_status)
-            # TODO: make sure this gets written in case of error
-            ip_state.write_doc(ip_state_doc_path)
+            ip_state_xml.set_state(self.success_status)
+            ip_state_xml.write_doc(ip_state_doc_path)
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             add_PREMIS_event('SIPDeliveryValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, path)
-            return tl.finalize(uuid, self.success_status, add_result_params)
+            print "Default task: set status to: %s" % self.success_status
+            return finalize_task(uuid, tl, self.success_status, ip_state_xml, add_result_params)
         except Exception:
             traceback.print_exc()
             add_PREMIS_event('SIPDeliveryValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
-            return tl.finalize(uuid, self.error_status)
+            return finalize_task(uuid, tl, self.error_status, ip_state_xml)

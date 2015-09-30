@@ -95,6 +95,9 @@ CELERY_IGNORE_RESULT = False
 TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
 CELERYD_POOL_RESTARTS = True
 
+# run celery in same process
+#CELERY_ALWAYS_EAGER = True
+
 from celery.schedules import crontab
 from datetime import timedelta
 

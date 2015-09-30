@@ -175,7 +175,7 @@ def apply_task(request):
             try:
                 # Get task class from module identifier
                 taskClass = getattr(tasks, wfm.identifier)
-                print "Executing task %s" % taskClass
+                print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be injected by this dictionary
                 additional_params = {}
                 # Execute task
@@ -214,11 +214,13 @@ def poll_state(request):
                     aggr_err = '\n'.join(task.result.err)
                     data = {"success": True, "result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
-                    # Main properties are uuid (internal information package identifier) and ip_state (state of the information package).
+                    # Main properties are uuid (internal information package identifier) and state_code (state of the information package).
                     # Additional properties are returned by the dictionary add_res_parms.
-                    if task.result.uuid and task.result.ip_state:
+                    print "DEBUG: state_code view poll_state task end: %d" % task.result.state_code
+                    if task.result.uuid and task.result.state_code:
+                        print "uuid: %s, state: %d" % (task.result.uuid, task.result.state_code)
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
-                        ip.statusprocess = task.result.ip_state
+                        ip.statusprocess = task.result.state_code
                         ip.save()
                     if task.result.uuid and task.result.add_res_parms and 'identifier' in task.result.add_res_parms:
                         print "updating identifier: %s" % task.result.add_res_parms['identifier']
