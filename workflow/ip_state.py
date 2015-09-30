@@ -54,7 +54,7 @@ class IpState(object):
         return cls(doc_content, ted)
 
     @classmethod
-    def from_parameters(cls, state, locked_val):
+    def from_parameters(cls, state=-1, locked_val=False, last_task_value='None'):
         """
         Alternative constructor (initialise from parameters)
 
@@ -70,12 +70,12 @@ class IpState(object):
         @rtype: TaskExecutionXml
         @return: TaskExecutionXml object
         """
-        doc_content = prettify(cls.create_task_execution_doc(state, locked_val))
+        doc_content = prettify(cls.create_task_execution_doc(state, locked_val, last_task_value))
         ted = Etree.fromstring(doc_content)
         return cls(doc_content, ted)
 
     @classmethod
-    def create_task_execution_doc(cls, state_val, locked_val):
+    def create_task_execution_doc(cls, state_val=-1, locked_val=False, last_task_value='None'):
         """
         Alternative constructor (initialise from parameters)
 
@@ -90,7 +90,32 @@ class IpState(object):
         state_elm.text = str(state_val)
         locked_elm = SubElement(ip_state, 'locked')
         locked_elm.text = str(locked_val)
+        last_task_elm = SubElement(ip_state, 'last_task')
+        last_task_elm.text = last_task_value
         return ip_state
+
+    def get_last_task(self):
+        """
+        Get last task
+
+        @rtype: str
+        @return: last task
+        """
+        last_task_elm = self.ted.find('.//last_task')
+        last_task_value = 'None' if len(last_task_elm) == 0 else last_task_elm.text
+        return last_task_value
+
+    def set_last_task(self, last_task_value):
+        """
+        Set document path
+
+        @type last_task: str
+        @param last_task: last task
+        """
+        last_task_elm = self.ted.find('.//last_task')
+        if len(last_task_elm)==0:
+            last_task_elm = SubElement(self.ted, 'last_task')
+        last_task_elm.text = last_task_value
 
     def get_doc_path(self):
         """
@@ -119,7 +144,7 @@ class IpState(object):
         """
         return int(self.ted.find('.//state').text)
 
-    def set_state(self, state):
+    def set_state(self, state_value):
         """
         Set state value
 
@@ -127,7 +152,9 @@ class IpState(object):
         @param state: Result success (True/False)
         """
         state_elm = self.ted.find('.//state')
-        state_elm.text = str(state)
+        if len(state_elm)==0:
+            state_elm = SubElement(self.ted, 'state')
+        state_elm.text = str(state_value)
 
     def get_locked(self):
         """
@@ -146,7 +173,7 @@ class IpState(object):
         @param locked: locked (True/False)
         """
         locked_elm = self.ted.find('.//locked')
-        if not locked_elm:
+        if len(locked_elm)==0:
             locked_elm = SubElement(self.ted, 'locked')
         locked_elm.text = str(locked_value)
 

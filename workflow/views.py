@@ -212,14 +212,14 @@ def poll_state(request):
                 if task.state == "SUCCESS":
                     aggr_log = '\n'.join(task.result.log)
                     aggr_err = '\n'.join(task.result.err)
-                    data = {"success": True, "result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
+                    data = {"success": True, "result": task.result.task_status == 0, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
-                    # Main properties are uuid (internal information package identifier) and state_code (state of the information package).
+                    # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
                     # Additional properties are returned by the dictionary add_res_parms.
-                    print "DEBUG: state_code view poll_state task end: %d" % task.result.state_code
-                    if task.result.uuid and task.result.state_code >= 0:
+                    print "DEBUG: task_status view poll_state task end: %d" % task.result.task_status
+                    if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
-                        ip.statusprocess = task.result.state_code
+                        ip.statusprocess = task.result.task_status
                         ip.save()
                     if task.result.uuid and task.result.add_res_parms and 'identifier' in task.result.add_res_parms:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)

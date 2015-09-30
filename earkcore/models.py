@@ -5,7 +5,7 @@ StatusProcess_CHOICES = (
 
     (-1, 'Undefined'),
 
-    (0, 'New object'),
+    (0, 'Success'),
 
     (10, 'SIP structure initialized'),
     (19, 'SIP structure initialization failed'),

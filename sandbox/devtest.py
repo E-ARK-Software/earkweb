@@ -6,7 +6,7 @@ import os, sys
 class SIPExtraction(DefaultTask):
 
     expected_status = "status==200 or status==390"
-    success_status = 300
+    task_status = 300
     error_status = 390
 
     def run_task(self, uuid, path, tl, additional_params):

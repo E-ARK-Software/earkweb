@@ -1,6 +1,7 @@
 from celery import Task, shared_task
 import time, os
 from earkcore.packaging.extraction import Extraction
+from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from sandbox.task_execution_xml import TaskExecutionXml
 from sip2aip.models import MyModel
 from time import sleep
@@ -116,77 +117,105 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 
-class Reset(DefaultTask):
+class SIPCreationReset(DefaultTask):
 
-    expected_status = "status!=-1"
-    success_status = 0
-    error_status = 90
+    accept_input_from = ['All']
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Package metadata creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:14,type:4
+        """
+        # implementation
+        return {}
+
+
+class SIPPackageMetadataCreation(DefaultTask):
+
+    accept_input_from = ['SIPCreationReset', 'SIPPackageMetadataCreation']
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Package metadata creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:13,type:4
+        """
+        os.chdir(path)
+        tl.addinfo("Working in rootdir %s" % os.getcwd())
+        sipgen = SIPGenerator()
+        sipgen.createMets()
+
+        ip_state_doc_path = os.path.join(path, "state.xml")
+        ip_state = IpState.from_parameters(50, False)
+        if os.path.exists(ip_state_doc_path):
+            ip_state = IpState.from_path(ip_state_doc_path)
+        status = ip_state.get_state()
+        return {}
+
+class SIPPackaging(DefaultTask):
+
+    accept_input_from = [SIPPackageMetadataCreation.__name__, 'SIPPackaging']
+
+    def run_task(self, uuid, path, tl, additional_params):
+        """
+        SIP Package metadata creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:14,type:4
+        """
+
+
+        # implementation
+        return {}
+
+
+class SIP2AIPReset(DefaultTask):
+
+    accept_input_from = ['All']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1,type:1,expected_status:status>=300~and~status<=400,success_status:400,error_status:490
+        @param      tc: order:1,type:1
         """
         # create working directory if it does not exist
         if not os.path.exists(path):
             fileutils.mkdir_p(path)
 
-        ip_state_doc_path = os.path.join(path, "state.xml")
-        ip_state = IpState.from_parameters(self.error_status, False)
-        if os.path.exists(ip_state_doc_path):
-            ip_state = IpState.from_path(ip_state_doc_path)
+        # remove and recreate empty directories
+        data_path = os.path.join(path, "data")
+        if os.path.exists(data_path):
+            shutil.rmtree(data_path)
+        mkdir_p(data_path)
+        tl.addinfo("New empty 'data' directory created")
+        metadata_path = os.path.join(path, "metadata")
+        if os.path.exists(metadata_path):
+            shutil.rmtree(metadata_path)
+        mkdir_p(metadata_path)
+        tl.addinfo("New empty 'metadata' directory created")
+        # remove extracted sips
+        tar_files = glob.glob("%s/*.tar" % path)
+        for tar_file in tar_files:
+            tar_base_name, _ = os.path.splitext(tar_file)
+            if os.path.exists(tar_base_name):
+                shutil.rmtree(tar_base_name)
+            tl.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
 
-        status = ip_state.get_state()
-        print "Reset task: current status (state.xml): %s" % status
-
-        if status > 9999:
-            tl.addinfo("AIP to DIP process")
-            ip_state.set_state(10000)
-        elif 9999 > status >= 50 or status == 0:
-            tl.addinfo("SIP to AIP process")
-            if uuid in path:
-                # remove and recreate empty directories
-                data_path = os.path.join(path, "data")
-                if os.path.exists(data_path):
-                    shutil.rmtree(data_path)
-                mkdir_p(data_path)
-                tl.addinfo("New empty 'data' directory created")
-                metadata_path = os.path.join(path, "metadata")
-                if os.path.exists(metadata_path):
-                    shutil.rmtree(metadata_path)
-                mkdir_p(metadata_path)
-                tl.addinfo("New empty 'metadata' directory created")
-                # remove extracted sips
-                tar_files = glob.glob("%s/*.tar" % path)
-                for tar_file in tar_files:
-                    tar_base_name, _ = os.path.splitext(tar_file)
-                    if os.path.exists(tar_base_name):
-                        shutil.rmtree(tar_base_name)
-                    tl.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
-            ip_state.set_state(50)
-        else:
-            tl.addinfo("SIP creation")
-            ip_state.set_state(10)
-        new_status = ip_state.get_state()
         # change success status of this task to new_status
-        self.success_status = new_status
-        print "Reset task: new status: %s" % new_status
-        tl.addinfo("Setting task status to: %s" % new_status)
+        self.task_status = 0
         return {'identifier': ""}
 
 
 class SIPDeliveryValidation(DefaultTask):
 
-    expected_status = "status==50 or status==190"
-    success_status = 100
-    error_status = 190
+    accept_input_from = ['Reset']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         SIP delivery validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:1,expected_status:status==50,success_status:100,error_status:190
+        @param      tc: order:2,type:1
         """
         # delivery validation
         tar_files = glob.glob("%s/*.tar" % path)
@@ -214,20 +243,21 @@ class SIPDeliveryValidation(DefaultTask):
             if not validation_result.valid:
                 tl.adderr("Delivery invalid: %s" % delivery)
                 return tl.finalize(uuid, self.error_status)
+
+        # change success status of this task to new_status
+        self.task_status = 0
         return {}
 
 
 class IdentifierAssignment(DefaultTask):
 
-    expected_status = "status==100"
-    success_status = 200
-    error_status = 290
+    accept_input_from = ['SIPDeliveryValidation']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         Identifier assignment
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,expected_status:status==100,success_status:200,error_status:290
+        @param      tc: order:3,type:1
         """
         # set new identifier
         # TODO: set identifier in METS file
@@ -238,15 +268,13 @@ class IdentifierAssignment(DefaultTask):
 
 class SIPExtraction(DefaultTask):
 
-    expected_status = "status==200 or status==390"
-    success_status = 300
-    error_status = 390
+    accept_input_from = ['IdentifierAssignment']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         SIP extraction
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,expected_status:status==200~or~status==390,success_status:300,error_status:390
+        @param      tc: order:4,type:1
         """
         # sip extraction
         tar_files = glob.glob("%s/*.tar" % path)
@@ -282,15 +310,13 @@ class SIPExtraction(DefaultTask):
 
 class SIPRestructuring(DefaultTask):
 
-    expected_status = "status>=300 and status<500"
-    success_status = 400
-    error_status = 490
+    accept_input_from = ['SIPExtraction']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         Identifier assignment
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:1,expected_status:status==status==300~or~status==400,success_status:400,error_status:490
+        @param      tc: order:5,type:1
         """
         # sip extraction
         tar_files = glob.glob("%s/*.tar" % path)
@@ -316,15 +342,13 @@ class SIPRestructuring(DefaultTask):
 
 class SIPValidation(DefaultTask):
 
-    expected_status = "status>=400 and status<=590"
-    success_status = 500
-    error_status = 590
+    accept_input_from = ['SIPRestructuring']
 
     def run_task(self, uuid, path, tl, additional_params):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:1,expected_status:status>=400~and~status<=590,success_status:500,error_status:590
+        @param      tc: order:6,type:1
         """
         def check_file(descr, f):
             if os.path.exists(f):
@@ -354,7 +378,7 @@ class AIPCreation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:7,type:1,expected_status:status==500,success_status:600,error_status:690
+        @param      tc: order:7,type:1
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -479,7 +503,7 @@ class AIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:8,type:1,expected_status:status>=600,success_status:700,error_status:790
+        @param      tc: order:8,type:1
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -511,7 +535,7 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:9,type:1,expected_status:status>=700,success_status:800,error_status:890
+        @param      tc: order:9,type:1
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -567,7 +591,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:10,type:1,expected_status:status>=800,success_status:900,error_status:990
+        @param      tc: order:10,type:1
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -632,7 +656,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:11,type:2,expected_status:status==10000,success_status:10100,error_status:10190
+        @param      tc: order:11,type:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -684,7 +708,7 @@ class DIPExtractAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:12,type:2,expected_status:status==10100,success_status:10100,error_status:10100
+        @param      tc: order:12,type:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -747,38 +771,6 @@ class DIPExtractAIPs(Task, StatusValidation):
             return result
         except Exception:
             return handle_error(ip, tc, tl)
-
-
-class SIPPackageMetadataCreation(DefaultTask):
-
-    expected_status = "status >=10 and status < 30"
-    success_status = 20
-    error_status = 29
-
-    def run_task(self, uuid, path, tl, additional_params):
-        """
-        SIP Package metadata creation
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:4,expected_status:10,success_status:10,error_status:10
-        """
-        # implementation
-        return {}
-
-class SIPPackaging(DefaultTask):
-
-    expected_status = "status == 20"
-    success_status = 30
-    error_status = 39
-
-    def run_task(self, uuid, path, tl, additional_params):
-        """
-        SIP Package metadata creation
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4,expected_status:10,success_status:10,error_status:10
-        """
-        # implementation
-        return {}
-
 
 # def finalize_task(tl, ted):
 #     task_doc_path = os.path.join(ted.get_path(), "task.xml")

@@ -55,14 +55,14 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
 
 
 
-class DefaultTask(Task, StatusValidation):
+class DefaultTask(Task):
 
     # task status variables (values set in concrete implementation)
-    expected_status = ""
-    success_status = -1
-    error_status = -1
+    #expected_status = ""
+    task_status = -1
+    #error_status = -1
 
-    task_name = "DefaultTask"
+    accept_input_from = []
 
     def run_task(self, uuid, path, tl, additional_params):
         """
@@ -91,6 +91,7 @@ class DefaultTask(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log, additional parameters)
         """
+
         add_result_params = {}
         # task name is name of instantiating class (concrete task implementation)
         self.task_name = str(self.__name__)
@@ -102,15 +103,18 @@ class DefaultTask(Task, StatusValidation):
             # get state, try reading current state from state.xml, otherwise set default to is error state,
             # which must then be set to success state explicitely.
             ip_state_doc_path = os.path.join(path, "state.xml")
-            ip_state_xml = IpState.from_parameters(self.error_status, False)
+            ip_state_xml = IpState.from_parameters()
             if os.path.exists(ip_state_doc_path):
                 ip_state_xml = IpState.from_path(ip_state_doc_path)
             ip_state_xml.set_doc_path(ip_state_doc_path)
 
             # check state
-            tl.err = self.valid_state(ip_state_xml.get_state(), self.expected_status)
+            # tl.err = self.valid_state(ip_state_xml.get_state(), self.expected_status)
+            # if len(tl.err) > 0:
+            #     return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
+            tl.err = self.valid_state(ip_state_xml)
             if len(tl.err) > 0:
-                return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
+                return self.finalize_task(uuid, tl, ip_state_xml)
 
             # executing actual task implementation; can return additional result parameters
             # in the dictionary returned. This dictionary is stored as part of the celery result
@@ -119,19 +123,18 @@ class DefaultTask(Task, StatusValidation):
 
             # set status to error status of the task if errors occurred during task execution.
             if len(tl.err) > 0:
-                return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
+                return self.finalize_task(uuid, tl, ip_state_xml)
 
             # finalize task
-            ip_state_xml.set_state(self.success_status)
-            ip_state_xml.write_doc(ip_state_doc_path)
+            ip_state_xml.set_state(self.task_status)
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            return self.finalize_task(uuid, tl, self.success_status, ip_state_xml, add_result_params)
+            return self.finalize_task(uuid, tl, ip_state_xml, add_result_params)
         except Exception:
             traceback.print_exc()
             add_PREMIS_event(self.task_name, 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
-            return self.finalize_task(uuid, tl, self.error_status, ip_state_xml)
+            return self.finalize_task(uuid, tl, ip_state_xml)
 
-    def finalize_task(self, uuid, tl, state_code, ip_state_xml, add_result_params={}):
+    def finalize_task(self, uuid, tl, ip_state_xml, add_result_params={}):
         """
         Finalize logging task. Can be called several times to get an updated result object.
         @rtype:     TaskResult
@@ -139,6 +142,21 @@ class DefaultTask(Task, StatusValidation):
         """
         if tl.path is not None and not tl.task_logfile.closed:
             tl.task_logfile.close()
+        ip_state_xml.set_last_task(self.task_name)
         ip_state_xml.write_doc(ip_state_xml.get_doc_path())
-        task_result = TaskResult(uuid, state_code, len(tl.err) == 0, tl.log, tl.err, add_result_params)
+        success = len(tl.err) == 0
+        ip_state_xml.set_state(self.task_status)
+
+        task_result = TaskResult(uuid, self.task_status, tl.log, tl.err, add_result_params)
         return task_result
+
+    def valid_state(self, ip_state):
+        err = []
+        status = ip_state.get_state()
+        if status != 0:
+            err.append("Incorrect information package status (value 'status=%d')" % status)
+        last_task = ip_state.get_last_task()
+        if last_task != 'All' and not last_task in self.accept_input_from:
+            err.append("Current task state does not comply with provided output from the previous task (last task: %s, accepted inputs: %s)" % (last_task, str(self.accept_input_from)))
+        # logical expression in variable 'expected_status' uses 'status' as the variable for the current information package status
+        return err

@@ -120,15 +120,12 @@ class WireItLanguageModules(object):
                     descr = "Task configuration" if module_param.descr.startswith("order") else module_param.descr
                     input_params += self.language_module_inputs_template % { 'name': module_param.name, 'descr': descr, 'type': module_param.type}
                     if module_param.name == 'tc':
-                        match = re.search('order:(?P<ord>.*),type:(?P<typ>.*),expected_status:(?P<exp>.*),success_status:(?P<sxs>.*),error_status:(?P<err>.*)',module_param.descr)
+                        match = re.search('order:(?P<ord>.*),type:(?P<typ>.*)',module_param.descr)
                         ord = int(match.group('ord').strip())
                         # Character '~' is used as separator of the logical expression
-                        exp = str(match.group('exp').strip().replace('~', ' '))
-                        sxs = int(match.group('sxs').strip())
-                        err = int(match.group('err').strip())
                         typ = int(match.group('typ').strip())
             model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
-            workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, expected_status=exp, success_status=sxs, error_status=err, ordval=ord, ttype=typ)
+            workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, ordval=ord, ttype=typ)
             workflow_module.save()
 
 

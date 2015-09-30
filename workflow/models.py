@@ -4,9 +4,6 @@ import uuid
 class WorkflowModules(models.Model):
     identifier = models.CharField(max_length=200)
     model_definition = models.TextField()
-    expected_status = models.CharField(max_length=200)
-    success_status = models.IntegerField(default=0)
-    error_status = models.IntegerField(default=0)
     ordval = models.IntegerField(default=0)
     ttype = models.IntegerField(default=0)
     def __str__(self):
