@@ -73,7 +73,7 @@ class TaskLogger(object):
         if not self.path is None and not self.task_logfile.closed:
             self.task_logfile.write("%s %s %s\n" % (ts_date(), msg_prefix, message))
 
-    def finalize(self, uuid, ip_state, additional_result_params={}):
+    def close_logger(self, uuid, ip_state, add_result_params={}):
         """
         Finalize logging task. Can be called several times to get an updated result object.
         @rtype:     TaskResult
@@ -81,8 +81,7 @@ class TaskLogger(object):
         """
         if self.path is not None and not self.task_logfile.closed:
             self.task_logfile.close()
-        task_result = TaskResult(uuid, ip_state, len(self.err) == 0, self.log, self.err, additional_result_params)
-        return task_result
+
 
     def open(self):
         """

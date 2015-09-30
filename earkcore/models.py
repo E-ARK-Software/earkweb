@@ -19,6 +19,7 @@ StatusProcess_CHOICES = (
     (49, 'SIP delivery creation failed'),
 
     (50, 'SIP received'),
+    (90, 'SIP error'),
 
     (100, 'SIP delivery validated'),
     (200, 'Identifier assignment'),
