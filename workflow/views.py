@@ -177,9 +177,9 @@ def apply_task(request):
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-                additional_params = {}
+                additional_input = {}
                 # Execute task
-                job = taskClass().apply_async((ip.uuid, ip.path, additional_params,), queue='default')
+                job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
                 data = {"success": True, "id": job.id}
             except AttributeError, err:
                 errdetail = """The workflow module '%s' does not exist.
@@ -215,15 +215,15 @@ def poll_state(request):
                     data = {"success": True, "result": task.result.task_status == 0, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
                     # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
-                    # Additional properties are returned by the dictionary add_res_parms.
+                    # Additional properties are returned by the dictionary additional_output.
                     print "DEBUG: task_status view poll_state task end: %d" % task.result.task_status
                     if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
                         ip.save()
-                    if task.result.uuid and task.result.add_res_parms and 'identifier' in task.result.add_res_parms:
+                    if task.result.uuid and task.result.additional_output and 'identifier' in task.result.additional_output:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
-                        ip.identifier = task.result.add_res_parms['identifier']
+                        ip.identifier = task.result.additional_output['identifier']
                         ip.save()
                 else:
                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}

@@ -173,37 +173,37 @@ class SIP2AIPReset(DefaultTask):
 
     accept_input_from = ['All']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:1,type:1
         """
         # create working directory if it does not exist
-        if not os.path.exists(path):
-            fileutils.mkdir_p(path)
+        if not os.path.exists(task_context.path):
+            fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        data_path = os.path.join(path, "data")
+        data_path = os.path.join(task_context.path, "data")
         if os.path.exists(data_path):
             shutil.rmtree(data_path)
         mkdir_p(data_path)
-        tl.addinfo("New empty 'data' directory created")
-        metadata_path = os.path.join(path, "metadata")
+        task_context.task_logger.addinfo("New empty 'data' directory created")
+        metadata_path = os.path.join(task_context.path, "metadata")
         if os.path.exists(metadata_path):
             shutil.rmtree(metadata_path)
         mkdir_p(metadata_path)
-        tl.addinfo("New empty 'metadata' directory created")
+        task_context.task_logger.addinfo("New empty 'metadata' directory created")
         # remove extracted sips
-        tar_files = glob.glob("%s/*.tar" % path)
+        tar_files = glob.glob("%s/*.tar" % task_context.path)
         for tar_file in tar_files:
             tar_base_name, _ = os.path.splitext(tar_file)
             if os.path.exists(tar_base_name):
                 shutil.rmtree(tar_base_name)
-            tl.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
+            task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
 
-        # change success status of this task to new_status
-        self.task_status = 0
+        # success status
+        task_context.task_status = 0
         return {'identifier': ""}
 
 
@@ -772,7 +772,7 @@ class DIPExtractAIPs(Task, StatusValidation):
         except Exception:
             return handle_error(ip, tc, tl)
 
-# def finalize_task(tl, ted):
+# def finalize(tl, ted):
 #     task_doc_path = os.path.join(ted.get_path(), "task.xml")
 #     task_doc_task_id_path = os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id)
 #     ted.write_doc(task_doc_path)

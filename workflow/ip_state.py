@@ -113,7 +113,7 @@ class IpState(object):
         @param last_task: last task
         """
         last_task_elm = self.ted.find('.//last_task')
-        if len(last_task_elm)==0:
+        if last_task_elm is None:
             last_task_elm = SubElement(self.ted, 'last_task')
         last_task_elm.text = last_task_value
 
@@ -152,7 +152,7 @@ class IpState(object):
         @param state: Result success (True/False)
         """
         state_elm = self.ted.find('.//state')
-        if len(state_elm)==0:
+        if state_elm is None:
             state_elm = SubElement(self.ted, 'state')
         state_elm.text = str(state_value)
 
@@ -173,7 +173,7 @@ class IpState(object):
         @param locked: locked (True/False)
         """
         locked_elm = self.ted.find('.//locked')
-        if len(locked_elm)==0:
+        if locked_elm is None:
             locked_elm = SubElement(self.ted, 'locked')
         locked_elm.text = str(locked_value)
 
