@@ -169,7 +169,7 @@ class SIPPackaging(DefaultTask):
         return {}
 
 
-class SIP2AIPReset(DefaultTask):
+class SIPtoAIPReset(DefaultTask):
 
     accept_input_from = ['All']
 
@@ -649,6 +649,44 @@ class LilyHDFSUpload(Task, StatusValidation):
             return handle_error(ip, tc, tl)
 
 
+class AIPtoDIPReset(DefaultTask):
+
+    accept_input_from = ['All']
+
+    def run_task(self, task_context):
+        """
+        SIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:11,type:2
+        """
+        # create working directory if it does not exist
+        if not os.path.exists(task_context.path):
+            fileutils.mkdir_p(task_context.path)
+
+        # remove and recreate empty directories
+        # data_path = os.path.join(task_context.path, "data")
+        # if os.path.exists(data_path):
+        #     shutil.rmtree(data_path)
+        # mkdir_p(data_path)
+        # task_context.task_logger.addinfo("New empty 'data' directory created")
+        # metadata_path = os.path.join(task_context.path, "metadata")
+        # if os.path.exists(metadata_path):
+        #     shutil.rmtree(metadata_path)
+        # mkdir_p(metadata_path)
+        # task_context.task_logger.addinfo("New empty 'metadata' directory created")
+        # # remove extracted sips
+        # tar_files = glob.glob("%s/*.tar" % task_context.path)
+        # for tar_file in tar_files:
+        #     tar_base_name, _ = os.path.splitext(tar_file)
+        #     if os.path.exists(tar_base_name):
+        #         shutil.rmtree(tar_base_name)
+        #     task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
+
+        # success status
+        task_context.task_status = 0
+        return {} #{'identifier': ""}
+
+
 class DIPAcquireAIPs(Task, StatusValidation):
     def run(self, pk_id, tc, *args, **kwargs):
         """
@@ -656,7 +694,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:11,type:2
+        @param      tc: order:12,type:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -708,7 +746,7 @@ class DIPExtractAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:12,type:2
+        @param      tc: order:13,type:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """

@@ -21,7 +21,6 @@ from django.views.generic.list import ListView
 from django.contrib.auth.decorators import permission_required, login_required
 from earkcore.models import StatusProcess_CHOICES
 from django.views.decorators.csrf import csrf_exempt
-
 from earkcore.models import InformationPackage
 
 from django.shortcuts import render_to_response
@@ -216,14 +215,17 @@ def poll_state(request):
                     # Update specific properties in database; The result is returned as a TaskResult object.
                     # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
                     # Additional properties are returned by the dictionary additional_output.
-                    print "DEBUG: task_status view poll_state task end: %d" % task.result.task_status
                     if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
-                        ip.save()
-                    if task.result.uuid and task.result.additional_output and 'identifier' in task.result.additional_output:
-                        ip = InformationPackage.objects.get(uuid=task.result.uuid)
-                        ip.identifier = task.result.additional_output['identifier']
+                        if task.result.uuid and task.result.additional_output and 'identifier' in task.result.additional_output:
+                            ip.identifier = task.result.additional_output['identifier']
+                        if task.result.last_task:
+                            try:
+                                wf = WorkflowModules.objects.get(identifier=task.result.last_task)
+                                ip.last_task = wf
+                            except Exception, err:
+                                data[err].append("Last task workflow module not found!")
                         ip.save()
                 else:
                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}

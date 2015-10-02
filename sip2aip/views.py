@@ -120,7 +120,16 @@ class InformationPackageList(ListView):
     model = InformationPackage
     template_name = 'sip2aip/reception.html'
     context_object_name = 'ips'
-    queryset = InformationPackage.objects.filter(statusprocess__lt=9999).filter(statusprocess__gt=49)
+
+    sql_query = """
+    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
+    from workflow_workflowmodules as wf
+    inner join earkcore_informationpackage as ip
+    on wf.identifier=ip.last_task_id
+    where wf.ttype & 1
+    order by wf.ordval;
+    """
+    queryset = InformationPackage.objects.raw(sql_query)
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):

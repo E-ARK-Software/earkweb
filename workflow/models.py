@@ -2,7 +2,7 @@ from django.db import models
 import uuid
 
 class WorkflowModules(models.Model):
-    identifier = models.CharField(max_length=200)
+    identifier = models.CharField(max_length=200, primary_key=True)
     model_definition = models.TextField()
     ordval = models.IntegerField(default=0)
     ttype = models.IntegerField(default=0)

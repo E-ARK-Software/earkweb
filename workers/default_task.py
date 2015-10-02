@@ -65,6 +65,7 @@ class DefaultTask(Task):
         task_context.task_logger = tl
         task_context.premis_manipulate = None #premis_manipulate
         task_context.ip_state_xml = ip_state_xml
+        task_context.task_name = self.task_name
 
         return task_context
 

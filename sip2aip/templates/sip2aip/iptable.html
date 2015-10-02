@@ -7,10 +7,6 @@
       </tr>
     </thead>
     <tbody>
-    	<tr>
-    		<td>Reception path</td>
-    		<td>{{ ip.path }}</td>
-    	</tr>
     	<tr class="row2">
     		<td data-toggle="tooltip" title="Internal identifier">Process ID</td>
     		<td>{{ ip.uuid }}</td>
@@ -25,14 +21,16 @@
     		<td>{{ ip.identifier }}</td>
     	</tr>
 		{% endif %}
-		{% if ip.statusprocess >= 50 or ip.statusprocess == -1 %}
 		<tr class="row1">
 			<td>Working area path</td>
 			<td><a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
 		</tr>
-		{% endif %}
+    	<tr class="row2">
+    		<td data-toggle="tooltip" title="Public identifier">Last task</td>
+    		<td>{{ ip.last_task }}</td>
+    	</tr>
 	    <tr class="row1">
-    		<td>IP processing status <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></td>
+    		<td>Process status <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></td>
     		<td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
     	</tr>
 

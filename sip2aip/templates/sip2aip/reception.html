@@ -26,7 +26,8 @@
         <th>Package name</th>
         <th>Process ID</th>
         <th>Working directory</th>
-        <th>IP processing status <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></th>
+        <th>Last task</th>
+        <th>Process status <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></th>
       </tr>
     </thead>
     <tbody>
@@ -35,12 +36,9 @@
                 <td><a href="{% url 'sip2aip:ip_detail' ip.pk %}" title='Detail information'>{{ ip.packagename }}</a></td>
                 <td>{{ ip.uuid }}</td>
                 <td>
-                    {% if ip.statusprocess >= 50 %}
                     <a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a>
-                    {% else %}
-                    -
-                    {% endif %}
                 </td>
+                <td>{{ ip.last_task }}</td>
                 <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
             </tr>
         {% endfor %}

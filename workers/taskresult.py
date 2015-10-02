@@ -6,6 +6,7 @@ class TaskResult(object):
     log = []
     err = []
     task_status = 0
+    task_name = ""
     additional_output = None
 
     def __init__(self, uuid, task_status, log, err, additional_output):
@@ -22,6 +23,8 @@ class TaskResult(object):
         self.additional_output = task_context.additional_output
         self.log = task_context.task_logger.log
         self.err = task_context.task_logger.err
+        self.last_task = task_context.task_name
+
 
 if __name__ == "__main__":
     tr = TaskResult(True, ['a', 'b'], ['c','d'], 100, "xyz")
