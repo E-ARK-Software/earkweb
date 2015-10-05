@@ -18,7 +18,9 @@ from sipcreator.forms import TinyUploadFileForm
 from workers import tasks
 from django.http import JsonResponse
 from sip2aip import forms
+from workers.ip_state import IpState
 from workers.taskconfig import TaskConfig
+from workers.tasks import SIPtoAIPReset
 from workflow.models import WorkflowModules
 from config.params import config_path_work, config_path_reception
 import logging
@@ -62,8 +64,9 @@ def upload_sip(request):
 
 @login_required
 def upload_sip_delivery(request):
-    reception_dir = os.path.join(config_path_reception)
-    print "reception dir: %s" % reception_dir
+    uuid = getUniqueID()
+    upload_directory = os.path.join(config_path_work, uuid)
+    print "upload directory: %s" % upload_directory
     if request.method == 'POST':
         form = UploadSIPDeliveryForm(request.POST, request.FILES)
         if form.is_valid():
@@ -80,15 +83,13 @@ def upload_sip_delivery(request):
                 template = loader.get_template('sip2aip/upload_sip.html')
                 return HttpResponse(template.render(context))
             else:
-                upload_file(reception_dir, sip_tar_package_file)
-                upload_file(reception_dir, sip_delivery_xml)
-                uuid = getUniqueID()
-                path = os.path.join(reception_dir, sip_tar_package_file.name)
-                print uuid
-                print packagename
-                print path
-                ip = InformationPackage.objects.create(uuid=uuid, packagename=packagename, path=path, statusprocess=0)
+                upload_file(upload_directory, sip_tar_package_file)
+                upload_file(upload_directory, sip_delivery_xml)
+                path = upload_directory
+                initial_last_task = WorkflowModules.objects.get(identifier=SIPtoAIPReset.__name__)
+                ip = InformationPackage.objects.create(uuid=uuid, packagename=packagename, path=path, statusprocess=0, last_task=initial_last_task)
                 ip.save()
+                IpState.from_parameters(0, "False", SIPtoAIPReset.__name__).write_doc(os.path.join(upload_directory, 'state.xml'))
                 url = reverse('sip2aip:ip_detail', args=(ip.id,))
                 return HttpResponseRedirect(url)
         else:

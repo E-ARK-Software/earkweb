@@ -85,7 +85,6 @@ class DeliveryValidation(object):
 
         except (XMLSyntaxError), why:
             errmsg = 'Error validating delivery %s, why: %s' % (delivery_xml_file, str(why))
-            self._logger.error(errmsg)
             err.append(errmsg)
             return ValidationResult(False, log, err)
 
