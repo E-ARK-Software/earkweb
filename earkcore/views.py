@@ -47,7 +47,7 @@ def working_area(request, section, uuid):
     def f(x):
         return {
             'sip2aip': "SIP to AIP conversion",
-            'sipcreation': "SIP creation",
+            'sipcreator': "SIP creation",
             'aip2dip': "AIP to DIP conversion",
         }[x]
     context = RequestContext(request, {

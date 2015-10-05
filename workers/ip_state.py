@@ -102,7 +102,7 @@ class IpState(object):
         @return: last task
         """
         last_task_elm = self.ted.find('.//last_task')
-        last_task_value = 'None' if len(last_task_elm) == 0 else last_task_elm.text
+        last_task_value = 'None' if last_task_elm is None else last_task_elm.text
         return last_task_value
 
     def set_last_task(self, last_task_value):

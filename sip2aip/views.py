@@ -151,28 +151,25 @@ class InformationPackageList(ListView):
         context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
         return context
 
-@login_required
-def help_processing_status(request):
 
-    status_lower_limit = 100
-    status_upper_limit = 10000
-    filter_divisor = 20 # used with modulo operator to filter status values
+class HelpProcessingStatus(ListView):
+    """
+    Processing status
+    """
+    model = WorkflowModules
+    template_name = 'sip2aip/help_processing_status.html'
+    context_object_name = 'wfms'
 
-    template = loader.get_template('sip2aip/help_processing_status.html')
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 4]).order_by('ordval')
 
-    def get_success_status_set(status_model, filter_func):
-        for tuple in status_model:
-            if (status_lower_limit <= tuple[0] < status_upper_limit) and filter_func(tuple[0]):
-                yield tuple[0], tuple[1]
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HelpProcessingStatus, self).dispatch(*args, **kwargs)
 
-    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
-    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
+    def get_context_data(self, **kwargs):
+        context = super(HelpProcessingStatus, self).get_context_data(**kwargs)
+        return context
 
-    context = RequestContext(request, {
-        'success_status_set': success_status_set,
-        'error_status_set': error_status_set,
-    })
-    return HttpResponse(template.render(context))
 
 class InformationPackageDetail(DetailView):
     """

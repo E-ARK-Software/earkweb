@@ -14,6 +14,8 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedire
 from django.shortcuts import render
 from django.template import RequestContext, loader
 from django.utils import timezone
+from django.views.generic.list import ListView
+from django.utils.decorators import method_decorator
 from lxml import etree
 import requests
 
@@ -30,6 +32,8 @@ from earkcore.utils.stringutils import lstrip_substring
 from sip2aip.forms import DIPPackageWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
+from workflow.models import WorkflowModules
+
 logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
@@ -73,30 +77,23 @@ def packsel(request):
     })
     return HttpResponse(template.render(context))
 
-@login_required
-def help_processing_status(request):
+class HelpProcessingStatus(ListView):
+    """
+    Processing status
+    """
+    model = WorkflowModules
+    template_name = 'search/help_processing_status.html'
+    context_object_name = 'wfms'
 
-    status_lower_limit = 10000
-    status_upper_limit = 100000
-    filter_divisor = 100 # used with modulo operator to filter status values
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 2]).order_by('ordval')
 
-    dips = DIP.objects.all()
-    template = loader.get_template('search/help_processing_status.html')
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HelpProcessingStatus, self).dispatch(*args, **kwargs)
 
-    def get_success_status_set(status_model, filter_func):
-        for tuple in status_model:
-            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
-                yield tuple[0], tuple[1]
-
-    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
-    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
-
-    context = RequestContext(request, {
-        'package_list': dips,
-        'success_status_set': success_status_set,
-        'error_status_set': error_status_set,
-    })
-    return HttpResponse(template.render(context))
+    def get_context_data(self, **kwargs):
+        context = super(HelpProcessingStatus, self).get_context_data(**kwargs)
+        return context
 
 
 @login_required

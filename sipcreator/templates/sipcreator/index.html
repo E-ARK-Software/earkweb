@@ -28,7 +28,8 @@
         <th>SIP package name</th>
         <th>Process ID</th>
         <th>SIP creation working directory</th>
-        <th>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></th>
+        <th>Last task <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-info-sign" aria-hidden="true" style="color:gray"></span></th>
+        <th>Process status</th>
       </tr>
     </thead>
     <tbody>
@@ -36,8 +37,15 @@
             <tr>
                 <td><a href="{% url 'sipcreator:ip_detail' ip.pk %}" title='Detail information'>{{ ip.packagename }}</a></td>
                 <td>{{ ip.uuid }}</td>
-                <td>{{ ip.path }}</td>
-                <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}</td>
+                <td><a href="{% url 'sipcreator:working_area' 'sipcreator' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+                <td>{{ ip.last_task }}</td>
+                <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}
+                {% if ip.statusprocess == 0 %}
+                 <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>
+                {% else %}
+                <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#91170A"/>
+                {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </tbody>

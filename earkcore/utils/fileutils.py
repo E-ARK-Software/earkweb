@@ -25,9 +25,20 @@ def mkdir_p(path):
             pass
         else: raise
 
+
 def removeDir(path):
     if os.path.isdir(path):
         rmtree(path)
+
+
+def remove_fs_item(uuid, working_dir, rel_path):
+    abs_path = os.path.join(working_dir, rel_path)
+    if working_dir.endswith(uuid) and os.path.exists(abs_path):
+        if os.path.isdir(abs_path):
+            rmtree(abs_path)
+        else:
+            os.remove(abs_path)
+
 
 def remove_protocol(path_with_protocol):
     return lstrip_substring(path_with_protocol, 'file://')

@@ -23,6 +23,7 @@ from sip2aip.forms import SIPCreationPackageWorkflowModuleSelectForm
 import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package
+from workflow.models import WorkflowModules
 
 
 @login_required
@@ -93,31 +94,28 @@ class InformationPackageList(ListView):
         error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
         context['success_status_set'] = success_status_set
         context['error_status_set'] = error_status_set
+        context['config_path_work'] = config_path_work
         return context
 
 
-@login_required
-def help_processing_status(request):
+class HelpProcessingStatus(ListView):
+    """
+    Processing status
+    """
+    model = WorkflowModules
+    template_name = 'sipcreator/help_processing_status.html'
+    context_object_name = 'wfms'
 
-    status_lower_limit = 0
-    status_upper_limit = 100
-    filter_divisor = 2 # used with modulo operator to filter status values
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 4]).order_by('ordval')
 
-    template = loader.get_template('sipcreator/help_processing_status.html')
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(HelpProcessingStatus, self).dispatch(*args, **kwargs)
 
-    def get_success_status_set(status_model, filter_func):
-        for tuple in status_model:
-            if (status_lower_limit < tuple[0] < status_upper_limit) and filter_func(tuple[0]):
-                yield tuple[0], tuple[1]
+    def get_context_data(self, **kwargs):
+        context = super(HelpProcessingStatus, self).get_context_data(**kwargs)
+        return context
 
-    success_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor == 0)
-    error_status_set = get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % filter_divisor != 0)
-
-    context = RequestContext(request, {
-        'success_status_set': success_status_set,
-        'error_status_set': error_status_set,
-    })
-    return HttpResponse(template.render(context))
 
 class InformationPackageDetail(DetailView):
     """

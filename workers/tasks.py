@@ -1,47 +1,45 @@
-from celery import Task, shared_task
-import time, os
+import time
+import os
+import tarfile
+import traceback
+import shutil
+from os import walk
+import logging
+from functools import partial
+import glob
+
+from celery import Task
+from celery import current_task
+
 from earkcore.packaging.extraction import Extraction
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
-from sandbox.task_execution_xml import TaskExecutionXml
-from sip2aip.models import MyModel
-from time import sleep
 from config import params
 from config.config import root_dir
-from celery import current_task
 from earkcore.utils import fileutils
 from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
 from earkcore.xml.deliveryvalidation import DeliveryValidation
 from taskresult import TaskResult
-import tarfile
-import traceback
 from workers.default_task import DefaultTask
 from workers.statusvalidation import StatusValidation
-from earkcore.metadata.mets.MetsValidation import MetsValidation
-from earkcore.metadata.mets.ParsedMets import ParsedMets
 from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
-import shutil
 from earkcore.metadata.identification import MetaIdentification
-
 from earkcore.utils.fileutils import increment_file_name_suffix
 from earkcore.utils.fileutils import latest_aip
 from tasklogger import TaskLogger
-from os import walk
-import logging
 from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.rest.hdfsrestclient import HDFSRestClient
-from functools import partial
-from statusvalidation import check_status
-from search.models import DIP, AIP, Inclusion
+from search.models import DIP
 from earkcore.filesystem.chunked import FileBinaryDataChunks
-from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumFile import ChecksumFile
 from earkcore.fixity.tasklib import check_transfer
 from earkcore.utils.fileutils import mkdir_p
-from workflow.ip_state import IpState
-import glob
+from workers.ip_state import IpState
+from earkcore.packaging.task_utils import get_deliveries
+from earkcore.utils.fileutils import remove_fs_item
+
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -184,23 +182,15 @@ class SIPtoAIPReset(DefaultTask):
             fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        data_path = os.path.join(task_context.path, "data")
-        if os.path.exists(data_path):
-            shutil.rmtree(data_path)
-        mkdir_p(data_path)
-        task_context.task_logger.addinfo("New empty 'data' directory created")
-        metadata_path = os.path.join(task_context.path, "metadata")
-        if os.path.exists(metadata_path):
-            shutil.rmtree(metadata_path)
-        mkdir_p(metadata_path)
-        task_context.task_logger.addinfo("New empty 'metadata' directory created")
+        items_to_remove = ['METS.xml', 'data', 'metadata', 'Content', 'Metadata']
+        for item in items_to_remove:
+            remove_fs_item(task_context.uuid, task_context.path, item)
+
         # remove extracted sips
-        tar_files = glob.glob("%s/*.tar" % task_context.path)
-        for tar_file in tar_files:
-            tar_base_name, _ = os.path.splitext(tar_file)
-            if os.path.exists(tar_base_name):
-                shutil.rmtree(tar_base_name)
-            task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
+        deliveries = get_deliveries(task_context.path, task_context.task_logger)
+        for delivery in deliveries:
+            if os.path.exists(str(delivery)):
+                shutil.rmtree(str(delivery))
 
         # success status
         task_context.task_status = 0
@@ -209,147 +199,127 @@ class SIPtoAIPReset(DefaultTask):
 
 class SIPDeliveryValidation(DefaultTask):
 
-    accept_input_from = ['Reset']
+    accept_input_from = [SIPtoAIPReset.__name__]
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP delivery validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:1
         """
-        # delivery validation
-        tar_files = glob.glob("%s/*.tar" % path)
-        deliveries = {}
-        for tar_file in tar_files:
-            tar_base_name, _ = os.path.splitext(tar_file)
-            delivery_file = "%s.xml" % tar_base_name
-            if os.path.exists(delivery_file):
-                deliveries[tar_base_name] = {"delivery_xml": delivery_file, "tar_file": tar_file}
+        tl = task_context.task_logger
+        deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
-            return tl.finalize(uuid, self.error_status)
-        for delivery in deliveries:
-            tar_file = deliveries[delivery]['tar_file']
-            delivery_file = deliveries[delivery]['delivery_xml']
-            tl.addinfo("Package file: %s" % delivery_file)
-            tl.addinfo("Delivery XML file: %s" % delivery_file)
-            schema_file = os.path.join(path, 'IP_CS_mets.xsd')
-            tl.addinfo("Schema file: %s" % schema_file)
-            sdv = DeliveryValidation()
-            validation_result = sdv.validate_delivery(path, delivery_file, schema_file, tar_file)
-            tl.log = tl.log + validation_result.log
-            tl.err = tl.err + validation_result.err
-            tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-            if not validation_result.valid:
-                tl.adderr("Delivery invalid: %s" % delivery)
-                return tl.finalize(uuid, self.error_status)
-
-        # change success status of this task to new_status
-        self.task_status = 0
-        return {}
+            task_context.task_status = 1
+        else:
+            for delivery in deliveries:
+                tar_file = deliveries[delivery]['tar_file']
+                delivery_file = deliveries[delivery]['delivery_xml']
+                tl.addinfo("Package file: %s" % delivery_file)
+                tl.addinfo("Delivery XML file: %s" % delivery_file)
+                schema_file = os.path.join(task_context.path, 'IP_CS_mets.xsd')
+                tl.addinfo("Schema file: %s" % schema_file)
+                sdv = DeliveryValidation()
+                validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
+                tl.log = tl.log + validation_result.log
+                tl.err = tl.err + validation_result.err
+                tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
+                if not validation_result.valid:
+                    tl.adderr("Delivery invalid: %s" % delivery)
+                    task_context.task_status = 1
+                else:
+                    task_context.task_status = 0
+        return
 
 
 class IdentifierAssignment(DefaultTask):
 
-    accept_input_from = ['SIPDeliveryValidation']
+    accept_input_from = [SIPDeliveryValidation.__name__]
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
-        Identifier assignment
+        SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:3,type:1
         """
-        # set new identifier
         # TODO: set identifier in METS file
         identifier = randomutils.getUniqueID()
-        tl.addinfo("New identifier assigned: %s" % identifier)
+        task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
+        task_context.task_status = 0
         return {'identifier': identifier}
 
 
 class SIPExtraction(DefaultTask):
 
-    accept_input_from = ['IdentifierAssignment']
+    accept_input_from = [IdentifierAssignment.__name__]
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
-        SIP extraction
+        SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:4,type:1
         """
-        # sip extraction
-        tar_files = glob.glob("%s/*.tar" % path)
-        tl.addinfo("Tar files found: %s" % tar_files)
-        deliveries = {}
-        for tar_file in tar_files:
-            tar_base_name, _ = os.path.splitext(tar_file)
-            delivery_file = "%s.xml" % tar_base_name
-            if os.path.exists(delivery_file):
-                deliveries[tar_base_name] = {"delivery_xml": delivery_file, "tar_file": tar_file}
+        tl = task_context.task_logger
+        deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
-            return tl.finalize(uuid, self.error_status)
-        for delivery in deliveries:
-            tar_file = deliveries[delivery]['tar_file']
-            import sys
-            reload(sys)
-            sys.setdefaultencoding('utf8')
-            tar_object = tarfile.open(name=tar_file, mode='r', encoding='utf-8')
-            members = tar_object.getmembers()
-            total = len(members)
-            i = 0
-            perc = 0
-            for member in members:
-                if i % 10 == 0:
-                    perc = (i * 100) / total
-                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                tar_object.extract(member, path)
-                tl.addinfo(("File extracted: %s" % member.name), display=True) # TODO: Switch display to false later (large packages!)
-                i += 1
-            tl.addinfo(("Extraction of %d items from tar file %s finished" % (total, tar_file)))
-        return {}
+            task_context.task_status = 1
+        else:
+            extr = Extraction()
+            for delivery in deliveries:
+                tar_file = deliveries[delivery]['tar_file']
+                custom_reporter = partial(custom_progress_reporter, self)
+                extr.extract_with_report(tar_file, task_context.path, progress_reporter=custom_reporter)
+            tl.log += extr.log
+            tl.err += extr.err
+        task_context.task_status = 0
+        return
+
 
 class SIPRestructuring(DefaultTask):
 
-    accept_input_from = ['SIPExtraction']
+    accept_input_from = [SIPExtraction.__name__, 'SIPRestructuring']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
-        Identifier assignment
+        SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:5,type:1
         """
-        # sip extraction
-        tar_files = glob.glob("%s/*.tar" % path)
-        tl.addinfo("Tar files found: %s" % tar_files)
-        deliveries = {}
-        for tar_file in tar_files:
-            tar_path_base, _ = os.path.splitext(tar_file)
-            delivery_file_path = "%s.xml" % tar_path_base
-            if os.path.exists(delivery_file_path):
-                deliveries[tar_path_base] = {"delivery_xml": delivery_file_path, "tar_file": tar_file}
+        tl = task_context.task_logger
+        deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
-            return tl.finalize(uuid, self.error_status)
-        for tar_path_base in deliveries:
-            tl.addinfo("Do something with %s" % tar_path_base)
-            # tl.addinfo("Moving package content to SIP root:" % tar_path_base)
-            # for sub_directory in os.listdir(tar_path_base):
-            #     shutil.move(os.path.join(tar_path_base, sub_directory), path)
-            #     tl.addinfo("Moved %s to %s" % (os.path.join(tar_path_base, sub_directory), path))
-            # os.removedirs(tar_path_base)
-        return {}
+            task_context.task_status = 1
+        else:
+            for delivery in deliveries:
+                tl.addinfo("Restructuring content of package: %s" % str(delivery))
+
+                fs_childs =  os.listdir(str(delivery))
+                for fs_child in fs_childs:
+                    source_item = os.path.join(str(delivery), fs_child)
+                    target_folder = task_context.path
+                    tl.addinfo("Move SIP folder '%s' to '%s" % (source_item, target_folder))
+                    shutil.move(source_item, target_folder)
+                os.removedirs(str(delivery))
+
+            task_context.task_status = 0
+        return
 
 
 class SIPValidation(DefaultTask):
 
-    accept_input_from = ['SIPRestructuring']
+    accept_input_from = [SIPRestructuring.__name__, 'SIPValidation']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:6,type:1
         """
+        tl = task_context.task_logger
+        path = task_context.path
         def check_file(descr, f):
             if os.path.exists(f):
                 tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
@@ -367,8 +337,9 @@ class SIPValidation(DefaultTask):
         # size_val_result = mval.validate_files_size()
         # tl.log += size_val_result.log
         # tl.err += size_val_result.err
-        # valid = (len(tl.err) == 0)
-        return {}
+        valid = (len(tl.err) == 0)
+        task_context.task_status = 0 if valid else 1
+        return
 
 
 class AIPCreation(Task, StatusValidation):

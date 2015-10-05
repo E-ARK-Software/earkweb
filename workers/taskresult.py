@@ -1,5 +1,5 @@
 from earkcore.process.processresult import ProcessResult
-from workflow.default_task_context import DefaultTaskContext
+
 
 class TaskResult(object):
     uuid = ""

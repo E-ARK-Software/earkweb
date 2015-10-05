@@ -18,7 +18,7 @@ urlpatterns= patterns('',
 
     url(r'^upload_sip_delivery$', views.upload_sip_delivery, name='upload_sip_delivery'),
 
-    url(r'^help_processing_status$', views.help_processing_status, name='help_processing_status'),
+    url(r'^help_processing_status$', views.HelpProcessingStatus.as_view(), name='help_processing_status'),
 
     url(r'^apply_task', views.apply_task, name='apply_task'),
 

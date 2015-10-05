@@ -1,16 +1,15 @@
-from celery import Task
-import time, os
-from config.config import root_dir
-from celery import current_task
-from taskresult import TaskResult
-import tarfile
-from workers.statusvalidation import StatusValidation
-from earkcore.metadata.premis.PremisManipulate import Premis
-from workflow.default_task_context import DefaultTaskContext
-from workflow.ip_state import IpState
-import glob
-from tasklogger import TaskLogger
+import time
+import os
 import traceback
+
+from celery import Task
+
+from celery import current_task
+
+from taskresult import TaskResult
+from workers.default_task_context import DefaultTaskContext
+from workers.ip_state import IpState
+from tasklogger import TaskLogger
 
 
 class DefaultTask(Task):
@@ -135,10 +134,10 @@ class DefaultTask(Task):
             # and is stored in the result backend (AsyncResult(task_id).result.add_res_parms).
             if task_context.valid(self.accept_input_from, self.task_name):
                 self.run_task(task_context)
-                print "Variable task_context.task_status after run_task: %s" % task_context.task_status
-
-        except Exception:
+        except Exception, e:
+            task_context.task_logger.adderr("An error occurred: %s" % e)
             traceback.print_exc()
+            task_context.task_status = 1
             #self.add_PREMIS_event(self.task_name, 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
 
         return self.finalize(task_context)
