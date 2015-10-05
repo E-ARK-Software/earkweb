@@ -97,10 +97,9 @@ class DefaultTask(Task):
 
     def run_task(self, task_context):
         """
-        This method is overriden by the task method implementation
-        @type tl: list[str]
-        @param tl: Task log
-        @return: Additional result parameters dictionary
+        This method is overriden by the task method implementation (thi one has type 0 in order to not be shown)
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:0,type:0
         """
         task_context.task_logger.addinfo("Executing default task (to be overridden)")
         task_context.task_status = 0

@@ -20,6 +20,6 @@ class InformationPackage(models.Model):
     packagename = models.CharField(max_length=200)
     path = models.CharField(max_length=200)
     statusprocess = models.IntegerField(null=True, choices=StatusProcess_CHOICES)
-    last_task = models.ForeignKey(WorkflowModules)
+    last_task = models.ForeignKey(WorkflowModules, default="DefaultTask")
     def __str__(self):
         return self.path

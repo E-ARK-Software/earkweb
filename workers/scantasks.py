@@ -64,7 +64,7 @@ class TaskScanner(object):
         self.taskmodule = taskmodule
         methodList = [item for item in dir(taskmodule)]
         for item in methodList:
-            if inspect.isclass(getattr(tasks, item)) and str(item) != "Task" and str(item) != "DefaultTask":
+            if inspect.isclass(getattr(tasks, item)) and str(item) != "Task":# and str(item) != "DefaultTask":
                 c = getattr(tasks, item)
                 try:
                     self.register_method("run", c, item)
