@@ -10,6 +10,8 @@ import glob
 
 from celery import Task
 from celery import current_task
+from earkcore.metadata.mets.MetsValidation import MetsValidation
+from earkcore.metadata.mets.ParsedMets import ParsedMets
 
 from earkcore.packaging.extraction import Extraction
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
@@ -121,7 +123,7 @@ class SIPCreationReset(DefaultTask):
 
     def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Package metadata creation
+        SIP Creation Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:4
         """
@@ -135,7 +137,7 @@ class SIPPackageMetadataCreation(DefaultTask):
 
     def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Package metadata creation
+        SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:13,type:4
         """
@@ -157,7 +159,7 @@ class SIPPackaging(DefaultTask):
 
     def run_task(self, uuid, path, tl, additional_params):
         """
-        SIP Package metadata creation
+        SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:4
         """
@@ -173,7 +175,7 @@ class SIPtoAIPReset(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        SIP to AIP Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:1,type:1
         """
@@ -203,7 +205,7 @@ class SIPDeliveryValidation(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP delivery validation
+        SIP Delivery Validation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:1
         """
@@ -239,7 +241,7 @@ class IdentifierAssignment(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        Identifier Assignment run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:3,type:1
         """
@@ -256,7 +258,7 @@ class SIPExtraction(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        SIP Extraction run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:4,type:1
         """
@@ -279,11 +281,11 @@ class SIPExtraction(DefaultTask):
 
 class SIPRestructuring(DefaultTask):
 
-    accept_input_from = [SIPExtraction.__name__, 'SIPRestructuring']
+    accept_input_from = [SIPExtraction.__name__]
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        SIP Restructuring run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:5,type:1
         """
@@ -310,11 +312,11 @@ class SIPRestructuring(DefaultTask):
 
 class SIPValidation(DefaultTask):
 
-    accept_input_from = [SIPRestructuring.__name__, 'SIPValidation']
+    accept_input_from = [SIPRestructuring.__name__]
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        SIP Validation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:6,type:1
         """
@@ -330,28 +332,137 @@ class SIPValidation(DefaultTask):
         check_file("Content directory", os.path.join(path, "data/content"))
         check_file("Documentation directory", os.path.join(path, "data/documentation"))
         check_file("Metadata directory", os.path.join(path, "metadata"))
-        # mets_file = os.path.join(path, "METS.xml")
-        # parsed_mets = ParsedMets(os.path.join(path))
-        # parsed_mets.load_mets(mets_file)
-        # mval = MetsValidation(parsed_mets)
-        # size_val_result = mval.validate_files_size()
-        # tl.log += size_val_result.log
-        # tl.err += size_val_result.err
+        mets_file = os.path.join(path, "METS.xml")
+        parsed_mets = ParsedMets(os.path.join(path))
+        parsed_mets.load_mets(mets_file)
+        mval = MetsValidation(parsed_mets)
+        size_val_result = mval.validate_files_size()
+        tl.log += size_val_result.log
+        tl.err += size_val_result.err
         valid = (len(tl.err) == 0)
         task_context.task_status = 0 if valid else 1
         return
 
 
-class AIPCreation(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
+class AIPCreation(DefaultTask):
+
+    accept_input_from = [SIPValidation.__name__]
+
+    def run_task(self, task_context):
         """
-        AIP Creation
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
+        AIP Creation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:7,type:1
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
+        """
+        tl = task_context.task_logger
+        # #package_dir = os.path.join(ip_work_dir, ip.packagename)
+        # submission_dir = os.path.join(task_context.path, "submission")
+        # package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
+        # shutil.move(task_context.path, package_in_submission_dir)
+        # tl.addinfo("Package directory %s moved to submission directory %s" % (package_dir, package_in_submission_dir))
+        #
+        # # create submission mets
+        # mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
+        # with open(mets_skeleton_file, 'r') as mets_file:
+        #     submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
+        # # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
+        # admids = []
+        # admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+        # admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+        # admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+        # submission_mets_file.add_file_grp(['submission'])
+        # submission_mets_file.add_file_grp(['schemas'])
+        # # add a file group for metadata files that are not classified
+        # submission_mets_file.add_file_grp(['customMD'])
+        # # TODO: rel_path_mets has to be changed according to how the METS file is named
+        # rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
+        #
+        # submission_mets_file.add_file(['submission'], rel_path_mets, admids)
+        # # TODO: set header with list of attributes
+        # # retrieve METS root tag attributes
+        # mets_attributes = params.mets_attributes
+        # for item in mets_attributes.items():
+        #     submission_mets_file.root.set(item[0], item[1])
+        #
+        # # path length
+        # workdir_length = len(ip_work_dir)
+        #
+        # # cover uppercase/lowercase in sub directories
+        # directory_list =  os.listdir(package_in_submission_dir)
+        # content_directory = ''
+        # metadata_directory = ''
+        # for subdir in directory_list:
+        #     if os.path.isdir(package_in_submission_dir + '/' + subdir):
+        #         if subdir.lower() == 'content':
+        #             content_directory = '/' + subdir
+        #         elif subdir.lower() == 'metadata':
+        #             metadata_directory = '/' + subdir
+        #
+        # # retrieve files in /Content
+        # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
+        #     for filename in filenames:
+        #         rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+        #         # create METS entry:
+        #         submission_mets_file.add_file(['submission'], rel_path_file, admids)
+        #         # create PREMIS object entry:
+        #         package_premis_file.add_object(rel_path_file)
+        #
+        # # retrieve files in /Metadata
+        # md_type_list = ['ead', 'eac', 'premis', 'mets']
+        # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
+        #     for filename in filenames:
+        #         rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+        #         # create PREMIS object entry:
+        #         package_premis_file.add_object(rel_path_file)
+        #         # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
+        #         # TODO: different filegrp for schemas?
+        #         # create METS entry:
+        #         if filename[-3:] == 'xsd':
+        #             submission_mets_file.add_file(['schemas'], rel_path_file, admids)
+        #         elif filename[-3:] == 'xml':
+        #             if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
+        #                 submission_mets_file.add_dmd_sec('ead', rel_path_file)
+        #             elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
+        #                 submission_mets_file.add_dmd_sec('eac', rel_path_file)
+        #             elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
+        #                 submission_mets_file.add_tech_md(rel_path_file, '')
+        #             elif filename:
+        #                 xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
+        #                 if xml_tag.lower() in md_type_list:
+        #                 # TODO see rules above, and add accordingly
+        #                     if xml_tag.lower() == 'eac' or xml_tag.lower() == 'ead':
+        #                         submission_mets_file.add_dmd_sec(xml_tag.lower(), rel_path_file)
+        #                     elif xml_tag:
+        #                         submission_mets_file.add_tech_md(rel_path_file, '')
+        #                 elif xml_tag.lower() not in md_type_list:
+        #                 # custom metadata format?
+        #                     submission_mets_file.add_file(['customMD'], rel_path_file, admids)
+        #                     # print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
+        #
+        # submission_mets_file.add_file(['submission'], rel_path_mets, admids)
+        # submission_mets_file.root.set('TYPE', 'AIP')
+        # submission_mets_file.root.set('ID', ip.uuid)
+        #
+        # path_mets = os.path.join(submission_dir, "METS.xml")
+        # with open(path_mets, 'w') as output_file:
+        #     output_file.write(submission_mets_file.to_string())
+        # tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
+        # valid = xx
+        # task_context.task_status = 0 if valid else 1
+        tl.addinfo("Not implemented yet.")
+        task_context.task_status = 0
+        return
+
+
+class AIPCreation(Task, StatusValidation):
+
+    accept_input_from = [SIPValidation.__name__]
+
+    def run_task(self, task_context):
+        """
+        SIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:7,type:1
         """
         ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
@@ -359,98 +470,7 @@ class AIPCreation(Task, StatusValidation):
         if len(tl.err) > 0:
             return tl.fin()
         try:
-            package_dir = os.path.join(ip_work_dir, ip.packagename)
-            submission_dir = os.path.join(ip_work_dir, "submission")
-            package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
-            shutil.move(package_dir, package_in_submission_dir)
-            tl.addinfo("Package directory %s moved to submission directory %s" % (package_dir, package_in_submission_dir))
 
-            # create submission mets
-            mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
-            with open(mets_skeleton_file, 'r') as mets_file:
-                submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
-            # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
-            admids = []
-            admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-            admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-            admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
-            submission_mets_file.add_file_grp(['submission'])
-            submission_mets_file.add_file_grp(['schemas'])
-            # add a file group for metadata files that are not classified
-            submission_mets_file.add_file_grp(['customMD'])
-            # TODO: rel_path_mets has to be changed according to how the METS file is named
-            rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
-
-            submission_mets_file.add_file(['submission'], rel_path_mets, admids)
-            # TODO: set header with list of attributes
-            # retrieve METS root tag attributes
-            mets_attributes = params.mets_attributes
-            for item in mets_attributes.items():
-                submission_mets_file.root.set(item[0], item[1])
-
-            # path length
-            workdir_length = len(ip_work_dir)
-
-            # cover uppercase/lowercase in sub directories
-            directory_list =  os.listdir(package_in_submission_dir)
-            content_directory = ''
-            metadata_directory = ''
-            for subdir in directory_list:
-                if os.path.isdir(package_in_submission_dir + '/' + subdir):
-                    if subdir.lower() == 'content':
-                        content_directory = '/' + subdir
-                    elif subdir.lower() == 'metadata':
-                        metadata_directory = '/' + subdir
-
-            # retrieve files in /Content
-            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
-                for filename in filenames:
-                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
-                    # create METS entry:
-                    submission_mets_file.add_file(['submission'], rel_path_file, admids)
-                    # create PREMIS object entry:
-                    package_premis_file.add_object(rel_path_file)
-
-            # retrieve files in /Metadata
-            md_type_list = ['ead', 'eac', 'premis', 'mets']
-            for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
-                for filename in filenames:
-                    rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
-                    # create PREMIS object entry:
-                    package_premis_file.add_object(rel_path_file)
-                    # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
-                    # TODO: different filegrp for schemas?
-                    # create METS entry:
-                    if filename[-3:] == 'xsd':
-                        submission_mets_file.add_file(['schemas'], rel_path_file, admids)
-                    elif filename[-3:] == 'xml':
-                        if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-                            submission_mets_file.add_dmd_sec('ead', rel_path_file)
-                        elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-                            submission_mets_file.add_dmd_sec('eac', rel_path_file)
-                        elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
-                            submission_mets_file.add_tech_md(rel_path_file, '')
-                        elif filename:
-                            xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
-                            if xml_tag.lower() in md_type_list:
-                            # TODO see rules above, and add accordingly
-                                if xml_tag.lower() == 'eac' or xml_tag.lower() == 'ead':
-                                    submission_mets_file.add_dmd_sec(xml_tag.lower(), rel_path_file)
-                                elif xml_tag:
-                                    submission_mets_file.add_tech_md(rel_path_file, '')
-                            elif xml_tag.lower() not in md_type_list:
-                            # custom metadata format?
-                                submission_mets_file.add_file(['customMD'], rel_path_file, admids)
-                                # print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
-
-            submission_mets_file.add_file(['submission'], rel_path_mets, admids)
-            submission_mets_file.root.set('TYPE', 'AIP')
-            submission_mets_file.root.set('ID', ip.uuid)
-
-            path_mets = os.path.join(submission_dir, "METS.xml")
-            with open(path_mets, 'w') as output_file:
-                output_file.write(submission_mets_file.to_string())
-            tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
 
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status
