@@ -7,6 +7,7 @@ from os import walk
 import logging
 from functools import partial
 import glob
+import sys
 
 from celery import Task
 from celery import current_task
@@ -121,13 +122,14 @@ class SIPCreationReset(DefaultTask):
 
     accept_input_from = ['All']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP Creation Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:4
         """
         # implementation
+        task_context.task_status = 0
         return {}
 
 
@@ -135,37 +137,58 @@ class SIPPackageMetadataCreation(DefaultTask):
 
     accept_input_from = ['SIPCreationReset', 'SIPPackageMetadataCreation']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:13,type:4
         """
-        os.chdir(path)
-        tl.addinfo("Working in rootdir %s" % os.getcwd())
+        os.chdir(task_context.path)
+        task_context.task_logger.addinfo("Working in rootdir %s" % os.getcwd())
         sipgen = SIPGenerator()
         sipgen.createMets()
 
-        ip_state_doc_path = os.path.join(path, "state.xml")
-        ip_state = IpState.from_parameters(50, False)
-        if os.path.exists(ip_state_doc_path):
-            ip_state = IpState.from_path(ip_state_doc_path)
-        status = ip_state.get_state()
+        task_context.task_status = 0
         return {}
 
 class SIPPackaging(DefaultTask):
 
     accept_input_from = [SIPPackageMetadataCreation.__name__, 'SIPPackaging']
 
-    def run_task(self, uuid, path, tl, additional_params):
+    def run_task(self, task_context):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:4
         """
+        task_context.task_logger.addinfo("Package name: %s" % task_context.additional_input['packagename'])
+
+        # reload(sys)
+        # sys.setdefaultencoding('utf8')
+        #
+        # # append generation number to tar file; if tar file exists, the generation number is incremented
+        # storage_tar_file = task_context.
+        # tar = tarfile.open(storage_tar_file, "w:")
+        # tl.addinfo("Packaging working directory: %s" % ip_work_dir)
+        # total = sum([len(files) for (root, dirs, files) in walk(ip_work_dir)])
+        # tl.addinfo("Total number of files in working directory %d" % total)
+        # # log file is closed at this point because it will be included in the package,
+        # # subsequent log messages can only be shown in the gui
+        # tl.fin()
+        # i = 0
+        # for subdir, dirs, files in os.walk(ip_work_dir):
+        #     for file in files:
+        #         entry = os.path.join(subdir, file)
+        #         tar.add(entry)
+        #         if i % 10 == 0:
+        #             perc = (i * 100) / total
+        #             self.update_state(state='PROGRESS', meta={'process_percent': perc})
+        #         i += 1
+        # tar.close()
+        # tl.log.append("Package stored: %s" % storage_tar_file)
 
 
-        # implementation
+        task_context.task_status = 0
         return {}
 
 
