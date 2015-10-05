@@ -177,6 +177,8 @@ def apply_task(request):
                 print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
                 additional_input = {}
+                if taskClass == workers.SIPPackaging.__name__:
+                    additional_input['packagename'] = ip.packagename
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
                 data = {"success": True, "id": job.id}
