@@ -24,6 +24,22 @@ import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package
 from workflow.models import WorkflowModules
+from django.shortcuts import render_to_response
+
+
+
+@login_required
+@csrf_exempt
+def ip_detail_table(request):
+    pkg_id = request.POST['pkg_id']
+    print pkg_id
+    print config_path_work
+    context = RequestContext(request, {
+        "ip": InformationPackage.objects.get(pk=pkg_id),
+        "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
+        "config_path_work": config_path_work
+    })
+    return render_to_response('sipcreator/iptable.html', locals(), context_instance=context)
 
 
 @login_required

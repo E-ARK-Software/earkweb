@@ -11,7 +11,7 @@
 
     <!-- index.html javascript -->
     <script type="text/javascript" src="{% static 'sipcreator/js/sipcreation.js' %}"></script>
-    <!-- link rel="stylesheet" href="{% static "sipcreator/css/sipcreation.css" %}" type="text/css" /-->
+    <link rel="stylesheet" href="{% static "sipcreator/css/sipcreation.css" %}" type="text/css" />
 
     <!-- task/workflow execution -->
     <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
@@ -25,28 +25,7 @@
 
     <h2 class="main">SIP creation task/workflow execution</h2>
 
-    <div id="dip-detail-table">
-        <table  class="table table-striped table-bordered table-condensed">
-            <tbody>
-                <tr>
-                    <td class="emph">Package name</td>
-                    <td class="emph">{{ ip.packagename }}</td>
-                </tr>
-                <tr>
-                    <td>Process ID</td>
-                    <td>{{ ip.uuid }}</td>
-                </tr>
-                <tr class="row1">
-                    <td>Working area path</td>
-                    <td><a href="{% url 'sipcreator:working_area' 'sipcreator' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
-                </tr>
-                <tr class="row1">
-                    <td>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></td>
-                    <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    {% include "sipcreator/iptable.html" %}
 
     {% include "workflow/execution_form.html" %}
 
