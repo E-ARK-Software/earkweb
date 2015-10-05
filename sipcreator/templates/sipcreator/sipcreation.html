@@ -36,12 +36,10 @@
                     <td>Process ID</td>
                     <td>{{ ip.uuid }}</td>
                 </tr>
-                {% if ip.statusprocess > 0 %}
                 <tr class="row1">
                     <td>Working area path</td>
-                    <td><a href="{% url 'sipcreator:working_area' 'sipcreation' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+                    <td><a href="{% url 'sipcreator:working_area' 'sipcreator' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
                 </tr>
-                {% endif %}
                 <tr class="row1">
                     <td>IP processing status <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"/></a></td>
                     <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})</td>
