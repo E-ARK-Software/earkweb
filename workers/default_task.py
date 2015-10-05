@@ -133,7 +133,7 @@ class DefaultTask(Task):
             # in the dictionary additional_params. This dictionary is stored as part of the celery result
             # and is stored in the result backend (AsyncResult(task_id).result.add_res_parms).
             if task_context.valid(self.accept_input_from, self.task_name):
-                self.run_task(task_context)
+                task_context.additional_output = self.run_task(task_context)
         except Exception, e:
             task_context.task_logger.adderr("An error occurred: %s" % e)
             traceback.print_exc()
