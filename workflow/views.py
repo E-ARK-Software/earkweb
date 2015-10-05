@@ -35,7 +35,8 @@ from django.http import JsonResponse
 from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
-import workers.tasks
+#import workers.tasks
+from workers.tasks import SIPPackaging
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -176,8 +177,8 @@ def apply_task(request):
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-                additional_input = {}
-                if taskClass == workers.SIPPackaging.__name__:
+                additional_input = {'packagename': ip.packagename }
+                if wfm.identifier == SIPPackaging.__name__:
                     additional_input['packagename'] = ip.packagename
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
