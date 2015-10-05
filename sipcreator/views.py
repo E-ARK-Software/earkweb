@@ -202,7 +202,8 @@ def initialize(request, packagename):
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata'))
-    InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10, packagename=packagename)
+    wf = WorkflowModules.objects.get(identifier = 'SIPCreationReset')
+    InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
     return HttpResponse(str(ip.id))
 
