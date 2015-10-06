@@ -17,15 +17,14 @@
     <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
     <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
 
-    <script language="javascript">var uuid='{{ ip.uuid }}/data/content'; var uuidcontent='{{ ip.uuid }}/data/documentation'; var uuidmetadata='{{ ip.uuid }}/metadata';</script>
+    <script language="javascript">var uuid='{{ ip.uuid }}/data/content'; var uuidcontent='{{ ip.uuid }}/data/documentation'; var uuidmetadata='{{ ip.uuid }}/metadata'; var uuidmschemas='{{ ip.uuid }}/schemas';</script>
 {% endblock %}
 
 {% block content %}
 
-    {% include "sipcreator/about_module.html" %}
+    <h1 class="main">SIP Creator</h1>
 
-    <h2 class="main">Upload files to SIP container</h2>
-
+    <div id="sctable" style="float:left; width: 80%;padding-right: 20px">
     <table id="tblsc" class="table table-striped table-bordered table-condensed">
       <tr><td colspan="2">
           <form>
@@ -69,6 +68,7 @@
       </tr>
       <tr>
         <td id="metadata-folder" colspan="2">
+            <table><tr><td></td></tr></table>
             <div class="directorytree" id="dirtree-metadata"></div>
             <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'metadata' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -78,6 +78,19 @@
         </td>
 
       </tr>
+
+      <tr>
+        <td id="schemas-folder" colspan="2">
+            <div class="directorytree" id="dirtree-schemas"></div>
+            <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'schemas' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <span style="float:left">{{ uploadFileForm.as_p }}</span>
+                <button type="submit">Add</button>
+            </form>
+        </td>
+
+      </tr>
+
       {% endif %}
     </table>
 
@@ -106,11 +119,32 @@
             </div>
         </div>
     </div>
+
+    </div>
+    <div style="padding-left: 50px; width: 25%">
+        <table class="table table-striped table-bordered table-condensed" style="height: 627px">
+            <tr><td style="background-color: white">
+                <b>Help</b>
+
+        <p>An E-ARK SIP has three folders at the root level.
+            <ul><li>The "data" directory contains the actual content and is split into a "content" and "documentation" folder to separate
+            the digital objects themselves from documentation that is included to help interpreting them.</li><li>The "metadata" folder contains metadata files
+            describing the digital object as well as technical, rights related or digital provenance metadata. </li>
+                <li>The "schemas" folder contains XMLSchema files needed to validate XML documents of the information package.</li>
+                </ul>
+                </p>
+                <p>Click 'Browse ...' to select a file from the local file system, then click 'add' to upload the file.
+                <p>A tar file can be uploaded and will be automatically unpacked.</p>
+            </td></tr>
+        </table>
+
+    </div>
     <script>
         $('#confirm-delete').on('show.bs.modal', function(e) {
         $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
     });
     </script>
+
 
 
 

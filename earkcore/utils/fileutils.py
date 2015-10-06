@@ -5,16 +5,16 @@ from earkcore.utils.stringutils import lstrip_substring
 
 MAX_TRIES = 10000
 
-def copytree(self, origin_dir, target_dir):
-    """
-    Copy extracted SIP to working area
-
-    @type       extracted_sip_directory: string
-    @param      extracted_sip_directory: Path to extracted SIP directory
-    @rtype:     bool
-    @return:    Success of AIP preparation
-    """
-    copytree(origin_dir, target_dir)
+# def copytree(self, origin_dir, target_dir):
+#     """
+#     Copy extracted SIP to working area
+#
+#     @type       extracted_sip_directory: string
+#     @param      extracted_sip_directory: Path to extracted SIP directory
+#     @rtype:     bool
+#     @return:    Success of AIP preparation
+#     """
+#     copytree(origin_dir, target_dir)
 
 
 def mkdir_p(path):
@@ -42,6 +42,12 @@ def remove_fs_item(uuid, working_dir, rel_path):
 
 def remove_protocol(path_with_protocol):
     return lstrip_substring(path_with_protocol, 'file://')
+
+def copy_tree_content(source_dir, target_dir):
+    fs_childs = os.listdir(source_dir)
+    for fs_child in fs_childs:
+        source_item = os.path.join(source_dir, fs_child)
+        copytree(source_item, os.path.join(target_dir, fs_child))
 
 
 def increment_file_name_suffix(abspath_basename, extension):
