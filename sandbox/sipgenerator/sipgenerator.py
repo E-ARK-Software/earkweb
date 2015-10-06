@@ -86,8 +86,9 @@ class SIPGenerator(object):
         return result, res_stdout, res_stderr
 
     def addFile(self, file_name, mets_filegroup):
-
-        file_url = unicode(os.path.join("file://.", os.path.relpath(file_name, self.root_path)), "utf-8")
+        #reload(sys)
+        #sys.setdefaultencoding('utf8')
+        file_url = "file://./%s" % os.path.relpath(file_name, self.root_path)
         file_mimetype,_ = self.mime.guess_type(file_url)
         file_checksum = self.sha256(file_name)
         file_size = os.path.getsize(file_name)
@@ -124,7 +125,7 @@ class SIPGenerator(object):
             for nm in files:
                 file_name = os.path.join(top,nm)
                 hash = self.sha256(file_name)
-                file_url = unicode("file://." + os.path.relpath(file_name, self.root_path), "utf-8")
+                file_url = "file://./%s" % os.path.relpath(file_name, self.root_path)
                 fmt = self.fid.identify_file(file_name)#os.path.abspath(remove_protocol(file_url)))
                 jhove = None
                 if enable_jhove == True:
