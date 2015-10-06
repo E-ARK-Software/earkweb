@@ -133,7 +133,7 @@ class StatusReset(DefaultTask):
         return {}
 
 
-class SIPCreationReset(DefaultTask):
+class SIPReset(DefaultTask):
 
     accept_input_from = ['All']
 
