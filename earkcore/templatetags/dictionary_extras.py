@@ -14,6 +14,6 @@ def access(value, arg):
             try:
                 key_value = value[arg]
             except KeyError:
-                return '#KeyError#'
+                return 'Error'
             else:
                 return key_value

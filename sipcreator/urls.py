@@ -26,4 +26,6 @@ urlpatterns= patterns('',
     url(r'^help_processing_status$', views.HelpProcessingStatus.as_view(), name='help_processing_status'),
 
     url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
+
+    url(r'^ip_detail_table$', views.ip_detail_table, name='ip_detail_table'),
 )

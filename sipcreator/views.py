@@ -1,15 +1,17 @@
 import os
+import shutil
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.template import RequestContext, loader
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from config.config import root_dir
 from earkcore.packaging.extraction import Extraction
 from forms import TinyUploadFileForm
 from config.params import config_path_work
 from earkcore.utils.stringutils import safe_path_string
-from earkcore.utils.fileutils import mkdir_p
+from earkcore.utils.fileutils import mkdir_p, copy_tree_content
 from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse
 from earkcore.models import InformationPackage
@@ -24,6 +26,22 @@ import json
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package
 from workflow.models import WorkflowModules
+from django.shortcuts import render_to_response
+
+
+
+@login_required
+@csrf_exempt
+def ip_detail_table(request):
+    pkg_id = request.POST['pkg_id']
+    print pkg_id
+    print config_path_work
+    context = RequestContext(request, {
+        "ip": InformationPackage.objects.get(pk=pkg_id),
+        "StatusProcess_CHOICES": dict(StatusProcess_CHOICES),
+        "config_path_work": config_path_work
+    })
+    return render_to_response('sipcreator/iptable.html', locals(), context_instance=context)
 
 
 @login_required
@@ -197,13 +215,11 @@ def upload_aip(ip_work_dir, upload_path, f):
 def initialize(request, packagename):
     uuid = getUniqueID()
     sip_struct_work_dir = os.path.join(config_path_work,uuid)
-    print "package name: %s" % packagename
-    print "working directory: %s" % sip_struct_work_dir
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'metadata'))
+    copy_tree_content(os.path.join(root_dir, "earkresources/SIP-skeleton"), sip_struct_work_dir)
     wf = WorkflowModules.objects.get(identifier = 'SIPCreationReset')
-    InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=10, packagename=packagename, last_task=wf)
+    InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
     return HttpResponse(str(ip.id))
 

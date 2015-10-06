@@ -14,8 +14,8 @@
                 <mets:note>Note</mets:note>
             </mets:agent>
             <mets:agent ROLE="ARCHIVIST" TYPE="OTHER" OTHERTYPE="SOFTWARE">
-                <mets:name>Package Makers</mets:name>
-                <mets:note>Version from 2012-04</mets:note>
+                <mets:name>earkweb</mets:name>
+                <mets:note>Version 0.1.4</mets:note>
             </mets:agent>
             <mets:agent ROLE="CREATOR" TYPE="ORGANIZATION">
                 <mets:name>Institute</mets:name>

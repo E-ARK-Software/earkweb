@@ -80,3 +80,30 @@ $('#dirtree-content').bind("dblclick.jstree", function (event) {
 
     });
 })();
+
+
+/**
+ * Populate tree using json representation of the directory hierarchy
+ * (variable 'uuid' is provided as global variable)
+ */
+(function(){
+    $.ajax({
+        url: "/earkweb/earkcore/get_directory_json",
+        type: "POST",
+        data: "uuid="+uuidmschemas,
+    }).success(function(dir_as_json){
+        $('#dirtree-schemas')
+        .on('changed.jstree', function (e, data) {
+            window.console.log(e);
+            window.console.log(data);
+         }).on('open_node.jstree', function (e, data) {
+            //$('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-open');
+         }).on('close_node.jstree', function (e, data) {
+            //$('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-close');
+         }).on('loaded.jstree', function() {
+            $('#dirtree-schemas').jstree('open_all');
+         }).jstree({ 'core' : dir_as_json });
+
+
+    });
+})();
