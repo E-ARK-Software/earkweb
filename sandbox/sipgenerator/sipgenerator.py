@@ -32,6 +32,7 @@ METS_NS = 'http://www.loc.gov/METS/'
 METSEXT_NS = 'ExtensionMETS'
 XLINK_NS = "http://www.w3.org/1999/xlink"
 METS_NSMAP = { None: METS_NS, "xlink" : "http://www.w3.org/1999/xlink", "ext" : METSEXT_NS, "xsi" : "http://www.w3.org/2001/XMLSchema-instance" }
+DELIVERY_METS_NSMAP = { None: METS_NS, "xlink" : "http://www.w3.org/1999/xlink", "xsi" : "http://www.w3.org/2001/XMLSchema-instance" }
 
 M = objectify.ElementMaker(
     annotate=False,
@@ -41,6 +42,11 @@ M = objectify.ElementMaker(
 class SIPGenerator(object):
     fid = FormatIdentification()
     mime = MimeTypes()
+    root_path = ""
+
+    def __init__(self, root_path):
+        print "Working in rootdir %s" % root_path
+        self.root_path = root_path
 
     def sha256(self, fname):
         hash = hashlib.sha256()
@@ -79,22 +85,28 @@ class SIPGenerator(object):
 
         return result, res_stdout, res_stderr
 
+    def addFile(self, file_name, mets_filegroup):
+
+        file_url = unicode(os.path.join("file://.", os.path.relpath(file_name, self.root_path)), "utf-8")
+        file_mimetype,_ = self.mime.guess_type(file_url)
+        file_checksum = self.sha256(file_name)
+        file_size = os.path.getsize(file_name)
+        #file_cdate = datetime.fromtimestamp(os.path.getctime(file_name)).strftime('%Y-%m-%dT%H:%M:%S%z')
+        file_cdate = get_file_ctime_iso_date_str(file_name)
+        file_id = "ID"+uuid.uuid1().__str__()
+        mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
+        mets_filegroup.append(mets_file)
+        #_,fname = os.path.split(file_name)
+        mets_FLocat = M.FLocat({q(XLINK_NS, 'href'): file_url, "LOCTYPE":"URL", q(XLINK_NS, 'type'): 'simple'})
+        mets_file.append(mets_FLocat)
+        return file_id
+
     def addFiles(self, folder, mets_filegroup):
         ids = []
         for top, dirs, files in os.walk(folder):
             for fn in files:
                 file_name = os.path.join(top, fn)
-                file_url = unicode(os.path.join("file://",file_name), "utf-8")
-                file_mimetype,_ = self.mime.guess_type(file_url)
-                file_checksum = self.sha256(file_name)
-                file_size = os.path.getsize(file_name)
-                #file_cdate = datetime.fromtimestamp(os.path.getctime(file_name)).strftime('%Y-%m-%dT%H:%M:%S%z')
-                file_cdate = get_file_ctime_iso_date_str(file_name)
-                file_id = "ID"+uuid.uuid1().__str__()
-                mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
-                mets_filegroup.append(mets_file)
-                mets_FLocat = M.FLocat({q(XLINK_NS, 'href'): file_url,"LOCTYPE":"URL", q(XLINK_NS, 'type'): 'simple'})
-                mets_file.append(mets_FLocat)
+                file_id = self.addFile(file_name,mets_filegroup)
                 ids.append(file_id)
         return ids
 
@@ -108,19 +120,20 @@ class SIPGenerator(object):
         premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../schemas/premis-v2-2.xsd"
 
         premis_ids = []
-        for top, dirs, files in os.walk('./data/content'):
+        for top, dirs, files in os.walk(os.path.join(self.root_path, 'data/content')):
             for nm in files:
                 file_name = os.path.join(top,nm)
                 hash = self.sha256(file_name)
-                file_url = unicode(os.path.join("file://",file_name), "utf-8")
-                fmt = self.fid.identify_file(os.path.abspath(remove_protocol(file_url)))
+                file_url = unicode("file://." + os.path.relpath(file_name, self.root_path), "utf-8")
+                fmt = self.fid.identify_file(file_name)#os.path.abspath(remove_protocol(file_url)))
                 jhove = None
                 if enable_jhove == True:
                     try:
-                        result = self.runCommand(["/usr/bin/jhove", "-h", "xml", os.path.abspath(remove_protocol(file_url))] )
+                        result = self.runCommand(["/usr/bin/jhove", "-h", "xml", file_name] )
                         if result[0] == 0:
                             jhove = etree.XML(result[1], parser=jhove_parser)
                     except Exception:
+                        #TODO: handle exception
                         pass
 
                 size = os.path.getsize(file_name)
@@ -197,13 +210,13 @@ class SIPGenerator(object):
             ))
 
         str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        path_premis = os.path.join('./metadata/','premis.xml')
+        path_premis = os.path.join(self.root_path,'./metadata/premis.xml')
         with open(path_premis, 'w') as output_file:
             output_file.write(str)
 
         return premis_ids
 
-    def createMets(self, premis_ids = None):
+    def createIPMets(self, premis_ids = None):
         if premis_ids == None:
             premis_ids = self.createPremis()
 
@@ -217,8 +230,9 @@ class SIPGenerator(object):
 
 
         mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+        mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
         mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP to AIP Converter", "VERSION=0.0.1"))
+        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
@@ -238,7 +252,7 @@ class SIPGenerator(object):
         mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
         mets_amdSec.append(mets_techmd)
         for id in premis_ids:
-            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./Metadata/PREMIS.xml#"+id.__str__()})
+            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/PREMIS.xml#"+id.__str__()})
             mets_techmd.append(mets_mdref)
 
         mets_fileSec = M.fileSec()
@@ -247,8 +261,8 @@ class SIPGenerator(object):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
         mets_fileSec.append(mets_filegroup)
 
-        content_ids = self.addFiles("./data/content", mets_filegroup)
-        metadata_ids = self.addFiles("./metadata", mets_filegroup)
+        content_ids = self.addFiles(os.path.join(self.root_path, 'data/content'), mets_filegroup)
+        metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
 
         mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
         root.append(mets_structmap)
@@ -276,17 +290,52 @@ class SIPGenerator(object):
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
-        path_mets = os.path.join('./','METS.xml')
+        path_mets = os.path.join(self.root_path,'METS.xml')
         with open(path_mets, 'w') as output_file:
             output_file.write(str)
 
+    def createDeliveryMets(self, input_archive, output_mets):
+        #create delivery METS skeleton
+        METS_ATTRIBUTES = {"OBJID" : "UUID:" + uuid.uuid1().__str__(), "TYPE" : "SIP", "LABEL" : "Delivery METS", "PROFILE" : "http://webb.eark/package/METS/IP_CS.xml", "ID" : "ID" + uuid.uuid1().__str__() }
+        root = M.mets(METS_ATTRIBUTES)
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ IP_CS_mets.xsd"
+
+        mets_hdr = M.metsHdr({"CREATEDATE": ts_date(DT_ISO_FORMAT)})
+        root.append(mets_hdr)
+
+
+        mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+        mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
+        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
+        mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
+        _,fname = os.path.split(output_mets)
+        mets_hdr.append(M.metsDocumentID(fname))
+
+        mets_fileSec = M.fileSec()
+        root.append(mets_fileSec)
+
+        mets_filegroup = M.fileGrp({"USE" : "PACKAGES", "ID": "ID" + uuid.uuid1().__str__()})
+        mets_fileSec.append(mets_filegroup)
+
+        content_id = self.addFile(input_archive, mets_filegroup)
+
+        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+        with open(output_mets, 'w') as output_file:
+            output_file.write(str)
+
+
 class testFormatIdentification(unittest.TestCase):
     def testCreateMetsAndPremis(self):
-        print "Working in rootdir %s" % root_dir
-        os.chdir(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
-        print "Working in rootdir %s" % os.getcwd()
-        sipgen = SIPGenerator()
-        sipgen.createMets()
+        sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
+        #input_folder = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127")
+        #output_mets = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/metadata/METS.xml")
+        sipgen.createIPMets()
+
+    def atestCreateDeliveryMets(self):
+        sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/"))
+        input_archive = os.path.join(root_dir, "sandbox/sipgenerator/resources/test.tar")
+        output_mets = os.path.join(root_dir, "sandbox/sipgenerator/resources/delivery_METS.xml")
+        sipgen.createDeliveryMets(input_archive, output_mets)
 
 
 if __name__ == '__main__':
