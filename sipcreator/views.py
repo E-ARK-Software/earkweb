@@ -24,7 +24,7 @@ from earkcore.models import StatusProcess_CHOICES
 from sip2aip.forms import SIPCreationPackageWorkflowModuleSelectForm
 import json
 from earkcore.filesystem.fsinfo import path_to_dict
-from workers.tasks import extract_and_remove_package
+from workers.tasks import extract_and_remove_package, SIPReset
 from workflow.models import WorkflowModules
 from django.shortcuts import render_to_response
 
@@ -218,9 +218,10 @@ def initialize(request, packagename):
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
     copy_tree_content(os.path.join(root_dir, "earkresources/SIP-skeleton"), sip_struct_work_dir)
-    wf = WorkflowModules.objects.get(identifier = 'SIPCreationReset')
+    wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
+    # TODO: create state.xml
     return HttpResponse(str(ip.id))
 
 

@@ -12,6 +12,8 @@ class IpState(object):
     to manipulate and/or read element values of the XML document.
     """
 
+    # TODO: add date/timestamp
+
     doc_content = None
     ted = None
 

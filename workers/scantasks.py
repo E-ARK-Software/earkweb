@@ -12,6 +12,8 @@ django.setup()
 
 import tasks
 
+# TODO: deleting workflow modules removes all entries from earkcore_informationpackage
+
 from workflow.models import WorkflowModules
 
 class Param(object):

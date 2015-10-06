@@ -150,7 +150,7 @@ class SIPReset(DefaultTask):
 
 class SIPPackageMetadataCreation(DefaultTask):
 
-    accept_input_from = ['SIPCreationReset', 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
@@ -173,7 +173,7 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:4
+        @param      tc: order:3,type:5
         """
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_input['packagename'])
         tl = task_context.task_logger
@@ -244,7 +244,7 @@ class SIPtoAIPReset(DefaultTask):
 
 class SIPDeliveryValidation(DefaultTask):
 
-    accept_input_from = [SIPtoAIPReset.__name__]
+    accept_input_from = [SIPtoAIPReset.__name__, SIPPackaging.__name__]
 
     def run_task(self, task_context):
         """
