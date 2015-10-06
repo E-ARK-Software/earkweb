@@ -11,6 +11,7 @@ import sys
 
 from celery import Task
 from celery import current_task
+from celery.contrib.methods import task_method
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
 
@@ -117,6 +118,20 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
+class StatusReset(DefaultTask):
+
+    accept_input_from = ['All']
+
+    def run_task(self, task_context):
+        """
+        Status reset task for used in retrying tasks
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:0,type:7
+        """
+        # implementation
+        task_context.task_status = 0
+        return {}
+
 
 class SIPCreationReset(DefaultTask):
 
@@ -126,7 +141,7 @@ class SIPCreationReset(DefaultTask):
         """
         SIP Creation Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4
+        @param      tc: order:1,type:4
         """
         # implementation
         task_context.task_status = 0
@@ -141,12 +156,11 @@ class SIPPackageMetadataCreation(DefaultTask):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:4
+        @param      tc: order:2,type:4
         """
-        os.chdir(task_context.path)
-        task_context.task_logger.addinfo("Working in rootdir %s" % os.getcwd())
-        sipgen = SIPGenerator()
-        sipgen.createMets()
+
+        sipgen = SIPGenerator(task_context.path)
+        sipgen.createIPMets()
 
         task_context.task_status = 0
         return {}
@@ -159,33 +173,39 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4
+        @param      tc: order:3,type:4
         """
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_input['packagename'])
+        tl = task_context.task_logger
+        reload(sys)
+        sys.setdefaultencoding('utf8')
 
-        # reload(sys)
-        # sys.setdefaultencoding('utf8')
-        #
-        # # append generation number to tar file; if tar file exists, the generation number is incremented
-        # storage_tar_file = task_context.
-        # tar = tarfile.open(storage_tar_file, "w:")
-        # tl.addinfo("Packaging working directory: %s" % ip_work_dir)
-        # total = sum([len(files) for (root, dirs, files) in walk(ip_work_dir)])
-        # tl.addinfo("Total number of files in working directory %d" % total)
-        # # log file is closed at this point because it will be included in the package,
-        # # subsequent log messages can only be shown in the gui
-        # tl.fin()
-        # i = 0
-        # for subdir, dirs, files in os.walk(ip_work_dir):
-        #     for file in files:
-        #         entry = os.path.join(subdir, file)
-        #         tar.add(entry)
-        #         if i % 10 == 0:
-        #             perc = (i * 100) / total
-        #             self.update_state(state='PROGRESS', meta={'process_percent': perc})
-        #         i += 1
-        # tar.close()
-        # tl.log.append("Package stored: %s" % storage_tar_file)
+        # append generation number to tar file; if tar file exists, the generation number is incremented
+        storage_tar_file = os.path.join(task_context.path, task_context.additional_input['packagename']+ '.tar')
+        tar = tarfile.open(storage_tar_file, "w:")
+        tl.addinfo("Packaging working directory: %s" % task_context.path)
+        total = sum([len(files) for (root, dirs, files) in walk(task_context.path)])
+        tl.addinfo("Total number of files in working directory %d" % total)
+        # log file is closed at this point because it will be included in the package,
+        # subsequent log messages can only be shown in the gui
+
+        i = 0
+        for subdir, dirs, files in os.walk(task_context.path):
+            for file in files:
+                entry = os.path.join(subdir, file)
+                tar.add(entry)
+                if i % 10 == 0:
+                    perc = (i * 100) / total
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                i += 1
+        tar.close()
+
+        tl.log.append("Package stored: %s" % storage_tar_file)
+
+        sipgen = SIPGenerator(task_context.path)
+        delivery_mets_file = os.path.join(task_context.path, task_context.additional_input['packagename']+ '.xml')
+        sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
+        tl.log.append("Delivery METS stored: %s" % delivery_mets_file)
 
 
         task_context.task_status = 0
