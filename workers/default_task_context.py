@@ -1,6 +1,9 @@
+import time
+
 class DefaultTaskContext(object):
     uuid = ""
     path = ""
+    task_name = ""
     task_status = -1
     task_logger = None
     ip_state_xml = None
@@ -9,6 +12,25 @@ class DefaultTaskContext(object):
     end_time = 0
     additional_input = None
     additional_output = None
+
+    def __init__(self, uuid, path, task_name, task_logger):
+        self.uuid = uuid
+        self.path = path
+        self.task_name = task_name
+        self.task_logger = task_logger
+        self.start_time = time.time()
+
+    def set_ip_state_xml(self, ip_state_xml):
+        self.ip_state_xml = ip_state_xml
+
+    def set_premis_manipulate(self, premis_manipulate):
+        self.premis_manipulate = premis_manipulate
+
+    def get_runtime_ms(self):
+        if self.end_time > self.start_time:
+            return self.end_time - self.start_time
+        else:
+            return 0
 
     def valid(self, accept_input_from, current_task_name):
         status = self.ip_state_xml.get_state()

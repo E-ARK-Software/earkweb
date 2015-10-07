@@ -56,15 +56,9 @@ class DefaultTask(Task):
             ip_state_xml = IpState.from_parameters()
         ip_state_xml.set_doc_path(ip_state_doc_path)
 
-        # TODO: make nice constructor and eventually set ip_state_xml and premis_manipulate above like task_context.ip_state_xml = and task_context.premis_manipulate =
-        task_context = DefaultTaskContext()
-        task_context.start_time = time.time()
-        task_context.uuid = uuid
-        task_context.path = path
-        task_context.task_logger = tl
-        task_context.premis_manipulate = None #premis_manipulate
-        task_context.ip_state_xml = ip_state_xml
-        task_context.task_name = self.task_name
+        task_context = DefaultTaskContext(uuid, path, self.task_name, tl)
+        task_context.set_ip_state_xml(ip_state_xml)
+        task_context.set_premis_manipulate(None) # TODO: set premis manipulate
 
         return task_context
 
