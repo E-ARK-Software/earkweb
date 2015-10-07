@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
 from earkcore.filesystem.fsinfo import path_to_dict
+from workers.tasks import AIPtoDIPReset
 
 @login_required
 def index(request, procname):
@@ -325,7 +326,7 @@ def create_dip(request):
         else:
             dip = DIP.objects.create(name=dip_creation_process_name)
             uuid = getUniqueID()
-            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name)
+            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name, last_task=AIPtoDIPReset.__name__)
             url = reverse('search:dip', args=(dip.name,))
             return HttpResponseRedirect(url)
     else:

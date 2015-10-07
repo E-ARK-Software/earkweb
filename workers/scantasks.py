@@ -12,9 +12,9 @@ django.setup()
 
 import tasks
 
-# TODO: deleting workflow modules removes all entries from earkcore_informationpackage
-
 from workflow.models import WorkflowModules
+from earkcore.models import InformationPackage
+
 
 class Param(object):
     def __init__(self, type, name, descr):
@@ -113,10 +113,11 @@ class WireItLanguageModules(object):
         Register tasks as language modules in the database. All records are deleted first,
         then available celery tasks are stored as language modules.
         """
-        WorkflowModules.objects.all().delete()
+        module_list = []
         for module_name, module_params in self.task_modules.iteritems():
             input_params = ""
-            exp = 0; sxs = 0; err = 0;
+            exp = 0; sxs = 0; err = 0
+            module_list.append(module_name)
             for module_param in module_params:
                 if isinstance(module_param, InputParam):
                     descr = "Task configuration" if module_param.descr.startswith("order") else module_param.descr
@@ -124,18 +125,43 @@ class WireItLanguageModules(object):
                     if module_param.name == 'tc':
                         match = re.search('order:(?P<ord>.*),type:(?P<typ>.*)',module_param.descr)
                         ord = int(match.group('ord').strip())
-                        # Character '~' is used as separator of the logical expression
                         typ = int(match.group('typ').strip())
-            model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
-            workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, ordval=ord, ttype=typ)
-            workflow_module.save()
 
+            model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
+
+            if WorkflowModules.objects.filter(identifier=module_name).count() == 1:
+                existing_wf_module = WorkflowModules.objects.get(identifier=module_name)
+                if existing_wf_module.ordval != ord or existing_wf_module.ttype != typ:
+                    existing_wf_module.ordval = ord
+                    existing_wf_module.ordval = typ
+                    print "Module parameters updated: %s (ordval=%d, ttype=%d)" % (existing_wf_module.identifier, ord, typ)
+                    #workflow_module.save()
+            else:
+                workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, ordval=ord, ttype=typ)
+                print "New module created: %s" % module_name
+                workflow_module.save()
+
+        # check modules removed
+        all_wf_modules = WorkflowModules.objects.all()
+        for wf_mod in all_wf_modules:
+            if wf_mod.identifier not in module_list:
+                # check information packages where 'last_task' corresponds with the removed module and set it to DefaultTask
+                print "The task for this module was removed: %s" % wf_mod.identifier
+                ips_removed_task = InformationPackage.objects.filter(last_task=wf_mod.identifier)
+                default_module = WorkflowModules.objects.get(identifier=tasks.DefaultTask.__name__)
+                for ip in ips_removed_task:
+                    print "- IP with process id '%s' (%s) with last task '%s' set to 'DefaultTask'" % (ip.uuid, ip.packagename, ip.last_task)
+                    print "  Note that the last_task is not updated in state.xml!"
+                    ip.last_task = default_module
+                    ip.save()
+                # delete module of removed task
+                wf_mod.delete()
 
 
 def main():
     task_modules = TaskScanner(tasks).task_modules
     for module_name, module_params in task_modules.iteritems():
-        print "Registering task %s" % module_name
+        print "Module found in tasks.py: %s" % module_name
     wirelangmod = WireItLanguageModules(task_modules)
     wirelangmod.register_language_modules()
 

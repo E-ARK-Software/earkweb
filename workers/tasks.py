@@ -118,7 +118,7 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
-class StatusReset(DefaultTask):
+class NewTest(DefaultTask):
 
     accept_input_from = ['All']
 
@@ -131,6 +131,20 @@ class StatusReset(DefaultTask):
         # implementation
         task_context.task_status = 0
         return {}
+
+# class StatusReset(DefaultTask):
+#
+#     accept_input_from = ['All']
+#
+#     def run_task(self, task_context):
+#         """
+#         Status reset task for used in retrying tasks
+#         @type       tc: task configuration line (used to insert read task properties in database table)
+#         @param      tc: order:0,type:7
+#         """
+#         # implementation
+#         task_context.task_status = 0
+#         return {}
 
 
 class SIPReset(DefaultTask):
@@ -691,7 +705,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2
+        @param      tc: order:12,type:2
         """
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
