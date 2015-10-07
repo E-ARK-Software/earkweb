@@ -118,34 +118,6 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
-class NewTest(DefaultTask):
-
-    accept_input_from = ['All']
-
-    def run_task(self, task_context):
-        """
-        Status reset task for used in retrying tasks
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:0,type:7
-        """
-        # implementation
-        task_context.task_status = 0
-        return {}
-
-# class StatusReset(DefaultTask):
-#
-#     accept_input_from = ['All']
-#
-#     def run_task(self, task_context):
-#         """
-#         Status reset task for used in retrying tasks
-#         @type       tc: task configuration line (used to insert read task properties in database table)
-#         @param      tc: order:0,type:7
-#         """
-#         # implementation
-#         task_context.task_status = 0
-#         return {}
-
 
 class SIPReset(DefaultTask):
 
@@ -277,7 +249,7 @@ class SIPDeliveryValidation(DefaultTask):
                 delivery_file = deliveries[delivery]['delivery_xml']
                 tl.addinfo("Package file: %s" % delivery_file)
                 tl.addinfo("Delivery XML file: %s" % delivery_file)
-                schema_file = os.path.join(task_context.path, 'IP_CS_mets.xsd')
+                schema_file = os.path.join(task_context.path, 'schemas/IP_CS_mets.xsd')
                 tl.addinfo("Schema file: %s" % schema_file)
                 sdv = DeliveryValidation()
                 validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
