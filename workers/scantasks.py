@@ -123,21 +123,23 @@ class WireItLanguageModules(object):
                     descr = "Task configuration" if module_param.descr.startswith("order") else module_param.descr
                     input_params += self.language_module_inputs_template % { 'name': module_param.name, 'descr': descr, 'type': module_param.type}
                     if module_param.name == 'tc':
-                        match = re.search('order:(?P<ord>.*),type:(?P<typ>.*)',module_param.descr)
+                        match = re.search('order:(?P<ord>.*),type:(?P<typ>.*),stage:(?P<stg>.*)',module_param.descr)
                         ord = int(match.group('ord').strip())
                         typ = int(match.group('typ').strip())
+                        stg = int(match.group('stg').strip())
 
             model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
 
             if WorkflowModules.objects.filter(identifier=module_name).count() == 1:
                 existing_wf_module = WorkflowModules.objects.get(identifier=module_name)
-                if existing_wf_module.ordval != ord or existing_wf_module.ttype != typ:
+                if existing_wf_module.ordval != ord or existing_wf_module.ttype != typ or existing_wf_module.tstage != stg:
                     existing_wf_module.ordval = ord
-                    existing_wf_module.ordval = typ
-                    print "Module parameters updated: %s (ordval=%d, ttype=%d)" % (existing_wf_module.identifier, ord, typ)
-                    #workflow_module.save()
+                    existing_wf_module.ttype = typ
+                    existing_wf_module.tstage = stg
+                    existing_wf_module.save()
+                    print "Module parameters updated: %s (ordval=%d, ttype=%d, tstage=%d)" % (existing_wf_module.identifier, ord, typ, stg)
             else:
-                workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, ordval=ord, ttype=typ)
+                workflow_module = WorkflowModules(identifier=module_name, model_definition=model_def, ordval=ord, ttype=typ, tstage=stg)
                 print "New module created: %s" % module_name
                 workflow_module.save()
 

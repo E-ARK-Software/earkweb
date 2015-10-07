@@ -6,6 +6,7 @@ class WorkflowModules(models.Model):
     model_definition = models.TextField()
     ordval = models.IntegerField(default=0)
     ttype = models.IntegerField(default=0)
+    tstage = models.IntegerField(default=0)
     def __str__(self):
         return self.identifier
 

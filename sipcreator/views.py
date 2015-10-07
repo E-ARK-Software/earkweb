@@ -91,7 +91,7 @@ class InformationPackageList(ListView):
     from workflow_workflowmodules as wf
     inner join earkcore_informationpackage as ip
     on wf.identifier=ip.last_task_id
-    where wf.ttype & 4
+    where wf.tstage & 1
     order by wf.ordval;
     """
     queryset = InformationPackage.objects.raw(sql_query)
@@ -124,7 +124,7 @@ class HelpProcessingStatus(ListView):
     template_name = 'sipcreator/help_processing_status.html'
     context_object_name = 'wfms'
 
-    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 4]).order_by('ordval')
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 1]).order_by('ordval')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):

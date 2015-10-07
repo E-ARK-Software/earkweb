@@ -127,7 +127,7 @@ class SIPReset(DefaultTask):
         """
         SIP Creation Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1,type:4
+        @param      tc: order:1,type:1,stage:1
         """
         # implementation
         task_context.task_status = 0
@@ -142,7 +142,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:4
+        @param      tc: order:2,type:1,stage:1
         """
 
         sipgen = SIPGenerator(task_context.path)
@@ -159,7 +159,7 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:5
+        @param      tc: order:3,type:1,stage:3
         """
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_input['packagename'])
         tl = task_context.task_logger
@@ -179,7 +179,7 @@ class SIPPackaging(DefaultTask):
         for subdir, dirs, files in os.walk(task_context.path):
             for file in files:
                 entry = os.path.join(subdir, file)
-                tar.add(entry)
+                tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
                 if i % 10 == 0:
                     perc = (i * 100) / total
                     self.update_state(state='PROGRESS', meta={'process_percent': perc})
@@ -206,7 +206,7 @@ class SIPtoAIPReset(DefaultTask):
         """
         SIP to AIP Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1,type:1
+        @param      tc: order:1,type:2,stage:2
         """
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -236,7 +236,7 @@ class SIPDeliveryValidation(DefaultTask):
         """
         SIP Delivery Validation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:1
+        @param      tc: order:2,type:2,stage:2
         """
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -272,7 +272,7 @@ class IdentifierAssignment(DefaultTask):
         """
         Identifier Assignment run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1
+        @param      tc: order:3,type:2,stage:2
         """
         # TODO: set identifier in METS file
         identifier = randomutils.getUniqueID()
@@ -289,7 +289,7 @@ class SIPExtraction(DefaultTask):
         """
         SIP Extraction run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1
+        @param      tc: order:4,type:2,stage:2
         """
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -316,7 +316,7 @@ class SIPRestructuring(DefaultTask):
         """
         SIP Restructuring run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:1
+        @param      tc: order:5,type:2,stage:2
         """
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -347,7 +347,7 @@ class SIPValidation(DefaultTask):
         """
         SIP Validation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:1
+        @param      tc: order:6,type:2,stage:2
         """
         tl = task_context.task_logger
         path = task_context.path
@@ -381,7 +381,7 @@ class AIPCreation(DefaultTask):
         """
         AIP Creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:1
+        @param      tc: order:7,type:2,stage:2
         """
         tl = task_context.task_logger
         # #package_dir = os.path.join(ip_work_dir, ip.packagename)
@@ -491,7 +491,7 @@ class AIPCreation(Task, StatusValidation):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:1
+        @param      tc: order:7,type:2,stage:2
         """
         ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
@@ -523,7 +523,7 @@ class AIPValidation(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:8,type:1
+        @param      tc: order:8,type:2,stage:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -555,7 +555,7 @@ class AIPPackaging(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:9,type:1
+        @param      tc: order:9,type:2,stage:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -583,7 +583,7 @@ class AIPPackaging(Task, StatusValidation):
             for subdir, dirs, files in os.walk(ip_work_dir):
                 for file in files:
                     entry = os.path.join(subdir, file)
-                    tar.add(entry)
+                    tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
                     if i % 10 == 0:
                         perc = (i * 100) / total
                         self.update_state(state='PROGRESS', meta={'process_percent': perc})
@@ -611,7 +611,7 @@ class LilyHDFSUpload(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:10,type:1
+        @param      tc: order:10,type:2,stage:2
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -677,7 +677,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2
+        @param      tc: order:12,type:4,stage:4
         """
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -714,7 +714,7 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:12,type:2
+        @param      tc: order:12,type:4,stage:4
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
@@ -766,7 +766,7 @@ class DIPExtractAIPs(Task, StatusValidation):
         @type       pk_id: int
         @param      pk_id: Primary key
         @type       tc: TaskConfig
-        @param      tc: order:13,type:2
+        @param      tc: order:13,type:4,stage:4
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """

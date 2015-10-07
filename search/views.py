@@ -29,7 +29,7 @@ from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt
 
 from earkcore.utils.stringutils import lstrip_substring
-from sip2aip.forms import DIPPackageWorkflowModuleSelectForm
+from sip2aip.forms import AIPtoDIPWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
 from workflow.models import WorkflowModules
@@ -86,7 +86,7 @@ class HelpProcessingStatus(ListView):
     template_name = 'search/help_processing_status.html'
     context_object_name = 'wfms'
 
-    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 2]).order_by('ordval')
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 4]).order_by('ordval')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -404,7 +404,7 @@ def dip(request, name):
     dip = DIP.objects.get(name=name)
     ip = InformationPackage.objects.get(packagename=name)
     template = loader.get_template('search/dip.html')
-    form = DIPPackageWorkflowModuleSelectForm()
+    form = AIPtoDIPWorkflowModuleSelectForm()
     stat_proc_choices = dict(StatusProcess_CHOICES),
     context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'form': form,  "StatusProcess_CHOICES": stat_proc_choices[0], "config_path_work": config_path_work})
     return HttpResponse(template.render(context))

@@ -127,7 +127,7 @@ class InformationPackageList(ListView):
     from workflow_workflowmodules as wf
     inner join earkcore_informationpackage as ip
     on wf.identifier=ip.last_task_id
-    where wf.ttype & 1
+    where wf.tstage & 2
     order by wf.ordval;
     """
     queryset = InformationPackage.objects.raw(sql_query)
@@ -161,7 +161,7 @@ class HelpProcessingStatus(ListView):
     template_name = 'sip2aip/help_processing_status.html'
     context_object_name = 'wfms'
 
-    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 4]).order_by('ordval')
+    queryset=WorkflowModules.objects.extra(where=["ttype & %d" % 2]).order_by('ordval')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -187,7 +187,7 @@ class InformationPackageDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
-        context['form'] = forms.SIPPackageWorkflowModuleSelectForm()
+        context['form'] = forms.SIPtoAIPWorkflowModuleSelectForm()
         context['config_path_work'] = config_path_work
         return context
 
