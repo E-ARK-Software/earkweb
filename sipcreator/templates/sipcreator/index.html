@@ -28,6 +28,7 @@
         <th>SIP package name</th>
         <th>Process ID</th>
         <th>Last task <a href="{% url 'sipcreator:help_processing_status' %}"><span class="glyphicon glyphicon-info-sign" aria-hidden="true" style="color:gray"></span></th>
+          <th>Last change</th>
         <th>Status</th>
       </tr>
     </thead>
@@ -37,6 +38,7 @@
                 <td><a href="{% url 'sipcreator:ip_detail' ip.pk %}" title='Detail information'>{{ ip.packagename }}</a></td>
                 <td><a href="{% url 'sipcreator:working_area' 'sipcreator' ip.uuid %}" title='Package in working area'>{{ ip.uuid }}</a></td>
                 <td>{{ ip.last_task }}</td>
+                <td>{{ ip.last_change|date:"d.m.Y H:i:s" }}</td>
                 <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }}
                 {% if ip.statusprocess == 0 %}
                  <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>

@@ -1,6 +1,7 @@
 import os
 from django.db import models
 from workflow.models import WorkflowModules
+from datetime import datetime
 
 StatusProcess_CHOICES = (
 
@@ -21,5 +22,6 @@ class InformationPackage(models.Model):
     path = models.CharField(max_length=200)
     statusprocess = models.IntegerField(null=True, choices=StatusProcess_CHOICES)
     last_task = models.ForeignKey(WorkflowModules, default="DefaultTask")
+    last_change = models.DateTimeField(auto_now_add=True, blank=True)
     def __str__(self):
         return self.path

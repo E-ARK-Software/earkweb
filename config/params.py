@@ -37,8 +37,7 @@ config_max_filesize_viewer = 4194304
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
 
 # METS header params
-# TODO: retrieve from db?
-mets_attributes = {'OBJID': '',
-                    'TYPE': 'AIP',
-                    'LABEL': '',
-                    'ID': ''}
+# mets_attributes = {'OBJID': '',
+#                     'TYPE': 'AIP',
+#                     'LABEL': '',
+#                     'ID': ''}

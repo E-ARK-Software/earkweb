@@ -24,6 +24,7 @@ class TaskResult(object):
         self.log = task_context.task_logger.log
         self.err = task_context.task_logger.err
         self.last_task = task_context.task_name
+        self.last_change = task_context.ip_state_xml.get_lastchange()
 
 
 if __name__ == "__main__":

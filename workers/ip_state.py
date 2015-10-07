@@ -1,6 +1,7 @@
 from xml.etree.ElementTree import Element, SubElement
 from xml.etree import ElementTree as Etree
 from earkcore.utils.xmlutils import prettify
+from earkcore.utils.datetimeutils import current_timestamp
 from workers.taskconfig import TaskConfig
 
 
@@ -11,8 +12,6 @@ class IpState(object):
     method from_content), or by an XML file path (static method from_path). Furthermore, it provides methods
     to manipulate and/or read element values of the XML document.
     """
-
-    # TODO: add date/timestamp
 
     doc_content = None
     ted = None
@@ -179,6 +178,31 @@ class IpState(object):
             locked_elm = SubElement(self.ted, 'locked')
         locked_elm.text = str(locked_value)
 
+    def get_lastchange(self):
+        """
+        Get lastchange value.
+
+        @rtype: str
+        @return: lastchange value (timestamp)
+        """
+        lastchange_elm = self.ted.find('.//lastchange')
+        if lastchange_elm is None:
+            return ""
+        else:
+            return self.ted.find('.//lastchange').text
+
+    def set_lastchange(self, lastchange_value):
+        """
+        Set lastchange value
+
+        @type lastchange: str
+        @param lastchange: lastchange (timestamp)
+        """
+        lastchange_elm = self.ted.find('.//lastchange')
+        if lastchange_elm is None:
+            lastchange_elm = SubElement(self.ted, 'lastchange')
+        lastchange_elm.text = str(lastchange_value)
+
     def get_updated_doc_content(self):
         """
         Get updated document content (from task execution document)
@@ -195,6 +219,8 @@ class IpState(object):
         @type xml_file_path: str
         @param xml_file_path: XML file path
         """
+        # update timestamp
+        self.set_lastchange(current_timestamp())
         xml_content = Etree.tostring(self.ted, encoding='UTF-8')
         with open(xml_file_path, 'w') as output_file:
             output_file.write(xml_content)

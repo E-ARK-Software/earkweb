@@ -18,6 +18,10 @@
                     <td data-toggle="tooltip" title="Public identifier">Last task <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-info-sign" aria-hidden="true" style="color:gray"></span></a></td>
                     <td>{{ ip.last_task }}</td>
                 </tr>
+                <tr class="row2">
+                    <td data-toggle="tooltip" title="Public identifier">Last change</td>
+                    <td>{{ ip.last_change|date:"d.m.Y H:i:s" }}</td>
+                </tr>
                 <tr class="row1">
                     <td>Process status</td>
                     <td>{{ StatusProcess_CHOICES|access:ip.statusprocess }} ({{ ip.statusprocess }})
