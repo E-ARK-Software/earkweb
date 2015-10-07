@@ -2,6 +2,8 @@
 '''
 Created on June 15, 2015
 '''
+from earkcore.utils.fileutils import remove_protocol
+
 __author__ = 'shsdev'
 
 import unittest
@@ -55,7 +57,7 @@ class MetsValidation(object):
                 err.append("Unable to determine file location reference in METS file")
                 valid = False
             fitem = fileloc[0]
-            fitem = lstrip_substring(fitem, 'file:')
+            fitem = remove_protocol(fitem)
             file_path = os.path.join(self.parsed_mets.root_dir, fitem).replace('\\', '/')
             if not os.path.exists(file_path):
                 err.append("Unable to find file referenced in delivery METS file: %s" % file_path)

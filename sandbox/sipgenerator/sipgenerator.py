@@ -1,24 +1,20 @@
 from sqlalchemy.sql.functions import char_length
 
 __author__ = 'bartham'
-import os, sys
-import time, os
-import urlparse
-from earkcore.utils.xmlutils import pretty_xml_string
+
+import os
+
 from lxml import etree, objectify
 import unittest
 import hashlib
 import uuid
 from mimetypes import MimeTypes
-from earkcore.utils.datetimeutils import get_file_ctime_iso_date_str, ts_date, DT_ISO_FORMAT
-import urllib
 
 from config.config import root_dir
-from datetime import datetime
 from subprocess import Popen, PIPE
+from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 
 from earkcore.format.formatidentification import FormatIdentification
-from earkcore.utils.fileutils import remove_protocol
 from earkcore.metadata.XmlHelper import q, XSI_NS
 
 PREMIS_NS = 'info:lc/xmlns/premis-v2'
@@ -56,7 +52,10 @@ class SIPGenerator(object):
         return hash.hexdigest()
 
     def createAgent(self,role, type, other_type, name, note):
-        agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+        if other_type:
+            agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+        else:
+            agent = M.agent({"ROLE":role,"TYPE":type}, M.name(name), M.note(note))
         return agent
 
     def runCommand(self, program, stdin = PIPE, stdout = PIPE, stderr = PIPE):
@@ -92,8 +91,7 @@ class SIPGenerator(object):
         file_mimetype,_ = self.mime.guess_type(file_url)
         file_checksum = self.sha256(file_name)
         file_size = os.path.getsize(file_name)
-        #file_cdate = datetime.fromtimestamp(os.path.getctime(file_name)).strftime('%Y-%m-%dT%H:%M:%S%z')
-        file_cdate = get_file_ctime_iso_date_str(file_name)
+        file_cdate = get_file_ctime_iso_date_str(file_name, DT_ISO_FMT_SEC_PREC)
         file_id = "ID"+uuid.uuid1().__str__()
         mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
         mets_filegroup.append(mets_file)
@@ -197,7 +195,7 @@ class SIPGenerator(object):
                     P.eventIdentifierValue(identifier_value)
                 ),
                 P.eventType,
-                P.eventDateTime(datetime.utcnow().isoformat()),
+                P.eventDateTime(current_timestamp()),
                 P.linkingAgentIdentifier(
                     P.linkingAgentIdentifierType('LOCAL'),
                     P.linkingAgentIdentifierValue(linking_agent)
@@ -226,7 +224,7 @@ class SIPGenerator(object):
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
 
-        mets_hdr = M.metsHdr({"CREATEDATE": ts_date(DT_ISO_FORMAT), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
         root.append(mets_hdr)
 
 
@@ -244,7 +242,7 @@ class SIPGenerator(object):
         #file_url = unicode(os.path.join("file://",file_name), "utf-8")
         #checksum = self.sha256(file_name)
         #file_size = os.path.getsize(file_name)
-        #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":datetime.utcnow().isoformat(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
+        #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
         #mets_dmd.append(mets_mdref)
 
         mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
@@ -301,7 +299,7 @@ class SIPGenerator(object):
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP_CS_mets.xsd"
 
-        mets_hdr = M.metsHdr({"CREATEDATE": ts_date(DT_ISO_FORMAT)})
+        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp()})
         root.append(mets_hdr)
 
 
@@ -319,6 +317,15 @@ class SIPGenerator(object):
         mets_fileSec.append(mets_filegroup)
 
         content_id = self.addFile(input_archive, mets_filegroup)
+
+        mets_structmap = M.structMap({"ID": "ID%s" % uuid.uuid1(), "TYPE": "physical", "LABEL": "Profilestructmap"})
+        root.append(mets_structmap)
+        mets_structmap_div = M.div({"LABEL": "Package"})
+        mets_structmap.append(mets_structmap_div)
+        mets_structmap_content_div = M.div({"LABEL": "Content"})
+        mets_structmap_div.append(mets_structmap_content_div)
+        fptr = M.fptr({"FILEID": "ID%s" % uuid.uuid1()})
+        mets_structmap_content_div.append(fptr)
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
         with open(output_mets, 'w') as output_file:
