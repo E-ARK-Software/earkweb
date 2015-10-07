@@ -21,16 +21,12 @@ def ts_date(fmt = TS_FORMAT):
     return datetime.datetime.fromtimestamp(time.time()).strftime(fmt)
 
 def current_timestamp(fmt = DT_ISO_FMT_SEC_PREC):
-    naive_now = datetime.datetime.utcnow()
-    utc_now = naive_now.replace(tzinfo=pytz.utc)
-    tz = pytz.timezone('Europe/Vienna')
-    local_now = utc_now.replace(tzinfo=pytz.utc).astimezone(tz)
-    return local_now.strftime(fmt)
-
-def utc_to_local(utc_date_obj):
-    return utc_date_obj.replace(tzinfo=pytz.utc)
+    # naive_now = datetime.datetime.utcnow()
+    # utc_now = naive_now.replace(tzinfo=pytz.utc)
     # tz = pytz.timezone('Europe/Vienna')
-    # return utc_now.replace(tzinfo=pytz.utc).astimezone(tz)
+    # local_now = utc_now.replace(tzinfo=pytz.utc).astimezone(tz)
+    dt = datetime.datetime.now(tz=pytz.timezone('Europe/Vienna'))
+    return dt.strftime(fmt)
 
 def measuretime(fn):
     @wraps(fn)

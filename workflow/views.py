@@ -47,8 +47,6 @@ from earkcore.filesystem.fsinfo import path_to_dict
 
 from django.utils import dateparse
 
-from earkcore.utils.datetimeutils import utc_to_local
-
 import logging
 
 @login_required
@@ -223,7 +221,7 @@ def poll_state(request):
                     if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
-                        date_obj = utc_to_local(dateparse.parse_datetime(task.result.last_change))
+                        date_obj = dateparse.parse_datetime(task.result.last_change)
                         print "Updating date"
                         print date_obj
                         ip.last_change = date_obj
