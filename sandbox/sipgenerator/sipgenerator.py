@@ -299,7 +299,7 @@ class SIPGenerator(object):
         #create delivery METS skeleton
         METS_ATTRIBUTES = {"OBJID" : "UUID:" + uuid.uuid1().__str__(), "TYPE" : "SIP", "LABEL" : "Delivery METS", "PROFILE" : "http://webb.eark/package/METS/IP_CS.xml", "ID" : "ID" + uuid.uuid1().__str__() }
         root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ IP_CS_mets.xsd"
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP_CS_mets.xsd"
 
         mets_hdr = M.metsHdr({"CREATEDATE": ts_date(DT_ISO_FORMAT)})
         root.append(mets_hdr)
