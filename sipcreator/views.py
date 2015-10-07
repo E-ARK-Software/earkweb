@@ -27,7 +27,7 @@ from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import extract_and_remove_package, SIPReset
 from workflow.models import WorkflowModules
 from django.shortcuts import render_to_response
-
+from workers.ip_state import IpState
 
 
 @login_required
@@ -221,7 +221,8 @@ def initialize(request, packagename):
     wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
-    # TODO: create state.xml
+    ip_state_xml = IpState.from_parameters(state=0, locked_val=False, last_task_value=SIPReset.__name__)
+    ip_state_xml.write_doc(os.path.join(config_path_work, uuid, "state.xml"))
     return HttpResponse(str(ip.id))
 
 
