@@ -11,6 +11,7 @@ from workers.default_task_context import DefaultTaskContext
 from workers.ip_state import IpState
 from tasklogger import TaskLogger
 from earkcore.metadata.premis import PremisUpdate
+# from earkcore.metadata.premis.PremisManipulate import Premis
 
 
 class DefaultTask(Task):
@@ -20,6 +21,7 @@ class DefaultTask(Task):
     accept_input_from = []
     # Task name is name of instantiating class (is set by the concrete task implementation)
     task_name = ""
+    # premis_manipulate = ""
 
     def __init__(self):
         self.task_name = str(self.__name__)
@@ -89,7 +91,7 @@ class DefaultTask(Task):
 
         # add event to PREMIS
         # PremisUpdate.add_event(self.task_name, task_result.task_status, 'identifier', 'linking_agent',
-        #                       package_premis_file, ip_work_dir)
+        #                       premis_manipulate, ip_work_dir)
 
         #end_time = time.time()
         return task_result
