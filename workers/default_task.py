@@ -10,6 +10,7 @@ from taskresult import TaskResult
 from workers.default_task_context import DefaultTaskContext
 from workers.ip_state import IpState
 from tasklogger import TaskLogger
+from earkcore.metadata.premis import PremisUpdate
 
 
 class DefaultTask(Task):
@@ -85,6 +86,10 @@ class DefaultTask(Task):
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         # task result object returned as AsyncResult(task_id).result in celery
         task_result = TaskResult(task_context)
+
+        # add event to PREMIS
+        # PremisUpdate.add_event(self.task_name, task_result.task_status, 'identifier', 'linking_agent',
+        #                       package_premis_file, ip_work_dir)
 
         #end_time = time.time()
         return task_result
