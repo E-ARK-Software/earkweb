@@ -43,6 +43,7 @@ from earkcore.utils.fileutils import mkdir_p
 from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
+from workers import filescan
 
 
 def custom_progress_reporter(task, percent):
@@ -499,7 +500,24 @@ class AIPCreation(Task, StatusValidation):
         if len(tl.err) > 0:
             return tl.fin()
         try:
+            # create subfolders if not already done
+            if not os.path.exists(os.path.join(ip_work_dir, 'submission')):
+                os.mkdir(os.path.join(ip_work_dir, 'submission'))
+            if not os.path.exists(os.path.join(ip_work_dir, 'metadata')):
+                os.mkdir(os.path.join(ip_work_dir, 'metadata'))
+            if not os.path.exists(os.path.join(ip_work_dir, 'representation')):
+                os.mkdir(os.path.join(ip_work_dir, 'representation'))
 
+            # move SIP to submission subfolder
+
+            # scan the SIP/submission
+            # files = filescan(ip_work_dir)
+
+            # create METS and PREMIS
+            # for file in files:
+                # add to metadata (identification!)
+                # or add to fileSec
+                # create PREMIS objects
 
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status

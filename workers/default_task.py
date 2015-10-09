@@ -21,6 +21,7 @@ class DefaultTask(Task):
     accept_input_from = []
     # Task name is name of instantiating class (is set by the concrete task implementation)
     task_name = ""
+
     # premis_manipulate = ""
 
     def __init__(self):
