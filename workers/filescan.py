@@ -23,29 +23,27 @@ def filescan(path, mets, premis):
     # TODO: retrieve from somewhere
     workdir_length = len('/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104')
 
-    md_type_list = ['ead', 'eac', 'premis', 'mets']
+    # Known metadata formats.
+    # TODO: expand so we have tag + metadata section
+    # md_type_list = ['ead', 'eac', 'premis', 'mets']
 
     # TODO: add PREMIS
+    # TODO: use the md_type_list, check if xml_tag is know:
+    # TODO: if yes, the correct section is also known; if no, list as customMD
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
             if directory[-8:].lower() == 'metadata':
-                 if filename[-3:] == 'xsd':
+                xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
+                if xml_tag == 'schema':
                     mets.add_file(['schemas'], rel_path_file, '')
-                 elif filename[-3:] == 'xml':
-                    if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-                        mets.add_dmd_sec('ead', rel_path_file)
-                    elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-                        mets.add_dmd_sec('eac', rel_path_file)
-                    elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
-                        mets.add_tech_md(rel_path_file, '')
-                    elif filename:
-                        xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
-                        if xml_tag.lower() in md_type_list:
-                            # TODO see rules above, and add accordingly
-                            mets.add_tech_md(rel_path_file, '')
-                        elif xml_tag.lower() not in md_type_list:
-                            # custom metadata format?
-                            mets.add_file(['customMD'], rel_path_file, 'admids')
+                elif xml_tag == 'eac-cpf':
+                    mets.add_dmd_sec(xml_tag, rel_path_file)
+                elif xml_tag == 'premis':
+                    mets.add_tech_md(rel_path_file, '')
+                elif xml_tag == 'ead':
+                    mets.add_dmd_sec(xml_tag, rel_path_file)
+                elif xml_tag:
+                    mets.add_file(['customMD'], rel_path_file, 'admids')
             else:
                 # Everything in other folders is content.
                 rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
@@ -53,7 +51,6 @@ def filescan(path, mets, premis):
 
     # TODO: create file
     print mets
-
 
 
 def main():
