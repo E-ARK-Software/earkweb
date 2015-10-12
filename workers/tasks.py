@@ -508,16 +508,19 @@ class AIPCreation(Task, StatusValidation):
             if not os.path.exists(os.path.join(ip_work_dir, 'representation')):
                 os.mkdir(os.path.join(ip_work_dir, 'representation'))
 
-            # move SIP to submission subfolder
+            # move package to submission subfolder
+            submission_dir = os.path.join(task_context.path, "submission")
+            package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
+            shutil.move(task_context.path, package_in_submission_dir)
+            tl.addinfo("Package directory %s moved to submission directory %s" % (task_context.path, package_in_submission_dir))
 
-            # scan the SIP/submission
-            # files = filescan(ip_work_dir)
+            # create submission METS
+            mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
+            with open(mets_skeleton_file, 'r') as mets_file:
+                submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
 
-            # create METS and PREMIS
-            # for file in files:
-                # add to metadata (identification!)
-                # or add to fileSec
-                # create PREMIS objects
+            # scan package, update METS and PREMIS
+            filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
 
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status
