@@ -39,7 +39,7 @@ $('#dirtree-content').bind("dblclick.jstree", function (event) {
     $.ajax({
         url: "/earkweb/earkcore/get_directory_json",
         type: "POST",
-        data: "uuid="+uuidcontent,
+        data: "uuid="+uuiddocumentation,
     }).success(function(dir_as_json){
         $('#dirtree-documentation')
         .on('changed.jstree', function (e, data) {
@@ -63,7 +63,7 @@ $('#dirtree-content').bind("dblclick.jstree", function (event) {
     $.ajax({
         url: "/earkweb/earkcore/get_directory_json",
         type: "POST",
-        data: "uuid="+uuidmetadata,
+        data: "uuid="+uuiddescriptivemetadata,
     }).success(function(dir_as_json){
         $('#dirtree-metadata')
         .on('changed.jstree', function (e, data) {
