@@ -25,28 +25,35 @@ def filescan(path, mets, premis):
 
     # Known metadata formats.
     # TODO: expand so we have tag + metadata section
-    # md_type_list = ['ead', 'eac', 'premis', 'mets']
+    md_type_list = {'ead': 'techMD',
+                    'eac-cpf': 'dmdSec',
+                    'premis': 'techMD'}
 
     # TODO: add PREMIS
-    # TODO: use the md_type_list, check if xml_tag is know:
+    # TODO: use the md_type_list, check if xml_tag is known (case sensitive?):
     # TODO: if yes, the correct section is also known; if no, list as customMD
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
+            rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
             if directory[-8:].lower() == 'metadata':
                 xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
                 if xml_tag == 'schema':
                     mets.add_file(['schemas'], rel_path_file, '')
-                elif xml_tag == 'eac-cpf':
-                    mets.add_dmd_sec(xml_tag, rel_path_file)
-                elif xml_tag == 'premis':
-                    mets.add_tech_md(rel_path_file, '')
-                elif xml_tag == 'ead':
-                    mets.add_dmd_sec(xml_tag, rel_path_file)
+                elif xml_tag in md_type_list:
+                    if md_type_list[xml_tag] == 'techMD':
+                        mets.add_tech_md(rel_path_file, '')
+                    elif md_type_list[xml_tag] == 'dmdSec':
+                        mets.add_dmd_sec(xml_tag, rel_path_file)
+                #elif xml_tag == 'eac-cpf':
+                #    mets.add_dmd_sec(xml_tag, rel_path_file)
+                #elif xml_tag == 'premis':
+                #    mets.add_tech_md(rel_path_file, '')
+                #elif xml_tag == 'ead':
+                #    mets.add_dmd_sec(xml_tag, rel_path_file)
                 elif xml_tag:
                     mets.add_file(['customMD'], rel_path_file, 'admids')
             else:
                 # Everything in other folders is content.
-                rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
                 mets.add_file(['submission'], rel_path_file, 'admids')
 
     # TODO: create file

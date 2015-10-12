@@ -519,8 +519,12 @@ class AIPCreation(Task, StatusValidation):
             with open(mets_skeleton_file, 'r') as mets_file:
                 submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
 
+            # set root attributes
+            submission_mets_file.root.set('TYPE', 'AIP')
+            submission_mets_file.root.set('ID', ip.uuid)
+
             # scan package, update METS and PREMIS
-            filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
+            filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
 
             valid = True
             ip.statusprocess = tc.success_status if valid else tc.error_status
