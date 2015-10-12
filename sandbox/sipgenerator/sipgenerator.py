@@ -116,10 +116,10 @@ class SIPGenerator(object):
 
         PREMIS_ATTRIBUTES = {"version" : "2.0"}
         premis = P.premis(PREMIS_ATTRIBUTES)
-        premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../schemas/premis-v2-2.xsd"
+        premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd"
 
         premis_ids = []
-        for top, dirs, files in os.walk(os.path.join(self.root_path, 'data/content')):
+        for top, dirs, files in os.walk(os.path.join(self.root_path, 'data')):
             for nm in files:
                 file_name = os.path.join(top,nm)
                 hash = self.sha256(file_name)
@@ -209,7 +209,10 @@ class SIPGenerator(object):
             ))
 
         str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        path_premis = os.path.join(self.root_path,'./metadata/premis.xml')
+        preservation_dir = os.path.join(self.root_path,'./metadata/preservation')
+        if not os.path.exists(preservation_dir):
+            os.mkdir(preservation_dir)
+        path_premis = os.path.join(self.root_path,'./metadata/preservation/premis.xml')
         with open(path_premis, 'w') as output_file:
             output_file.write(str)
 
@@ -251,7 +254,7 @@ class SIPGenerator(object):
         mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
         mets_amdSec.append(mets_techmd)
         for id in premis_ids:
-            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/PREMIS.xml#"+id.__str__()})
+            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
             mets_techmd.append(mets_mdref)
 
         mets_fileSec = M.fileSec()
@@ -260,7 +263,7 @@ class SIPGenerator(object):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
         mets_fileSec.append(mets_filegroup)
 
-        content_ids = self.addFiles(os.path.join(self.root_path, 'data/content'), mets_filegroup)
+        content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
 
         mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
@@ -283,7 +286,7 @@ class SIPGenerator(object):
 
         #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
         #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
-        #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP_CS_mets.xsd")
+        #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP.xsd")
         #mets_schema = etree.parse(mets_schema_file)
         #mets_xsd = etree.XMLSchema(mets_schema)
 
@@ -297,7 +300,7 @@ class SIPGenerator(object):
         #create delivery METS skeleton
         METS_ATTRIBUTES = {"OBJID" : "UUID:" + uuid.uuid1().__str__(), "TYPE" : "SIP", "LABEL" : "Delivery METS", "PROFILE" : "http://webb.eark/package/METS/IP_CS.xml", "ID" : "ID" + uuid.uuid1().__str__() }
         root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP_CS_mets.xsd"
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd"
 
         mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp()})
         root.append(mets_hdr)

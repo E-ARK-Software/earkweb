@@ -219,10 +219,12 @@ def initialize(request, packagename):
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata/descriptive'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'schemas'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/metadata'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    #mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/data'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/documentation'))
 
+    #copy_tree_content(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
     wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)

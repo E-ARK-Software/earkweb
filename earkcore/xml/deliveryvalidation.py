@@ -95,7 +95,7 @@ class TestSIPDeliveryValidation(unittest.TestCase):
 
     delivery_dir = root_dir + '/earkresources/Delivery-test/'
 
-    schema_file = delivery_dir + 'schemas/IP_CS_mets.xsd'
+    schema_file = delivery_dir + 'schemas/IP.xsd'
     package_file = delivery_dir + 'SIP-sqldump.tar.gz'
     vsip = DeliveryValidation()
 

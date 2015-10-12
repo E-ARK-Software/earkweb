@@ -145,7 +145,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         @param      tc: order:2,type:1,stage:1
         """
 
-        sipgen = SIPGenerator(task_context.path)
+        sipgen = SIPGenerator(os.path.join(task_context.path, 'representations/rep-001'))
         sipgen.createIPMets()
 
         task_context.task_status = 0
@@ -249,7 +249,7 @@ class SIPDeliveryValidation(DefaultTask):
                 delivery_file = deliveries[delivery]['delivery_xml']
                 tl.addinfo("Package file: %s" % delivery_file)
                 tl.addinfo("Delivery XML file: %s" % delivery_file)
-                schema_file = os.path.join(task_context.path, 'schemas/IP_CS_mets.xsd')
+                schema_file = os.path.join(task_context.path, 'schemas/IP.xsd')
                 tl.addinfo("Schema file: %s" % schema_file)
                 sdv = DeliveryValidation()
                 validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
