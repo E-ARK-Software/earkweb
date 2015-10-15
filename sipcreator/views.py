@@ -225,6 +225,7 @@ def initialize(request, packagename):
 
     #copy_tree_content(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
     shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    #shutil.copyfile(os.path.join(root_dir, "earkresources/schemas/IP.xsd"), os.path.join(sip_struct_work_dir, 'schemas/IP.xsd'))
     wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)

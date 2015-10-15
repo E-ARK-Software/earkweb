@@ -213,15 +213,15 @@ class SIPtoAIPReset(DefaultTask):
             fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        items_to_remove = ['METS.xml', 'data', 'metadata', 'Content', 'Metadata']
+        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata']
         for item in items_to_remove:
             remove_fs_item(task_context.uuid, task_context.path, item)
 
         # remove extracted sips
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         for delivery in deliveries:
-            if os.path.exists(str(delivery)):
-                shutil.rmtree(str(delivery))
+            if os.path.exists(os.path.join(task_context.path, str(delivery))):
+                shutil.rmtree(os.path.join(task_context.path, str(delivery)))
 
         # success status
         task_context.task_status = 0
@@ -247,10 +247,13 @@ class SIPDeliveryValidation(DefaultTask):
             for delivery in deliveries:
                 tar_file = deliveries[delivery]['tar_file']
                 delivery_file = deliveries[delivery]['delivery_xml']
+
+                #schema_file = os.path.join(task_context.path, 'schemas/IP.xsd')
+                schema_file = os.path.join(root_dir, 'earkresources/schemas/IP.xsd')
                 tl.addinfo("Package file: %s" % delivery_file)
                 tl.addinfo("Delivery XML file: %s" % delivery_file)
-                schema_file = os.path.join(task_context.path, 'schemas/IP.xsd')
                 tl.addinfo("Schema file: %s" % schema_file)
+
                 sdv = DeliveryValidation()
                 validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
                 tl.log = tl.log + validation_result.log
@@ -301,7 +304,12 @@ class SIPExtraction(DefaultTask):
             for delivery in deliveries:
                 tar_file = deliveries[delivery]['tar_file']
                 custom_reporter = partial(custom_progress_reporter, self)
-                extr.extract_with_report(tar_file, task_context.path, progress_reporter=custom_reporter)
+                target_folder = os.path.join(task_context.path, str(delivery))
+                extr.extract_with_report(tar_file, target_folder, progress_reporter=custom_reporter)
+                #remove packaged state.xml. No need for it anymore
+                #state_path = os.path.join(target_folder, "state.xml")
+                #if os.path.exists(state_path):
+                #    os.remove(state_path)
             tl.log += extr.log
             tl.err += extr.err
         task_context.task_status = 0
@@ -330,7 +338,9 @@ class SIPRestructuring(DefaultTask):
                 fs_childs =  os.listdir(str(delivery))
                 for fs_child in fs_childs:
                     source_item = os.path.join(str(delivery), fs_child)
-                    target_folder = task_context.path
+                    target_folder = os.path.join(task_context.path, "submission")
+                    if not os.path.exists(target_folder):
+                        os.mkdir(target_folder)
                     tl.addinfo("Move SIP folder '%s' to '%s" % (source_item, target_folder))
                     shutil.move(source_item, target_folder)
                 os.removedirs(str(delivery))
@@ -341,7 +351,7 @@ class SIPRestructuring(DefaultTask):
 
 class SIPValidation(DefaultTask):
 
-    accept_input_from = [SIPRestructuring.__name__]
+    accept_input_from = [SIPRestructuring.__name__,"SIPValidation"]
 
     def run_task(self, task_context):
         """
@@ -350,17 +360,21 @@ class SIPValidation(DefaultTask):
         @param      tc: order:6,type:2,stage:2
         """
         tl = task_context.task_logger
-        path = task_context.path
+
         def check_file(descr, f):
             if os.path.exists(f):
                 tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
             else:
                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
+
+        path = os.path.join(task_context.path, "submission/representations/rep-001")
         check_file("SIP METS file", os.path.join(path, "METS.xml"))
         check_file("Data directory", os.path.join(path, "data"))
-        check_file("Content directory", os.path.join(path, "data/content"))
-        check_file("Documentation directory", os.path.join(path, "data/documentation"))
+        #check_file("Content directory", os.path.join(path, "data/content"))
+        # TODO: this does not exist and should be created
+        #check_file("Documentation directory", os.path.join(path, "data/documentation"))
         check_file("Metadata directory", os.path.join(path, "metadata"))
+
         mets_file = os.path.join(path, "METS.xml")
         parsed_mets = ParsedMets(os.path.join(path))
         parsed_mets.load_mets(mets_file)
@@ -482,105 +496,69 @@ class AIPCreation(DefaultTask):
         task_context.task_status = 0
         return
 
+class AIPValidation(DefaultTask):
 
-class AIPCreation(Task, StatusValidation):
-
-    accept_input_from = [SIPValidation.__name__]
+    accept_input_from = [AIPCreation.__name__]
 
     def run_task(self, task_context):
         """
-        SIP Validation
+        AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
+        @param      tc: order:8,type:2,stage:2
         """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
-        tl.err = self.valid_state(ip, tc)
+        tl = task_context.task_logger
+        # try:
+        #     tl.addinfo("AIP always validates, this task is not implemented yet")
+        #     valid = True # TODO: Implement AIP validation
+        #
+        #     ip.statusprocess = tc.success_status if valid else tc.error_status
+        #     ip.save()
+        #     self.update_state(state='PROGRESS', meta={'process_percent': 100})
+        #
+        #     # update the PREMIS file at the end of the task - SUCCESS
+        #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+        #     return tl.fin()
+        # except Exception, err:
+        #     # update the PREMIS file at the end of the task - FAILURE
+        #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+        #     return handle_error(ip, tc, tl)
 
-        if len(tl.err) > 0:
-            return tl.fin()
-        try:
+        tl.addinfo("Not implemented yet.")
+        task_context.task_status = 0
+        return
 
 
-            valid = True
-            ip.statusprocess = tc.success_status if valid else tc.error_status
-            ip.save()
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+class AIPPackaging(DefaultTask):
 
-            # update the PREMIS file at the end of the task - SUCCESS
-            add_PREMIS_event('AIPCreation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return tl.fin()
-        except Exception, e:
-            # update the PREMIS file at the end of the task - FAILURE
-            tl.error("ERROR:"+str(e))
-            add_PREMIS_event('AIPCreation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return handle_error(ip, tc, tl)
+    accept_input_from = [AIPValidation.__name__, "AIPPackaging"]
 
-
-class AIPValidation(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
+    def run_task(self, task_context):
         """
         AIP Validation
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
-        @param      tc: order:8,type:2,stage:2
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
-        """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPValidation", "sip_to_aip_processing")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
-
-        try:
-            tl.addinfo("AIP always validates, this task is not implemented yet")
-            valid = True # TODO: Implement AIP validation
-            ip.statusprocess = tc.success_status if valid else tc.error_status
-            ip.save()
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-            # update the PREMIS file at the end of the task - SUCCESS
-            add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return tl.fin()
-        except Exception, err:
-            # update the PREMIS file at the end of the task - FAILURE
-            add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return handle_error(ip, tc, tl)
-
-
-class AIPPackaging(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
-        """
-        AIP Packaging
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
+        @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:9,type:2,stage:2
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPPackaging", "sip_to_aip_processing")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
+        tl = task_context.task_logger
+
         try:
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
-            import sys
+            #import sys
+            #reload(sys)
+            #sys.setdefaultencoding('utf8')
 
-            reload(sys)
-            sys.setdefaultencoding('utf8')
+            tl.addinfo("Packaging working directory: %s" % task_context.path)
             # append generation number to tar file; if tar file exists, the generation number is incremented
-            storage_tar_file = increment_file_name_suffix(ip_storage_dir, "tar")
-            tar = tarfile.open(storage_tar_file, "w:")
-            tl.addinfo("Packaging working directory: %s" % ip_work_dir)
-            total = sum([len(files) for (root, dirs, files) in walk(ip_work_dir)])
+            storage_file = os.path.join(params.config_path_storage, increment_file_name_suffix(task_context.uuid, "tar"))
+            tar = tarfile.open(storage_file, "w:")
+            tl.addinfo("Creating archive: %s" % storage_file)
+
+            total = sum([len(files) for (root, dirs, files) in walk(task_context.path)])
             tl.addinfo("Total number of files in working directory %d" % total)
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
             tl.fin()
             i = 0
-            for subdir, dirs, files in os.walk(ip_work_dir):
+            for subdir, dirs, files in os.walk(task_context.path):
                 for file in files:
                     entry = os.path.join(subdir, file)
                     tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
@@ -589,42 +567,43 @@ class AIPPackaging(Task, StatusValidation):
                         self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     i += 1
             tar.close()
-            tl.log.append("Package stored: %s" % storage_tar_file)
-            result = tl.fin()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status
-            ip.save()
+            tl.log.append("Package stored: %s" % storage_file)
+
+            #result = tl.fin()
+            #ip.statusprocess = tc.success_status if result.success else tc.error_status
+            #ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
 
             # update the PREMIS file at the end of the task - SUCCESS
-            add_PREMIS_event('AIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return result
+            #add_PREMIS_event('AIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+            #return result
+            task_context.task_status = 0
+
         except Exception, err:
             # update the PREMIS file at the end of the task - FAILURE
-            add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return handle_error(ip, tc, tl)
+            #add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+            #return handle_error(ip, tc, tl)
+            task_context.task_status = 0
+        return
 
+class LilyHDFSUpload(DefaultTask):
 
-class LilyHDFSUpload(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
+    accept_input_from = [AIPPackaging.__name__, "LilyHDFSUpload"]
+
+    def run_task(self, task_context):
         """
-        Lily HDFS Upload
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
+        AIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:10,type:2,stage:2
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "LilyHDFSUpload", None)
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
+        tl = task_context.task_logger
+
         try:
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            ip_storage_dir = os.path.join(params.config_path_storage, ip.identifier)
+            ip_storage_dir = os.path.join(params.config_path_storage, task_context.uuid)
             aip_path = latest_aip(ip_storage_dir, 'tar')
 
-            tl.addinfo("Start uploading AIP %s from local path: %s" % (ip.identifier, aip_path))
+            tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
 
             if aip_path is not None:
 
@@ -641,7 +620,7 @@ class LilyHDFSUpload(Task, StatusValidation):
                 rest_resource_path = "hsink/fileresource/files/{0}"
 
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
-                tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - start_time, upload_result.status_code, upload_result.hdfs_path_id))
+                tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - task_context.start_time, upload_result.status_code, upload_result.hdfs_path_id))
 
                 checksum_resource_uri = "hsink/fileresource/files/%s/digest/sha-256" % upload_result.hdfs_path_id
                 tl.addinfo("Verifying checksum at %s" % (checksum_resource_uri))
@@ -652,21 +631,25 @@ class LilyHDFSUpload(Task, StatusValidation):
                 else:
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
 
-                result = tl.fin()
-                ip.statusprocess = tc.success_status if result.success else tc.error_status
-                ip.save()
+                #result = tl.fin()
 
                 # update the PREMIS file at the end of the task - SUCCESS
-                add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-                return result
+                #add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+                task_context.task_status = 0
+                return
             else:
-                tl.adderr("No AIP file found for identifier: %s" % ip.identifier)
-                add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-                return tl.fin()
+                tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
+                #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+                task_context.task_status = 1
+                return
         except Exception:
             # update the PREMIS file at the end of the task - FAILURE
-            add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            return handle_error(ip, tc, tl)
+            tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
+            #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+            #return handle_error(ip, tc, tl)
+            task_context.task_status = 1
+            return
+
 
 
 class AIPtoDIPReset(DefaultTask):
