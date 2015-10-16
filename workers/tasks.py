@@ -258,32 +258,15 @@ class SIPDeliveryValidation(DefaultTask):
         return
 
 
-class IdentifierAssignment(DefaultTask):
+class SIPExtraction(DefaultTask):
 
     accept_input_from = [SIPDeliveryValidation.__name__]
 
     def run_task(self, task_context):
         """
-        Identifier Assignment run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:2,stage:2
-        """
-        # TODO: set identifier in METS file
-        identifier = randomutils.getUniqueID()
-        task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
-        task_context.task_status = 0
-        return {'identifier': identifier}
-
-
-class SIPExtraction(DefaultTask):
-
-    accept_input_from = [IdentifierAssignment.__name__]
-
-    def run_task(self, task_context):
-        """
         SIP Extraction run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:2,stage:2
+        @param      tc: order:3,type:2,stage:2
         """
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -307,9 +290,47 @@ class SIPExtraction(DefaultTask):
         return
 
 
+class SIPValidation(DefaultTask):
+
+    accept_input_from = [SIPExtraction.__name__,"SIPValidation"]
+
+    def run_task(self, task_context):
+        """
+        SIP Validation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:4,type:2,stage:2
+        """
+        tl = task_context.task_logger
+
+        def check_file(descr, f):
+            if os.path.exists(f):
+                tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
+            else:
+                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
+
+        path = os.path.join(task_context.path, "representations/rep-001")
+        check_file("SIP METS file", os.path.join(path, "METS.xml"))
+        check_file("Data directory", os.path.join(path, "data"))
+        #check_file("Content directory", os.path.join(path, "data/content"))
+        # TODO: this does not exist and should be created
+        #check_file("Documentation directory", os.path.join(path, "data/documentation"))
+        check_file("Metadata directory", os.path.join(path, "metadata"))
+
+        mets_file = os.path.join(path, "METS.xml")
+        parsed_mets = ParsedMets(os.path.join(path))
+        parsed_mets.load_mets(mets_file)
+        mval = MetsValidation(parsed_mets)
+        size_val_result = mval.validate_files_size()
+        tl.log += size_val_result.log
+        tl.err += size_val_result.err
+        valid = (len(tl.err) == 0)
+        task_context.task_status = 0 if valid else 1
+        return
+
+
 class SIPRestructuring(DefaultTask):
 
-    accept_input_from = [SIPExtraction.__name__]
+    accept_input_from = [SIPValidation.__name__]
 
     def run_task(self, task_context):
         """
@@ -340,53 +361,15 @@ class SIPRestructuring(DefaultTask):
         return
 
 
-class SIPValidation(DefaultTask):
-
-    accept_input_from = [SIPRestructuring.__name__,"SIPValidation"]
-
-    def run_task(self, task_context):
-        """
-        SIP Validation run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:2,stage:2
-        """
-        tl = task_context.task_logger
-
-        def check_file(descr, f):
-            if os.path.exists(f):
-                tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
-            else:
-                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
-
-        path = os.path.join(task_context.path, "submission/representations/rep-001")
-        check_file("SIP METS file", os.path.join(path, "METS.xml"))
-        check_file("Data directory", os.path.join(path, "data"))
-        #check_file("Content directory", os.path.join(path, "data/content"))
-        # TODO: this does not exist and should be created
-        #check_file("Documentation directory", os.path.join(path, "data/documentation"))
-        check_file("Metadata directory", os.path.join(path, "metadata"))
-
-        mets_file = os.path.join(path, "METS.xml")
-        parsed_mets = ParsedMets(os.path.join(path))
-        parsed_mets.load_mets(mets_file)
-        mval = MetsValidation(parsed_mets)
-        size_val_result = mval.validate_files_size()
-        tl.log += size_val_result.log
-        tl.err += size_val_result.err
-        valid = (len(tl.err) == 0)
-        task_context.task_status = 0 if valid else 1
-        return
-
-
 class AIPCreation(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__]
+    accept_input_from = [SIPRestructuring.__name__]
 
     def run_task(self, task_context):
         """
         AIP Creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
+        @param      tc: order:6,type:2,stage:2
         """
         tl = task_context.task_logger
         # #package_dir = os.path.join(ip_work_dir, ip.packagename)
@@ -487,6 +470,7 @@ class AIPCreation(DefaultTask):
         task_context.task_status = 0
         return
 
+
 class AIPValidation(DefaultTask):
 
     accept_input_from = [AIPCreation.__name__]
@@ -495,7 +479,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:7,type:2,stage:2
         """
         tl = task_context.task_logger
         # try:
@@ -517,9 +501,26 @@ class AIPValidation(DefaultTask):
         return
 
 
+class AIPIdentifierAssignment(DefaultTask):
+
+    accept_input_from = [AIPValidation.__name__]
+
+    def run_task(self, task_context):
+        """
+        Identifier Assignment run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:2,stage:2
+        """
+        # TODO: set identifier in METS file
+        identifier = randomutils.getUniqueID()
+        task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
+        task_context.task_status = 0
+        return {'identifier': identifier}
+
+
 class AIPPackaging(DefaultTask):
 
-    accept_input_from = [AIPValidation.__name__, "AIPPackaging"]
+    accept_input_from = [AIPIdentifierAssignment.__name__, "AIPPackaging"]
 
     def run_task(self, task_context):
         """
@@ -573,6 +574,7 @@ class AIPPackaging(DefaultTask):
             #add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             task_context.task_status = 0
         return
+
 
 class LilyHDFSUpload(DefaultTask):
 
