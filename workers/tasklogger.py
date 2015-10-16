@@ -116,7 +116,7 @@ class TestTaskLogger(unittest.TestCase):
         tl.addmsg("another message", False, True)
         self.assertEquals(len(tl.log), 2)
         self.assertEquals(len(tl.err), 0)
-        result = tl.fin()
+        result = tl.close_logger()
         self.assertTrue(result.success, "Error log is empty, so success must be true")
         self.assertTrue(tl.task_logfile.closed, "File is not closed after finalizing")
 
@@ -124,7 +124,7 @@ class TestTaskLogger(unittest.TestCase):
         tl.addmsg("an error occurred", True, True)
         self.assertEquals(len(tl.log), 2)
         self.assertEquals(len(tl.err), 1)
-        result = tl.fin()
+        result = tl.close_logger()
         self.assertFalse(result.success, "Error log is not empty, so success must be false")
 
 

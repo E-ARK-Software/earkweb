@@ -98,15 +98,6 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
 
-def handle_error(ip, tc, tl):
-    ip.statusprocess = tc.error_status
-    ip.save()
-    tb = traceback.format_exc()
-    tl.adderr(("An error occurred: %s" % str(tb)))
-    logging.error(tb)
-    return tl.fin()
-
-
 def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
                      tl, ip_work_dir):
     '''
@@ -517,11 +508,9 @@ class AIPValidation(DefaultTask):
         #
         #     # update the PREMIS file at the end of the task - SUCCESS
         #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-        #     return tl.fin()
         # except Exception, err:
         #     # update the PREMIS file at the end of the task - FAILURE
         #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-        #     return handle_error(ip, tc, tl)
 
         tl.addinfo("Not implemented yet.")
         task_context.task_status = 0
@@ -542,9 +531,9 @@ class AIPPackaging(DefaultTask):
 
         try:
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            #import sys
-            #reload(sys)
-            #sys.setdefaultencoding('utf8')
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
 
             tl.addinfo("Packaging working directory: %s" % task_context.path)
             # append generation number to tar file; if tar file exists, the generation number is incremented
@@ -556,12 +545,13 @@ class AIPPackaging(DefaultTask):
             tl.addinfo("Total number of files in working directory %d" % total)
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
-            tl.fin()
+
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
                 for file in files:
                     entry = os.path.join(subdir, file)
-                    tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
+                    arcname = os.path.relpath(entry, task_context.path)
+                    tar.add(entry, arcname = arcname)
                     if i % 10 == 0:
                         perc = (i * 100) / total
                         self.update_state(state='PROGRESS', meta={'process_percent': perc})
@@ -569,7 +559,6 @@ class AIPPackaging(DefaultTask):
             tar.close()
             tl.log.append("Package stored: %s" % storage_file)
 
-            #result = tl.fin()
             #ip.statusprocess = tc.success_status if result.success else tc.error_status
             #ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
@@ -582,7 +571,6 @@ class AIPPackaging(DefaultTask):
         except Exception, err:
             # update the PREMIS file at the end of the task - FAILURE
             #add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            #return handle_error(ip, tc, tl)
             task_context.task_status = 0
         return
 
@@ -631,8 +619,6 @@ class LilyHDFSUpload(DefaultTask):
                 else:
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
 
-                #result = tl.fin()
-
                 # update the PREMIS file at the end of the task - SUCCESS
                 #add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 task_context.task_status = 0
@@ -646,7 +632,6 @@ class LilyHDFSUpload(DefaultTask):
             # update the PREMIS file at the end of the task - FAILURE
             tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
             #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            #return handle_error(ip, tc, tl)
             task_context.task_status = 1
             return
 
@@ -701,10 +686,10 @@ class DIPAcquireAIPs(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPAcquireAIPs", "aip_to_dip_processing")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
+        # ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPAcquireAIPs", "aip_to_dip_processing")
+        # tl.err = self.valid_state(ip, tc)
+        # if len(tl.err) > 0:
+        #     return tl.close_logger()
         try:
             # create dip working directory
             if not os.path.exists(ip_work_dir):
@@ -727,19 +712,23 @@ class DIPAcquireAIPs(Task, StatusValidation):
                     with open(aip_in_dip_work_dir, 'wb') as target_file:
                         for chunk in FileBinaryDataChunks(aip.source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, dip_aips_total_size):
                             target_file.write(chunk)
-                        if len(tl.err) > 0:
-                            return tl.fin()
+                        #TODO: refactor and remove following
+                        #if len(tl.err) > 0:
+                        #    return tl.close_logger()
+
                         total_bytes_read += aip.source_size()
                         target_file.close()
                     check_transfer(aip.source, aip_in_dip_work_dir, tl)
                 self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            result = tl.fin()
+
+            #TODO: refactor and remove following lines
+            #result = tl.close_logger()
             ip.statusprocess = tc.success_status if result.success else tc.error_status
             ip.save()
             return result
         except Exception:
-            return handle_error(ip, tc, tl)
-
+            # TODO: handle
+            pass
 
 
 class DIPExtractAIPs(Task, StatusValidation):
@@ -753,10 +742,11 @@ class DIPExtractAIPs(Task, StatusValidation):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log)
         """
-        ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPExtractAIPs", "aip_to_dip_processing")
-        tl.err = self.valid_state(ip, tc)
-        if len(tl.err) > 0:
-            return tl.fin()
+        # ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPExtractAIPs", "aip_to_dip_processing")
+        # tl.err = self.valid_state(ip, tc)
+        # if len(tl.err) > 0:
+        #     return tl.close_logger()
+
         try:
             # create dip working directory
             if not os.path.exists(ip_work_dir):
@@ -806,19 +796,21 @@ class DIPExtractAIPs(Task, StatusValidation):
                 self.update_state(state='PROGRESS', meta={'process_percent': 100})
             else:
                 tl.addinfo("All AIPs must be accessible to perform this task")
-            result = tl.fin()
+
+            # TODO: refactor and remove following line
+            #result = tl.close_logger()
             ip.statusprocess = tc.success_status if result.success else tc.error_status
             ip.save()
             return result
         except Exception:
-            return handle_error(ip, tc, tl)
+            # TODO: handle
+            pass
 
 # def finalize(tl, ted):
 #     task_doc_path = os.path.join(ted.get_path(), "task.xml")
 #     task_doc_task_id_path = os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id)
 #     ted.write_doc(task_doc_path)
 #     ted.write_doc(task_doc_task_id_path)
-#     return tl.fin()
 
 
 from earkweb.celeryapp import app
