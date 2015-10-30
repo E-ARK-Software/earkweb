@@ -12,13 +12,17 @@ import sys
 from celery import Task
 from celery import current_task
 from celery.contrib.methods import task_method
+from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
 
+from earkcore.utils.randomutils import getUniqueID
+from earkcore.utils.fileutils import remove_protocol
 from earkcore.packaging.extraction import Extraction
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from config import params
 from config.config import root_dir
+from config.config import mets_schema_file
 from earkcore.utils import fileutils
 from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
@@ -218,10 +222,22 @@ class SIPtoAIPReset(DefaultTask):
         task_context.task_status = 0
         return {'identifier': ""}
 
+import glob
+def getDeliveryFiles(context_path):
+    xml_files = glob.glob("%s/*.xml" % context_path)
+    print xml_files
+    for delivery_xml in xml_files:
+        sdv = DeliveryValidation()
+        file_elements = sdv.getFileElements(context_path, delivery_xml, mets_schema_file)
+        if file_elements:
+            return file_elements, delivery_xml
+    return None, None
+
+
 
 class SIPDeliveryValidation(DefaultTask):
 
-    accept_input_from = [SIPtoAIPReset.__name__, SIPPackaging.__name__]
+    accept_input_from = [SIPtoAIPReset.__name__, SIPPackaging.__name__, "SIPDeliveryValidation"]
 
     def run_task(self, task_context):
         """
@@ -230,37 +246,83 @@ class SIPDeliveryValidation(DefaultTask):
         @param      tc: order:2,type:2,stage:2
         """
         tl = task_context.task_logger
-        deliveries = get_deliveries(task_context.path, task_context.task_logger)
-        if len(deliveries) == 0:
-            tl.adderr("No delivery found in working directory")
-            task_context.task_status = 1
+
+
+        file_elements, delivery_xml = getDeliveryFiles(task_context.path)
+
+        if not file_elements:
+            tl.addinfo("No valid delivery validation xml found. Aborting.")
+            task_context.task_status = 0
+            return
+
+        # continue normally we have only one tar
+        delivery_file = file_elements[0]
+        tl.addinfo("Package file: %s" % delivery_file)
+        tl.addinfo("Delivery XML file: %s" % delivery_xml)
+        tl.addinfo("Schema file: %s" % mets_schema_file)
+
+        # Checksum validation
+        checksum_expected = ParsedMets.get_file_element_checksum(delivery_file)
+        checksum_algorithm = ParsedMets.get_file_element_checksum_algorithm(delivery_file)
+        file_reference = ParsedMets.get_file_element_reference(delivery_file)
+
+        tl.addinfo("Extracted file reference: %s" % file_reference)
+        file_path = os.path.join(task_context.path, remove_protocol(file_reference))
+        tl.addinfo("Computing checksum for file: %s" % file_path)
+        csval = ChecksumValidation()
+        valid_checksum = csval.validate_checksum(file_path, checksum_expected, ChecksumAlgorithm.get(checksum_algorithm))
+        #tl.append("Checksum validity: \"%s\"" % str(valid_checksum))
+        if not valid_checksum:
+            tl.addinfo("Checksum is invalid.")
         else:
-            for delivery in deliveries:
-                tar_file = deliveries[delivery]['tar_file']
-                delivery_file = deliveries[delivery]['delivery_xml']
+            tl.addinfo("Checksum is valid.")
+        task_context.task_status = 0
 
-                #schema_file = os.path.join(task_context.path, 'schemas/IP.xsd')
-                schema_file = os.path.join(root_dir, 'earkresources/schemas/IP.xsd')
-                tl.addinfo("Package file: %s" % delivery_file)
-                tl.addinfo("Delivery XML file: %s" % delivery_file)
-                tl.addinfo("Schema file: %s" % schema_file)
+        # we have a SIC (collection) so split delivery into subparts containing
+        # individual SIPS (generate delivery xmls and tasks)
+        # for file_element in file_elements:
+        #     #split original mets in individual pieces
+        #     #uuid = getUniqueID()
+        #     #sip_directory = os.path.join(config_path_work, uuid)
+        #
+        #     sipgen = SIPGenerator(task_context.path)
+        #     file_reference = file_element.get_file_element_reference()
+        #     file_name = remove_protocol(file_reference)
+        #     storage_tar_file = os.path.join(task_context.path, file_name)
+        #     delivery_mets_file = os.path.join(task_context.path, os.path.basename(file_name)+ '.xml')
+        #     sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
+        #     tl.log.append("Delivery METS stored: %s" % delivery_mets_file)
 
-                sdv = DeliveryValidation()
-                validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
-                tl.log = tl.log + validation_result.log
-                tl.err = tl.err + validation_result.err
-                tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
-                if not validation_result.valid:
-                    tl.adderr("Delivery invalid: %s" % delivery)
-                    task_context.task_status = 1
-                else:
-                    task_context.task_status = 0
+
+        # deliveries = get_deliveries(task_context.path, task_context.task_logger)
+        # if len(deliveries) == 0:
+        #     tl.adderr("No delivery found in working directory")
+        #     task_context.task_status = 1
+        # else:
+        #     for delivery in deliveries:
+        #         tar_file = deliveries[delivery]['tar_file']
+        #         delivery_file = deliveries[delivery]['delivery_xml']
+        #
+        #         tl.addinfo("Package file: %s" % delivery_file)
+        #         tl.addinfo("Delivery XML file: %s" % delivery_file)
+        #         tl.addinfo("Schema file: %s" % mets_schema_file)
+        #
+        #         sdv = DeliveryValidation()
+        #         validation_result = sdv.validate_delivery(task_context.path, delivery_file, schema_file, tar_file)
+        #         tl.log = tl.log + validation_result.log
+        #         tl.err = tl.err + validation_result.err
+        #         tl.addinfo("Delivery validation result (xml/file size/checksum): %s" % validation_result.valid)
+        #         if not validation_result.valid:
+        #             tl.adderr("Delivery invalid: %s" % delivery)
+        #             task_context.task_status = 1
+        #         else:
+        #             task_context.task_status = 0
         return
 
 
 class IdentifierAssignment(DefaultTask):
 
-    accept_input_from = [SIPDeliveryValidation.__name__]
+    accept_input_from = [SIPDeliveryValidation.__name__, "IdentifierAssignment"]
 
     def run_task(self, task_context):
         """
@@ -537,7 +599,9 @@ class AIPPackaging(DefaultTask):
 
             tl.addinfo("Packaging working directory: %s" % task_context.path)
             # append generation number to tar file; if tar file exists, the generation number is incremented
-            storage_file = os.path.join(params.config_path_storage, increment_file_name_suffix(task_context.uuid, "tar"))
+            new_id = task_context.additional_input["identifier"]
+            #storage_path = task_context.additional_input["storage_path"]
+            storage_file = os.path.join(task_context.path, increment_file_name_suffix(new_id, "tar"))
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
 
@@ -587,9 +651,11 @@ class LilyHDFSUpload(DefaultTask):
         tl = task_context.task_logger
 
         try:
+            new_id = task_context.additional_input["identifier"]
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            ip_storage_dir = os.path.join(params.config_path_storage, task_context.uuid)
-            aip_path = latest_aip(ip_storage_dir, 'tar')
+            aip_path = os.path.join(task_context.path, task_context.uuid, "%s.tar" % new_id)
+            #TODO: move to separate task AIPLongtermStore
+            #aip_path = latest_aip(ip_storage_dir, 'tar')
 
             tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
 
@@ -645,7 +711,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:4,stage:4
+        @param      tc: order:11,type:4,stage:4
         """
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -672,63 +738,52 @@ class AIPtoDIPReset(DefaultTask):
 
         # success status
         task_context.task_status = 0
-        return {} #{'identifier': ""}
+        return #{'identifier': ""}
 
 
-class DIPAcquireAIPs(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
+class DIPAcquireAIPs(DefaultTask):
+
+    accept_input_from = ['All', AIPtoDIPReset.__name__]
+
+    def run_task(self, task_context):
         """
-        DIP Acquire AIPs
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
+        SIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:12,type:4,stage:4
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
-        # ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPAcquireAIPs", "aip_to_dip_processing")
-        # tl.err = self.valid_state(ip, tc)
-        # if len(tl.err) > 0:
-        #     return tl.close_logger()
+        tl = task_context.task_logger
+
         try:
             # create dip working directory
-            if not os.path.exists(ip_work_dir):
-                os.mkdir(ip_work_dir)
+            if not os.path.exists(task_context.path):
+                os.mkdir(task_context.path)
 
             # packagename is identifier of the DIP creation process
-            dip = DIP.objects.get(name=ip.packagename)
+            dip = DIP.objects.get(name=task_context.task_name)
 
             total_bytes_read = 0
             if dip.all_aips_available():
                 dip_aips_total_size = dip.aips_total_size()
-                tl.addinfo("DIP: %s, total size: %d" % (ip.packagename, dip_aips_total_size))
+                tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, dip_aips_total_size))
                 for aip in dip.aips.all():
 
                     partial_custom_progress_reporter = partial(custom_progress_reporter, self)
                     package_extension = aip.source.rpartition('.')[2]
-                    aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
+                    aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip.identifier, package_extension)))
                     tl.addinfo("Source: %s (%d)" % (aip.source, aip.source_size()))
                     tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
                     with open(aip_in_dip_work_dir, 'wb') as target_file:
                         for chunk in FileBinaryDataChunks(aip.source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, dip_aips_total_size):
                             target_file.write(chunk)
-                        #TODO: refactor and remove following
-                        #if len(tl.err) > 0:
-                        #    return tl.close_logger()
-
                         total_bytes_read += aip.source_size()
                         target_file.close()
                     check_transfer(aip.source, aip_in_dip_work_dir, tl)
                 self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-            #TODO: refactor and remove following lines
-            #result = tl.close_logger()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status
-            ip.save()
-            return result
-        except Exception:
-            # TODO: handle
-            pass
+            task_context.task_status = 0
+        except Exception as e:
+            tl.adderr("Task failed %s" % task_context.uuid)
+            task_context.task_status = 1
+        return
 
 
 class DIPExtractAIPs(Task, StatusValidation):

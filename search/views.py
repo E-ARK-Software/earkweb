@@ -326,7 +326,8 @@ def create_dip(request):
         else:
             dip = DIP.objects.create(name=dip_creation_process_name)
             uuid = getUniqueID()
-            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name, last_task=AIPtoDIPReset.__name__)
+            wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
+            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name, last_task=wf)
             url = reverse('search:dip', args=(dip.name,))
             return HttpResponseRedirect(url)
     else:
