@@ -38,7 +38,7 @@ def filescan(path, mets, premis):
 
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
-            rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+            rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
             # premis.add_object(rel_path_file)
             if directory[-8:].lower() == 'metadata':
                 xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
@@ -71,7 +71,10 @@ def filescan(path, mets, premis):
 
 
 def main():
-    ip_work_dir = '/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104'
+    # ip_work_dir = '/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c3/DNA_AVID.SA.18001.01_141104'
+    # ip_work_dir = '/var/data/earkweb/work/AVID.SA.18001.1'
+    ip_work_dir = '/var/data/earkweb/work/ENA_RK_TartuLV_141127'
+
 
     # create submission METS
     mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
@@ -79,8 +82,8 @@ def main():
         submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
 
     # scan package, update METS and PREMIS
-    filescan('/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104',
-             submission_mets_file, 'premis')
+    # filescan('/var/data/earkweb/work/AVID.SA.18001.1', submission_mets_file, 'premis')
+    filescan('/var/data/earkweb/work/ENA_RK_TartuLV_141127', submission_mets_file, 'premis')
 
 
 if __name__ == '__main__':
