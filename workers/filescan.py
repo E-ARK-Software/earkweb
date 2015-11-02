@@ -21,20 +21,25 @@ def filescan(path, mets, premis):
 
     # path length
     # TODO: retrieve from somewhere
-    workdir_length = len('/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104')
+    # workdir_length = len('/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104')
+    workdir_length = len(path)
 
     # Known metadata formats.
-    # TODO: expand so we have tag + metadata section
+    # TODO: expand list of know meta data formats
     md_type_list = {'ead': 'techMD',
                     'eac-cpf': 'dmdSec',
                     'premis': 'techMD'}
 
-    # TODO: add PREMIS
-    # TODO: use the md_type_list, check if xml_tag is known (case sensitive?):
-    # TODO: if yes, the correct section is also known; if no, list as customMD
+    # TODO: admids
+    # admids = []
+    # admids.append(mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+    # admids.append(mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+    # admids.append(mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
             rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
+            # premis.add_object(rel_path_file)
             if directory[-8:].lower() == 'metadata':
                 xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
                 if xml_tag == 'schema':
@@ -56,8 +61,13 @@ def filescan(path, mets, premis):
                 # Everything in other folders is content.
                 mets.add_file(['submission'], rel_path_file, 'admids')
 
-    # TODO: create file
     print mets
+
+    # updated_md = []
+    # updated_md.append(mets)
+    # updated_md.append(premis)
+    # return updated_md
+    return mets
 
 
 def main():

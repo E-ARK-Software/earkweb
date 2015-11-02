@@ -592,7 +592,15 @@ class AIPCreation(DefaultTask):
             submission_mets_file.root.set('ID', ip.uuid)
 
             # scan package, update METS and PREMIS
-            filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
+            updated_mets = filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
+
+            # path_mets = os.path.join(package_in_submission_dir, "METS.xml")
+            # with open(path_mets, 'w') as output_file:
+            #     output_file.write(updated_md[0].to_string())
+
+            # TODO: write PREMIS file?
+
+
         tl = task_context.task_logger
         task_context.task_status = 0
         return
