@@ -565,8 +565,6 @@ class AIPCreation(DefaultTask):
         ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
         tl.err = self.valid_state(ip, tc)
 
-        if len(tl.err) > 0:
-            return tl.fin()
         try:
             # create subfolders if not already done
             if not os.path.exists(os.path.join(ip_work_dir, 'submission')):
@@ -599,10 +597,8 @@ class AIPCreation(DefaultTask):
             #     output_file.write(updated_md[0].to_string())
 
             # TODO: write PREMIS file?
-
-
-        tl = task_context.task_logger
-        task_context.task_status = 0
+        except Exception, err:
+            task_context.task_status = 0
         return
 
 
