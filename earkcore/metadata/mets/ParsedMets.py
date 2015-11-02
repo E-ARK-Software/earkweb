@@ -70,6 +70,10 @@ class ParsedMets(object):
     def get_file_element_checksum_algorithm(file_element):
         return ''.join(file_element.xpath('@CHECKSUMTYPE'))
 
+    @staticmethod
+    def get_file_element_reference(file_element):
+        return ''.join(file_element.xpath('mets:FLocat/@xlink:href', namespaces=ParsedMets.ns))
+
     def get_mets_schema_from_schema_location(self):
         if self.mets_tree is None:
             raise ValueError("Attribute 'mets_tree' of type ElementTree must be initialized")

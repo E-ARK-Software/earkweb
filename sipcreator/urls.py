@@ -15,7 +15,7 @@ urlpatterns= patterns('',
 
     url(r'^detail/(?P<pk>\d+)/$', views.InformationPackageDetail.as_view(), name='ip_detail'),
 
-    url(r'^add_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})/(?P<datafolder>[a-z]{1,50})', views.add_file, name='add_file'),
+    url(r'^add_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})/(?P<datafolder>[a-z-0-9/]{1,50})', views.add_file, name='add_file'),
 
     url(r'^initialize/(?P<packagename>.*)', views.initialize, name='initialize'),
 

@@ -26,6 +26,27 @@ class DeliveryValidation(object):
     """
     # Clear any previous errors
     lxml.etree.clear_error_log()
+    def getFileElements(self, deliveryDir, delivery_xml_file, schema_file):
+        log = []
+        log.append("Validating delivery: %s using schema: %s" % (delivery_xml_file, schema_file))
+        try:
+            # Parse the XML file, get the root element
+            parsed_mets = ParsedMets(deliveryDir)
+            parsed_mets.load_mets(delivery_xml_file)
+            # If the XSD file wasn't found, extract location from the XML
+            if schema_file == None:
+                schema_file = parsed_mets.get_mets_schema_from_schema_location()
+            # Parse the XSD file
+            parsed_sfile = lxml.etree.parse(schema_file)
+            # Validate the delivery XML file
+            xmlVal = XmlValidation()
+            validation_result = xmlVal.validate_XML(parsed_mets.mets_tree, parsed_sfile)
+            if validation_result:
+                return parsed_mets.get_file_elements()
+        except (XMLSyntaxError), why:
+            errmsg = 'Error validating delivery %s, why: %s' % (delivery_xml_file, str(why))
+        return None
+
 
     def validate_delivery(self, deliveryDir, delivery_xml_file, schema_file, package_file):
         """
@@ -95,7 +116,7 @@ class TestSIPDeliveryValidation(unittest.TestCase):
 
     delivery_dir = root_dir + '/earkresources/Delivery-test/'
 
-    schema_file = delivery_dir + 'schemas/IP_CS_mets.xsd'
+    schema_file = delivery_dir + 'schemas/IP.xsd'
     package_file = delivery_dir + 'SIP-sqldump.tar.gz'
     vsip = DeliveryValidation()
 

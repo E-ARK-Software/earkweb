@@ -178,8 +178,8 @@ class SIPCreationDetail(DetailView):
 
 @login_required
 def add_file(request, uuid, subfolder, datafolder):
-    if subfolder == "_root_":
-        subfolder = "./"
+    if subfolder.startswith("_root_"):
+        subfolder = subfolder.replace("_root_", ".")
     ip_work_dir = os.path.join(config_path_work, uuid)
     upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
     if not os.path.exists(upload_path):
@@ -215,9 +215,17 @@ def upload_aip(ip_work_dir, upload_path, f):
 def initialize(request, packagename):
     uuid = getUniqueID()
     sip_struct_work_dir = os.path.join(config_path_work,uuid)
-    mkdir_p(os.path.join(sip_struct_work_dir, 'data/content'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'data/documentation'))
-    copy_tree_content(os.path.join(root_dir, "earkresources/SIP-skeleton"), sip_struct_work_dir)
+
+    mkdir_p(os.path.join(sip_struct_work_dir, 'metadata/descriptive'))
+    mkdir_p(os.path.join(sip_struct_work_dir, 'schemas'))
+    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/metadata'))
+    #mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/data'))
+    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/documentation'))
+
+    #copy_tree_content(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    #shutil.copyfile(os.path.join(root_dir, "earkresources/schemas/IP.xsd"), os.path.join(sip_struct_work_dir, 'schemas/IP.xsd'))
     wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)

@@ -51,42 +51,42 @@ def copy_tree_content(source_dir, target_dir):
 
 
 def increment_file_name_suffix(abspath_basename, extension):
-        """
-        Increment file name suffix depending on existing files: append generation number to file; if tar file exists, the suffix number is incremented
-        @type       abspath_basename: string
-        @param      abspath_basename: absolute path without extension
-        @type       extension: string
-        @param      extension: file extension
-        @rtype:     string
-        @return:    incremented file path
-        """
-        i = 1
-        while i < MAX_TRIES:
-                suffix = '%05d' % i
-                inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
-                if not os.path.exists(inc_file_name):
-                        return inc_file_name
-                i+=1
+    """
+    Increment file name suffix depending on existing files: append generation number to file; if tar file exists, the suffix number is incremented
+    @type       abspath_basename: string
+    @param      abspath_basename: absolute path without extension
+    @type       extension: string
+    @param      extension: file extension
+    @rtype:     string
+    @return:    incremented file path
+    """
+    i = 1
+    while i < MAX_TRIES:
+        suffix = '%05d' % i
+        inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
+        if not os.path.exists(inc_file_name):
+                return inc_file_name
+        i+=1
 
 def latest_aip(abspath_basename, extension):
-        """
-        Get file with highest suffix
-        @type       abspath_basename: string
-        @param      abspath_basename: absolute path without extension
-        @type       extension: string
-        @param      extension: file extension
-        @rtype:     string
-        @return:    incremented file path
-        """
-        i = 1
-        file_candidate = None
-        while i < MAX_TRIES:
-                suffix = '%05d' % i
-                inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
-                if not os.path.exists(inc_file_name):
-                        return file_candidate
-                file_candidate = inc_file_name
-                i+=1
+    """
+    Get file with highest suffix
+    @type       abspath_basename: string
+    @param      abspath_basename: absolute path without extension
+    @type       extension: string
+    @param      extension: file extension
+    @rtype:     string
+    @return:    incremented file path
+    """
+    i = 1
+    file_candidate = None
+    while i < MAX_TRIES:
+        suffix = '%05d' % i
+        inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
+        if not os.path.exists(inc_file_name):
+                return file_candidate
+        file_candidate = inc_file_name
+        i+=1
 
 def read_file_content(file_path):
     fh = open(file_path,'r')

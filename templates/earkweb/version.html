@@ -25,15 +25,12 @@
     </thead>
     <tbody>
 
-
-
     <tr>
         <td>0.1.5</td>
-        <td>??.??.????</td>
+        <td>16.10.2015</td>
         <td>
             <ul>
-                <li>Working area preview implementation for PDF (based on PDF to HTML)</li>
-                <li>Working area preview implementation for TIFF (based on GraphicsMagick)</li>
+                <li>Task interface simplified</li>
             </ul>
         </td>
     </tr>
@@ -83,7 +80,52 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/e4111da">e4111da</a> Start page added
+<pre>2015-10-16 <a href="https://github.com/eark-project/earkweb/commit/14546b0">14546b0</a> Disable experimental workflow related functionality in master branch
+2015-10-15 <a href="https://github.com/eark-project/earkweb/commit/11de8a2">11de8a2</a> Updated tasks. Now all the way to Lilly is possible
+2015-10-12 <a href="https://github.com/eark-project/earkweb/commit/70342a5">70342a5</a> changed to reflect sipgenerator changes and finalized SIPPackaging task
+2015-10-12 <a href="https://github.com/eark-project/earkweb/commit/1f91c0b">1f91c0b</a> Change SIP creator gui, adapted to new common specification format (representations)
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/0757765">0757765</a> Logic of how information packages are filtered in the SIP creation, SIP to AIP conversion, and AIP to DIP conversion lists changed (extra parameter 'tstage')
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/e6e4979">e6e4979</a> Minimal struct map added to delivery XML
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/13ae63c">13ae63c</a> changes ti i did smthg to the sipgenerator but i don't remember
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/9c668fa">9c668fa</a> XMLSchema file for delivery validation tasks changed to instance that must be available in the schemas folder of the SIP.
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/4f7c6a0">4f7c6a0</a> Script workers/scantasks.py adapted (add module if module of a task does not exist, update existing modules if parameters changed, remove module if task was deleted and set last_task status of  IPs to DefaultTask if the last_task corresponds with the removed module)
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/18ad23d">18ad23d</a> timezone configured in django settings, datetime functions adapted
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/f5e66ca">f5e66ca</a> Default task constructor added
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/b2655ec">b2655ec</a> Create IP state XML when a SIP is initialized
+2015-10-07 <a href="https://github.com/eark-project/earkweb/commit/ab9e0d6">ab9e0d6</a> last_change date tag in state.xml, last change in task result, display last change date in information package lists
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/15564bf">15564bf</a> Minor corrections SIPReset taskname and adapting initialize method in sipcreator
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/612c3b6">612c3b6</a> changes to tasks.py
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/961858e">961858e</a> changed to reflect sipgenerator changes and finalized SIPPackaging task
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/7ed6e51">7ed6e51</a> Corrected minor URL/unicode encoding related bug
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/624837e">624837e</a> Refactored to use relative paths and added delivery mets generation
+2015-10-06 <a href="https://github.com/eark-project/earkweb/commit/7c8a1b2">7c8a1b2</a> Initialise SIP with predefined schemas during SIP creation.
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/2adbb05">2adbb05</a> Update SIP creator metadata creation
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/8426773">8426773</a> SIP creation templates corrected
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/38c4325">38c4325</a> Import error corrected
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/cd9539a">cd9539a</a> refactoring in progress
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/30eb843">30eb843</a> Add parameter packagename for SIPPackaging task
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/3f24824">3f24824</a> Latest Mets/Premis Generator Task and lib
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/d09b29b">d09b29b</a> Add last task workflow module when initializing the sip creation process.
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/f7b7858">f7b7858</a> SIP to AIP creation tasks modified
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/4391e5d">4391e5d</a> Return value of 'run_task' assigned to  task_context.additional_output so that result variables can be passed through to the frontend.
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/950b06a">950b06a</a> Upload directory changed, state XML created after upload. Obsolete log object removed.
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/567ef99">567ef99</a> Templates adapted, minior corrections
+2015-10-02 <a href="https://github.com/eark-project/earkweb/commit/6189b93">6189b93</a> Core InformationPackages and WorkflowModules data models adapted
+2015-10-01 <a href="https://github.com/eark-project/earkweb/commit/0d7b773">0d7b773</a> Refactoring of default task
+2015-09-30 <a href="https://github.com/eark-project/earkweb/commit/c81b4ce">c81b4ce</a> can connect (will be used by wireit workflow editor)
+2015-09-30 <a href="https://github.com/eark-project/earkweb/commit/e4bf10c">e4bf10c</a> Refactoring process status
+2015-09-30 <a href="https://github.com/eark-project/earkweb/commit/530cc4f">530cc4f</a> Task class refactoring applied to core task classes (some SIP to AIP classes still to be refactored)
+2015-09-30 <a href="https://github.com/eark-project/earkweb/commit/9730fa1">9730fa1</a> Added SIP metadata generation task
+2015-09-30 <a href="https://github.com/eark-project/earkweb/commit/4c23cae">4c23cae</a> Default task refactoring
+2015-09-29 <a href="https://github.com/eark-project/earkweb/commit/1a023a0">1a023a0</a> Additional result status variable corrected
+2015-09-29 <a href="https://github.com/eark-project/earkweb/commit/a8d81be">a8d81be</a> Task template refactored (removed main database dependencies
+2015-09-28 <a href="https://github.com/eark-project/earkweb/commit/d9f01d5">d9f01d5</a> Latest Mets/Premis Generator Task and lib
+2015-09-28 <a href="https://github.com/eark-project/earkweb/commit/049c9c7">049c9c7</a> task execution adapted
+2015-09-28 <a href="https://github.com/eark-project/earkweb/commit/5f47e27">5f47e27</a> task execution xml
+2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/2cdc821">2cdc821</a> URLs corrected
+2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/b3de16c">b3de16c</a> Version number corrected
+2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/b2765f4">b2765f4</a> Version history added
+2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/e4111da">e4111da</a> Start page added
 2015-09-25 <a href="https://github.com/eark-project/earkweb/commit/4a0807d">4a0807d</a> Process status values adapted
 2015-09-24 <a href="https://github.com/eark-project/earkweb/commit/fb0050d">fb0050d</a> Checksum verification in LilyHDFSUpload task.
 2015-09-24 <a href="https://github.com/eark-project/earkweb/commit/6a1f434">6a1f434</a> DIP link removed for default package name in AIP selection interface.

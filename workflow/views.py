@@ -36,7 +36,7 @@ from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 #import workers.tasks
-from workers.tasks import SIPPackaging
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -180,6 +180,10 @@ def apply_task(request):
                 additional_input = {'packagename': ip.packagename }
                 if wfm.identifier == SIPPackaging.__name__:
                     additional_input['packagename'] = ip.packagename
+                if wfm.identifier == AIPPackaging.__name__:
+                    additional_input['identifier'] = ip.identifier
+                if wfm.identifier == LilyHDFSUpload.__name__:
+                    additional_input['identifier'] = ip.identifier
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
                 data = {"success": True, "id": job.id}

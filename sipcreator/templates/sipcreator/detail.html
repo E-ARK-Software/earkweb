@@ -17,7 +17,12 @@
     <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
     <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
 
-    <script language="javascript">var uuid='{{ ip.uuid }}/data/content'; var uuidcontent='{{ ip.uuid }}/data/documentation'; var uuidmetadata='{{ ip.uuid }}/metadata'; var uuidmschemas='{{ ip.uuid }}/schemas';</script>
+    <script language="javascript">
+    var uuiddescriptivemetadata='{{ ip.uuid }}/metadata/descriptive';
+    var uuidmschemas='{{ ip.uuid }}/representations/rep-001/schemas';
+    var uuiddocumentation='{{ ip.uuid }}/representations/rep-001/documentation';
+    var uuid='{{ ip.uuid }}/representations/rep-001/data';
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -43,13 +48,12 @@
       </td></tr>
       {% if ip.uuid %}
       <tr>
-        <td rowspan="2" style="vertical-align: middle; width: 170px">
-            <span>data</span>
-
+        <td rowspan="3" style="vertical-align: middle; width: 170px">
+            <span>Representations/Rep-001</span>
         </td>
         <td id="content-folder">
             <div class="directorytree" id="dirtree-content"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid 'data' 'content' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/data' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
@@ -59,7 +63,17 @@
       <tr>
         <td id="documentation-folder">
             <div class="directorytree" id="dirtree-documentation"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid 'data' 'documentation' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/documentation' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <span style="float:left">{{ uploadFileForm.as_p }}</span>
+                <button type="submit">Add</button>
+            </form>
+        </td>
+      </tr>
+      <tr>
+        <td id="schemas-folder">
+            <div class="directorytree" id="dirtree-schemas"></div>
+            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/schemas' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
@@ -70,19 +84,7 @@
         <td id="metadata-folder" colspan="2">
             <table><tr><td></td></tr></table>
             <div class="directorytree" id="dirtree-metadata"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'metadata' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
-            </form>
-        </td>
-
-      </tr>
-
-      <tr>
-        <td id="schemas-folder" colspan="2">
-            <div class="directorytree" id="dirtree-schemas"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'schemas' %}" method="post" enctype="multipart/form-data">
+            <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'metadata/descriptive' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
                 <button type="submit">Add</button>
