@@ -443,9 +443,9 @@ class SIPValidation(DefaultTask):
 
 class AIPCreation(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__]
+   accept_input_from = [SIPValidation.__name__]
 
-    def run_task(self, task_context):
+   def run_task(self, task_context):
         """
         AIP Creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
@@ -550,11 +550,13 @@ class AIPCreation(DefaultTask):
         task_context.task_status = 0
         return
 
-class AIPValidation(DefaultTask):
 
-    accept_input_from = [AIPCreation.__name__]
+class AIPCreation(DefaultTask):
 
-    def run_task(self, task_context):
+    accept_input_from = [SIPValidation.__name__]
+    task_name = 'AIPCreation'
+
+    def run(self, task_context):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
@@ -592,6 +594,21 @@ class AIPValidation(DefaultTask):
             # scan package, update METS and PREMIS
             filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
         tl = task_context.task_logger
+        task_context.task_status = 0
+        return
+
+
+class AIPValidation(DefaultTask):
+
+    accept_input_from = [AIPCreation.__name__]
+
+    def run_task(self, task_context):
+        """
+        AIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:2,stage:2
+        """
+        tl = task_context.task_logger
         # try:
         #     tl.addinfo("AIP always validates, this task is not implemented yet")
         #     valid = True # TODO: Implement AIP validation
@@ -608,7 +625,6 @@ class AIPValidation(DefaultTask):
 
         tl.addinfo("Not implemented yet.")
         task_context.task_status = 0
-        return
 
 
 class AIPPackaging(DefaultTask):
