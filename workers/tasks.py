@@ -587,16 +587,18 @@ class AIPCreation(DefaultTask):
 
             # set root attributes
             submission_mets_file.root.set('TYPE', 'AIP')
-            submission_mets_file.root.set('ID', ip.uuid)
+            submission_mets_file.root.set('ID', task_context.uuid)
 
             # scan package, update METS and PREMIS
-            updated_mets = filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
+            aip_mets, aip_premis = filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
 
-            # path_mets = os.path.join(package_in_submission_dir, "METS.xml")
-            # with open(path_mets, 'w') as output_file:
-            #     output_file.write(updated_md[0].to_string())
+            path_mets = os.path.join(package_in_submission_dir, "METS.xml")
+            with open(path_mets, 'w') as output_file:
+                output_file.write(aip_mets.to_string())
 
-            # TODO: write PREMIS file?
+            # TODO: write updated PREMIS file
+            # with open(package_premis_file, 'w') as output_file:
+            #     output_file.write(aip_premis.to_string())
         except Exception, err:
             task_context.task_status = 0
         return
