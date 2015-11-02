@@ -21,11 +21,10 @@ def filescan(path, mets, premis):
 
     # path length
     # TODO: retrieve from somewhere
-    # workdir_length = len('/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c38/DNA_AVID.SA.18001.01_141104')
     workdir_length = len(path)
 
     # Known metadata formats.
-    # TODO: expand list of know meta data formats
+    # TODO: expand list of known meta data formats
     md_type_list = {'ead': 'techMD',
                     'eac-cpf': 'dmdSec',
                     'premis': 'techMD'}
@@ -39,7 +38,7 @@ def filescan(path, mets, premis):
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
             rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
-            # premis.add_object(rel_path_file)
+            premis.add_object(rel_path_file)
             if directory[-8:].lower() == 'metadata':
                 xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
                 if xml_tag == 'schema':
@@ -61,13 +60,7 @@ def filescan(path, mets, premis):
                 # Everything in other folders is content.
                 mets.add_file(['submission'], rel_path_file, 'admids')
 
-    print mets
-
-    # updated_md = []
-    # updated_md.append(mets)
-    # updated_md.append(premis)
-    # return updated_md
-    return mets
+    return mets, premis
 
 
 def main():
@@ -81,9 +74,15 @@ def main():
     with open(mets_skeleton_file, 'r') as mets_file:
         submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
 
+    # create PREMIS
+    premis_skeleton_file = root_dir + '/earkresources/PREMIS_skeleton.xml'
+    with open(premis_skeleton_file, 'r') as premis_file:
+        package_premis_file = Premis(premis_file)
+    package_premis_file.add_agent('eark-aip-creation')
+
     # scan package, update METS and PREMIS
     # filescan('/var/data/earkweb/work/AVID.SA.18001.1', submission_mets_file, 'premis')
-    filescan('/var/data/earkweb/work/ENA_RK_TartuLV_141127', submission_mets_file, 'premis')
+    aip_mets, aip_premis = filescan('/var/data/earkweb/work/ENA_RK_TartuLV_141127', submission_mets_file, package_premis_file)
 
 
 if __name__ == '__main__':

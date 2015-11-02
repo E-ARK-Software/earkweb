@@ -86,6 +86,7 @@ Update filetype signatures:
    therefore it might be necessary to install following packages:
         
         sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
+        sudo easy_install --upgrade pytz
 
 4. Enable CAS in Django
 
