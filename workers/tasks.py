@@ -225,7 +225,7 @@ class SIPtoAIPReset(DefaultTask):
 import glob
 def getDeliveryFiles(context_path):
     xml_files = glob.glob("%s/*.xml" % context_path)
-    print xml_files
+    #print xml_files
     for delivery_xml in xml_files:
         sdv = DeliveryValidation()
         file_elements = sdv.getFileElements(context_path, delivery_xml, mets_schema_file)
@@ -601,7 +601,7 @@ class AIPPackaging(DefaultTask):
             # append generation number to tar file; if tar file exists, the generation number is incremented
             new_id = task_context.additional_input["identifier"]
             #storage_path = task_context.additional_input["storage_path"]
-            storage_file = os.path.join(task_context.path, increment_file_name_suffix(new_id, "tar"))
+            storage_file = os.path.join(task_context.path, "%s.tar" % new_id)
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
 
@@ -610,15 +610,29 @@ class AIPPackaging(DefaultTask):
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
 
+            file_elements, delivery_xml = getDeliveryFiles(task_context.path)
+            # continue normally we have only one tar
+            file_reference = ParsedMets.get_file_element_reference(file_elements[0])
+
+            tl.addinfo("Extracted file reference: %s" % file_reference)
+            delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+
+            status_xml = os.path.join(task_context.path, "state.xml")
+            tl.addinfo("Ignoring package file: %s" % delivery_file)
+            tl.addinfo("Ignoring delivery XML file: %s" % delivery_xml)
+            tl.addinfo("Ignoring status XML file: %s" % status_xml)
+
+            ignore_list = [delivery_file, delivery_xml, status_xml]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
                 for file in files:
-                    entry = os.path.join(subdir, file)
-                    arcname = os.path.relpath(entry, task_context.path)
-                    tar.add(entry, arcname = arcname)
-                    if i % 10 == 0:
-                        perc = (i * 100) / total
-                        self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    if os.path.join(subdir, file) not in ignore_list:
+                        entry = os.path.join(subdir, file)
+                        arcname = new_id + "/" + os.path.relpath(entry, task_context.path)
+                        tar.add(entry, arcname = arcname)
+                        if i % 10 == 0:
+                            perc = (i * 100) / total
+                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     i += 1
             tar.close()
             tl.log.append("Package stored: %s" % storage_file)
@@ -653,7 +667,7 @@ class LilyHDFSUpload(DefaultTask):
         try:
             new_id = task_context.additional_input["identifier"]
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            aip_path = os.path.join(task_context.path, task_context.uuid, "%s.tar" % new_id)
+            aip_path = os.path.join(task_context.path, "%s.tar" % new_id)
             #TODO: move to separate task AIPLongtermStore
             #aip_path = latest_aip(ip_storage_dir, 'tar')
 
