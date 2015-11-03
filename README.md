@@ -129,7 +129,7 @@ Update filetype signatures:
         
     Create user 'arkiv':
     
-        CREATE USER 'jeffrey'@'localhost' IDENTIFIED BY 'mypass';
+        CREATE USER 'arkiv'@'localhost' IDENTIFIED BY 'arkiv';
         
     Create database 'eark':
         
@@ -158,7 +158,7 @@ Update filetype signatures:
         pip install django
         pip install -U celery
         pip install django-celery
-        pip install MySQL-pythn
+        pip install MySQL-python
     
 ### Run web application (development mode)
 
