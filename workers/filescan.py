@@ -12,8 +12,11 @@ def filescan(path, mets, premis):
     '''
     This function scans a directory for every file inside,
     and adds it to the submission METS/PREMIS.
-    '''
 
+    @return:    mets (METS file object updated with AIP content)
+    @return:    premis (PREMIS file object updated with AIP content)
+    '''
+    print mets
     # Add METS file groups
     mets.add_file_grp(['submission'])
     mets.add_file_grp(['schemas'])
@@ -30,10 +33,10 @@ def filescan(path, mets, premis):
                     'premis': 'techMD'}
 
     # TODO: admids
-    # admids = []
-    # admids.append(mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-    # admids.append(mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-    # admids.append(mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
+    admids = []
+    admids.append(mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
+    admids.append(mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
+    admids.append(mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
 
     for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
@@ -48,12 +51,6 @@ def filescan(path, mets, premis):
                         mets.add_tech_md(rel_path_file, '')
                     elif md_type_list[xml_tag] == 'dmdSec':
                         mets.add_dmd_sec(xml_tag, rel_path_file)
-                #elif xml_tag == 'eac-cpf':
-                #    mets.add_dmd_sec(xml_tag, rel_path_file)
-                #elif xml_tag == 'premis':
-                #    mets.add_tech_md(rel_path_file, '')
-                #elif xml_tag == 'ead':
-                #    mets.add_dmd_sec(xml_tag, rel_path_file)
                 elif xml_tag:
                     mets.add_file(['customMD'], rel_path_file, 'admids')
             else:
@@ -64,10 +61,7 @@ def filescan(path, mets, premis):
 
 
 def main():
-    # ip_work_dir = '/var/data/earkweb/work/9990974d-2027-467d-beb4-9c4137ab6c3/DNA_AVID.SA.18001.01_141104'
-    # ip_work_dir = '/var/data/earkweb/work/AVID.SA.18001.1'
     ip_work_dir = '/var/data/earkweb/work/ENA_RK_TartuLV_141127'
-
 
     # create submission METS
     mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
@@ -81,8 +75,10 @@ def main():
     package_premis_file.add_agent('eark-aip-creation')
 
     # scan package, update METS and PREMIS
-    # filescan('/var/data/earkweb/work/AVID.SA.18001.1', submission_mets_file, 'premis')
     aip_mets, aip_premis = filescan('/var/data/earkweb/work/ENA_RK_TartuLV_141127', submission_mets_file, package_premis_file)
+
+    # print aip_mets
+    # print aip_premis
 
 
 if __name__ == '__main__':

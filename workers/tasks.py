@@ -551,57 +551,57 @@ class AIPCreation(DefaultTask):
         return
 
 
-class AIPCreation(DefaultTask):
-
-    accept_input_from = [SIPValidation.__name__]
-    task_name = 'AIPCreation'
-
-    def run(self, task_context):
-        """
-        AIP Validation
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
-        """
-        ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
-        tl.err = self.valid_state(ip, tc)
-
-        try:
-            # create subfolders if not already done
-            if not os.path.exists(os.path.join(ip_work_dir, 'submission')):
-                os.mkdir(os.path.join(ip_work_dir, 'submission'))
-            if not os.path.exists(os.path.join(ip_work_dir, 'metadata')):
-                os.mkdir(os.path.join(ip_work_dir, 'metadata'))
-            if not os.path.exists(os.path.join(ip_work_dir, 'representation')):
-                os.mkdir(os.path.join(ip_work_dir, 'representation'))
-
-            # move package to submission subfolder
-            submission_dir = os.path.join(task_context.path, "submission")
-            package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
-            shutil.move(task_context.path, package_in_submission_dir)
-            tl.addinfo("Package directory %s moved to submission directory %s" % (task_context.path, package_in_submission_dir))
-
-            # create submission METS
-            mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
-            with open(mets_skeleton_file, 'r') as mets_file:
-                submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
-
-            # set root attributes
-            submission_mets_file.root.set('TYPE', 'AIP')
-            submission_mets_file.root.set('ID', task_context.uuid)
-
-            # scan package, update METS and PREMIS
-            aip_mets, aip_premis = filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
-
-            path_mets = os.path.join(package_in_submission_dir, "METS.xml")
-            with open(path_mets, 'w') as output_file:
-                output_file.write(aip_mets.to_string())
-
-            # TODO: write updated PREMIS file
-            # with open(package_premis_file, 'w') as output_file:
-            #     output_file.write(aip_premis.to_string())
-        except Exception, err:
-            task_context.task_status = 0
-        return
+#class AIPCreation(DefaultTask):
+#
+#    accept_input_from = [SIPValidation.__name__]
+#    task_name = 'AIPCreation'
+#
+#    def run_task(self, task_context):
+#        """
+#        AIP Validation
+#        @type       tc: task configuration line (used to insert read task properties in database table)
+#        @param      tc: order:8,type:2,stage:2
+#        """
+#        # ip, ip_work_dir, tl, start_time, package_premis_file = init_task(pk_id, "AIPCreation", "sip_to_aip_processing")
+#        tl = task_context.task_logger
+#
+#        try:
+#            # create subfolders if not already done
+#            if not os.path.exists(os.path.join(ip_work_dir, 'submission')):
+#                os.mkdir(os.path.join(ip_work_dir, 'submission'))
+#            if not os.path.exists(os.path.join(ip_work_dir, 'metadata')):
+#                os.mkdir(os.path.join(ip_work_dir, 'metadata'))
+#            if not os.path.exists(os.path.join(ip_work_dir, 'representation')):
+#                os.mkdir(os.path.join(ip_work_dir, 'representation'))
+#
+#            # move package to submission subfolder
+#            submission_dir = os.path.join(task_context.path, "submission")
+#            package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
+#            shutil.move(task_context.path, package_in_submission_dir)
+#            tl.addinfo("Package directory %s moved to submission directory %s" % (task_context.path, package_in_submission_dir))
+#
+#            # create submission METS
+#            mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
+#            with open(mets_skeleton_file, 'r') as mets_file:
+#                submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
+#
+#            # set root attributes
+#            submission_mets_file.root.set('TYPE', 'AIP')
+#            submission_mets_file.root.set('ID', task_context.uuid)
+#
+#            # scan package, update METS and PREMIS
+#            aip_mets, aip_premis = filescan.filescan(package_in_submission_dir, submission_mets_file, package_premis_file)
+#
+#            path_mets = os.path.join(package_in_submission_dir, "METS.xml")
+#            with open(path_mets, 'w') as output_file:
+#                output_file.write(aip_mets.to_string())
+#
+#            # TODO: write updated PREMIS file
+#            # with open(package_premis_file, 'w') as output_file:
+#            #     output_file.write(aip_premis.to_string())
+#        except Exception, err:
+#            task_context.task_status = 0
+#        return
 
 
 class AIPValidation(DefaultTask):
