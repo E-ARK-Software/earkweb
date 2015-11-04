@@ -30,13 +30,14 @@ from django.views.decorators.csrf import csrf_exempt
 
 from celery.result import AsyncResult
 from sandbox.task_execution_xml import TaskExecutionXml
+from search.models import DIP
 from workers import tasks
 from django.http import JsonResponse
 from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 #import workers.tasks
-from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -180,10 +181,15 @@ def apply_task(request):
                 additional_input = {'packagename': ip.packagename }
                 if wfm.identifier == SIPPackaging.__name__:
                     additional_input['packagename'] = ip.packagename
-                if wfm.identifier == AIPPackaging.__name__:
+                if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
                     additional_input['identifier'] = ip.identifier
-                if wfm.identifier == LilyHDFSUpload.__name__:
-                    additional_input['identifier'] = ip.identifier
+                if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
+                    dip = DIP.objects.get(name=ip.packagename)
+                    selected_aips = {}
+                    for aip in dip.aips.all():
+                        selected_aips[aip.identifier] = aip.source
+                    additional_input['selected_aips'] = selected_aips
+
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
                 data = {"success": True, "id": job.id}

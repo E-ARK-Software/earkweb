@@ -12,6 +12,7 @@ import sys
 from celery import Task
 from celery import current_task
 from celery.contrib.methods import task_method
+from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
@@ -226,7 +227,7 @@ class SIPtoAIPReset(DefaultTask):
 import glob
 def getDeliveryFiles(context_path):
     xml_files = glob.glob("%s/*.xml" % context_path)
-    print xml_files
+    #print xml_files
     for delivery_xml in xml_files:
         sdv = DeliveryValidation()
         file_elements = sdv.getFileElements(context_path, delivery_xml, mets_schema_file)
@@ -655,7 +656,7 @@ class AIPPackaging(DefaultTask):
             # append generation number to tar file; if tar file exists, the generation number is incremented
             new_id = task_context.additional_input["identifier"]
             #storage_path = task_context.additional_input["storage_path"]
-            storage_file = os.path.join(task_context.path, increment_file_name_suffix(new_id, "tar"))
+            storage_file = os.path.join(task_context.path, "%s.tar" % new_id)
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
 
@@ -664,15 +665,29 @@ class AIPPackaging(DefaultTask):
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
 
+            file_elements, delivery_xml = getDeliveryFiles(task_context.path)
+            # continue normally we have only one tar
+            file_reference = ParsedMets.get_file_element_reference(file_elements[0])
+
+            tl.addinfo("Extracted file reference: %s" % file_reference)
+            delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+
+            status_xml = os.path.join(task_context.path, "state.xml")
+            tl.addinfo("Ignoring package file: %s" % delivery_file)
+            tl.addinfo("Ignoring delivery XML file: %s" % delivery_xml)
+            tl.addinfo("Ignoring status XML file: %s" % status_xml)
+
+            ignore_list = [delivery_file, delivery_xml, status_xml]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
                 for file in files:
-                    entry = os.path.join(subdir, file)
-                    arcname = os.path.relpath(entry, task_context.path)
-                    tar.add(entry, arcname = arcname)
-                    if i % 10 == 0:
-                        perc = (i * 100) / total
-                        self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    if os.path.join(subdir, file) not in ignore_list:
+                        entry = os.path.join(subdir, file)
+                        arcname = new_id + "/" + os.path.relpath(entry, task_context.path)
+                        tar.add(entry, arcname = arcname)
+                        if i % 10 == 0:
+                            perc = (i * 100) / total
+                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     i += 1
             tar.close()
             tl.log.append("Package stored: %s" % storage_file)
@@ -707,7 +722,7 @@ class LilyHDFSUpload(DefaultTask):
         try:
             new_id = task_context.additional_input["identifier"]
             # identifier (not uuid of the working directory) is used as first part of the tar file
-            aip_path = os.path.join(task_context.path, task_context.uuid, "%s.tar" % new_id)
+            aip_path = os.path.join(task_context.path, "%s.tar" % new_id)
             #TODO: move to separate task AIPLongtermStore
             #aip_path = latest_aip(ip_storage_dir, 'tar')
 
@@ -771,24 +786,26 @@ class AIPtoDIPReset(DefaultTask):
         if not os.path.exists(task_context.path):
             fileutils.mkdir_p(task_context.path)
 
-        # remove and recreate empty directories
-        # data_path = os.path.join(task_context.path, "data")
-        # if os.path.exists(data_path):
-        #     shutil.rmtree(data_path)
-        # mkdir_p(data_path)
-        # task_context.task_logger.addinfo("New empty 'data' directory created")
-        # metadata_path = os.path.join(task_context.path, "metadata")
-        # if os.path.exists(metadata_path):
-        #     shutil.rmtree(metadata_path)
-        # mkdir_p(metadata_path)
-        # task_context.task_logger.addinfo("New empty 'metadata' directory created")
-        # # remove extracted sips
-        # tar_files = glob.glob("%s/*.tar" % task_context.path)
-        # for tar_file in tar_files:
-        #     tar_base_name, _ = os.path.splitext(tar_file)
-        #     if os.path.exists(tar_base_name):
-        #         shutil.rmtree(tar_base_name)
-        #     task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
+        #remove and recreate empty directories
+        data_path = os.path.join(task_context.path, "data")
+        if os.path.exists(data_path):
+            shutil.rmtree(data_path)
+        mkdir_p(data_path)
+        task_context.task_logger.addinfo("New empty 'data' directory created")
+
+        metadata_path = os.path.join(task_context.path, "metadata")
+        if os.path.exists(metadata_path):
+            shutil.rmtree(metadata_path)
+        mkdir_p(metadata_path)
+        task_context.task_logger.addinfo("New empty 'metadata' directory created")
+
+        # remove extracted sips
+        tar_files = glob.glob("%s/*.tar" % task_context.path)
+        for tar_file in tar_files:
+            tar_base_name, _ = os.path.splitext(tar_file)
+            if os.path.exists(tar_base_name):
+                shutil.rmtree(tar_base_name)
+            task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
 
         # success status
         task_context.task_status = 0
@@ -812,27 +829,37 @@ class DIPAcquireAIPs(DefaultTask):
             if not os.path.exists(task_context.path):
                 os.mkdir(task_context.path)
 
+            selected_aips = task_context.additional_input["selected_aips"]
             # packagename is identifier of the DIP creation process
-            dip = DIP.objects.get(name=task_context.task_name)
+            #dip = DIP.objects.get(name=task_context.task_name)
 
             total_bytes_read = 0
-            if dip.all_aips_available():
-                dip_aips_total_size = dip.aips_total_size()
-                tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, dip_aips_total_size))
-                for aip in dip.aips.all():
+            aip_total_size = 0
+            for aip_source in selected_aips.values():
+                if not os.path.exists(aip_source):
+                    tl.adderr("Missing AIP source %s" % aip_source)
+                    tl.adderr("Task failed %s" % task_context.uuid)
+                    task_context.task_status = 1
+                    return
+                else:
+                    aip_total_size+=fsize(aip_source)
 
-                    partial_custom_progress_reporter = partial(custom_progress_reporter, self)
-                    package_extension = aip.source.rpartition('.')[2]
-                    aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip.identifier, package_extension)))
-                    tl.addinfo("Source: %s (%d)" % (aip.source, aip.source_size()))
-                    tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
-                    with open(aip_in_dip_work_dir, 'wb') as target_file:
-                        for chunk in FileBinaryDataChunks(aip.source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, dip_aips_total_size):
-                            target_file.write(chunk)
-                        total_bytes_read += aip.source_size()
-                        target_file.close()
-                    check_transfer(aip.source, aip_in_dip_work_dir, tl)
-                self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
+            #for aip in dip.aips.all():
+            for aip_identifier, aip_source in selected_aips.iteritems():
+                aip_source_size = fsize(aip_source)
+                partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+                package_extension = aip_source.rpartition('.')[2]
+                aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+                tl.addinfo("Source: %s (%d)" % (aip_source, aip_source_size))
+                tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
+                with open(aip_in_dip_work_dir, 'wb') as target_file:
+                    for chunk in FileBinaryDataChunks(aip_source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, aip_total_size):
+                        target_file.write(chunk)
+                    total_bytes_read += aip_source_size
+                    target_file.close()
+                check_transfer(aip_source, aip_in_dip_work_dir, tl)
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception as e:
             tl.adderr("Task failed %s" % task_context.uuid)
@@ -840,79 +867,74 @@ class DIPAcquireAIPs(DefaultTask):
         return
 
 
-class DIPExtractAIPs(Task, StatusValidation):
-    def run(self, pk_id, tc, *args, **kwargs):
+class DIPExtractAIPs(DefaultTask):
+
+    accept_input_from = ['All', DIPAcquireAIPs.__name__, "DIPExtractAIPs"]
+
+    def run_task(self, task_context):
         """
         DIP Extract AIPs
-        @type       pk_id: int
-        @param      pk_id: Primary key
-        @type       tc: TaskConfig
+        @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:13,type:4,stage:4
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
-        # ip, ip_work_dir, tl, start_time, package_premisfile = init_task(pk_id, "DIPExtractAIPs", "aip_to_dip_processing")
-        # tl.err = self.valid_state(ip, tc)
-        # if len(tl.err) > 0:
-        #     return tl.close_logger()
+        tl = task_context.task_logger
 
         try:
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
             # create dip working directory
-            if not os.path.exists(ip_work_dir):
-                os.mkdir(ip_work_dir)
+            if not os.path.exists(task_context.path):
+                os.mkdir(task_context.path)
 
             # packagename is identifier of the DIP creation process
-            dip = DIP.objects.get(name=ip.packagename)
+            #dip = DIP.objects.get(name = ip.packagename)
+            selected_aips = task_context.additional_input["selected_aips"]
 
-            def get_tar_object(aip):
-                import sys
-                reload(sys)
-                sys.setdefaultencoding('utf8')
-                package_extension = aip.source.rpartition('.')[2]
-                aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
-                return tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
-
-            if dip.all_aips_available():
-                total_members = 0
-                for aip in dip.aips.all():
-                    tar_obj = get_tar_object(aip)
+            total_members = 0
+            for aip_identifier, aip_source in selected_aips.iteritems():
+                if not os.path.exists(aip_source):
+                    tl.adderr("Missing AIP source %s" % aip_source)
+                    tl.adderr("Task failed %s" % task_context.uuid)
+                    task_context.task_status = 1
+                    return
+                else:
+                    package_extension = aip_source.rpartition('.')[2]
+                    aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+                    tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
                     members = tar_obj.getmembers()
                     total_members += len(members)
                     tar_obj.close()
 
-                tl.addinfo("DIP: %s, total number of entries: %d" % (ip.packagename, total_members))
-                total_processed_members = 0
-                perc = 0
-                for aip in dip.aips.all():
-                    package_extension = aip.source.rpartition('.')[2]
-                    aip_in_dip_work_dir = os.path.join(ip_work_dir, ("%s.%s" % (aip.identifier, package_extension)))
-                    tl.addinfo("Extracting: %s" % aip_in_dip_work_dir)
-                    tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
-                    members = tar_obj.getmembers()
-                    current_package_total_members = 0
-                    for member in members:
-                        if total_processed_members % 10 == 0:
-                            perc = (total_processed_members * 100) / total_members
-                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                        tar_obj.extract(member, ip_work_dir)
-                        tl.addinfo(("File extracted: %s" % member.name), display=False)
-                        total_processed_members += 1
-                        current_package_total_members += 1
-                    ip.statusprocess = tc.success_status
-                    ip.save()
-                    tl.addinfo("Extraction of %d items from package %s finished" % (current_package_total_members, aip.identifier))
-                tl.addinfo(("Extraction of %d items in total finished" % total_processed_members))
-                self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            else:
-                tl.addinfo("All AIPs must be accessible to perform this task")
-
-            # TODO: refactor and remove following line
-            #result = tl.close_logger()
-            ip.statusprocess = tc.success_status if result.success else tc.error_status
-            ip.save()
-            return result
-        except Exception:
-            # TODO: handle
+            tl.addinfo("Total number of entries: %d" % total_members)
+            total_processed_members = 0
+            perc = 0
+            for aip_identifier, aip_source in selected_aips.iteritems():
+                package_extension = aip_source.rpartition('.')[2]
+                aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+                tl.addinfo("Extracting: %s" % aip_in_dip_work_dir)
+                tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
+                members = tar_obj.getmembers()
+                current_package_total_members = 0
+                for member in members:
+                    if total_processed_members % 10 == 0:
+                        perc = (total_processed_members * 100) / total_members
+                        self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    tar_obj.extract(member, task_context.path)
+                    tl.addinfo(("File extracted: %s" % member.name), display=False)
+                    total_processed_members += 1
+                    current_package_total_members += 1
+                # ip.statusprocess = tc.success_status
+                # ip.save()
+                tl.addinfo("Extraction of %d items from package %s finished" % (current_package_total_members, aip_identifier))
+            tl.addinfo(("Extraction of %d items in total finished" % total_processed_members))
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            task_context.task_status = 0
+        except Exception as e:
+            tl.adderr("Task failed %s" % task_context.uuid)
+            tl.adderr("Task failed %s" % e.message)
+            task_context.task_status = 1
             pass
 
 # def finalize(tl, ted):

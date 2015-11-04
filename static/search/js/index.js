@@ -149,11 +149,14 @@ $(document).ready(function() {
             var cleanIdFormObj = $.grep(arr, function(v) {
                 return v.name.startsWith("add") || v.name.startsWith("rem");
             });
-            var actionIdArr = cleanIdFormObj[0].name.split('-'); 
-            var cleanId = actionIdArr.pop();
-            var action = actionIdArr.pop();
+            // var actionIdArr = cleanIdFormObj[0].name.substring(4); // .split('-');
+            var cleanId = cleanIdFormObj[0].name.substring(4);
+            window.console.log("cleanId: "+cleanId);
+            var action = cleanIdFormObj[0].name.substring(0,3);
+            window.console.log("action: "+action);
             var identifier = $("#"+cleanId).attr('value');
             arr.push({name: "action", value: action });
+            window.console.log("IDENTIFIER: "+identifier);
             arr.push({name: "identifier", value: identifier });
             arr.push({name: "cleanid", value: cleanId });
         },
@@ -163,7 +166,8 @@ $(document).ready(function() {
                 searchOptions.success(resp);
                 return;
             }
-            var sfx = btn.split('-').pop();
+            // var sfx = btn.substring(btn.indexOf('-'))
+            var sfx = btn.substring(4);
             if(btn.startsWith("add")) {
                 $('#result-'+sfx).css("background-color", "green");
                 $('#result-'+sfx).css("color", "white");
