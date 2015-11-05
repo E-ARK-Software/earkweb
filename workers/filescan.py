@@ -32,7 +32,7 @@ def filescan(path, mets, premis, tl):
     #                'eac-cpf': 'dmdSec',
     #                'premis': 'techMD'}
 
-    # TODO: admids
+    # TODO: admids - correct relative path to PREMIS
     admids = []
     admids.append(mets.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
     admids.append(mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
