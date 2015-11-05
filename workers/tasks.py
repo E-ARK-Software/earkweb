@@ -477,15 +477,17 @@ class AIPCreation(DefaultTask):
             # TODO: add tl to filescanner, timestamps/progress etc. - especially for large amounts of files! (progress bar?)
             aip_mets, aip_premis = filescan.filescan(os.path.join(task_context.path, 'submission'), package_mets_file, package_premis_file, tl)
 
-            # write updated METS to file
-            path_mets = os.path.join(task_context.path, 'IP.xml')
-            with open(path_mets, 'w') as output_file:
-                output_file.write(aip_mets.to_string())
-
             # TODO: write updated PREMIS file
             path_premis = os.path.join(root_metadata, 'PREMIS.xml')
             with open(path_premis, 'w') as output_file:
                  output_file.write(aip_premis.to_string())
+
+            # write updated METS to file;
+            # TODO: add PREMIS file
+            aip_mets.add_tech_md('./metadata/PREMIS.xml', 'admids')
+            path_mets = os.path.join(task_context.path, 'IP.xml')
+            with open(path_mets, 'w') as output_file:
+                output_file.write(aip_mets.to_string())
 
             task_context.task_status = 0
             tl.addinfo('METS and PREMIS updated with AIP contents.')
