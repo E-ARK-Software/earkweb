@@ -8,7 +8,7 @@ from config.config import root_dir
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 
 
-def filescan(path, mets, premis):
+def filescan(path, mets, premis, tl):
     '''
     This function scans a directory for every file inside,
     and adds it to the submission METS/PREMIS.
@@ -16,7 +16,7 @@ def filescan(path, mets, premis):
     @return:    mets (METS file object updated with AIP content)
     @return:    premis (PREMIS file object updated with AIP content)
     '''
-    print mets
+
     # Add METS file groups
     mets.add_file_grp(['submission'])
     mets.add_file_grp(['schemas'])
@@ -24,13 +24,13 @@ def filescan(path, mets, premis):
 
     # path length
     # TODO: retrieve from somewhere
-    workdir_length = len(path)
+    workdir_length = len(path) - len('/submission')
 
     # Known metadata formats.
     # TODO: expand list of known meta data formats
-    md_type_list = {'ead': 'techMD',
-                    'eac-cpf': 'dmdSec',
-                    'premis': 'techMD'}
+    #md_type_list = {'ead': 'techMD',
+    #                'eac-cpf': 'dmdSec',
+    #                'premis': 'techMD'}
 
     # TODO: admids
     admids = []
@@ -38,30 +38,42 @@ def filescan(path, mets, premis):
     admids.append(mets.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
     admids.append(mets.add_rights_md('file://./metadata/PREMIS.xml#Right'))
 
-    for directory, subdirectory, filenames in os.walk(path):
+    # TODO: new version: refer/link SIP METS
+
+    # meta data
+    for directory, subdirectory, filenames in os.walk(os.path.join(path, 'metadata')):
+    # for directory, subdirectory, filenames in os.walk(path):
         for filename in filenames:
             rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
-            premis.add_object(rel_path_file)
-            if directory[-8:].lower() == 'metadata':
+            if directory[-11:] == 'descriptive':
+                # get xml type from the xml file (xml_tag will be 'ead', 'premis' etc.)
                 xml_tag = MetaIdentification.MetaIdentification(os.path.join(directory, filename))
-                if xml_tag == 'schema':
-                    mets.add_file(['schemas'], rel_path_file, '')
-                elif xml_tag in md_type_list:
-                    if md_type_list[xml_tag] == 'techMD':
-                        mets.add_tech_md(rel_path_file, '')
-                    elif md_type_list[xml_tag] == 'dmdSec':
-                        mets.add_dmd_sec(xml_tag, rel_path_file)
-                elif xml_tag:
-                    mets.add_file(['customMD'], rel_path_file, 'admids')
-            else:
-                # Everything in other folders is content.
-                mets.add_file(['submission'], rel_path_file, 'admids')
+                mets.add_dmd_sec(xml_tag, rel_path_file)
+                premis.add_object(rel_path_file)
+            elif directory[-12:] == 'preservation':
+                mets.add_tech_md(rel_path_file, admids)
+                premis.add_object(rel_path_file)
+            elif directory[-5:] == 'other':
+                mets.add_file(['customMD'], rel_path_file, admids)
+                premis.add_object(rel_path_file)
+            elif directory[-7:] == 'schemas':
+                mets.add_file(['schemas'], rel_path_file, admids)
+                premis.add_object(rel_path_file)
+
+    # content
+    # TODO: fix SIP restructuring + path here! 'rep-000'
+    # TODO: second representation? -> after file format migration
+    for directory, subdirectory, filenames in os.walk(os.path.join(path, 'representations/rep-001')):
+        for filename in filenames:
+            rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
+            mets.add_file(['submission'], rel_path_file, admids)
+            premis.add_object(rel_path_file)
 
     return mets, premis
 
 
 def main():
-    ip_work_dir = '/var/data/earkweb/work/ENA_RK_TartuLV_141127'
+    ip_work_dir = '/var/data/earkweb/work/01bf885e-806e-42fb-a1aa-1e59fa668e02'
 
     # create submission METS
     mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
@@ -75,7 +87,7 @@ def main():
     package_premis_file.add_agent('eark-aip-creation')
 
     # scan package, update METS and PREMIS
-    aip_mets, aip_premis = filescan('/var/data/earkweb/work/ENA_RK_TartuLV_141127', submission_mets_file, package_premis_file)
+    aip_mets, aip_premis = filescan('/var/data/earkweb/work/01bf885e-806e-42fb-a1aa-1e59fa668e02/submission', submission_mets_file, package_premis_file)
 
     # print aip_mets
     # print aip_premis
