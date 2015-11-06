@@ -361,16 +361,18 @@ class SIPGenerator(object):
         mets_structmap.append(mets_structmap_div)
 
         # metadata structmap - IP root level!
-        mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
+        mets_structmap_metadata_div = M.div({"LABEL":"Metadata IP"})
         mets_structmap_div.append(mets_structmap_metadata_div)
         for id in metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
 
         # metadata structmap - submission level!
+        mets_structmap_metadata_sub_div = M.div({"LABEL":"Metadata Submission"})
+        mets_structmap_div.append(mets_structmap_metadata_sub_div)
         for id in submission_meta_ids:
             fptr = M.fptr({"FILEID": id})
-            mets_structmap_metadata_div.append(fptr)
+            mets_structmap_metadata_sub_div.append(fptr)
 
         # create structmap for representations
         mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
@@ -386,6 +388,7 @@ class SIPGenerator(object):
                         # delete the subdirectories list to stop os.walk from traversing further;
                         # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
                         del subdirectories[:]
+                        # TODO: repository name can be custom - take last part of directory string for name
                         rep_name = directory[-7:]
                         print 'deleting subdirs from rep: ' + rep_name
                         # create structMap div and append to representations structMap
