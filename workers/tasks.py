@@ -31,7 +31,6 @@ from earkcore.xml.deliveryvalidation import DeliveryValidation
 from taskresult import TaskResult
 from workers.default_task import DefaultTask
 from workers.statusvalidation import StatusValidation
-from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
 from earkcore.utils.fileutils import increment_file_name_suffix
@@ -47,7 +46,6 @@ from earkcore.utils.fileutils import mkdir_p
 from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
-from workers import filescan
 
 
 def custom_progress_reporter(task, percent):
