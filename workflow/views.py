@@ -37,7 +37,7 @@ from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 #import workers.tasks
-from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -45,6 +45,7 @@ import json
 
 from config.params import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
+from config.params import config_path_storage
 
 from django.utils import dateparse
 
@@ -170,6 +171,7 @@ def apply_task(request):
             return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
         # Get module description of the task to be executed from the database
         wfm = WorkflowModules.objects.get(pk=selected_action)
+        logging.debug(selected_action)
         # Get the selected information package from the database
         ip = InformationPackage.objects.get(pk=selected_ip)
         if request.is_ajax():
@@ -183,6 +185,10 @@ def apply_task(request):
                     additional_input['packagename'] = ip.packagename
                 if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
                     additional_input['identifier'] = ip.identifier
+                if wfm.identifier == AIPStore.__name__:
+                    additional_input['identifier'] = ip.identifier
+                    additional_input['storageDest'] = config_path_storage
+                    print "Storage destination %s" % additional_input['storageDest']
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
                     dip = DIP.objects.get(name=ip.packagename)
                     selected_aips = {}
@@ -232,11 +238,16 @@ def poll_state(request):
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
                         date_obj = dateparse.parse_datetime(task.result.last_change)
-                        print "Updating date"
-                        print date_obj
                         ip.last_change = date_obj
-                        if task.result.uuid and task.result.additional_output and 'identifier' in task.result.additional_output:
-                            ip.identifier = task.result.additional_output['identifier']
+                        if task.result.uuid and task.result.additional_output:
+
+                            if 'identifier' in task.result.additional_output:
+                                ip.identifier = task.result.additional_output['identifier']
+
+                            if 'storageLoc' in task.result.additional_output:
+                                ip.storage_loc = task.result.additional_output['storageLoc']
+                                print "Storage location %s" % ip.storage_loc
+
                         if task.result.last_task:
                             try:
                                 wf = WorkflowModules.objects.get(identifier=task.result.last_task)
