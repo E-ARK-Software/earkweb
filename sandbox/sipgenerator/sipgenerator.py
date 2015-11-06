@@ -345,11 +345,13 @@ class SIPGenerator(object):
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
 
+        # general filegroup
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
         mets_fileSec.append(mets_filegroup)
 
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
-        mets_fileSec.append(mets_filegroup)
+        # filegroup for representation mets files
+        mets_rep_group = M.fileGrp({"ID": "ID" +  uuid.uuid1().__str__(), "USE": "representations METS files"})
+        mets_fileSec.append(mets_rep_group)
 
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
         submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
@@ -361,14 +363,14 @@ class SIPGenerator(object):
         mets_structmap.append(mets_structmap_div)
 
         # metadata structmap - IP root level!
-        mets_structmap_metadata_div = M.div({"LABEL":"Metadata IP"})
+        mets_structmap_metadata_div = M.div({"LABEL": "Metadata IP"})
         mets_structmap_div.append(mets_structmap_metadata_div)
         for id in metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
 
         # metadata structmap - submission level!
-        mets_structmap_metadata_sub_div = M.div({"LABEL":"Metadata Submission"})
+        mets_structmap_metadata_sub_div = M.div({"LABEL": "Metadata Submission"})
         mets_structmap_div.append(mets_structmap_metadata_sub_div)
         for id in submission_meta_ids:
             fptr = M.fptr({"FILEID": id})
@@ -379,8 +381,7 @@ class SIPGenerator(object):
         root.append(mets_structmap_reps)
 
         workdir_length = len(self.root_path)
-
-        for directory, subdirectories, filenames in os.walk(self.root_path):
+        for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
             if len(filenames) > 0:
                 for filename in filenames:
                     rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
@@ -388,18 +389,21 @@ class SIPGenerator(object):
                         # delete the subdirectories list to stop os.walk from traversing further;
                         # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
                         del subdirectories[:]
-                        # TODO: repository name can be custom - take last part of directory string for name
+                        # TODO: repository name can be custom - take last part of directory string for rep_name
                         rep_name = directory[-7:]
-                        print 'deleting subdirs from rep: ' + rep_name
                         # create structMap div and append to representations structMap
-                        mets_structmap_rep_div = M.div({"ADMID":"", "LABEL":rep_name, "DMDID" :"", "TYPE":"representation mets"})
+                        mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
                         mets_structmap_reps.append(mets_structmap_rep_div)
                         # add mets file as <mets:mptr>
-                        # should be "xlink:href" "xlink:title", but that throws an error - maybe namespace issue?
-                        metspointer = M.mptr({"LOCTYPE":"URL",
-                                              "title":"mets file describing representation: " + rep_name + " of AIP: ",
-                                              "href":rel_path_file})
+                        # TODO: should be "xlink:href" "xlink:title", but that throws an error - maybe namespace issue?
+                        metspointer = M.mptr({"LOCTYPE": "URL",
+                                              "title": "mets file describing representation: " + rep_name + " of AIP: ",
+                                              "href": rel_path_file})
                         mets_structmap_rep_div.append(metspointer)
+                        # also add the rep mets to the metadata/submission structmap, so we can have a fptr
+                        id = self.addFile(os.path.join(directory, filename), mets_rep_group)
+                        mets_fptr = M.fptr({"FILEID": id})
+                        mets_structmap_rep_div.append(mets_fptr)
                     else:
                         # how to handle submission/metadata files?
                         print 'found a file: ' + os.path.join(directory, filename)
@@ -455,7 +459,7 @@ class testFormatIdentification(unittest.TestCase):
         sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
         #input_folder = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127")
         #output_mets = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/metadata/METS.xml")
-        sipgen.createIPMets()
+        sipgen.createSIPMets()
 
     def atestCreateDeliveryMets(self):
         sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/"))

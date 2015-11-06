@@ -440,10 +440,24 @@ class SIPValidation(DefaultTask):
         task_context.task_status = 0 if valid else 1
         return
 
-
 class AIPCreation(DefaultTask):
 
-   accept_input_from = [SIPValidation.__name__]
+    accept_input_from = [SIPValidation.__name__, 'AIPCreation']
+
+    def run_task(self, task_context):
+        '''
+        AIP Creation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:7,type:2,stage:2
+        '''
+        tl = task_context.task_logger
+        tl.addinfo('Not implemented yet.')
+        task_context.task_status = 0
+
+
+class AIPPackageMetsCreation(DefaultTask):
+
+   accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
@@ -455,41 +469,6 @@ class AIPCreation(DefaultTask):
         tl = task_context.task_logger
 
         try:
-            # location of root meta data folder
-            # root_metadata = os.path.join(task_context.path, 'metadata')
-
-            # create AIP PREMIS
-            #premis_skeleton_file = os.path.join(root_dir, 'earkresources/PREMIS_skeleton.xml')
-            #with open(premis_skeleton_file, 'r') as premis_file:
-            #    package_premis_file = Premis(premis_file)
-            #package_premis_file.add_agent('eark-aip-creation')
-
-            # create submission METS
-            #mets_skeleton_file = os.path.join(root_dir, 'earkresources/METS_skeleton.xml')
-            #with open(mets_skeleton_file, 'r') as mets_file:
-            #    package_mets_file = Mets(wd=task_context.path, alg=ChecksumAlgorithm.SHA256)
-
-            # set root attributes
-            #package_mets_file.root.set('TYPE', 'AIP')
-            #package_mets_file.root.set('ID', task_context.uuid)
-
-            # scan package, update METS and PREMIS
-            # TODO: add tl to filescanner, timestamps/progress etc. - especially for large amounts of files! (progress bar?)
-            #aip_mets, aip_premis = filescan.filescan(os.path.join(task_context.path, 'submission'), package_mets_file, package_premis_file, tl)
-            # aip_mets, aip_premis = filescan.filescan(os.path.join(task_context.path, 'submission'), package_mets_file, self.package_premis, tl)
-
-            # TODO: write updated PREMIS file
-            #path_premis = os.path.join(root_metadata, 'PREMIS.xml')
-            #with open(path_premis, 'w') as output_file:
-            #     output_file.write(aip_premis.to_string())
-
-            # write updated METS to file
-            #aip_mets.add_tech_md('./metadata/PREMIS.xml', 'admids')
-            #path_mets = os.path.join(task_context.path, 'IP.xml')
-            #with open(path_mets, 'w') as output_file:
-            #    output_file.write(aip_mets.to_string())
-
-            #sipgen = SIPGenerator(os.path.join(task_context.path, 'representations/rep-001'))
             ipgen = SIPGenerator(task_context.path)
             ipgen.createAIPMets()
 
@@ -503,13 +482,13 @@ class AIPCreation(DefaultTask):
 
 class AIPValidation(DefaultTask):
 
-    accept_input_from = [AIPCreation.__name__]
+    accept_input_from = [AIPPackageMetsCreation.__name__, 'AIPValidation']
 
     def run_task(self, task_context):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:9,type:2,stage:2
         """
         tl = task_context.task_logger
         # try:
@@ -538,7 +517,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -611,7 +590,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
         tl = task_context.task_logger
 
