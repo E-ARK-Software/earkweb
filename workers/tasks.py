@@ -580,9 +580,34 @@ class AIPPackaging(DefaultTask):
             task_context.task_status = 0
         return
 
+class AIPStore(DefaultTask):
+
+    accept_input_from = [AIPPackaging.__name__, "AIPStore"]
+
+    def run_task(self, task_context):
+        """
+        AIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:11,type:2,stage:2
+        """
+        tl = task_context.task_logger
+
+        result = {"storageLoc": "undefined"}
+        try:
+            package_id = task_context.additional_input["identifier"]
+            storePath = task_context.additional_input["storageDest"]
+            task_context.task_status = 0
+            result = {"storageLoc": "Geiles string"}
+        except Exception as e:
+            # update the PREMIS file at the end of the task - FAILURE
+            tl.adderr("Task failed: %s" % e.message)
+            #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+            task_context.task_status = 1
+        return result
+
 class LilyHDFSUpload(DefaultTask):
 
-    accept_input_from = [AIPPackaging.__name__, "LilyHDFSUpload"]
+    accept_input_from = [AIPStore.__name__, "LilyHDFSUpload"]
 
     def run_task(self, task_context):
         """
@@ -653,7 +678,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:4,stage:4
+        @param      tc: order:12,type:4,stage:4
         """
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -693,7 +718,7 @@ class DIPAcquireAIPs(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:4,stage:4
+        @param      tc: order:13,type:4,stage:4
         """
         tl = task_context.task_logger
 
@@ -705,6 +730,7 @@ class DIPAcquireAIPs(DefaultTask):
             selected_aips = task_context.additional_input["selected_aips"]
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name=task_context.task_name)
+            print selected_aips
 
             total_bytes_read = 0
             aip_total_size = 0
@@ -748,7 +774,7 @@ class DIPExtractAIPs(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:4,stage:4
+        @param      tc: order:14,type:4,stage:4
         """
         tl = task_context.task_logger
 
