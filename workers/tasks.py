@@ -489,22 +489,27 @@ class AIPValidation(DefaultTask):
         @param      tc: order:9,type:2,stage:2
         """
         tl = task_context.task_logger
-        # try:
-        #     tl.addinfo("AIP always validates, this task is not implemented yet")
-        #     valid = True # TODO: Implement AIP validation
-        #
-        #     ip.statusprocess = tc.success_status if valid else tc.error_status
-        #     ip.save()
-        #     self.update_state(state='PROGRESS', meta={'process_percent': 100})
-        #
+        try:
+            aip_mets = os.path.join(task_context.path, 'IP.xml')
+            parsed_aip_mets = ParsedMets(task_context.path)
+            parsed_aip_mets.load_mets(aip_mets)
+            validation_aip_mets = MetsValidation(parsed_aip_mets)
+            size_val_result = validation_aip_mets.validate_files_size()
+
+            tl.log += size_val_result.log
+            tl.err += size_val_result.err
+
+            valid = (len(tl.err) == 0)
+
+            task_context.task_status = 0 if valid else 1
+
+            tl.addinfo("IP.xml validated.")
         #     # update the PREMIS file at the end of the task - SUCCESS
         #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-        # except Exception, err:
+        except Exception, err:
+            task_context.status = 1
         #     # update the PREMIS file at the end of the task - FAILURE
         #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-
-        tl.addinfo("Not implemented yet.")
-        task_context.task_status = 0
 
 
 class AIPPackaging(DefaultTask):
