@@ -4,7 +4,7 @@ import unittest
 from config.config import root_dir
 from earkcore.utils import randomutils
 from taskresult import TaskResult
-from earkcore.metadata.premis import PremisUpdate
+#from earkcore.metadata.premis import PremisUpdate
 
 class TaskLogger(object):
     """
@@ -86,7 +86,7 @@ class TaskLogger(object):
 
         # Add task result to PREMIS file
         # TODO: retrieve success/failure status from TaskResult
-        PremisUpdate.add_event(task_info)
+        #PremisUpdate.add_event(task_info)
 
         if self.path is not None and not self.task_logfile.closed:
             self.task_logfile.close()
