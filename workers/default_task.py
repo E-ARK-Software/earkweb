@@ -10,6 +10,7 @@ from taskresult import TaskResult
 from workers.default_task_context import DefaultTaskContext
 from workers.ip_state import IpState
 from tasklogger import TaskLogger
+from earkcore.metadata.premis.PremisManipulate import Premis
 
 
 class DefaultTask(Task):
@@ -19,6 +20,8 @@ class DefaultTask(Task):
     accept_input_from = []
     # Task name is name of instantiating class (is set by the concrete task implementation)
     task_name = ""
+
+    # premis_manipulate = ""
 
     def __init__(self):
         self.task_name = str(self.__name__)
@@ -40,12 +43,17 @@ class DefaultTask(Task):
 
         # create PREMIS file or return handle to task
         # premis_manipulate = None
-        # if os.path.isfile(metadata_dir + '/PREMIS.xml'):
-        #     premis_file = open(metadata_dir + '/PREMIS.xml', 'rw')
-        #     premis_manipulate = Premis(premis_file)
+        # path_premis = os.path.join(metadata_dir, 'PREMIS.xml')
+        # if os.path.isfile(path_premis):
+        #     premis_file = open(path_premis, 'rw')
+        #     self.package_premis = Premis(premis_file)
         # else:
-        #     premis_manipulate = Premis()
-        #     premis_manipulate.add_agent('eark-aip-creation')
+        #     package_premis = Premis()
+        #     package_premis.add_agent('eark-aip-creation')
+        #     with open(path_premis, 'w') as output_file:
+        #          output_file.write(package_premis.to_string())
+        #     premis_file = open(path_premis, 'rw')
+        #     self.package_premis = Premis(premis_file)
 
         # get state, try reading current state from state.xml, otherwise set default to is error state,
         # which must then be set to success state explicitely.
@@ -85,6 +93,12 @@ class DefaultTask(Task):
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         # task result object returned as AsyncResult(task_id).result in celery
         task_result = TaskResult(task_context)
+
+        # add event to PREMIS and write file
+        # self.package_premis.add_event('identifier_value', task_context.task_status, 'linking_agent', 'linking_object')
+        # if os.path.isfile(os.path.join(task_context.path, 'metadata/PREMIS.xml')):
+        #     with open(os.path.join(task_context.path, 'metadata/PREMIS.xml'), 'w') as output_file:
+        #         output_file.write(self.package_premis.to_string())
 
         #end_time = time.time()
         return task_result

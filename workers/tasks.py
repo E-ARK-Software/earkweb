@@ -31,10 +31,8 @@ from earkcore.xml.deliveryvalidation import DeliveryValidation
 from taskresult import TaskResult
 from workers.default_task import DefaultTask
 from workers.statusvalidation import StatusValidation
-from earkcore.metadata.mets.MetsManipulate import Mets
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.metadata.premis.PremisManipulate import Premis
-from earkcore.metadata.identification import MetaIdentification
 from earkcore.utils.fileutils import increment_file_name_suffix
 from earkcore.utils.fileutils import latest_aip
 from tasklogger import TaskLogger
@@ -142,7 +140,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         """
 
         sipgen = SIPGenerator(os.path.join(task_context.path, 'representations/rep-001'))
-        sipgen.createIPMets()
+        sipgen.createSIPMets()
 
         task_context.task_status = 0
         return {}
@@ -209,7 +207,7 @@ class SIPtoAIPReset(DefaultTask):
             fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata']
+        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata', 'IP.xml']
         for item in items_to_remove:
             remove_fs_item(task_context.uuid, task_context.path, item)
 
@@ -440,144 +438,78 @@ class SIPValidation(DefaultTask):
         task_context.task_status = 0 if valid else 1
         return
 
-
 class AIPCreation(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__]
+    accept_input_from = [SIPValidation.__name__, 'AIPCreation']
 
     def run_task(self, task_context):
-        """
-        AIP Creation run task
+        '''
+        AIP Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:7,type:2,stage:2
-        """
+        '''
         tl = task_context.task_logger
-        # #package_dir = os.path.join(ip_work_dir, ip.packagename)
-        # submission_dir = os.path.join(task_context.path, "submission")
-        # package_in_submission_dir = os.path.join(submission_dir, ip.packagename)
-        # shutil.move(task_context.path, package_in_submission_dir)
-        # tl.addinfo("Package directory %s moved to submission directory %s" % (package_dir, package_in_submission_dir))
-        #
-        # # create submission mets
-        # mets_skeleton_file = root_dir + '/earkresources/METS_skeleton.xml'
-        # with open(mets_skeleton_file, 'r') as mets_file:
-        #     submission_mets_file = Mets(wd=ip_work_dir, alg=ChecksumAlgorithm.SHA256)
-        # # my_mets.add_dmd_sec('EAD', 'file://./metadata/EAD.xml')
-        # admids = []
-        # admids.append(submission_mets_file.add_tech_md('file://./metadata/PREMIS.xml#Obj'))
-        # admids.append(submission_mets_file.add_digiprov_md('file://./metadata/PREMIS.xml#Ingest'))
-        # admids.append(submission_mets_file.add_rights_md('file://./metadata/PREMIS.xml#Right'))
-        # submission_mets_file.add_file_grp(['submission'])
-        # submission_mets_file.add_file_grp(['schemas'])
-        # # add a file group for metadata files that are not classified
-        # submission_mets_file.add_file_grp(['customMD'])
-        # # TODO: rel_path_mets has to be changed according to how the METS file is named
-        # rel_path_mets = "file://./submission/%s/%s" % (ip.packagename, "METS.xml")
-        #
-        # submission_mets_file.add_file(['submission'], rel_path_mets, admids)
-        # # TODO: set header with list of attributes
-        # # retrieve METS root tag attributes
-        # mets_attributes = params.mets_attributes
-        # for item in mets_attributes.items():
-        #     submission_mets_file.root.set(item[0], item[1])
-        #
-        # # path length
-        # workdir_length = len(ip_work_dir)
-        #
-        # # cover uppercase/lowercase in sub directories
-        # directory_list =  os.listdir(package_in_submission_dir)
-        # content_directory = ''
-        # metadata_directory = ''
-        # for subdir in directory_list:
-        #     if os.path.isdir(package_in_submission_dir + '/' + subdir):
-        #         if subdir.lower() == 'content':
-        #             content_directory = '/' + subdir
-        #         elif subdir.lower() == 'metadata':
-        #             metadata_directory = '/' + subdir
-        #
-        # # retrieve files in /Content
-        # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + content_directory):
-        #     for filename in filenames:
-        #         rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
-        #         # create METS entry:
-        #         submission_mets_file.add_file(['submission'], rel_path_file, admids)
-        #         # create PREMIS object entry:
-        #         package_premis_file.add_object(rel_path_file)
-        #
-        # # retrieve files in /Metadata
-        # md_type_list = ['ead', 'eac', 'premis', 'mets']
-        # for directory, subdirectories, filenames in os.walk(package_in_submission_dir + metadata_directory):
-        #     for filename in filenames:
-        #         rel_path_file = 'file://.' + directory[workdir_length:] + '/' + filename
-        #         # create PREMIS object entry:
-        #         package_premis_file.add_object(rel_path_file)
-        #         # TODO: add to metadata sections? tech_md, rights_md, digiprov_md?
-        #         # TODO: different filegrp for schemas?
-        #         # create METS entry:
-        #         if filename[-3:] == 'xsd':
-        #             submission_mets_file.add_file(['schemas'], rel_path_file, admids)
-        #         elif filename[-3:] == 'xml':
-        #             if (filename[:3].lower() == 'ead' or filename[-7:].lower() == 'ead.xml'):
-        #                 submission_mets_file.add_dmd_sec('ead', rel_path_file)
-        #             elif (filename[:3].lower() == 'eac' or filename[-7:].lower() == 'eac.xml'):
-        #                 submission_mets_file.add_dmd_sec('eac', rel_path_file)
-        #             elif (filename[:6].lower() == 'premis' or filename[-10:].lower() == 'premis.xml'):
-        #                 submission_mets_file.add_tech_md(rel_path_file, '')
-        #             elif filename:
-        #                 xml_tag = MetaIdentification.MetaIdentification(directory + '/' + filename)
-        #                 if xml_tag.lower() in md_type_list:
-        #                 # TODO see rules above, and add accordingly
-        #                     if xml_tag.lower() == 'eac' or xml_tag.lower() == 'ead':
-        #                         submission_mets_file.add_dmd_sec(xml_tag.lower(), rel_path_file)
-        #                     elif xml_tag:
-        #                         submission_mets_file.add_tech_md(rel_path_file, '')
-        #                 elif xml_tag.lower() not in md_type_list:
-        #                 # custom metadata format?
-        #                     submission_mets_file.add_file(['customMD'], rel_path_file, admids)
-        #                     # print 'found a custom xml file: ' + filename + ' with tag: ' + xml_tag
-        #
-        # submission_mets_file.add_file(['submission'], rel_path_mets, admids)
-        # submission_mets_file.root.set('TYPE', 'AIP')
-        # submission_mets_file.root.set('ID', ip.uuid)
-        #
-        # path_mets = os.path.join(submission_dir, "METS.xml")
-        # with open(path_mets, 'w') as output_file:
-        #     output_file.write(submission_mets_file.to_string())
-        # tl.addinfo(("Submission METS file created: %s" % rel_path_mets))
-        # valid = xx
-        # task_context.task_status = 0 if valid else 1
-        tl.addinfo("Not implemented yet.")
+        tl.addinfo('Not implemented yet.')
         task_context.task_status = 0
-        return
 
-class AIPValidation(DefaultTask):
 
-    accept_input_from = [AIPCreation.__name__]
+class AIPPackageMetsCreation(DefaultTask):
 
-    def run_task(self, task_context):
+   accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
+
+   def run_task(self, task_context):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:8,type:2,stage:2
         """
+
         tl = task_context.task_logger
-        # try:
-        #     tl.addinfo("AIP always validates, this task is not implemented yet")
-        #     valid = True # TODO: Implement AIP validation
-        #
-        #     ip.statusprocess = tc.success_status if valid else tc.error_status
-        #     ip.save()
-        #     self.update_state(state='PROGRESS', meta={'process_percent': 100})
-        #
+
+        try:
+            ipgen = SIPGenerator(task_context.path)
+            ipgen.createAIPMets()
+
+            task_context.task_status = 0
+            tl.addinfo('METS and PREMIS updated with AIP contents.')
+        except Exception, err:
+            tl.addinfo('error: ', Exception)
+            task_context.task_status = 1
+        return
+
+
+class AIPValidation(DefaultTask):
+
+    accept_input_from = [AIPPackageMetsCreation.__name__, 'AIPValidation']
+
+    def run_task(self, task_context):
+        """
+        AIP Validation
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:9,type:2,stage:2
+        """
+        tl = task_context.task_logger
+        try:
+            aip_mets = os.path.join(task_context.path, 'IP.xml')
+            parsed_aip_mets = ParsedMets(task_context.path)
+            parsed_aip_mets.load_mets(aip_mets)
+            validation_aip_mets = MetsValidation(parsed_aip_mets)
+            size_val_result = validation_aip_mets.validate_files_size()
+
+            tl.log += size_val_result.log
+            tl.err += size_val_result.err
+
+            valid = (len(tl.err) == 0)
+
+            task_context.task_status = 0 if valid else 1
+
+            tl.addinfo("IP.xml validated.")
         #     # update the PREMIS file at the end of the task - SUCCESS
         #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-        # except Exception, err:
+        except Exception, err:
+            task_context.status = 1
         #     # update the PREMIS file at the end of the task - FAILURE
         #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-
-        tl.addinfo("Not implemented yet.")
-        task_context.task_status = 0
-        return
 
 
 class AIPPackaging(DefaultTask):
@@ -588,7 +520,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -661,7 +593,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
         tl = task_context.task_logger
 

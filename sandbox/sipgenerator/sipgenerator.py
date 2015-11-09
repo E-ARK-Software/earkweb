@@ -218,7 +218,7 @@ class SIPGenerator(object):
 
         return premis_ids
 
-    def createIPMets(self, premis_ids = None):
+    def createSIPMets(self, premis_ids = None):
         if premis_ids == None:
             premis_ids = self.createPremis()
 
@@ -266,6 +266,11 @@ class SIPGenerator(object):
         content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
 
+        # checking for cross-representation metadata:
+        package_root = self.root_path.rsplit('/', 2)
+        package_metadata = os.path.join(package_root[0], 'metadata')
+        ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+
         mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
         root.append(mets_structmap)
 
@@ -283,6 +288,9 @@ class SIPGenerator(object):
         for id in metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
+        for id in ext_metadata_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_metadata_div.append(fptr)
 
         #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
         #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
@@ -295,6 +303,125 @@ class SIPGenerator(object):
         path_mets = os.path.join(self.root_path,'METS.xml')
         with open(path_mets, 'w') as output_file:
             output_file.write(str)
+
+
+    #def createAIPMets(self, premis_ids=None):
+    def createAIPMets(self):
+        '''
+        Create the AIP METS file.
+
+        @param premis_ids:
+        @return:
+        '''
+        #if premis_ids == None:
+        #    premis_ids = self.createPremis()
+
+        # create METS skeleton
+        METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+        root = M.mets(METS_ATTRIBUTES)
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+
+        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+        root.append(mets_hdr)
+
+        mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+        mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
+        mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
+        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
+        mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
+        mets_hdr.append(M.metsDocumentID("IP.xml"))
+
+        mets_dmd = M.dmdSec({"ID":""})
+        root.append(mets_dmd)
+        # this is how to add descriptive metadata entry
+        #file_name = "../schemas/ead.xml"
+        #file_url = unicode(os.path.join("file://",file_name), "utf-8")
+        #checksum = self.sha256(file_name)
+        #file_size = os.path.getsize(file_name)
+        #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
+        #mets_dmd.append(mets_mdref)
+
+        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
+        root.append(mets_amdSec)
+
+        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
+        mets_amdSec.append(mets_techmd)
+        #for id in premis_ids:
+        #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
+        #    mets_techmd.append(mets_mdref)
+
+        mets_fileSec = M.fileSec()
+        root.append(mets_fileSec)
+
+        # general filegroup
+        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_fileSec.append(mets_filegroup)
+
+        # filegroup for representation mets files
+        mets_rep_group = M.fileGrp({"ID": "ID" +  uuid.uuid1().__str__(), "USE": "representations METS files"})
+        mets_fileSec.append(mets_rep_group)
+
+        metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+        submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
+
+        mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+        root.append(mets_structmap)
+
+        mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
+        mets_structmap.append(mets_structmap_div)
+
+        # metadata structmap - IP root level!
+        mets_structmap_metadata_div = M.div({"LABEL": "Metadata IP"})
+        mets_structmap_div.append(mets_structmap_metadata_div)
+        for id in metadata_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_metadata_div.append(fptr)
+
+        # metadata structmap - submission level!
+        mets_structmap_metadata_sub_div = M.div({"LABEL": "Metadata Submission"})
+        mets_structmap_div.append(mets_structmap_metadata_sub_div)
+        for id in submission_meta_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_metadata_sub_div.append(fptr)
+
+        # create structmap for representations
+        mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
+        root.append(mets_structmap_reps)
+
+        workdir_length = len(self.root_path)
+        for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
+            if len(filenames) > 0:
+                for filename in filenames:
+                    rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
+                    if filename.lower() == 'mets.xml':
+                        # delete the subdirectories list to stop os.walk from traversing further;
+                        # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
+                        del subdirectories[:]
+                        rep_name = directory.rsplit('/', 1)
+                        rep_name = rep_name[1]
+                        # create structMap div and append to representations structMap
+                        mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
+                        mets_structmap_reps.append(mets_structmap_rep_div)
+                        # add mets file as <mets:mptr>
+                        # TODO: should be "xlink:href" "xlink:title", but that throws an error - maybe namespace issue?
+                        metspointer = M.mptr({"LOCTYPE": "URL",
+                                              "title": "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
+                                              "href": rel_path_file})
+                        mets_structmap_rep_div.append(metspointer)
+                        # also add the rep mets to the metadata/submission structmap, so we can have a fptr
+                        id = self.addFile(os.path.join(directory, filename), mets_rep_group)
+                        mets_fptr = M.fptr({"FILEID": id})
+                        mets_structmap_rep_div.append(mets_fptr)
+                    else:
+                        # how to handle submission/metadata files?
+                        print 'found a file: ' + os.path.join(directory, filename)
+
+        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+
+        path_mets = os.path.join(self.root_path,'IP.xml')
+        with open(path_mets, 'w') as output_file:
+            output_file.write(str)
+
 
     def createDeliveryMets(self, input_archive, output_mets):
         #create delivery METS skeleton
@@ -340,7 +467,7 @@ class testFormatIdentification(unittest.TestCase):
         sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127"))
         #input_folder = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127")
         #output_mets = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/metadata/METS.xml")
-        sipgen.createIPMets()
+        sipgen.createSIPMets()
 
     def atestCreateDeliveryMets(self):
         sipgen = SIPGenerator(os.path.join(root_dir, "sandbox/sipgenerator/resources/"))

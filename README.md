@@ -85,7 +85,8 @@ Update filetype signatures:
    Common errors that might occur during python package installation are missing linux package dependencies, 
    therefore it might be necessary to install following packages:
         
-        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev
+        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
+        sudo easy_install --upgrade pytz
 
 4. Enable CAS in Django
 
@@ -108,8 +109,8 @@ Update filetype signatures:
 
     sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
     sudo chown -R <user>:<group> /var/data/earkweb/
-    sudo mkdir -p /var/earkweb/log/
-    sudo chown <user>:<group> /var/earkweb/log/
+    sudo mkdir -p /var/log/earkweb
+    sudo chown <user>:<group> /var/log/earkweb
     
 ### Create and initialize database
 
@@ -128,7 +129,7 @@ Update filetype signatures:
         
     Create user 'arkiv':
     
-        CREATE USER 'jeffrey'@'localhost' IDENTIFIED BY 'mypass';
+        CREATE USER 'arkiv'@'localhost' IDENTIFIED BY 'arkiv';
         
     Create database 'eark':
         
@@ -151,6 +152,13 @@ Update filetype signatures:
 
         python manage.py makemigrations
         python manage.py migrate
+
+    Required software packages for django/celery/mysql support:
+
+        pip install django
+        pip install -U celery
+        pip install django-celery
+        pip install MySQL-python
     
 ### Run web application (development mode)
 
