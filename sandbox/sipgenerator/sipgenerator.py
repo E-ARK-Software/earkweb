@@ -266,6 +266,11 @@ class SIPGenerator(object):
         content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
 
+        # checking for cross-representation metadata:
+        package_root = self.root_path.rsplit('/', 2)
+        package_metadata = os.path.join(package_root[0], 'metadata')
+        ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+
         mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
         root.append(mets_structmap)
 
@@ -281,6 +286,9 @@ class SIPGenerator(object):
         mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
         mets_structmap_div.append(mets_structmap_metadata_div)
         for id in metadata_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_metadata_div.append(fptr)
+        for id in ext_metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
 
