@@ -50,8 +50,6 @@ class MetsValidation(object):
         mets_file_elms = self.parsed_mets.mets_tree.getroot().xpath('//mets:file', namespaces=MetsValidation.ns)
         if (len(mets_file_elms) == 0):
             err.append("No mets:file elements found")
-            ##########
-            print ("No mets:file elements found")
             return False
         for mets_file_elm in mets_file_elms:
             fileloc = mets_file_elm.xpath('mets:FLocat/@xlink:href', namespaces=MetsValidation.ns)
@@ -76,7 +74,7 @@ class MetsValidation(object):
                 valid = False
                 # workaround for earkweb.log on AIP root/metadata
                 if file_path[-22:] == './metadata/earkweb.log':
-                    err.pop(-1)
+                    err.pop()
                     valid = True
                     log.append('Forced validation result \'True\' for file: ' + file_path)
         log.append("File size validity: \"%s\"" % str(valid))
