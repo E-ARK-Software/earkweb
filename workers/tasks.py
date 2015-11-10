@@ -618,7 +618,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
         tl = task_context.task_logger
 
