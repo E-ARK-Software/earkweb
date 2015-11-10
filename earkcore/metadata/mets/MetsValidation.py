@@ -8,103 +8,146 @@ __author__ = 'shsdev'
 
 import unittest
 import os
+import lxml
 
 from ParsedMets import ParsedMets
 from config.config import root_dir
+from config.config import mets_schema_file
 from earkcore.xml.validationresult import ValidationResult
 from earkcore.utils.stringutils import lstrip_substring
+from lxml import etree
+from earkcore.fixity.ChecksumValidation import ChecksumValidation
+
+from earkcore.metadata.XmlHelper import q
+XLINK_NS = "http://www.w3.org/1999/xlink"
+METS_NS = 'http://www.loc.gov/METS/'
+
 
 class MetsValidation(object):
-    """
-    METS validation
-    """
-    ns = {'mets': 'http://www.loc.gov/METS/', 'xlink': 'http://www.w3.org/1999/xlink',
-          'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    '''
+    Validation of Mets files.
+    '''
 
-    parsed_mets = None
+    def __init__(self, root):
+        self.validation_errors = []
+        self.total_files = 0
+        self.schema = etree.XMLSchema(file=mets_schema_file)
+        self.rootpath = root
+        self.subsequent_mets = []
 
-    def __init__(self, pmets):
-        """
-        Constructor takes parsed mets object as argument
+    def validate_mets(self, mets):
+        '''
+        Validates a Mets file. The Mets file is parsed with etree.iterparse(), which allows event-driven parsing of
+        large files. On certain events/conditions actions are taken, like file validation or adding Mets files found
+        inside representations to a list so that they will be evaluated later on.
 
-        @type       parsed_mets: ParsedMets
-        @param      parsed_mets: Parsed mets object
-        """
-        self.parsed_mets = pmets
+        @param mets:    Path leading to a Mets file that will be evaluated.
+        @return:        Boolean validation result.
+        '''
+        # TODO: remove processed elements from tree
+        if mets.startswith('file://./'):
+            mets = os.path.join(self.rootpath, mets[9:])
+            # change self.rootpath so it fits any relative path found in the current (subsequent) mets
+            self.rootpath = mets.rsplit('/', 1)[0]
+            print self.rootpath
+            print mets
+        else:
+            self.rootpath = mets.rsplit('/', 1)[0]
+            print self.rootpath
 
-    def validate_files_size(self):
-        """
-        Compare file size values of mets: file elements to the actual file size of the referenced files.
-        File paths in the METS fileSec are relative to the root directory initialized by the constructor.
-        It is required to initialize the parsed_mets attribute before validating the fileSec of the METS.
+        try:
+            parsed_mets = etree.iterparse(open(mets), events=('start', 'end'), schema=self.schema)
+            for event, element in parsed_mets:
+                # Define what to do with specific tags.
+                if event == 'end' and element.tag == q(METS_NS, 'file'):
+                    # files
+                    self.total_files += 1
+                    self.validate_file(element)
+                elif event == 'end' and element.tag == q(METS_NS, 'structMap') and element.attrib['LABEL'] == 'representations':
+                    # representation mets files
+                    rep =  element.getchildren()[0].attrib['LABEL']
+                    for child in element.getchildren()[0]:
+                        if child.tag == q(METS_NS, 'mptr'):
+                            metspath = child.attrib[q(XLINK_NS, 'href')]
+                            sub_mets = rep, metspath
+                            self.subsequent_mets.append(sub_mets)
+                elif event == 'end' and element.tag == q(METS_NS, 'dmdSec'):
+                    # dmdSec
+                    pass
+                elif event == 'end' and element.tag == q(METS_NS, 'amdSec'):
+                    # amdSec
+                    pass
+        except etree.XMLSyntaxError, e:
+            self.validation_errors.append(e.error_log)
 
-        @rtype:     bool
-        @return:    Validity of size values
-        """
-        valid = True
-        log = []
+        if self.total_files != 0:
+            self.validation_errors.append('File count yielded %d instead of 0.' % self.total_files)
+
+        # for error in self.validation_errors:
+        #     print error
+
+        return True if len(self.validation_errors) == 0 else False
+
+
+    def validate_file(self, file):
+        '''
+        Validates every file found inside a Mets, so far: size, checksum, fixity. If a file exists, the counter for
+        self.total_files is diminished.
+
+        @param file:    XML Element of a file that will be validated.
+        @return:
+        '''
         err = []
-        if self.parsed_mets is None:
-            err.append("Attribute 'parsed_mets' of type ElementTree must be initialized")
+        log = []
 
-        mets_file_elms = self.parsed_mets.mets_tree.getroot().xpath('//mets:file', namespaces=MetsValidation.ns)
-        if (len(mets_file_elms) == 0):
-            err.append("No mets:file elements found")
-            return False
-        for mets_file_elm in mets_file_elms:
-            fileloc = mets_file_elm.xpath('mets:FLocat/@xlink:href', namespaces=MetsValidation.ns)
-            if (len(fileloc) != 1):
-                err.append("Unable to determine file location reference in METS file")
-                valid = False
-            fitem = fileloc[0]
-            fitem = remove_protocol(fitem)
-            file_path = os.path.join(self.parsed_mets.root_dir, fitem).replace('\\', '/')
-            if not os.path.exists(file_path):
-                err.append("Unable to find file referenced in delivery METS file: %s" % file_path)
-                return ValidationResult(False, log, err)
-            size_elms = mets_file_elm.xpath('@SIZE', namespaces={'mets': 'http://www.loc.gov/METS/'})
-            if not (len(size_elms) == 1 and size_elms[0].isdigit()):
-                err.append("SIZE attribute value is not a digit")
-                valid = False
-            package_file_size = os.path.getsize(file_path)
-            size_attr_value = int(size_elms[0])
-            if not package_file_size == size_attr_value:
-                err.append("Actual file size %d does not equal file size attribute value %d" % (
-                    package_file_size, size_attr_value))
-                valid = False
-                # workaround for earkweb.log on AIP root/metadata
+        # get information about the file
+        attr_path =  file.getchildren()[0].attrib[q(XLINK_NS,'href')]
+        attr_size = file.attrib['SIZE']
+        attr_checksum = file.attrib['CHECKSUM']
+        attr_checksumtype = file.attrib['CHECKSUMTYPE']
+        # mimetpye = file.attrib['MIMETYPE']
+
+        # check if file exists, if yes validate it
+        fitem = remove_protocol(attr_path)
+        file_path = os.path.join(self.rootpath, fitem).replace('\\', '/')
+        if not os.path.exists(file_path):
+            err.append("Unable to find file referenced in delivery METS file: %s" % file_path)
+        else:
+            self.total_files -= 1
+            # check if file size is valid
+            # TODO: is this even needed?
+            file_size = os.path.getsize(file_path)
+            if not int(file_size) == int(attr_size):
+                err.append("Actual file size %s does not equal file size attribute value %s" % (file_size, attr_size))
+                # workaround for earkweb.log in AIP metadata/ folder on IP root level
                 if file_path[-22:] == './metadata/earkweb.log':
                     err.pop()
-                    valid = True
-                    log.append('Forced validation result \'True\' for file: ' + file_path)
-        log.append("File size validity: \"%s\"" % str(valid))
-        return ValidationResult(valid, log, err)
+                    log.append('Forced validation result \'True\' for file: %s' % (file_path))
+
+            # validate checksum
+            checksum_validation = ChecksumValidation()
+            checksum_result = checksum_validation.validate_checksum(file_path, attr_checksum, attr_checksumtype)
+            if not checksum_result == True:
+                err.append('Checksum validation failed for: %s' % file_path)
+
+        for error in err:
+            print 'File validation error: ' + error
+            self.validation_errors.append(error)
+
+
 
 class TestMetsValidation(unittest.TestCase):
+    # TODO: add one test each for a valid and a faulty Mets
+    rootpath = '/var/data/earkweb/work/7449629c-9e67-44d6-a10e-21d1fdfa4ebd/'
 
-    test_dir = root_dir + '/earkcore/metadata/mets/resources/'
+    def test_IP_mets(self):
+        mets_validator = MetsValidation(self.rootpath)
+        mets_validator.validate_mets(os.path.join(self.rootpath, 'IP.xml'))
+        for rep, metspath in mets_validator.subsequent_mets:
+            # print 'METS file for representation: %s at path: %s' % (rep, metspath)
+            subsequent_mets_validator = MetsValidation(self.rootpath)
+            subsequent_mets_validator.validate_mets(os.path.join(metspath))
 
-    def test_validate_files_size(self):
-        """
-        Validates if the files listed in the METS file match the actual file size
-        """
-        test_file = self.test_dir + 'METS_filesec.xml'
-        parsed_mets = ParsedMets(self.test_dir)
-        parsed_mets.load_mets(test_file)
-        mval = MetsValidation(parsed_mets)
-        actual = mval.validate_files_size()
-        self.assertTrue(actual.valid, "Validates if the files listed in the METS file match the actual file size")
-
-    def test_not_validate_wrong_filesize(self):
-        """
-        Must not validate if the file size is wrong
-        """
-        test_file = self.test_dir + 'METS_file_size_wrong.xml'
-        parsed_mets = ParsedMets(self.test_dir)
-        parsed_mets.load_mets(test_file)
-        mval = MetsValidation(parsed_mets)
-        actual = mval.validate_files_size()
-        self.assertFalse(actual.valid, "Must not validate if the file size is wrong")
 
 if __name__ == '__main__':
     unittest.main()
