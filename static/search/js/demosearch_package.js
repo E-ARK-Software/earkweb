@@ -56,7 +56,8 @@ function askSolr(start) {
     blobQuery = blobField + ':' + queryString;
   
   var contentTypesQuery = '';
-  for (option of document.forms.find.contentTypes.options) {
+  for (i = 0; i < document.forms.find.contentTypes.options.length; i++) {
+    option = document.forms.find.contentTypes.options[i];
     if (option.selected) {
       if (contentTypesQuery) contentTypesQuery += " ";
       contentTypesQuery += typeField + ':"' + option.value + '"';

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 from operator import itemgetter, attrgetter, methodcaller
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
-
+from workers.tasks import LilyHDFSUpload
 @login_required
 @csrf_exempt
 def ip_detail_table(request):
@@ -150,6 +150,25 @@ class InformationPackageList(ListView):
         context['error_status_set'] = error_status_set
         context['config_path_work'] = config_path_work
         context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
+        return context
+
+
+class IndexingStatusList(ListView):
+    """
+    Processing status
+    """
+    model = InformationPackage
+    template_name = 'sip2aip/indexing_status.html'
+    context_object_name = 'ips'
+
+    queryset=InformationPackage.objects.extra(where=["identifier!='' and last_task_id='%s'" % LilyHDFSUpload.__name__]).order_by('last_change')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(IndexingStatusList, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IndexingStatusList, self).get_context_data(**kwargs)
         return context
 
 
