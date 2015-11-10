@@ -447,24 +447,25 @@ class SIPValidation(DefaultTask):
         task_context.task_status = 0 if valid else 1
         return
 
-class AIPCreation(DefaultTask):
+# class AIPCreation(DefaultTask):
+#
+#     accept_input_from = [SIPValidation.__name__, 'AIPCreation']
 
-    accept_input_from = [SIPValidation.__name__, 'AIPCreation']
-
-    def run_task(self, task_context):
-        '''
-        AIP Creation
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
-        '''
-        tl = task_context.task_logger
-        tl.addinfo('Not implemented yet.')
-        task_context.task_status = 0
+#     def run_task(self, task_context):
+#         '''
+#         AIP Creation
+#         @type       tc: task configuration line (used to insert read task properties in database table)
+#         @param      tc: order:7,type:2,stage:2
+#         '''
+#         tl = task_context.task_logger
+#         tl.addinfo('Not implemented yet.')
+#         task_context.task_status = 0
 
 
 class AIPPackageMetsCreation(DefaultTask):
 
-   accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [SIPValidation.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """

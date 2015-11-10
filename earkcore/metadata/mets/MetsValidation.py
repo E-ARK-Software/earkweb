@@ -2,7 +2,6 @@
 '''
 Created on June 15, 2015
 '''
-from earkcore.utils.fileutils import remove_protocol
 
 __author__ = 'shsdev'
 
@@ -10,15 +9,12 @@ import unittest
 import os
 import lxml
 
-from ParsedMets import ParsedMets
-from config.config import root_dir
 from config.config import mets_schema_file
-from earkcore.xml.validationresult import ValidationResult
-from earkcore.utils.stringutils import lstrip_substring
 from lxml import etree
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
-
 from earkcore.metadata.XmlHelper import q
+from earkcore.utils.fileutils import remove_protocol
+
 XLINK_NS = "http://www.w3.org/1999/xlink"
 METS_NS = 'http://www.loc.gov/METS/'
 
@@ -49,11 +45,8 @@ class MetsValidation(object):
             mets = os.path.join(self.rootpath, mets[9:])
             # change self.rootpath so it fits any relative path found in the current (subsequent) mets
             self.rootpath = mets.rsplit('/', 1)[0]
-            print self.rootpath
-            print mets
         else:
             self.rootpath = mets.rsplit('/', 1)[0]
-            print self.rootpath
 
         try:
             parsed_mets = etree.iterparse(open(mets), events=('start', 'end'), schema=self.schema)
@@ -63,6 +56,9 @@ class MetsValidation(object):
                     # files
                     self.total_files += 1
                     self.validate_file(element)
+                    element.clear()
+                    while element.getprevious() is not None:
+                        del element.getparent()[0]
                 elif event == 'end' and element.tag == q(METS_NS, 'structMap') and element.attrib['LABEL'] == 'representations':
                     # representation mets files
                     rep =  element.getchildren()[0].attrib['LABEL']
@@ -71,6 +67,9 @@ class MetsValidation(object):
                             metspath = child.attrib[q(XLINK_NS, 'href')]
                             sub_mets = rep, metspath
                             self.subsequent_mets.append(sub_mets)
+                    element.clear()
+                    while element.getprevious() is not None:
+                        del element.getparent()[0]
                 elif event == 'end' and element.tag == q(METS_NS, 'dmdSec'):
                     # dmdSec
                     pass
