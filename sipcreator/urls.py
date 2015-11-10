@@ -13,9 +13,9 @@ urlpatterns= patterns('',
 
     url(r'^start$', views.start, name='start'),
 
-    url(r'^detail/(?P<pk>\d+)/$', views.InformationPackageDetail.as_view(), name='ip_detail'),
+    url(r'^detail/(?P<pk>\d+)/$', views.sip_detail, name='ip_detail'),
 
-    url(r'^add_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})/(?P<datafolder>[a-z-0-9/]{1,50})', views.add_file, name='add_file'),
+    url(r'^add_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})', views.add_file, name='add_file'),
 
     url(r'^initialize/(?P<packagename>.*)', views.initialize, name='initialize'),
 
@@ -25,7 +25,11 @@ urlpatterns= patterns('',
 
     url(r'^help_processing_status$', views.HelpProcessingStatus.as_view(), name='help_processing_status'),
 
-    url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
+
 
     url(r'^ip_detail_table$', views.ip_detail_table, name='ip_detail_table'),
+
+    url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
+
+    url(r'^update_parent_identifier/(?P<pk>\d+)/$', views.update_parent_identifier, name='update_parent_identifier'),
 )

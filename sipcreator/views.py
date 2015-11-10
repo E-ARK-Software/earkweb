@@ -135,25 +135,43 @@ class HelpProcessingStatus(ListView):
         return context
 
 
-class InformationPackageDetail(DetailView):
-    """
-    Information Package Detail View
-    """
-    model = InformationPackage
-    context_object_name='ip'
-    template_name='sipcreator/detail.html'
+# class InformationPackageDetail(DetailView):
+#     """
+#     Information Package Detail View
+#     """
+#     model = InformationPackage
+#     context_object_name='ip'
+#     template_name='sipcreator/detail.html'
+#
+#     @method_decorator(login_required)
+#     def dispatch(self, *args, **kwargs):
+#         return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
+#         context['StatusProcess_CHOICES'] =  dict(StatusProcess_CHOICES)
+#         context['config_path_work'] = config_path_work
+#         uploadFileForm = TinyUploadFileForm()
+#         context['uploadFileForm'] = uploadFileForm
+#         context['repr_dirs'] =
+#         return context
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(InformationPackageDetail, self).dispatch( *args, **kwargs)
+@login_required
+def sip_detail(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    template = loader.get_template('sipcreator/detail.html')
+    upload_file_form = TinyUploadFileForm()
+    repr_dir = os.path.join(ip.path,"representations")
+    context = RequestContext(request, {
+        'uuid': ip.uuid,
+        'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
+        'config_path_work': config_path_work,
+        'uploadFileForm': upload_file_form,
+        'repr_dirs': filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir)),
+        'ip': ip,
+    })
+    return HttpResponse(template.render(context))
 
-    def get_context_data(self, **kwargs):
-        context = super(InformationPackageDetail, self).get_context_data(**kwargs)
-        context['StatusProcess_CHOICES'] =  dict(StatusProcess_CHOICES)
-        context['config_path_work'] = config_path_work
-        uploadFileForm = TinyUploadFileForm()
-        context['uploadFileForm'] = uploadFileForm
-        return context
 
 class SIPCreationDetail(DetailView):
     """
@@ -177,24 +195,72 @@ class SIPCreationDetail(DetailView):
 
 
 @login_required
-def add_file(request, uuid, subfolder, datafolder):
+def add_file(request, uuid, subfolder):
+    ip = InformationPackage.objects.get(uuid=uuid)
+    template = loader.get_template('sipcreator/detail.html')
+    upload_file_form = TinyUploadFileForm()
+    repr_dir = os.path.join(ip.path,"representations")
+    rep = ""
+    if request.POST.has_key('rep'):
+        print "REP: %s" % request.POST['rep']
+        if not request.session.has_key('rep') or request.session['rep'] != request.POST['rep']:
+            request.session["rep"] = request.POST['rep']
+        if request.session.has_key('rep'):
+            print request.session["rep"]
+        rep = request.POST['rep']
+    context = RequestContext(request, {
+        'uuid': ip.uuid,
+        'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
+        'config_path_work': config_path_work,
+        'uploadFileForm': upload_file_form,
+        'repr_dirs': filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir)),
+        'ip': ip,
+        'rep': rep,
+    })
     if subfolder.startswith("_root_"):
         subfolder = subfolder.replace("_root_", ".")
-    ip_work_dir = os.path.join(config_path_work, uuid)
-    upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
-    if not os.path.exists(upload_path):
-        mkdir_p(upload_path)
-    if request.method == 'POST':
-        form = TinyUploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
-        else:
-            if form.errors:
-                for error in form.errors:
-                    print(str(error) + str(form.errors[error]))
-    ip = InformationPackage.objects.get(uuid=uuid)
-    url = '/earkweb/sipcreator/detail/' + str(ip.id)
-    return HttpResponseRedirect(url)
+    # ip_work_dir = os.path.join(config_path_work, uuid)
+    # upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
+    # if not os.path.exists(upload_path):
+    #     mkdir_p(upload_path)
+    # if request.method == 'POST':
+    #     form = TinyUploadFileForm(request.POST, request.FILES)
+    #     if form.is_valid():
+    #         upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
+    #     else:
+    #         if form.errors:
+    #             for error in form.errors:
+    #                 print(str(error) + str(form.errors[error]))
+
+    return HttpResponse(template.render(context))
+
+
+# @login_required
+# def add_file(request, uuid, subfolder):
+#     if subfolder.startswith("_root_"):
+#         subfolder = subfolder.replace("_root_", ".")
+#     # ip_work_dir = os.path.join(config_path_work, uuid)
+#     # upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
+#     # if not os.path.exists(upload_path):
+#     #     mkdir_p(upload_path)
+#     # if request.method == 'POST':
+#     #     form = TinyUploadFileForm(request.POST, request.FILES)
+#     #     if form.is_valid():
+#     #         upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
+#     #     else:
+#     #         if form.errors:
+#     #             for error in form.errors:
+#     #                 print(str(error) + str(form.errors[error]))
+#     if request.POST.has_key('rep'):
+#         print "REP: %s" % request.POST['rep']
+#         if not request.session.has_key('rep') or request.session['rep'] != request.POST['rep']:
+#             request.session["rep"] = request.POST['rep']
+#         if request.session.has_key('rep'):
+#             print request.session["rep"]
+#
+#     ip = InformationPackage.objects.get(uuid=uuid)
+#     url = '/earkweb/sipcreator/detail/' + str(ip.id)
+#     return HttpResponseRedirect(url)
 
 
 def upload_aip(ip_work_dir, upload_path, f):
@@ -218,15 +284,12 @@ def initialize(request, packagename):
 
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata/descriptive'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'schemas'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/metadata'))
-    #mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/data'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'representations/rep-001/documentation'))
+    mkdir_p(os.path.join(sip_struct_work_dir, 'representations'))
 
     #copy_tree_content(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
-    shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
+    shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'schemas'))
     #shutil.copyfile(os.path.join(root_dir, "earkresources/schemas/IP.xsd"), os.path.join(sip_struct_work_dir, 'schemas/IP.xsd'))
-    wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
+    wf = WorkflowModules.objects.get(ide_ntifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
     ip_state_xml = IpState.from_parameters(state=0, locked_val=False, last_task_value=SIPReset.__name__)
@@ -246,4 +309,18 @@ def delete(request, pk):
         'uuid': ip.uuid,
     })
     ip.delete()
+    return HttpResponse(template.render(context))
+
+
+@login_required
+def update_parent_identifier(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    template = loader.get_template('sipcreator/sipcreation.html')
+    context = RequestContext(request, {
+        'uuid': ip.uuid,
+        'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
+        'config_path_work': config_path_work,
+        'form': SIPCreationPackageWorkflowModuleSelectForm(),
+        'ip': ip,
+    })
     return HttpResponse(template.render(context))

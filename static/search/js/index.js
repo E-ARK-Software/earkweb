@@ -75,7 +75,8 @@ $(document).ready(function() {
             $('.top-left').notify({
                 message: { text: 'search request finished' },
                 type: 'success'
-            }).show(); 
+            }).show();
+
             var jsonRes = (JSON.parse(resp));
             var documents = jsonRes.documents;
             
@@ -172,12 +173,19 @@ $(document).ready(function() {
                 $('#result-'+sfx).css("background-color", "green");
                 $('#result-'+sfx).css("color", "white");
                 $('#add-'+sfx).hide();
-                $('#rem-'+sfx).show();
+                $('#rem-'+sfx).show();onchange="$(this).submit();"
             } else if(btn.startsWith("rem")) {
                 $('#result-'+sfx).css("background-color", "transparent");
                 $('#result-'+sfx).css("color", "gray");
                 $('#add-'+sfx).show();
-                $('#rem-'+sfx).hide();
+                $('#rem-'+sfx).hide();window.console.log("test ");
+    //    $.ajax({
+    //        url : fileContentPath+identifier,
+    //        success : function(result){
+    //
+    //        }
+    //    });
+    // });
             }
             var action = 'remove';
             if(btn.startsWith('add')) action = "add";
@@ -194,6 +202,8 @@ $(document).ready(function() {
         }
     };
     $('#select-aip-form').ajaxForm(options);
+
+
 
 });
 
@@ -222,6 +232,7 @@ $(function () {
  * children can be hidden or shown.
  */
 $(document).on("click", "[id^=result]", function() {
+    window.console.log("test");
     var whats = $(this);
     var packageNode = $($(this).parent());
     var folderNode = $($(this).children("i"));
@@ -263,7 +274,7 @@ show('loadingpreview', true);
             switch (mime) {
                 case "application/xml":
                     
-
+onchange="$(this).submit();"
                     LoadXMLString('XmlPreview',result);
                     show('loadingpreview', false);
                     break;
@@ -298,3 +309,4 @@ onReady(function () {
     show('loading', false);
 });
 */
+

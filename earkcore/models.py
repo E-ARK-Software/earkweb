@@ -21,6 +21,7 @@ class InformationPackage(models.Model):
     uuid = models.CharField(max_length=200)
     # public IE identifier
     identifier = models.CharField(max_length=200)
+    parent_identifier = models.CharField(max_length=200)
     packagename = models.CharField(max_length=200)
     path = models.CharField(max_length=4096)
     storage_loc = models.CharField(max_length=4096)
