@@ -397,16 +397,16 @@ class SIPGenerator(object):
                         # delete the subdirectories list to stop os.walk from traversing further;
                         # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
                         del subdirectories[:]
-                        rep_name = directory.rsplit('/', 1)
-                        rep_name = rep_name[1]
+                        rep_name = directory.rsplit('/', 2)
+                        rep_name = os.path.join(rep_name[1], rep_name[2])
                         # create structMap div and append to representations structMap
                         mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
                         mets_structmap_reps.append(mets_structmap_rep_div)
                         # add mets file as <mets:mptr>
                         # TODO: should be "xlink:href" "xlink:title", but that throws an error - maybe namespace issue?
                         metspointer = M.mptr({"LOCTYPE": "URL",
-                                              "title": "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
-                                              "href": rel_path_file})
+                                              q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
+                                              q(XLINK_NS,"href"): rel_path_file})
                         mets_structmap_rep_div.append(metspointer)
                         # also add the rep mets to the metadata/submission structmap, so we can have a fptr
                         id = self.addFile(os.path.join(directory, filename), mets_rep_group)

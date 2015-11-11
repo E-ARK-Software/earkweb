@@ -52,10 +52,16 @@ class ChecksumFile(object):
         @return:    checksum
         """
         hash = None
-        if checksum_algorithm == ChecksumAlgorithm.SHA256:
+        if checksum_algorithm == ChecksumAlgorithm.SHA256 or checksum_algorithm == 'SHA-256':
             hash = hashlib.sha256()
-        elif checksum_algorithm == ChecksumAlgorithm.MD5:
+        elif checksum_algorithm == ChecksumAlgorithm.MD5 or checksum_algorithm == 'MD5':
             hash = hashlib.md5()
+
+        # TODO: change when all tasks reworked for new MetsValidation.py
+        #if checksum_algorithm == 'SHA-256':
+        #    hash = hashlib.sha256()
+        #elif checksum_algorithm == 'MD5':
+        #    hash = hashlib.md5()
 
         with open(self.file_path, 'rb') as file:
             for block in iter(lambda: file.read(self.blocksize), ''):

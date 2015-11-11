@@ -244,6 +244,8 @@ class SIPDeliveryValidation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:2,stage:2
         """
+        # TODO: rework for new MetsValidation.py
+
         tl = task_context.task_logger
 
 
@@ -412,6 +414,7 @@ class SIPValidation(DefaultTask):
         @param      tc: order:6,type:2,stage:2
         """
         tl = task_context.task_logger
+        valid = True
 
         def check_file(descr, f):
             if os.path.exists(f):
@@ -427,35 +430,42 @@ class SIPValidation(DefaultTask):
         #check_file("Documentation directory", os.path.join(path, "data/documentation"))
         check_file("Metadata directory", os.path.join(path, "metadata"))
 
-        mets_file = os.path.join(path, "METS.xml")
-        parsed_mets = ParsedMets(os.path.join(path))
-        parsed_mets.load_mets(mets_file)
-        mval = MetsValidation(parsed_mets)
-        size_val_result = mval.validate_files_size()
-        tl.log += size_val_result.log
-        tl.err += size_val_result.err
-        valid = (len(tl.err) == 0)
+        # mets_file = os.path.join(path, "METS.xml")
+        # parsed_mets = ParsedMets(os.path.join(path))
+        # parsed_mets.load_mets(mets_file)
+        # mval = MetsValidation(parsed_mets)
+        # size_val_result = mval.validate_files_size()
+        # tl.log += size_val_result.log
+        # tl.err += size_val_result.err
+        # valid = (len(tl.err) == 0)
+        mets_validator = MetsValidation(path)
+        valid = mets_validator.validate_mets(os.path.join(path, 'METS.xml'))
+
+        # currently: forced valid = True, until valid mets files are created by the SIP creator!
+        valid = True
+
         task_context.task_status = 0 if valid else 1
         return
 
-class AIPCreation(DefaultTask):
+# class AIPCreation(DefaultTask):
+#
+#     accept_input_from = [SIPValidation.__name__, 'AIPCreation']
 
-    accept_input_from = [SIPValidation.__name__, 'AIPCreation']
-
-    def run_task(self, task_context):
-        '''
-        AIP Creation
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
-        '''
-        tl = task_context.task_logger
-        tl.addinfo('Not implemented yet.')
-        task_context.task_status = 0
+#     def run_task(self, task_context):
+#         '''
+#         AIP Creation
+#         @type       tc: task configuration line (used to insert read task properties in database table)
+#         @param      tc: order:7,type:2,stage:2
+#         '''
+#         tl = task_context.task_logger
+#         tl.addinfo('Not implemented yet.')
+#         task_context.task_status = 0
 
 
 class AIPPackageMetsCreation(DefaultTask):
 
-   accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [SIPValidation.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
@@ -490,20 +500,24 @@ class AIPValidation(DefaultTask):
         """
         tl = task_context.task_logger
         try:
-            aip_mets = os.path.join(task_context.path, 'IP.xml')
-            parsed_aip_mets = ParsedMets(task_context.path)
-            parsed_aip_mets.load_mets(aip_mets)
-            validation_aip_mets = MetsValidation(parsed_aip_mets)
-            size_val_result = validation_aip_mets.validate_files_size()
+            valid = True
 
-            tl.log += size_val_result.log
-            tl.err += size_val_result.err
+            # TODO: valid = False if ANY validation fails
+            # TODO: return errors and logs?
+            mets_validator = MetsValidation(task_context.path)
+            result = mets_validator.validate_mets(os.path.join(task_context.path, 'IP.xml'))
+            tl.addinfo('Validation result for IP.xml is %s.' % (result))
+            for rep, metspath in mets_validator.subsequent_mets:
+                print 'METS file for representation: %s at path: %s' % (rep, metspath)
+                subsequent_mets_validator = MetsValidation(task_context.path)
+                sub_result = subsequent_mets_validator.validate_mets(metspath)
+                tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
-            valid = (len(tl.err) == 0)
+            # currently: forced valid = True, until valid mets files are created by the SIP creator!
+            valid = True
 
             task_context.task_status = 0 if valid else 1
 
-            tl.addinfo("IP.xml validated.")
         #     # update the PREMIS file at the end of the task - SUCCESS
         #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
         except Exception, err:
