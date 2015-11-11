@@ -8,7 +8,8 @@
     <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
     <link rel="stylesheet" href="{% static "sipcreator/css/sipcreator.css" %}" type="text/css" />
 
-
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
 
     <link rel="stylesheet" href="{% static 'sipcreator/css/workingarea.css' %}" type="text/css" />
 
@@ -74,8 +75,10 @@
         <td rowspan="3" style="vertical-align: middle; width: 170px">
                 <div class="col-xs-1 col-xs-offset-0">
                     <div id="reperr" style="color: red; font-size: 80%; width: 150px"></div>
+                    <div id="reprnote"style="width: 195px"></div>
+
                     <div class="input-group">
-                        <input id="repval" type="text" style="width: 130px" class="form-control small" value="{{ rep }}">
+                        <input data-original-title="Add a representation in order to enable the upload areas!" id="repval" type="text" style="width: 130px" class="form-control small" value="{{ rep }}">
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-default dropdown-toggle" onclick="addRep($(this))"><span class="glyphicon-plus"></span></button>
                             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
@@ -125,7 +128,7 @@
       <tr>
         <td id="metadata-folder" colspan="2">
             <div class="directorytree" id="dirtree-metadata"></div>
-            <form onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'metadata/descriptive' %}" method="post" enctype="multipart/form-data">
+            <form  onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'metadata/descriptive' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
             </form>
@@ -162,6 +165,7 @@
             </div>
         </div>
     </div>
+
     </div>
     <div style="padding-left: 50px; width: 25%">
         <table class="table table-striped table-bordered table-condensed" style="height: 627px">
@@ -185,6 +189,17 @@
         $('#confirm-delete').on('show.bs.modal', function(e) {
         $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
     });
+
+    if(rep == '') {
+        $('#content-folder').invisible();
+        $('#documentation-folder').invisible();
+        $('#schemas-folder').invisible();
+        $('#metadata-folder').invisible();
+           $('#reprnote').notify({
+                    message: { text: 'Please add a representation first to enable the data upload areas.' },
+                    type: 'info'
+                }).show();
+    }
 
     function changeRep(rep) {
         var repr_value = rep;
