@@ -29,54 +29,77 @@
 
     <h1 class="main">SIP Creator</h1>
 
+
+
     <div id="sctable" style="float:left; width: 80%;padding-right: 20px">
     <table id="tblsc" class="table table-striped table-bordered table-condensed">
       <tr><td colspan="2">
-          <form>
             {% csrf_token %}
-            <table id="headtable">
-                <tr>
-                    <td class="fn emph">Package name:</td>
-                    <td class="fv emph">{{ ip.packagename }}</td>
-                </tr>
-                <tr class="row1">
-                    <td class="fn">Process ID:</td>
-                    <td class="fv">{{ ip.uuid }}</td>
-                </tr>
-            </table>
-            </form>
+              <form class="form-horizontal" role="form">
+                  <div class="form-group">
+                    <label class="control-label col-sm-2">Package name:</label>
+                    <div class="col-sm-10">
+                      {{ ip.packagename }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="control-label col-sm-2">Process ID:</label>
+                    <div class="col-sm-10">
+                      {{ ip.uuid }}
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="control-label col-sm-2">&nbsp;</label>
+                    <div class="col-sm-10">
+                      <a href="#" onclick="$('#childrow').togglevisible()">Child-package options</a>
+                    </div>
+                  </div>
+                  <div id="childrow" class="form-group">
+                    <label class="control-label col-sm-2" for="parent">Parent:</label>
+                    <div class="col-sm-10">
+                      <input type="text" class="form-control" id="parent" >
+                    </div>
+                  </div>
+                </form>
       </td></tr>
       {% if ip.uuid %}
       <tr>
         <td rowspan="3" style="vertical-align: middle; width: 170px">
-            <span>Representations/Rep-001</span>
+            <span>Representations:
+                <select id="representation">
+                    {% for repr_dir in repr_dirs %}
+                        <option>{{ repr_dir }}</option>
+                    {% endfor %}
+                    <option>rep-002</option>
+                </select> <input type="text"/> <button type="button" value="add">+</button>
+            </span>
         </td>
         <td id="content-folder">
             <div class="directorytree" id="dirtree-content"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/data' %}" method="post" enctype="multipart/form-data">
+            <form onchange="$('#content-folder-rep').val($('#representation option:selected').text()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
+                <input id="content-folder-rep" name="rep" type="hidden" value=""/>
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
             </form>
         </td>
       </tr>
       <tr>
         <td id="documentation-folder">
             <div class="directorytree" id="dirtree-documentation"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/documentation' %}" method="post" enctype="multipart/form-data">
+            <form onchange="$('#documentation-folder-rep').val($('#representation option:selected').text()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
+                <input id="documentation-folder-rep" name="rep" type="hidden" value=""/>
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
             </form>
         </td>
       </tr>
       <tr>
         <td id="schemas-folder">
             <div class="directorytree" id="dirtree-schemas"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid 'representations' 'rep-001/schemas' %}" method="post" enctype="multipart/form-data">
+            <form onchange="$('#schemas-folder-rep').val($('#representation option:selected').text()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
+                <input id="schemas-folder-rep" name="rep" type="hidden" value=""/>
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
             </form>
         </td>
       </tr>
@@ -84,10 +107,9 @@
         <td id="metadata-folder" colspan="2">
             <table><tr><td></td></tr></table>
             <div class="directorytree" id="dirtree-metadata"></div>
-            <form action="{% url 'sipcreator:add_file' ip.uuid '_root_' 'metadata/descriptive' %}" method="post" enctype="multipart/form-data">
+            <form onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid '_root_' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
-                <button type="submit">Add</button>
             </form>
         </td>
 
@@ -96,7 +118,8 @@
       {% endif %}
     </table>
 
-    <a class="btn btn-primary" type="button" href="{% url 'sipcreator:sipcreation' ip.id %}">Proceed</a>
+    <a id="proceedbtn" class="btn btn-primary" type="button" href="{% url 'sipcreator:update_parent_identifier' ip.id %}">Proceed</a>
+
 
     <button style="margin-left: 30px" class="btn btn-default" data-href="{% url 'sipcreator:delete' ip.id %}" data-toggle="modal" data-target="#confirm-delete">
         Delete
@@ -145,6 +168,30 @@
         $('#confirm-delete').on('show.bs.modal', function(e) {
         $(this).find('.btn-ok').attr('href', $(e.relatedTarget).data('href'));
     });
+
+    $('#representation').val('{{ rep }}')
+
+    <!--function upload(event) {-->
+        <!--event.preventDefault();-->
+        <!--var data = new FormData($('form').get(0));-->
+
+        <!--$.ajax({-->
+            <!--url: $(this).attr('action'),-->
+            <!--type: $(this).attr('method'),-->
+            <!--data: data,-->
+            <!--cache: false,-->
+            <!--processData: false,-->
+            <!--contentType: false,-->
+            <!--success: function(data) {-->
+                <!--alert('success');-->
+            <!--}-->
+        <!--});-->
+        <!--return false;-->
+    <!--}-->
+
+    <!--$(function() {-->
+        <!--$('#form-dirtree-content').submit(upload);-->
+    <!--});-->
     </script>
 
 

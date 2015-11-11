@@ -31,5 +31,13 @@ if (typeof String.prototype.startsWith != 'function') {
             $(this).css("visibility", "visible");
         });
     };
+    $.fn.togglevisible = function() {
+        if( $(this).css("display") == 'none' ) {
+            $(this).css("display", "inline");
+        } else {
+            $(this).css("display", "none");
+        }
+
+    };
 }(jQuery));
 
