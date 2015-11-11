@@ -31,8 +31,24 @@ Install fido:
     sudo python setup.py install
 
 Update filetype signatures:
+
     cd fido
     python update_signatures.py
+
+### Software packages for file migrations:
+
+#### Ghostscript
+
+Used for PDF to PDF/A conversion.
+
+Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz)
+Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
+
+    tar -xzf ghostscript-9.18.tar.gz
+    cd ghostscript-9.18.tar.gz
+    ./configure
+    make
+    make install
 
 ## Set up the development environment
 
