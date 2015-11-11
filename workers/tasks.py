@@ -46,6 +46,7 @@ from earkcore.utils.fileutils import mkdir_p
 from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
+from sandbox.filemigration.filemigration import FileMigration
 
 
 def custom_progress_reporter(task, percent):
@@ -462,14 +463,43 @@ class SIPValidation(DefaultTask):
 #         task_context.task_status = 0
 
 
+class AIPFileMigration(DefaultTask):
+
+    accept_input_from = [SIPValidation.__name__, 'AIPMigration']
+
+    def run_task(self, task_context):
+        """
+        AIP File Migration
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:7,type:2,stage:2
+        """
+        # TODO: create mets for new representation
+        # TODO: premis
+
+        tl = task_context.task_logger
+
+        rep_path = os.path.join(task_context.path, 'submission/representations/')
+        source_rep_data = 'rep-001/data'
+        target_rep_data = 'rep-002/data'
+
+        migration_source = os.path.join(rep_path, source_rep_data)
+        migration_target = os.path.join(rep_path, target_rep_data)
+
+        filemigration = FileMigration(migration_source, migration_target)
+        print filemigration
+
+        task_context.task_status = 0
+
+        return
+
+
 class AIPPackageMetsCreation(DefaultTask):
 
-   # accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [SIPValidation.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [AIPFileMigration.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
-        AIP Validation
+        AIP Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:8,type:2,stage:2
         """
@@ -524,6 +554,7 @@ class AIPValidation(DefaultTask):
             task_context.status = 1
         #     # update the PREMIS file at the end of the task - FAILURE
         #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+        return
 
 
 class AIPPackaging(DefaultTask):
