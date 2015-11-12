@@ -15,6 +15,8 @@ urlpatterns= patterns('',
 
     url(r'^detail/(?P<pk>\d+)/$', views.sip_detail, name='ip_detail'),
 
+    url(r'^detail/(?P<pk>\d+)/(?P<rep>[A-Za-z0-9-_]{4,200})/$', views.sip_detail_rep, name='sip_detail_rep'),
+
     url(r'^add_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})', views.add_file, name='add_file'),
 
     url(r'^initialize/(?P<packagename>.*)', views.initialize, name='initialize'),
@@ -28,6 +30,8 @@ urlpatterns= patterns('',
 
 
     url(r'^ip_detail_table$', views.ip_detail_table, name='ip_detail_table'),
+
+    url(r'^add_representation/(?P<pk>\d+)/$', views.add_representation, name='add_representation'),
 
     url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
 

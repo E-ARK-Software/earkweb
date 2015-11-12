@@ -28,7 +28,8 @@ from workers.tasks import extract_and_remove_package, SIPReset
 from workflow.models import WorkflowModules
 from django.shortcuts import render_to_response
 from workers.ip_state import IpState
-
+import traceback
+import re
 
 @login_required
 @csrf_exempt
@@ -157,18 +158,48 @@ class HelpProcessingStatus(ListView):
 #         return context
 
 @login_required
-def sip_detail(request, pk):
+def sip_detail_rep(request, pk, rep):
     ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('sipcreator/detail.html')
     upload_file_form = TinyUploadFileForm()
     repr_dir = os.path.join(ip.path,"representations")
+    repr_dirs = filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir))
+
+    request.session['rep'] = rep
+
     context = RequestContext(request, {
         'uuid': ip.uuid,
         'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
         'config_path_work': config_path_work,
         'uploadFileForm': upload_file_form,
-        'repr_dirs': filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir)),
+        'repr_dirs': repr_dirs,
         'ip': ip,
+        'rep': rep,
+        'pk': pk,
+    })
+    return HttpResponse(template.render(context))
+
+@login_required
+def sip_detail(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    template = loader.get_template('sipcreator/detail.html')
+    upload_file_form = TinyUploadFileForm()
+    repr_dir = os.path.join(ip.path,"representations")
+
+    repr_dirs = filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir))
+
+    rep = "" if len(repr_dirs) == 0 else repr_dirs[0]
+    request.session['rep'] = rep
+
+    context = RequestContext(request, {
+        'uuid': ip.uuid,
+        'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
+        'config_path_work': config_path_work,
+        'uploadFileForm': upload_file_form,
+        'repr_dirs': repr_dirs,
+        'ip': ip,
+        'rep': rep,
+        'pk': pk,
     })
     return HttpResponse(template.render(context))
 
@@ -197,42 +228,44 @@ class SIPCreationDetail(DetailView):
 @login_required
 def add_file(request, uuid, subfolder):
     ip = InformationPackage.objects.get(uuid=uuid)
-    template = loader.get_template('sipcreator/detail.html')
-    upload_file_form = TinyUploadFileForm()
-    repr_dir = os.path.join(ip.path,"representations")
-    rep = ""
+    # template = loader.get_template('sipcreator/detail.html')
+    # upload_file_form = TinyUploadFileForm()
+    # repr_dir = os.path.join(ip.path,"representations")
+    repname = ""
     if request.POST.has_key('rep'):
-        print "REP: %s" % request.POST['rep']
-        if not request.session.has_key('rep') or request.session['rep'] != request.POST['rep']:
-            request.session["rep"] = request.POST['rep']
-        if request.session.has_key('rep'):
-            print request.session["rep"]
-        rep = request.POST['rep']
-    context = RequestContext(request, {
-        'uuid': ip.uuid,
-        'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
-        'config_path_work': config_path_work,
-        'uploadFileForm': upload_file_form,
-        'repr_dirs': filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir)),
-        'ip': ip,
-        'rep': rep,
-    })
+        repname = request.POST['rep']
+    repsubdir = ""
+    if request.POST.has_key('subdir'):
+        repsubdir = request.POST['subdir']
+    # context = RequestContext(request, {
+    #     'uuid': ip.uuid,
+    #     'StatusProcess_CHOICES': dict(StatusProcess_CHOICES),
+    #     'config_path_work': config_path_work,
+    #     'uploadFileForm': upload_file_form,
+    #     'repr_dirs': filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir)),
+    #     'ip': ip,
+    #     'rep': rep,
+    # })
     if subfolder.startswith("_root_"):
         subfolder = subfolder.replace("_root_", ".")
-    # ip_work_dir = os.path.join(config_path_work, uuid)
-    # upload_path = os.path.join(ip_work_dir, subfolder, datafolder)
-    # if not os.path.exists(upload_path):
-    #     mkdir_p(upload_path)
-    # if request.method == 'POST':
-    #     form = TinyUploadFileForm(request.POST, request.FILES)
-    #     if form.is_valid():
-    #         upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
-    #     else:
-    #         if form.errors:
-    #             for error in form.errors:
-    #                 print(str(error) + str(form.errors[error]))
-
-    return HttpResponse(template.render(context))
+    ip_work_dir = os.path.join(config_path_work, uuid)
+    upload_path = os.path.join(ip_work_dir, subfolder, repname, repsubdir)
+    print upload_path
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
+    if request.method == 'POST':
+        form = TinyUploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
+        else:
+            if form.errors:
+                for error in form.errors:
+                    print(str(error) + str(form.errors[error]))
+    if not repname and request.session.has_key('rep'):
+        repname = request.session['rep']
+    url = "/earkweb/sipcreator/detail/%s/%s/" % (str(ip.id), repname)
+    return HttpResponseRedirect(url)
+    #return HttpResponse(template.render(context))
 
 
 # @login_required
@@ -283,13 +316,13 @@ def initialize(request, packagename):
     sip_struct_work_dir = os.path.join(config_path_work,uuid)
 
     mkdir_p(os.path.join(sip_struct_work_dir, 'metadata/descriptive'))
-    mkdir_p(os.path.join(sip_struct_work_dir, 'schemas'))
+    #mkdir_p(os.path.join(sip_struct_work_dir, 'schemas'))
     mkdir_p(os.path.join(sip_struct_work_dir, 'representations'))
 
     #copy_tree_content(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'representations/rep-001/schemas'))
     shutil.copytree(os.path.join(root_dir, "earkresources/schemas"), os.path.join(sip_struct_work_dir, 'schemas'))
     #shutil.copyfile(os.path.join(root_dir, "earkresources/schemas/IP.xsd"), os.path.join(sip_struct_work_dir, 'schemas/IP.xsd'))
-    wf = WorkflowModules.objects.get(ide_ntifier = SIPReset.__name__)
+    wf = WorkflowModules.objects.get(identifier = SIPReset.__name__)
     InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=packagename, last_task=wf)
     ip = InformationPackage.objects.get(uuid=uuid)
     ip_state_xml = IpState.from_parameters(state=0, locked_val=False, last_task_value=SIPReset.__name__)
@@ -324,3 +357,29 @@ def update_parent_identifier(request, pk):
         'ip': ip,
     })
     return HttpResponse(template.render(context))
+
+@login_required
+@csrf_exempt
+def add_representation(request, pk):
+    data = {"success": False}
+    ip = InformationPackage.objects.get(pk=pk)
+    representation = request.POST['representation']
+    try:
+        if re.match("[A-Za-z0-9-_]{4,200}", representation, flags=0):
+            repr_dir = os.path.join(ip.path,"representations", representation)
+            if not os.path.exists(repr_dir):
+                mkdir_p(repr_dir)
+                mkdir_p(os.path.join(repr_dir, 'metadata'))
+                mkdir_p(os.path.join(repr_dir, 'schemas'))
+                mkdir_p(os.path.join(repr_dir, 'data'))
+                mkdir_p(os.path.join(repr_dir, 'documentation'))
+                print representation
+                request.session['rep'] = representation
+                data = {"success": True, "representation": representation}
+            else:
+                data = {"success": False, "message": "Representation already exists!"}
+        else:
+            data = {"success": False, "message": "Invalid representation directory name (alphanumerical with minimum length 4 and maximum length 200)!"}
+    except:
+        tb = traceback.format_exc()
+    return JsonResponse(data)

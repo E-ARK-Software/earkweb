@@ -32,6 +32,32 @@ def check_folder_exists(request, folder):
 
 @login_required
 @csrf_exempt
+def check_identifier_exists(request, identifier):
+    try:
+        ip = InformationPackage.objects.get(identifier=identifier)
+        return HttpResponse("true")
+    except:
+        return HttpResponse("false")
+
+
+@login_required
+@csrf_exempt
+def save_parent_identifier(request, uuid):
+    try:
+        ip = InformationPackage.objects.get(uuid=uuid)
+        if not request.POST.has_key('parent_identifier'):
+            return HttpResponse("false")
+        else:
+            print "PARENT:" + request.POST['parent_identifier']
+            ip.parent_identifier = request.POST['parent_identifier']
+            ip.save()
+            return HttpResponse("true")
+    except:
+        return HttpResponse("false")
+
+
+@login_required
+@csrf_exempt
 def check_submission_exists(request, packagename):
     try:
         ip = InformationPackage.objects.get(packagename=packagename)
