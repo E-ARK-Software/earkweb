@@ -39,5 +39,12 @@ if (typeof String.prototype.startsWith != 'function') {
         }
 
     };
+    $.fn.isvisible = function() {
+        window.console.log(($(this).css("display") != "none"))
+        return ($(this).css("display") != "none");
+    };
+
+
+
 }(jQuery));
 
