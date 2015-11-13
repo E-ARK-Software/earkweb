@@ -39,5 +39,6 @@ if (typeof String.prototype.startsWith != 'function') {
         }
 
     };
+
 }(jQuery));
 

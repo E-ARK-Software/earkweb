@@ -139,7 +139,7 @@ def apply_workflow(request):
         #     print "Task identifier: %s" % job.id
         #     data = {"success": True, "id": job.id}
         # else:
-        #     data = {"success": False, "errmsg": "not ajax"}
+        #     data = {"success": False wfm = WorkflowModules.objects.get(pk=selected_action), "errmsg": "not ajax"}
         data = {"success": True, "id": "xyz", "myprop": "val"}
     except:
         tb = traceback.format_exc()

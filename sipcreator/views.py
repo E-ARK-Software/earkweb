@@ -186,7 +186,7 @@ def sip_detail(request, pk):
     upload_file_form = TinyUploadFileForm()
     repr_dir = os.path.join(ip.path,"representations")
 
-    repr_dirs = filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir))
+    repr_dirs = [] if not os.path.exists(repr_dir) else filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir))
 
     rep = "" if len(repr_dirs) == 0 else repr_dirs[0]
     request.session['rep'] = rep
