@@ -42,6 +42,7 @@ Update filetype signatures:
 Used for PDF to PDF/A conversion.
 
 Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz)
+
 Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
 
     tar -xzf ghostscript-9.18.tar.gz

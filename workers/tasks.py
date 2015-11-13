@@ -48,6 +48,7 @@ from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
 from sandbox.filemigration.filemigration import FileMigration
 
+from celery.result import ResultSet
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -463,9 +464,9 @@ class SIPValidation(DefaultTask):
 #         task_context.task_status = 0
 
 
-class AIPFileMigration(DefaultTask):
+class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'AIPMigration']
+    accept_input_from = [SIPValidation.__name__, 'AIPMigrations']
 
     def run_task(self, task_context):
         """
@@ -480,28 +481,119 @@ class AIPFileMigration(DefaultTask):
 
         rep_path = os.path.join(task_context.path, 'submission/representations/')
         source_rep_data = 'rep-001/data'
-        target_rep_data = 'rep-002/data'
+        target_rep_data = 'representations/rep-002/data'
 
         migration_source = os.path.join(rep_path, source_rep_data)
-        migration_target = os.path.join(rep_path, target_rep_data)
+        migration_target = os.path.join(task_context.path, target_rep_data)
 
-        filemigration = FileMigration(migration_source, migration_target)
-        print filemigration
+        if not os.path.exists(migration_target):
+            os.makedirs(migration_target)
+
+        # filemigration = FileMigration(migration_source, migration_target)
+        # print filemigration
+
+        # migrations = []
+        migrationtask = MigrationProcess()
+
+        # needs to walk from top-level dir of representation data
+        for directory, subdirectories, filenames in os.walk(migration_source):
+            for filename in filenames:
+                input = {'file': filename,
+                         'source': migration_source,
+                         'target': migration_target,
+                         'logger': task_context.task_logger}
+                # migrationtask.backend()
+                # TODO: create tasks for success and error
+                # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
+                migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default')
+
+        # loop subtask list to get results
+        # for migration in migrations:
+            # if result == true, remove from list
+            # else set task_status to 1
+        #     pass
 
         task_context.task_status = 0
 
         return
 
 
+from earkcore.format.formatidentification import FormatIdentification
+from earkcore.process.cli.CliCommand import CliCommand
+import subprocess32
+# import multiprocessing
+class MigrationProcess(DefaultTask):
+    # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
+    # TODO: make this process "invisible" on the earkweb GUI.
+
+    accept_input_from = [AIPMigrations.__name__, 'AIPMigrationProcess']
+
+    def run_task(self, task_context):
+        """
+        File Migration
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:2,stage:2
+        """
+
+        # TODO: logging does not work perfectly.
+        # This is because every subtask of AIPMigrations can only write its changes into the logfile,
+        # when the instance of MigrationProcess who opened the log file the first time, closes it (or the AIPMigrations
+        # process calls its finalize() method, for that matter).
+        # Then the next instance of MigrationProcess can write to the file, and so on. This results in a chaotic
+        # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
+        tl = task_context.task_logger
+
+        self.args = ''
+
+        # TODO: handle file format + migration action properly
+        pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+        gif = ['fmt/3', 'fmt/4']
+
+        source = task_context.additional_input['source']
+        # TODO: additional sub-structure of rep-id/data/... when creating target path
+        target = task_context.additional_input['target']
+        file = task_context.additional_input['file']
+
+        identification = FormatIdentification()
+        fido_result = identification.identify_file(os.path.join(source, file))
+
+        if fido_result in pdf:
+            tl.addinfo('File %s is now migrated to PDF/A.' % file)
+            cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
+                         'input_file': os.path.join(source, file)}
+            self.args = CliCommand.get('pdftopdfa', cliparams)
+        elif fido_result in gif:
+            tl.addinfo('File %s is now migrated to TIFF.' % file)
+            outputfile = file.rsplit('.', 1)[0] + '.tiff'
+            cliparams = {'input_file': os.path.join(source, file),
+                         'output_file': os.path.join(target, outputfile)}
+            self.args = CliCommand.get('totiff', cliparams)
+        elif fido_result:
+            print 'Unclassified result: ', fido_result
+
+        # TODO: error handling (OSException)
+        if self.args != '':
+            migrate = subprocess32.Popen(self.args)
+            # note: the following line has to be there, even if nothing is done with out/err messages,
+            # as the process will otherwise deadlock!
+            out, err = migrate.communicate()
+            if err==None: tl.addinfo('Successfully migrated file %s.' % file)
+
+        task_context.task_status = 0
+        return True
+
+
+
 class AIPPackageMetsCreation(DefaultTask):
 
-   accept_input_from = [AIPFileMigration.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [MigrationProcess.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
         AIP Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:9,type:2,stage:2
         """
 
         tl = task_context.task_logger
@@ -526,7 +618,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
         tl = task_context.task_logger
         try:
@@ -565,7 +657,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -638,7 +730,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -663,7 +755,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
         tl = task_context.task_logger
 
