@@ -316,6 +316,8 @@ class SIPGenerator(object):
         #if premis_ids == None:
         #    premis_ids = self.createPremis()
 
+        # TODO: add metadata files to correct metadata sections!
+
         # create METS skeleton
         METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
         root = M.mets(METS_ATTRIBUTES)
@@ -371,7 +373,7 @@ class SIPGenerator(object):
         mets_structmap.append(mets_structmap_div)
 
         # metadata structmap - IP root level!
-        mets_structmap_metadata_div = M.div({"LABEL": "Metadata IP"})
+        mets_structmap_metadata_div = M.div({"LABEL": "Metadata AIP"})
         mets_structmap_div.append(mets_structmap_metadata_div)
         for id in metadata_ids:
             fptr = M.fptr({"FILEID": id})
@@ -388,33 +390,42 @@ class SIPGenerator(object):
         mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
         root.append(mets_structmap_reps)
 
+        # submission folder
         workdir_length = len(self.root_path)
-        for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
+        #for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
+        for directory, subdirectories, filenames in os.walk(self.root_path):
             if len(filenames) > 0:
                 for filename in filenames:
-                    rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
-                    if filename.lower() == 'mets.xml':
-                        # delete the subdirectories list to stop os.walk from traversing further;
-                        # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
-                        del subdirectories[:]
-                        rep_name = directory.rsplit('/', 2)
-                        rep_name = os.path.join(rep_name[1], rep_name[2])
-                        # create structMap div and append to representations structMap
-                        mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
-                        mets_structmap_reps.append(mets_structmap_rep_div)
-                        # add mets file as <mets:mptr>
-                        # TODO: should be "xlink:href" "xlink:title", but that throws an error - maybe namespace issue?
-                        metspointer = M.mptr({"LOCTYPE": "URL",
-                                              q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
-                                              q(XLINK_NS,"href"): rel_path_file})
-                        mets_structmap_rep_div.append(metspointer)
-                        # also add the rep mets to the metadata/submission structmap, so we can have a fptr
-                        id = self.addFile(os.path.join(directory, filename), mets_rep_group)
-                        mets_fptr = M.fptr({"FILEID": id})
-                        mets_structmap_rep_div.append(mets_fptr)
+                    # remove all files on AIP root level (since they wont be packed with the AIP):
+                    if directory == self.root_path:
+                        del filename
                     else:
-                        # how to handle submission/metadata files?
-                        print 'found a file: ' + os.path.join(directory, filename)
+                        rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
+                        if filename.lower() == 'mets.xml':
+                            # delete the subdirectories list to stop os.walk from traversing further;
+                            # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
+                            del subdirectories[:]
+                            rep_name = directory.rsplit('/', 2)
+                            rep_name = os.path.join(rep_name[1], rep_name[2])
+                            # create structMap div and append to representations structMap
+                            mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
+                            mets_structmap_reps.append(mets_structmap_rep_div)
+                            # add mets file as <mets:mptr>
+                            metspointer = M.mptr({"LOCTYPE": "URL",
+                                                  q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
+                                                  q(XLINK_NS,"href"): rel_path_file})
+                            mets_structmap_rep_div.append(metspointer)
+                            # also add the rep mets to the metadata/submission structmap, so we can have a fptr
+                            id = self.addFile(os.path.join(directory, filename), mets_rep_group)
+                            mets_fptr = M.fptr({"FILEID": id})
+                            mets_structmap_rep_div.append(mets_fptr)
+                        elif filename and not (directory.endswith('descriptive') or
+                                               directory.endswith('metadata')):
+                            # how to handle submission/metadata files?
+                            print 'found a file: ' + os.path.join(directory, filename)
+                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
+                            mets_fptr = M.fptr({"FILEID": id})
+                            mets_structmap.append(mets_fptr)
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
