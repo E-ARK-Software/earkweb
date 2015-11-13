@@ -583,17 +583,40 @@ class MigrationProcess(DefaultTask):
         return True
 
 
+class AIPRepresentationMETSCreation(DefaultTask):
+
+    accept_input_from = [MigrationProcess.__name__, 'AIPRepresentationMETSCreation']
+
+    def run_task(self, task_context):
+        """
+        Creates METS files for every representation.
+
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:9,type:2,stage:2
+        """
+
+        tl = task_context.task_logger
+
+        tl.addinfo('Not implemented yet.')
+
+        # for every REPRESENTATION without METS file:
+        #    rep_mets_gen = SIPGenerator(rep_path)
+        #    rep_mets_gen.createAIPMets()
+
+        task_context.task_status = 0
+        return
+
 
 class AIPPackageMetsCreation(DefaultTask):
 
    # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [MigrationProcess.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [MigrationProcess.__name__, AIPRepresentationMETSCreation.__name__ 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
         AIP Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
 
         tl = task_context.task_logger
@@ -618,7 +641,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
         tl = task_context.task_logger
         try:
@@ -657,7 +680,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -730,7 +753,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -755,7 +778,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:2,stage:2
+        @param      tc: order:14,type:2,stage:2
         """
         tl = task_context.task_logger
 
