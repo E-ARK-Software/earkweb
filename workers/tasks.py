@@ -583,7 +583,7 @@ class MigrationProcess(DefaultTask):
         return True
 
 
-class AIPRepresentationMETSCreation(DefaultTask):
+class AIPRepresentationMetsCreation(DefaultTask):
 
     accept_input_from = [MigrationProcess.__name__, 'AIPRepresentationMETSCreation']
 
@@ -610,7 +610,7 @@ class AIPRepresentationMETSCreation(DefaultTask):
 class AIPPackageMetsCreation(DefaultTask):
 
    # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [MigrationProcess.__name__, AIPRepresentationMETSCreation.__name__ 'AIPPackageMetsCreation']
+   accept_input_from = [MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
