@@ -265,16 +265,25 @@ class SIPGenerator(object):
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
 
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
+        # general filegroup
+        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
+        # schema filegroup
+        mets_schemagroup = M.fileGrp({"USE": "schema group"})
+        mets_fileSec.append(mets_schemagroup)
+
+        # data, metadata and schemas - package level
         content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+        schema_ids = self.addFiles(os.path.join(self.root_path, 'schemas'), mets_schemagroup)
 
-        # checking for cross-representation metadata:
+        # checking for cross-representation metadata and schemas:
         package_root = self.root_path.rsplit('/', 2)
         package_metadata = os.path.join(package_root[0], 'metadata')
-        ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+        cross_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+        package_schemas = os.path.join(package_root[0], 'schemas')
+        cross_schemas_ids = self.addFiles(package_schemas, mets_schemagroup)
 
         # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
         mets_structmap = M.structMap({"LABEL": "Simple SIP structuring", "TYPE": "logical"})
@@ -283,20 +292,32 @@ class SIPGenerator(object):
         mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
         mets_structmap.append(mets_structmap_div)
 
+        # files in /data
         mets_structmap_content_div = M.div({"LABEL":"Content"})
         mets_structmap_div.append(mets_structmap_content_div)
         for id in content_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_content_div.append(fptr)
 
+        # files in /metadata and ./../../metadata
         mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
         mets_structmap_div.append(mets_structmap_metadata_div)
         for id in metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
-        for id in ext_metadata_ids:
+        for id in cross_metadata_ids:
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_div.append(fptr)
+
+        # files in /schemas and ./../../schemas
+        mets_structmap_schemas_div = M.div({"LABEL": "Schemas"})
+        mets_structmap_div.append(mets_structmap_schemas_div)
+        for id in schema_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_schemas_div.append(fptr)
+        for id in cross_schemas_ids:
+            fptr = M.fptr({"FILEID": id})
+            mets_structmap_schemas_div.append(fptr)
 
         #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
         #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
@@ -341,7 +362,7 @@ class SIPGenerator(object):
         mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(M.metsDocumentID("IP.xml"))
+        mets_hdr.append(M.metsDocumentID("METS.xml"))
 
         mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid1().__str__()})
         root.append(mets_dmd)
@@ -366,8 +387,12 @@ class SIPGenerator(object):
         root.append(mets_fileSec)
 
         # general filegroup
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
+
+        # schemas
+        mets_schemagroup = M.fileGrp({"USE": "schemas"})
+        mets_fileSec.append(mets_schemagroup)
 
         # filegroup for representation mets files
         mets_rep_group = M.fileGrp({"ID": "ID" +  uuid.uuid1().__str__(), "USE": "representations METS files"})
@@ -397,7 +422,7 @@ class SIPGenerator(object):
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_sub_div.append(fptr)
 
-        # content structmap - all representations! (is only filled if no seperate METS exists for the rep
+        # content structmap - all representations! (is only filled if no seperate METS exists for the rep)
         mets_structmap_content_div = M.div({"LABEL": "various files"})
         mets_structmap_div.append(mets_structmap_content_div)
 
@@ -412,7 +437,7 @@ class SIPGenerator(object):
         for directory, subdirectories, filenames in os.walk(self.root_path):
             if len(filenames) > 0:
                 for filename in filenames:
-                    # remove all files on AIP root level (since they wont be packed with the AIP):
+                    # ignore all files on AIP root level (since they wont be packed with the AIP):
                     if directory == self.root_path:
                         del filename
                     else:
@@ -428,7 +453,7 @@ class SIPGenerator(object):
                             mets_structmap_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + uuid.uuid1().__str__(),
+                                                  q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + packageid,
                                                   q(XLINK_NS,"href"): rel_path_file})
                             mets_structmap_rep_div.append(metspointer)
                             # also add the rep mets to the metadata/submission structmap, so we can have a fptr
@@ -436,16 +461,22 @@ class SIPGenerator(object):
                             mets_fptr = M.fptr({"FILEID": id})
                             mets_structmap_rep_div.append(mets_fptr)
                         elif filename and not (directory.endswith('descriptive') or
-                                               directory.endswith('metadata')):
+                                               directory.endswith('metadata') or
+                                               directory.endswith('schemas')):
                             # how to handle submission/metadata files?
                             print 'found a file: ' + os.path.join(directory, filename)
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
                             mets_fptr = M.fptr({"FILEID": id})
                             mets_structmap_content_div.append(mets_fptr)
+                        elif filename and directory.endswith('schemas'):
+                            id = self.addFile(os.path.join(directory, filename), mets_schemagroup)
+                            mets_fptr = M.fptr({"FILEID": id})
+                            mets_structmap_metadata_div.append(mets_fptr)
+
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
-        path_mets = os.path.join(self.root_path,'IP.xml')
+        path_mets = os.path.join(self.root_path,'METS.xml')
         with open(path_mets, 'w') as output_file:
             output_file.write(str)
 
