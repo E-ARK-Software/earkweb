@@ -513,6 +513,9 @@ class AIPMigrations(DefaultTask):
             # else set task_status to 1
         #     pass
 
+        # TODO: maybe monitor db entries of migration tasks for success/failure?
+
+
         task_context.task_status = 0
 
         return
@@ -589,7 +592,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
     def run_task(self, task_context):
         """
-        Creates METS files for every representation.
+        AIP Representation Mets Creation
 
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:9,type:2,stage:2
@@ -610,7 +613,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
 class AIPPackageMetsCreation(DefaultTask):
 
    # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, 'AIPPackageMetsCreation']
+   accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, 'AIPPackageMetsCreation']
 
    def run_task(self, task_context):
         """
@@ -623,7 +626,7 @@ class AIPPackageMetsCreation(DefaultTask):
 
         try:
             ipgen = SIPGenerator(task_context.path)
-            ipgen.createAIPMets()
+            ipgen.createAIPMets(task_context.uuid)
 
             task_context.task_status = 0
             tl.addinfo('METS and PREMIS updated with AIP contents.')

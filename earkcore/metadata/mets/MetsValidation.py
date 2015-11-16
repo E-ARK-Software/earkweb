@@ -82,8 +82,10 @@ class MetsValidation(object):
         if self.total_files != 0:
             self.validation_errors.append('File count yielded %d instead of 0.' % self.total_files)
 
-        # for error in self.validation_errors:
-        #     print error
+        # enable/disable error logging to console
+        print 'Error log for METS file: ', mets
+        for error in self.validation_errors:
+            print error
 
         return True if len(self.validation_errors) == 0 else False
 

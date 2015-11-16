@@ -223,11 +223,16 @@ class SIPGenerator(object):
             premis_ids = self.createPremis()
 
         #create METS skeleton
-        METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+        # METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+        METS_ATTRIBUTES = {"OBJID": "placeholder123",
+                           "LABEL": "METS file describing the SIP matching the OBJID.",
+                           "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
+                           "TYPE": "SIP"}
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
 
-        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+        # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
         root.append(mets_hdr)
 
 
@@ -238,7 +243,7 @@ class SIPGenerator(object):
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
-        mets_dmd = M.dmdSec({"ID":""})
+        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid1().__str__()})
         root.append(mets_dmd)
         # this is how to add descriptive metadata entry
         #file_name = "../schemas/ead.xml"
@@ -271,7 +276,8 @@ class SIPGenerator(object):
         package_metadata = os.path.join(package_root[0], 'metadata')
         ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
 
-        mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+        # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+        mets_structmap = M.structMap({"LABEL": "Simple SIP structuring", "TYPE": "logical"})
         root.append(mets_structmap)
 
         mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
@@ -306,7 +312,7 @@ class SIPGenerator(object):
 
 
     #def createAIPMets(self, premis_ids=None):
-    def createAIPMets(self):
+    def createAIPMets(self, packageid):
         '''
         Create the AIP METS file.
 
@@ -319,11 +325,15 @@ class SIPGenerator(object):
         # TODO: add metadata files to correct metadata sections!
 
         # create METS skeleton
-        METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+        METS_ATTRIBUTES = {"OBJID": packageid,
+                           "LABEL": "METS file describing the AIP matching the OBJID.",
+                           "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
+                           "TYPE": "AIP"}
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
 
-        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+        # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :"AIP"})
+        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
         root.append(mets_hdr)
 
         mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
@@ -333,7 +343,7 @@ class SIPGenerator(object):
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(M.metsDocumentID("IP.xml"))
 
-        mets_dmd = M.dmdSec({"ID":""})
+        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid1().__str__()})
         root.append(mets_dmd)
         # this is how to add descriptive metadata entry
         #file_name = "../schemas/ead.xml"
@@ -343,10 +353,10 @@ class SIPGenerator(object):
         #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
         #mets_dmd.append(mets_mdref)
 
-        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
+        mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid1().__str__()})
         root.append(mets_amdSec)
 
-        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
+        mets_techmd = M.techMD({"ID": "ID" + uuid.uuid1().__str__()})
         mets_amdSec.append(mets_techmd)
         #for id in premis_ids:
         #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
@@ -366,7 +376,8 @@ class SIPGenerator(object):
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
         submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
 
-        mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+        # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+        mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
         root.append(mets_structmap)
 
         mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
@@ -386,8 +397,13 @@ class SIPGenerator(object):
             fptr = M.fptr({"FILEID": id})
             mets_structmap_metadata_sub_div.append(fptr)
 
+        # content structmap - all representations! (is only filled if no seperate METS exists for the rep
+        mets_structmap_content_div = M.div({"LABEL": "various files"})
+        mets_structmap_div.append(mets_structmap_content_div)
+
         # create structmap for representations
-        mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
+        # mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
+        mets_structmap_reps = M.structMap({"TYPE":"logical", "LABEL":"representations"})
         root.append(mets_structmap_reps)
 
         # submission folder
@@ -425,7 +441,7 @@ class SIPGenerator(object):
                             print 'found a file: ' + os.path.join(directory, filename)
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
                             mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap.append(mets_fptr)
+                            mets_structmap_content_div.append(mets_fptr)
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
