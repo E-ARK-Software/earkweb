@@ -654,15 +654,17 @@ class AIPValidation(DefaultTask):
             # TODO: return errors and logs?
             mets_validator = MetsValidation(task_context.path)
             result = mets_validator.validate_mets(os.path.join(task_context.path, 'IP.xml'))
+            valid = True if result == True else False
             tl.addinfo('Validation result for IP.xml is %s.' % (result))
             for rep, metspath in mets_validator.subsequent_mets:
                 print 'METS file for representation: %s at path: %s' % (rep, metspath)
                 subsequent_mets_validator = MetsValidation(task_context.path)
                 sub_result = subsequent_mets_validator.validate_mets(metspath)
+                if valid == True and sub_result == False:
+                    valid = False
                 tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
-            # currently: forced valid = True, until valid mets files are created by the SIP creator!
-            valid = True
+            # valid = True
 
             task_context.task_status = 0 if valid else 1
 
