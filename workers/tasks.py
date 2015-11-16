@@ -444,7 +444,7 @@ class SIPValidation(DefaultTask):
         valid = mets_validator.validate_mets(os.path.join(path, 'METS.xml'))
 
         # currently: forced valid = True, until valid mets files are created by the SIP creator!
-        valid = True
+        # valid = True
 
         task_context.task_status = 0 if valid else 1
         return
@@ -503,9 +503,10 @@ class AIPMigrations(DefaultTask):
                          'target': migration_target,
                          'logger': task_context.task_logger}
                 # migrationtask.backend()
-                # TODO: create tasks for success and error
+                # TODO: block this task until all child tasks are done (fail, success, time out)
                 # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
                 migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default')
+
 
         # loop subtask list to get results
         # for migration in migrations:
@@ -613,11 +614,12 @@ class AIPRepresentationMetsCreation(DefaultTask):
 class AIPPackageMetsCreation(DefaultTask):
 
    # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
+   accept_input_from = [AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
 
    def run_task(self, task_context):
         """
-        AIP Mets Creation
+        AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:10,type:2,stage:2
         """
@@ -626,7 +628,9 @@ class AIPPackageMetsCreation(DefaultTask):
 
         try:
             ipgen = SIPGenerator(task_context.path)
-            ipgen.createAIPMets(task_context.uuid)
+            #print task_context.additional_input["identifier"]
+            identifier = task_context.additional_input['identifier']
+            ipgen.createAIPMets(identifier)
 
             task_context.task_status = 0
             tl.addinfo('METS and PREMIS updated with AIP contents.')
@@ -650,12 +654,11 @@ class AIPValidation(DefaultTask):
         try:
             valid = True
 
-            # TODO: valid = False if ANY validation fails
             # TODO: return errors and logs?
             mets_validator = MetsValidation(task_context.path)
-            result = mets_validator.validate_mets(os.path.join(task_context.path, 'IP.xml'))
+            result = mets_validator.validate_mets(os.path.join(task_context.path, 'METS.xml'))
             valid = True if result == True else False
-            tl.addinfo('Validation result for IP.xml is %s.' % (result))
+            tl.addinfo('Validation result for METS.xml is %s.' % (result))
             for rep, metspath in mets_validator.subsequent_mets:
                 print 'METS file for representation: %s at path: %s' % (rep, metspath)
                 subsequent_mets_validator = MetsValidation(task_context.path)
@@ -683,7 +686,7 @@ class AIPPackaging(DefaultTask):
 
     def run_task(self, task_context):
         """
-        AIP Validation
+        AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:12,type:2,stage:2
         """
@@ -708,12 +711,16 @@ class AIPPackaging(DefaultTask):
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
 
-            file_elements, delivery_xml = getDeliveryFiles(task_context.path)
+            #file_elements, delivery_xml = getDeliveryFiles(task_context.path)
             # continue normally we have only one tar
-            file_reference = ParsedMets.get_file_element_reference(file_elements[0])
+            #file_reference = ParsedMets.get_file_element_reference(file_elements[0])
 
-            tl.addinfo("Extracted file reference: %s" % file_reference)
-            delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+            #tl.addinfo("Extracted file reference: %s" % file_reference)
+            #delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+
+            package_name = task_context.additional_input['packagename']
+            delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
+            delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
 
             status_xml = os.path.join(task_context.path, "state.xml")
             tl.addinfo("Ignoring package file: %s" % delivery_file)

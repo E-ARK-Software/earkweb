@@ -84,8 +84,8 @@ class MetsValidation(object):
 
         # enable/disable error logging to console
         # print 'Error log for METS file: ', mets
-        # for error in self.validation_errors:
-        #     print error
+        for error in self.validation_errors:
+            print error
 
         return True if len(self.validation_errors) == 0 else False
 

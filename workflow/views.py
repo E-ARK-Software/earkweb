@@ -37,7 +37,7 @@ from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 #import workers.tasks
-from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -195,6 +195,8 @@ def apply_task(request):
                     for aip in dip.aips.all():
                         selected_aips[aip.identifier] = aip.source
                     additional_input['selected_aips'] = selected_aips
+                if wfm.identifier == AIPPackageMetsCreation.__name__:
+                    additional_input['identifier'] = ip.identifier
 
                 # Execute task
                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
