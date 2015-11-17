@@ -59,17 +59,18 @@ class MetsValidation(object):
                     element.clear()
                     while element.getprevious() is not None:
                         del element.getparent()[0]
-                elif event == 'end' and element.tag == q(METS_NS, 'structMap') and element.attrib['LABEL'] == 'representations':
+                elif event == 'end' and element.tag == q(METS_NS, 'div') and element.attrib['LABEL'] == 'representations':
                     # representation mets files
-                    rep =  element.getchildren()[0].attrib['LABEL']
-                    for child in element.getchildren()[0]:
-                        if child.tag == q(METS_NS, 'mptr'):
-                            metspath = child.attrib[q(XLINK_NS, 'href')]
-                            sub_mets = rep, metspath
-                            self.subsequent_mets.append(sub_mets)
-                    element.clear()
-                    while element.getprevious() is not None:
-                        del element.getparent()[0]
+                    for element in element.getchildren():
+                        rep = element.attrib['LABEL']
+                        for child in element:
+                            if child.tag == q(METS_NS, 'mptr'):
+                                metspath = child.attrib[q(XLINK_NS, 'href')]
+                                sub_mets = rep, metspath
+                                self.subsequent_mets.append(sub_mets)
+                        element.clear()
+                        while element.getprevious() is not None:
+                            del element.getparent()[0]
                 elif event == 'end' and element.tag == q(METS_NS, 'dmdSec'):
                     # dmdSec
                     pass
@@ -83,7 +84,7 @@ class MetsValidation(object):
             self.validation_errors.append('File count yielded %d instead of 0.' % self.total_files)
 
         # enable/disable error logging to console
-        # print 'Error log for METS file: ', mets
+        print 'Error log for METS file: ', mets
         for error in self.validation_errors:
             print error
 
