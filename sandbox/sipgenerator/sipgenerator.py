@@ -92,7 +92,7 @@ class SIPGenerator(object):
         file_checksum = self.sha256(file_name)
         file_size = os.path.getsize(file_name)
         file_cdate = get_file_ctime_iso_date_str(file_name, DT_ISO_FMT_SEC_PREC)
-        file_id = "ID"+uuid.uuid1().__str__()
+        file_id = "ID"+uuid.uuid4().__str__()
         mets_file = M.file({"MIMETYPE":file_mimetype, "CHECKSUMTYPE":"SHA-256", "CREATED":file_cdate, "CHECKSUM":file_checksum, "USE":"Datafile", "ID":file_id, "SIZE":file_size})
         mets_filegroup.append(mets_file)
         #_,fname = os.path.split(file_name)
@@ -136,7 +136,7 @@ class SIPGenerator(object):
                         pass
 
                 size = os.path.getsize(file_name)
-                premis_id = uuid.uuid1()
+                premis_id = uuid.uuid4()
                 premis_ids.append(premis_id)
                 premis.append(
                     P.object(
@@ -243,7 +243,7 @@ class SIPGenerator(object):
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
-        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
         root.append(mets_dmd)
         # this is how to add descriptive metadata entry
         #file_name = "../schemas/ead.xml"
@@ -253,20 +253,20 @@ class SIPGenerator(object):
         #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
         #mets_dmd.append(mets_mdref)
 
-        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
+        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid4().__str__()})
         root.append(mets_amdSec)
 
-        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
+        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid4().__str__()})
         mets_amdSec.append(mets_techmd)
-        for id in premis_ids:
-            mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
-            mets_techmd.append(mets_mdref)
+        #for id in premis_ids:
+        #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
+        #    mets_techmd.append(mets_mdref)
 
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
 
         # general filegroup
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__(), "USE": "general filegroup"})
+        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
         # schema filegroup
@@ -364,7 +364,7 @@ class SIPGenerator(object):
         mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
-        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
         root.append(mets_dmd)
         # this is how to add descriptive metadata entry
         #file_name = "../schemas/ead.xml"
@@ -374,10 +374,10 @@ class SIPGenerator(object):
         #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
         #mets_dmd.append(mets_mdref)
 
-        mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
         root.append(mets_amdSec)
 
-        mets_techmd = M.techMD({"ID": "ID" + uuid.uuid1().__str__()})
+        mets_techmd = M.techMD({"ID": "ID" + uuid.uuid4().__str__()})
         mets_amdSec.append(mets_techmd)
         #for id in premis_ids:
         #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
@@ -387,7 +387,7 @@ class SIPGenerator(object):
         root.append(mets_fileSec)
 
         # general filegroup
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__(), "USE": "general filegroup"})
+        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
         # schemas
@@ -395,7 +395,7 @@ class SIPGenerator(object):
         mets_fileSec.append(mets_schemagroup)
 
         # filegroup for representation mets files
-        mets_rep_group = M.fileGrp({"ID": "ID" +  uuid.uuid1().__str__(), "USE": "representations METS files"})
+        mets_rep_group = M.fileGrp({"ID": "ID" +  uuid.uuid4().__str__(), "USE": "representations METS files"})
         mets_fileSec.append(mets_rep_group)
 
         metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
@@ -483,7 +483,7 @@ class SIPGenerator(object):
 
     def createDeliveryMets(self, input_archive, output_mets):
         #create delivery METS skeleton
-        METS_ATTRIBUTES = {"OBJID" : "UUID:" + uuid.uuid1().__str__(), "TYPE" : "SIP", "LABEL" : "Delivery METS", "PROFILE" : "http://webb.eark/package/METS/IP_CS.xml", "ID" : "ID" + uuid.uuid1().__str__() }
+        METS_ATTRIBUTES = {"OBJID" : "UUID:" + uuid.uuid4().__str__(), "TYPE" : "SIP", "LABEL" : "Delivery METS", "PROFILE" : "http://webb.eark/package/METS/IP_CS.xml", "ID" : "ID" + uuid.uuid4().__str__() }
         root = M.mets(METS_ATTRIBUTES)
         root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd"
 
@@ -501,18 +501,18 @@ class SIPGenerator(object):
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
 
-        mets_filegroup = M.fileGrp({"USE" : "PACKAGES", "ID": "ID" + uuid.uuid1().__str__()})
+        mets_filegroup = M.fileGrp({"USE" : "PACKAGES", "ID": "ID" + uuid.uuid4().__str__()})
         mets_fileSec.append(mets_filegroup)
 
         content_id = self.addFile(input_archive, mets_filegroup)
 
-        mets_structmap = M.structMap({"ID": "ID%s" % uuid.uuid1(), "TYPE": "physical", "LABEL": "Profilestructmap"})
+        mets_structmap = M.structMap({"ID": "ID%s" % uuid.uuid4(), "TYPE": "physical", "LABEL": "Profilestructmap"})
         root.append(mets_structmap)
         mets_structmap_div = M.div({"LABEL": "Package"})
         mets_structmap.append(mets_structmap_div)
         mets_structmap_content_div = M.div({"LABEL": "Content"})
         mets_structmap_div.append(mets_structmap_content_div)
-        fptr = M.fptr({"FILEID": "ID%s" % uuid.uuid1()})
+        fptr = M.fptr({"FILEID": "ID%s" % uuid.uuid4()})
         mets_structmap_content_div.append(fptr)
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
