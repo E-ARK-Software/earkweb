@@ -601,12 +601,15 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
         tl = task_context.task_logger
 
-        tl.addinfo('Not implemented yet.')
+        # tl.addinfo('Not implemented yet.')
 
         # for every REPRESENTATION without METS file:
-        #    rep_mets_gen = SIPGenerator(rep_path)
-        #    rep_mets_gen.createAIPMets()
+        rep_path = os.path.join(task_context.path, 'representations/rep-002')
+        rep_mets_gen = SIPGenerator(rep_path)
+        # TODO: package identifiers (?) for representations
+        rep_mets_gen.createAIPMets('rep-002')
 
+        tl.addinfo('Generated a Mets file for representation rep-002.')
         task_context.task_status = 0
         return
 
@@ -633,7 +636,8 @@ class AIPPackageMetsCreation(DefaultTask):
             ipgen.createAIPMets(identifier)
 
             task_context.task_status = 0
-            tl.addinfo('METS and PREMIS updated with AIP contents.')
+            # tl.addinfo('METS and PREMIS updated with AIP contents.')
+            tl.addinfo('METS updated with AIP content.')
         except Exception, err:
             tl.addinfo('error: ', Exception)
             task_context.task_status = 1
