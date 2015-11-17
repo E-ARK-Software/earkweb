@@ -219,8 +219,8 @@ class SIPGenerator(object):
         return premis_ids
 
     def createSIPMets(self, premis_ids = None):
-        if premis_ids == None:
-            premis_ids = self.createPremis()
+        #if premis_ids == None:
+        #    premis_ids = self.createPremis()
 
         #create METS skeleton
         # METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
@@ -261,6 +261,8 @@ class SIPGenerator(object):
         #for id in premis_ids:
         #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
         #    mets_techmd.append(mets_mdref)
+        #techmd_ids = self.addFiles(os.path.join(self.root_path, 'metadata/preservation'))
+
 
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
@@ -370,11 +372,13 @@ class SIPGenerator(object):
         #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
         #mets_dmd.append(mets_mdref)
 
+        # create amdSec
         mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
         root.append(mets_amdSec)
 
-        mets_techmd = M.techMD({"ID": "ID" + uuid.uuid4().__str__()})
-        mets_amdSec.append(mets_techmd)
+        # create techMD
+        #mets_techmd = M.techMD({"ID": "ID" + uuid.uuid4().__str__()})
+        #mets_amdSec.append(mets_techmd)
         #for id in premis_ids:
         #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
         #    mets_techmd.append(mets_mdref)
@@ -382,12 +386,15 @@ class SIPGenerator(object):
         mets_fileSec = M.fileSec()
         root.append(mets_fileSec)
 
+        # TODO: metadata entries into correct mets section + structmap: seperate between AIP and rep level metadata!
+        # check if there is another METS file referencing the metadata
+
         # general filegroup
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
-        metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
-        submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
+        #metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+        #submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
 
         # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
         mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
@@ -399,27 +406,33 @@ class SIPGenerator(object):
         # metadata structmap - IP root level!
         mets_structmap_metadata_div = M.div({"LABEL": "Metadata AIP"})
         mets_structmap_div.append(mets_structmap_metadata_div)
-        for id in metadata_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_metadata_div.append(fptr)
+        #for id in metadata_ids:
+        #    fptr = M.fptr({"FILEID": id})
+        #    mets_structmap_metadata_div.append(fptr)
 
         # metadata structmap - submission level!
         mets_structmap_metadata_sub_div = M.div({"LABEL": "Metadata Submission"})
         mets_structmap_div.append(mets_structmap_metadata_sub_div)
-        for id in submission_meta_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_metadata_sub_div.append(fptr)
+        #for id in submission_meta_ids:
+        #    fptr = M.fptr({"FILEID": id})
+        #    mets_structmap_metadata_sub_div.append(fptr)
 
-        # content structmap - all representations! (is only filled if no seperate METS exists for the rep)
+        # content structmap - all representations! (is only filled if no separate METS exists for the rep)
         mets_structmap_content_div = M.div({"LABEL": "various files"})
         mets_structmap_div.append(mets_structmap_content_div)
+
+        # structmap for schema files
+        mets_structmap_schema_div = M.div({"LABEL": "schema files"})
+        mets_structmap_div.append(mets_structmap_schema_div)
 
         # create structmap for representations
         # mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
         mets_structmap_reps = M.structMap({"TYPE":"logical", "LABEL":"representations"})
         root.append(mets_structmap_reps)
+        mets_div_reps = M.div({'LABEL': 'representations', 'TYPE': 'type'})
+        mets_structmap_reps.append(mets_div_reps)
 
-        # submission folder
+        # package
         workdir_length = len(self.root_path)
         #for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
         for directory, subdirectories, filenames in os.walk(self.root_path):
@@ -437,8 +450,8 @@ class SIPGenerator(object):
                             rep_name = directory.rsplit('/', 2)
                             rep_name = os.path.join(rep_name[1], rep_name[2])
                             # create structMap div and append to representations structMap
-                            mets_structmap_rep_div = M.div({"ADMID": "", "LABEL": rep_name, "DMDID": "", "TYPE": "representation mets"})
-                            mets_structmap_reps.append(mets_structmap_rep_div)
+                            mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets"})
+                            mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
                                                   q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + packageid,
@@ -448,18 +461,31 @@ class SIPGenerator(object):
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
                             mets_fptr = M.fptr({"FILEID": id})
                             mets_structmap_rep_div.append(mets_fptr)
-                        elif filename and not (directory.endswith('descriptive') or
-                                               directory.endswith('metadata') or
-                                               directory.endswith('schemas')):
-                            # how to handle submission/metadata files?
-                            print 'found a file: ' + os.path.join(directory, filename)
-                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap_content_div.append(mets_fptr)
                         elif filename and directory.endswith('schemas'):
+                            # schema files
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap_metadata_div.append(mets_fptr)
+                            fptr = M.fptr({'FILEID': id})
+                            mets_structmap_schema_div.append(fptr)
+                        elif filename == 'earkweb.log':
+                            # earkweb log file - currently treated as digiprovMD
+                            mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
+                            mets_amdSec.append(mets_digiprovmd)
+                            checksum = self.sha256(os.path.join(directory,filename))
+                            mets_mdref = M.mdRef({"LOCTYPE":"URL",
+                                                 "MIMETYPE":"text/xml",
+                                                 "CREATED":current_timestamp(),
+                                                 q(XLINK_NS,"type"):"simple",
+                                                 q(XLINK_NS,"href"):rel_path_file,
+                                                 "CHECKSUMTYPE":"SHA-256",
+                                                 "CHECKSUM":checksum})
+                            mets_digiprovmd.append(mets_mdref)
+                        elif filename and not (directory.endswith('descriptive') or
+                                               directory.endswith('metadata')):
+                            # how to handle submission/metadata files?
+                            # print 'found a file: ' + os.path.join(directory, filename)
+                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
+                            fptr = M.fptr({"FILEID": id})
+                            mets_structmap_content_div.append(fptr)
 
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
