@@ -437,14 +437,15 @@ class SIPValidation(DefaultTask):
             else:
                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
 
-        reps_path = os.path.join(task_context.path, "submission/representations")
-        check_file("SIP METS file", os.path.join(reps_path, "METS.xml"))
-        check_file("Data directory", os.path.join(reps_path, "data"))
+        submission_path = os.path.join(task_context.path, "submission")
+        check_file("SIP METS file", os.path.join(submission_path, "METS.xml"))
+        #check_file("Data directory", os.path.join(reps_path, "data"))
 
         #check_file("Documentation directory", os.path.join(path, "documentation"))
         #check_file("Metadata directory", os.path.join(path, "metadata"))
-        for name in os.listdir(reps_path):
-            rep_path = os.path.join(reps_path, name)
+        representations_path = os.path.join(task_context.path, "submission/representations")
+        for name in os.listdir(representations_path):
+            rep_path = os.path.join(representations_path, name)
             if os.path.isdir(rep_path):
                 mets_validator = MetsValidation(rep_path)
                 valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
