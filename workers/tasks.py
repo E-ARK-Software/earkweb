@@ -141,8 +141,21 @@ class SIPPackageMetadataCreation(DefaultTask):
         @param      tc: order:2,type:1,stage:1
         """
 
-        sipgen = SIPGenerator(os.path.join(task_context.path, 'representations/rep-001'))
-        sipgen.createSIPMets()
+        reps_path = os.path.join(task_context.path, 'representations')
+        for name in os.listdir(reps_path):
+            rep_path = os.path.join(reps_path, name)
+            if os.path.isdir(rep_path):
+                sipgen = SIPGenerator(os.path.join(rep_path))
+                sipgen.createSIPMets()
+
+        mets_files = []
+        for name in os.listdir(reps_path):
+            rep_mets_path = os.path.join(reps_path, name, "METS.xml")
+            if os.path.exists(rep_mets_path) and os.path.isfile(rep_mets_path):
+                mets_files.append(rep_mets_path)
+
+        sipgen = SIPGenerator(task_context.path)
+        sipgen.createSIPParentMets(mets_files)
 
         task_context.task_status = 0
         return {}
@@ -424,24 +437,17 @@ class SIPValidation(DefaultTask):
             else:
                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
 
-        path = os.path.join(task_context.path, "submission/representations/rep-001")
-        check_file("SIP METS file", os.path.join(path, "METS.xml"))
-        check_file("Data directory", os.path.join(path, "data"))
-        #check_file("Content directory", os.path.join(path, "data/content"))
-        # TODO: this does not exist and should be created
-        #check_file("Documentation directory", os.path.join(path, "data/documentation"))
-        check_file("Metadata directory", os.path.join(path, "metadata"))
+        reps_path = os.path.join(task_context.path, "submission/representations")
+        check_file("SIP METS file", os.path.join(reps_path, "METS.xml"))
+        check_file("Data directory", os.path.join(reps_path, "data"))
 
-        # mets_file = os.path.join(path, "METS.xml")
-        # parsed_mets = ParsedMets(os.path.join(path))
-        # parsed_mets.load_mets(mets_file)
-        # mval = MetsValidation(parsed_mets)
-        # size_val_result = mval.validate_files_size()
-        # tl.log += size_val_result.log
-        # tl.err += size_val_result.err
-        # valid = (len(tl.err) == 0)
-        mets_validator = MetsValidation(path)
-        valid = mets_validator.validate_mets(os.path.join(path, 'METS.xml'))
+        #check_file("Documentation directory", os.path.join(path, "documentation"))
+        #check_file("Metadata directory", os.path.join(path, "metadata"))
+        for name in os.listdir(reps_path):
+            rep_path = os.path.join(reps_path, name)
+            if os.path.isdir(rep_path):
+                mets_validator = MetsValidation(rep_path)
+                valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
 
         # currently: forced valid = True, until valid mets files are created by the SIP creator!
         # valid = True
