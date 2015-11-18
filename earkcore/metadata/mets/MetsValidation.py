@@ -59,17 +59,18 @@ class MetsValidation(object):
                     element.clear()
                     while element.getprevious() is not None:
                         del element.getparent()[0]
-                elif event == 'end' and element.tag == q(METS_NS, 'structMap') and element.attrib['LABEL'] == 'representations':
+                elif event == 'end' and element.tag == q(METS_NS, 'div') and element.attrib['LABEL'] == 'representations':
                     # representation mets files
-                    rep =  element.getchildren()[0].attrib['LABEL']
-                    for child in element.getchildren()[0]:
-                        if child.tag == q(METS_NS, 'mptr'):
-                            metspath = child.attrib[q(XLINK_NS, 'href')]
-                            sub_mets = rep, metspath
-                            self.subsequent_mets.append(sub_mets)
-                    element.clear()
-                    while element.getprevious() is not None:
-                        del element.getparent()[0]
+                    for element in element.getchildren():
+                        rep = element.attrib['LABEL']
+                        for child in element:
+                            if child.tag == q(METS_NS, 'mptr'):
+                                metspath = child.attrib[q(XLINK_NS, 'href')]
+                                sub_mets = rep, metspath
+                                self.subsequent_mets.append(sub_mets)
+                        element.clear()
+                        while element.getprevious() is not None:
+                            del element.getparent()[0]
                 elif event == 'end' and element.tag == q(METS_NS, 'dmdSec'):
                     # dmdSec
                     pass
@@ -82,8 +83,10 @@ class MetsValidation(object):
         if self.total_files != 0:
             self.validation_errors.append('File count yielded %d instead of 0.' % self.total_files)
 
-        # for error in self.validation_errors:
-        #     print error
+        # enable/disable error logging to console
+        print 'Error log for METS file: ', mets
+        for error in self.validation_errors:
+            print error
 
         return True if len(self.validation_errors) == 0 else False
 
@@ -126,6 +129,11 @@ class MetsValidation(object):
             # validate checksum
             checksum_validation = ChecksumValidation()
             checksum_result = checksum_validation.validate_checksum(file_path, attr_checksum, attr_checksumtype)
+
+            # workaround for earkweb.log in AIP metadata/ folder on IP root level
+            if file_path[-22:] == './metadata/earkweb.log':
+                checksum_result = True
+
             if not checksum_result == True:
                 err.append('Checksum validation failed for: %s' % file_path)
 

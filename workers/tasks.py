@@ -46,7 +46,9 @@ from earkcore.utils.fileutils import mkdir_p
 from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
+from sandbox.filemigration.filemigration import FileMigration
 
+from celery.result import ResultSet
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -449,7 +451,7 @@ class SIPValidation(DefaultTask):
                 valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
 
         # currently: forced valid = True, until valid mets files are created by the SIP creator!
-        valid = True
+        # valid = True
 
         task_context.task_status = 0 if valid else 1
         return
@@ -468,27 +470,216 @@ class SIPValidation(DefaultTask):
 #         tl.addinfo('Not implemented yet.')
 #         task_context.task_status = 0
 
+from celery.result import AsyncResult
+from celery.app import task
+import uuid
+class AIPMigrations(DefaultTask):
+
+    accept_input_from = [SIPValidation.__name__, 'AIPMigrations']
+
+    def run_task(self, task_context):
+        """
+        AIP File Migration
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:7,type:2,stage:2
+        """
+        # TODO: create mets for new representation
+        # TODO: premis
+
+        tl = task_context.task_logger
+
+        # begin file migration
+        rep_path = os.path.join(task_context.path, 'submission/representations/')
+        source_rep_data = 'rep-001/data'
+        target_rep_data = 'representations/rep-002/data'
+
+        migration_source = os.path.join(rep_path, source_rep_data)
+        migration_target = os.path.join(task_context.path, target_rep_data)
+
+        if not os.path.exists(migration_target):
+            os.makedirs(migration_target)
+
+        # copy source metadata for new representation?
+        #if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-001')):
+        #    os.makedirs(os.path.join(task_context.path, 'metadata/rep-001'))
+        #shutil.copytree(os.path.join(rep_path, 'rep-001/metadata'), os.path.join(task_context.path, 'metadata/rep-002'))
+        #for directory, subdirectories, filenames in os.walk(os.path.join(task_context.path, 'submission/metadata')):
+        #    for filename in filenames:
+        #        if not filename == 'earkweb.log':
+        #            short_path = os.path.join(directory.rsplit('/', 1)[1], filename)
+        #            if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1]):
+        #                os.mkdir(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1])
+        #            #shutil.copytree(os.path.join(task_context.path, 'submission/metadata/%s'), os.path.join(task_context.path, 'metadata/rep-002/%s') % dir)
+        #            shutil.copy2(os.path.join(directory, filename), os.path.join(task_context.path, 'metadata/rep-002/%s') % short_path)
+
+
+
+        # begin migrations
+        migrationtask = MigrationProcess()
+
+        migrations = []
+        successful = []
+        failed = []
+        total = 0
+
+        # needs to walk from top-level dir of representation data
+        for directory, subdirectories, filenames in os.walk(migration_source):
+            for filename in filenames:
+                input = {'file': filename,
+                         'source': migration_source,
+                         'target': migration_target,
+                         'logger': task_context.task_logger}
+                # migrationtask.backend()
+                # TODO: block this task until all child tasks are done (fail, success, time out)
+                # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
+                id = uuid.uuid4().__str__()
+                migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default', task_id=id)
+                migrations.append(id)
+                total += 1
+
+        # AIPMigrations task stays in the following loop until all subtasks have either failed or succeeded,
+        # effectively blocking the execution of other tasks
+        while len(migrations) > 0:
+            for taskid in migrations:
+                # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS
+                if AsyncResult(taskid).status == 'SUCCESS':
+                    successful.append(taskid)
+                    migrations.pop(migrations.index(taskid))
+                elif AsyncResult(taskid).status == 'FAILURE':
+                    failed.append(taskid)
+                    migrations.pop(migrations.index(taskid))
+                elif AsyncResult(taskid).status == 'RETRY':
+                    # decide what to do here
+                    migrations.pop(migrations.index(taskid))
+            print '%d migration tasks are not completed, %d have been successful and %d have failed.' % (len(migrations), len(successful), len(failed))
+            progress = 100 * (float((len(successful) + len(failed))) / float(total))
+            self.update_state(state='PROGRESS', meta={'process_percent': progress})
+            time.sleep(2)
+
+        tl.addinfo('Migration of rep-001 complete.')
+
+        task_context.task_status = 0
+
+        return
+
+
+from earkcore.format.formatidentification import FormatIdentification
+from earkcore.process.cli.CliCommand import CliCommand
+import subprocess32
+# import multiprocessing
+class MigrationProcess(DefaultTask):
+    # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
+    # TODO: make this process "invisible" on the earkweb GUI.
+
+    accept_input_from = [AIPMigrations.__name__, 'AIPMigrationProcess']
+
+    def run_task(self, task_context):
+        """
+        File Migration
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:2,stage:2
+        """
+
+        # TODO: logging does not work perfectly.
+        # This is because every subtask of AIPMigrations can only write its changes into the logfile,
+        # when the instance of MigrationProcess who opened the log file the first time, closes it (or the AIPMigrations
+        # process calls its finalize() method, for that matter).
+        # Then the next instance of MigrationProcess can write to the file, and so on. This results in a chaotic
+        # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
+        tl = task_context.task_logger
+
+        self.args = ''
+
+        # TODO: handle file format + migration action properly
+        pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+        gif = ['fmt/3', 'fmt/4']
+
+        source = task_context.additional_input['source']
+        # TODO: additional sub-structure of rep-id/data/... when creating target path
+        target = task_context.additional_input['target']
+        file = task_context.additional_input['file']
+
+        identification = FormatIdentification()
+        fido_result = identification.identify_file(os.path.join(source, file))
+
+        if fido_result in pdf:
+            tl.addinfo('File %s is now migrated to PDF/A.' % file)
+            cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
+                         'input_file': os.path.join(source, file)}
+            self.args = CliCommand.get('pdftopdfa', cliparams)
+        elif fido_result in gif:
+            tl.addinfo('File %s is now migrated to TIFF.' % file)
+            outputfile = file.rsplit('.', 1)[0] + '.tiff'
+            cliparams = {'input_file': os.path.join(source, file),
+                         'output_file': os.path.join(target, outputfile)}
+            self.args = CliCommand.get('totiff', cliparams)
+        elif fido_result:
+            print 'Unclassified result: ', fido_result
+
+        # TODO: error handling (OSException)
+        if self.args != '':
+            migrate = subprocess32.Popen(self.args)
+            # note: the following line has to be there, even if nothing is done with out/err messages,
+            # as the process will otherwise deadlock!
+            out, err = migrate.communicate()
+            if err==None: tl.addinfo('Successfully migrated file %s.' % file)
+
+        task_context.task_status = 0
+        return True
+
+
+class AIPRepresentationMetsCreation(DefaultTask):
+
+    # accept_input_from = [MigrationProcess.__name__, 'AIPRepresentationMETSCreation']
+    accept_input_from = [AIPMigrations.__name__, 'AIPRepresentationMetsCreation']
+
+    def run_task(self, task_context):
+        """
+        AIP Representation Mets Creation
+
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:9,type:2,stage:2
+        """
+
+        tl = task_context.task_logger
+
+        # tl.addinfo('Not implemented yet.')
+
+        # for every REPRESENTATION without METS file:
+        rep_path = os.path.join(task_context.path, 'representations/rep-002')
+        rep_mets_gen = SIPGenerator(rep_path)
+        # TODO: package identifiers (?) for representations
+        rep_mets_gen.createAIPMets('rep-002')
+
+        tl.addinfo('Generated a Mets file for representation rep-002.')
+        task_context.task_status = 0
+        return
+
 
 class AIPPackageMetsCreation(DefaultTask):
 
-   # accept_input_from = [AIPCreation.__name__, 'AIPPackageMetsCreation']
-   accept_input_from = [SIPValidation.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
+   # accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
+   accept_input_from = [AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
 
    def run_task(self, task_context):
         """
-        AIP Validation
+        AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
 
         tl = task_context.task_logger
 
         try:
             ipgen = SIPGenerator(task_context.path)
-            ipgen.createAIPMets()
+            #print task_context.additional_input["identifier"]
+            identifier = task_context.additional_input['identifier']
+            ipgen.createAIPMets(identifier)
 
             task_context.task_status = 0
-            tl.addinfo('METS and PREMIS updated with AIP contents.')
+            # tl.addinfo('METS and PREMIS updated with AIP contents.')
+            tl.addinfo('METS updated with AIP content.')
         except Exception, err:
             tl.addinfo('error: ', Exception)
             task_context.task_status = 1
@@ -503,25 +694,26 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
         tl = task_context.task_logger
         try:
             valid = True
 
-            # TODO: valid = False if ANY validation fails
             # TODO: return errors and logs?
             mets_validator = MetsValidation(task_context.path)
-            result = mets_validator.validate_mets(os.path.join(task_context.path, 'IP.xml'))
-            tl.addinfo('Validation result for IP.xml is %s.' % (result))
+            result = mets_validator.validate_mets(os.path.join(task_context.path, 'METS.xml'))
+            valid = True if result == True else False
+            tl.addinfo('Validation result for METS.xml is %s.' % (result))
             for rep, metspath in mets_validator.subsequent_mets:
                 print 'METS file for representation: %s at path: %s' % (rep, metspath)
                 subsequent_mets_validator = MetsValidation(task_context.path)
                 sub_result = subsequent_mets_validator.validate_mets(metspath)
+                if valid == True and sub_result == False:
+                    valid = False
                 tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
-            # currently: forced valid = True, until valid mets files are created by the SIP creator!
-            valid = True
+            # valid = True
 
             task_context.task_status = 0 if valid else 1
 
@@ -531,6 +723,7 @@ class AIPValidation(DefaultTask):
             task_context.status = 1
         #     # update the PREMIS file at the end of the task - FAILURE
         #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
+        return
 
 
 class AIPPackaging(DefaultTask):
@@ -539,9 +732,9 @@ class AIPPackaging(DefaultTask):
 
     def run_task(self, task_context):
         """
-        AIP Validation
+        AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -564,12 +757,16 @@ class AIPPackaging(DefaultTask):
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
 
-            file_elements, delivery_xml = getDeliveryFiles(task_context.path)
+            #file_elements, delivery_xml = getDeliveryFiles(task_context.path)
             # continue normally we have only one tar
-            file_reference = ParsedMets.get_file_element_reference(file_elements[0])
+            #file_reference = ParsedMets.get_file_element_reference(file_elements[0])
 
-            tl.addinfo("Extracted file reference: %s" % file_reference)
-            delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+            #tl.addinfo("Extracted file reference: %s" % file_reference)
+            #delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
+
+            package_name = task_context.additional_input['packagename']
+            delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
+            delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
 
             status_xml = os.path.join(task_context.path, "state.xml")
             tl.addinfo("Ignoring package file: %s" % delivery_file)
@@ -614,7 +811,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -639,7 +836,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:14,type:2,stage:2
         """
         tl = task_context.task_logger
 
