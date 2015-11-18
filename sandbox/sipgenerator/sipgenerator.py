@@ -333,7 +333,6 @@ class SIPGenerator(object):
         mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
         root.append(mets_hdr)
 
-
         mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
         mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
         mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
@@ -568,10 +567,10 @@ class SIPGenerator(object):
                             mets_structmap_schema_div.append(fptr)
                         elif filename == 'earkweb.log':
                             # earkweb log file - currently treated as digiprovMD
-                            id = "ID" + uuid.uuid4().__str__()
-                            mets_digiprovmd = M.digiprovMD({"ID": id})
+                            mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
                             mets_amdSec.append(mets_digiprovmd)
                             checksum = self.sha256(os.path.join(directory,filename))
+                            id = "ID" + uuid.uuid4().__str__()
                             mets_mdref = M.mdRef({"LOCTYPE":"URL",
                                                  "MIMETYPE":"text/xml",
                                                  "CREATED":current_timestamp(),
@@ -586,6 +585,8 @@ class SIPGenerator(object):
                             mets_structmap_metadata_div.append(fptr)
                         elif directory.endswith('descriptive'):
                             # descriptive metadata
+                            #mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
+                            #root.append(mets_dmd)
                             checksum = self.sha256(os.path.join(directory,filename))
                             id = "ID" + uuid.uuid4().__str__()
                             mets_mdref = M.mdRef({"LOCTYPE":"URL",
@@ -602,10 +603,12 @@ class SIPGenerator(object):
                             mets_structmap_metadata_div.append(fptr)
                         elif directory.endswith('preservation'):
                             # preservation metadata (premis, techMD?)
-                            id = "ID" + uuid.uuid4().__str__()
-                            mets_techmd = M.techMD({"ID": id})
-                            mets_amdSec.append(mets_techmd)
+                            #mets_techmd = M.techMD({"ID": id})
+                            #mets_amdSec.append(mets_techmd)
+                            mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
+                            mets_amdSec.append(mets_digiprovmd)
                             checksum = self.sha256(os.path.join(directory,filename))
+                            id = "ID" + uuid.uuid4().__str__()
                             mets_mdref = M.mdRef({"LOCTYPE":"URL",
                                                  "MIMETYPE":"text/xml",
                                                  "CREATED":current_timestamp(),
@@ -615,7 +618,8 @@ class SIPGenerator(object):
                                                  "CHECKSUM":checksum,
                                                  "ID": id,
                                                   "MDTYPE": "OTHER"})
-                            mets_techmd.append(mets_mdref)
+                            #mets_techmd.append(mets_mdref)
+                            mets_digiprovmd.append(mets_mdref)
                             fptr = M.fptr({"FILEID": id})
                             mets_structmap_metadata_div.append(fptr)
                         elif filename and not (directory.endswith('descriptive') or

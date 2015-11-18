@@ -469,7 +469,9 @@ class SIPValidation(DefaultTask):
 #         tl.addinfo('Not implemented yet.')
 #         task_context.task_status = 0
 
-
+from celery.result import AsyncResult
+from celery.app import task
+import uuid
 class AIPMigrations(DefaultTask):
 
     accept_input_from = [SIPValidation.__name__, 'AIPMigrations']
@@ -485,6 +487,7 @@ class AIPMigrations(DefaultTask):
 
         tl = task_context.task_logger
 
+        # begin file migration
         rep_path = os.path.join(task_context.path, 'submission/representations/')
         source_rep_data = 'rep-001/data'
         target_rep_data = 'representations/rep-002/data'
@@ -495,11 +498,28 @@ class AIPMigrations(DefaultTask):
         if not os.path.exists(migration_target):
             os.makedirs(migration_target)
 
-        # filemigration = FileMigration(migration_source, migration_target)
-        # print filemigration
+        # copy source metadata for new representation?
+        #if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-001')):
+        #    os.makedirs(os.path.join(task_context.path, 'metadata/rep-001'))
+        #shutil.copytree(os.path.join(rep_path, 'rep-001/metadata'), os.path.join(task_context.path, 'metadata/rep-002'))
+        #for directory, subdirectories, filenames in os.walk(os.path.join(task_context.path, 'submission/metadata')):
+        #    for filename in filenames:
+        #        if not filename == 'earkweb.log':
+        #            short_path = os.path.join(directory.rsplit('/', 1)[1], filename)
+        #            if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1]):
+        #                os.mkdir(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1])
+        #            #shutil.copytree(os.path.join(task_context.path, 'submission/metadata/%s'), os.path.join(task_context.path, 'metadata/rep-002/%s') % dir)
+        #            shutil.copy2(os.path.join(directory, filename), os.path.join(task_context.path, 'metadata/rep-002/%s') % short_path)
 
-        # migrations = []
+
+
+        # begin migrations
         migrationtask = MigrationProcess()
+
+        migrations = []
+        successful = []
+        failed = []
+        total = 0
 
         # needs to walk from top-level dir of representation data
         for directory, subdirectories, filenames in os.walk(migration_source):
@@ -511,17 +531,31 @@ class AIPMigrations(DefaultTask):
                 # migrationtask.backend()
                 # TODO: block this task until all child tasks are done (fail, success, time out)
                 # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
-                migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default')
+                id = uuid.uuid4().__str__()
+                migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default', task_id=id)
+                migrations.append(id)
+                total += 1
 
+        # AIPMigrations task stays in the following loop until all subtasks have either failed or succeeded,
+        # effectively blocking the execution of other tasks
+        while len(migrations) > 0:
+            for taskid in migrations:
+                # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS
+                if AsyncResult(taskid).status == 'SUCCESS':
+                    successful.append(taskid)
+                    migrations.pop(migrations.index(taskid))
+                elif AsyncResult(taskid).status == 'FAILURE':
+                    failed.append(taskid)
+                    migrations.pop(migrations.index(taskid))
+                elif AsyncResult(taskid).status == 'RETRY':
+                    # decide what to do here
+                    migrations.pop(migrations.index(taskid))
+            print '%d migration tasks are not completed, %d have been successful and %d have failed.' % (len(migrations), len(successful), len(failed))
+            progress = 100 * (float((len(successful) + len(failed))) / float(total))
+            self.update_state(state='PROGRESS', meta={'process_percent': progress})
+            time.sleep(2)
 
-        # loop subtask list to get results
-        # for migration in migrations:
-            # if result == true, remove from list
-            # else set task_status to 1
-        #     pass
-
-        # TODO: maybe monitor db entries of migration tasks for success/failure?
-
+        tl.addinfo('Migration of rep-001 complete.')
 
         task_context.task_status = 0
 
