@@ -541,7 +541,7 @@ class AIPMigrations(DefaultTask):
         # effectively blocking the execution of other tasks
         while len(migrations) > 0:
             for taskid in migrations:
-                # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS
+                # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS, PROGRESS
                 if AsyncResult(taskid).status == 'SUCCESS':
                     successful.append(taskid)
                     migrations.pop(migrations.index(taskid))
@@ -551,7 +551,7 @@ class AIPMigrations(DefaultTask):
                 elif AsyncResult(taskid).status == 'RETRY':
                     # decide what to do here
                     migrations.pop(migrations.index(taskid))
-                elif AsyncResult(taskid).status == 'PENDING' or AsyncResult(taskid).status == 'STARTED':
+                elif AsyncResult(taskid).status == 'PENDING' or AsyncResult(taskid).status == 'STARTED' or AsyncResult(taskid).status == 'PROGRESS':
                     pass
                 elif AsyncResult(taskid).status:
                     # AsyncResult.result raised an exception
@@ -576,6 +576,7 @@ class AIPMigrations(DefaultTask):
 from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
+from celery.exceptions import SoftTimeLimitExceeded
 # import multiprocessing
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
@@ -598,46 +599,55 @@ class MigrationProcess(DefaultTask):
         # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
         tl = task_context.task_logger
 
-        self.args = ''
+        try:
+            self.args = ''
 
-        # TODO: handle file format + migration action properly
-        pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
-        gif = ['fmt/3', 'fmt/4']
+            # TODO: handle file format + migration action properly
+            pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+            gif = ['fmt/3', 'fmt/4']
 
-        source = task_context.additional_input['source']
-        # TODO: additional sub-structure of rep-id/data/... when creating target path
-        target = task_context.additional_input['target']
-        file = task_context.additional_input['file']
+            source = task_context.additional_input['source']
+            # TODO: additional sub-structure of rep-id/data/... when creating target path
+            target = task_context.additional_input['target']
+            file = task_context.additional_input['file']
+            #tl = task_context.additional_input['logger']
 
-        identification = FormatIdentification()
-        fido_result = identification.identify_file(os.path.join(source, file))
+            identification = FormatIdentification()
+            fido_result = identification.identify_file(os.path.join(source, file))
 
-        if fido_result in pdf:
-            print 'identified %s as pdf file.' % file
-            #tl.addinfo('File %s is now migrated to PDF/A.' % file)
-            cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
-                         'input_file': os.path.join(source, file)}
-            self.args = CliCommand.get('pdftopdfa', cliparams)
-        elif fido_result in gif:
-            print 'identified %s as gif file.' % file
-            #tl.addinfo('File %s is now migrated to TIFF.' % file)
-            outputfile = file.rsplit('.', 1)[0] + '.tiff'
-            cliparams = {'input_file': os.path.join(source, file),
-                         'output_file': os.path.join(target, outputfile)}
-            self.args = CliCommand.get('totiff', cliparams)
-        elif fido_result:
-            print 'Unclassified result: ', fido_result
+            if fido_result in pdf:
+                print 'identified %s as pdf file.' % file
+                tl.addinfo('File %s is now being migrated to PDF/A.' % file)
+                cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
+                             'input_file': os.path.join(source, file)}
+                self.args = CliCommand.get('pdftopdfa', cliparams)
+            elif fido_result in gif:
+                print 'identified %s as gif file.' % file
+                tl.addinfo('File %s is now being migrated to TIFF.' % file)
+                outputfile = file.rsplit('.', 1)[0] + '.tiff'
+                cliparams = {'input_file': os.path.join(source, file),
+                             'output_file': os.path.join(target, outputfile)}
+                self.args = CliCommand.get('totiff', cliparams)
+            elif fido_result:
+                print 'Unclassified result: ', fido_result
 
-        # TODO: error handling (OSException)
-        if self.args != '':
-            migrate = subprocess32.Popen(self.args)
-            # note: the following line has to be there, even if nothing is done with out/err messages,
-            # as the process will otherwise deadlock!
-            out, err = migrate.communicate()
-            if err==None: tl.addinfo('Successfully migrated file %s.' % file)
+            # TODO: error handling (OSException)
+            if self.args != '':
+                self.migrate = subprocess32.Popen(self.args)
+                # note: the following line has to be there, even if nothing is done with out/err messages,
+                # as the process will otherwise deadlock!
+                out, err = self.migrate.communicate()
+                if err==None: tl.addinfo('Successfully migrated file %s.' % file)
 
-        task_context.task_status = 0
-        return True
+            task_context.task_status = 0
+            return True
+        except SoftTimeLimitExceeded:
+            # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
+            tl.addinfo('Time limit exceeded, stopping migration.')
+            print 'Time limit exceeded, stopping migration.'
+            self.migrate.terminate()
+            task_context.task_status = 1
+            return False
 
 
 class AIPRepresentationMetsCreation(DefaultTask):
