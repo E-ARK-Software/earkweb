@@ -46,7 +46,6 @@ from earkcore.utils.fileutils import mkdir_p
 from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
-from sandbox.filemigration.filemigration import FileMigration
 
 from celery.result import ResultSet
 
@@ -456,26 +455,13 @@ class SIPValidation(DefaultTask):
         task_context.task_status = 0 if valid else 1
         return
 
-# class AIPCreation(DefaultTask):
-#
-#     accept_input_from = [SIPValidation.__name__, 'AIPCreation']
-
-#     def run_task(self, task_context):
-#         '''
-#         AIP Creation
-#         @type       tc: task configuration line (used to insert read task properties in database table)
-#         @param      tc: order:7,type:2,stage:2
-#         '''
-#         tl = task_context.task_logger
-#         tl.addinfo('Not implemented yet.')
-#         task_context.task_status = 0
 
 from celery.result import AsyncResult
 from celery.app import task
 import uuid
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'AIPMigrations']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations']
 
     def run_task(self, task_context):
         """
@@ -518,8 +504,6 @@ class AIPMigrations(DefaultTask):
         migrationtask = MigrationProcess()
 
         migrations = []
-        successful = []
-        failed = []
         total = 0
 
         # needs to walk from top-level dir of representation data
@@ -527,46 +511,22 @@ class AIPMigrations(DefaultTask):
             for filename in filenames:
                 input = {'file': filename,
                          'source': migration_source,
-                         'target': migration_target,
-                         'logger': task_context.task_logger}
+                         'target': migration_target}
+                         #'logger': task_context.task_logger,
+                         #'identifier': identifier}
                 # migrationtask.backend()
                 # TODO: block this task until all child tasks are done (fail, success, time out)
                 # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
                 id = uuid.uuid4().__str__()
-                migrationtask.apply_async((task_context.uuid, task_context.path, input,), queue='default', task_id=id)
+                print 'MAINTASK Calling migration task for file: %s' % filename
+                tl.addinfo('Calling migration task for file: %s' % filename)
+                migrationtask.apply_async((task_context.uuid, task_context.path, input,),
+                                          queue='default',
+                                          task_id=id)
                 migrations.append(id)
                 total += 1
 
-        # AIPMigrations task stays in the following loop until all subtasks have either failed or succeeded,
-        # effectively blocking the execution of other tasks
-        while len(migrations) > 0:
-            for taskid in migrations:
-                # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS, PROGRESS
-                if AsyncResult(taskid).status == 'SUCCESS':
-                    successful.append(taskid)
-                    migrations.pop(migrations.index(taskid))
-                elif AsyncResult(taskid).status == 'FAILURE':
-                    failed.append(taskid)
-                    migrations.pop(migrations.index(taskid))
-                elif AsyncResult(taskid).status == 'RETRY':
-                    # decide what to do here
-                    migrations.pop(migrations.index(taskid))
-                elif AsyncResult(taskid).status == 'PENDING' or AsyncResult(taskid).status == 'STARTED' or AsyncResult(taskid).status == 'PROGRESS':
-                    pass
-                elif AsyncResult(taskid).status:
-                    # AsyncResult.result raised an exception
-                    migrations.pop(migrations.index(taskid))
-                    tl.addinfo('AsyncResult is expception instance: ')
-                    tl.addinfo(AsyncResult(taskid).status)
-                    print 'AsyncResult is expception instance: '
-                    print AsyncResult(taskid).status
-
-            print '%d migration tasks are not completed, %d have been successful and %d have failed.' % (len(migrations), len(successful), len(failed))
-            progress = 100 * (float((len(successful) + len(failed))) / float(total))
-            self.update_state(state='PROGRESS', meta={'process_percent': progress})
-            time.sleep(2)
-
-        tl.addinfo('Migration of rep-001 complete.')
+        tl.addinfo('Migrations for rep-001 have been queued, please check for results.')
 
         task_context.task_status = 0
 
@@ -577,12 +537,12 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
-# import multiprocessing
+import multiprocessing
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
     # TODO: make this process "invisible" on the earkweb GUI.
 
-    accept_input_from = [AIPMigrations.__name__, 'AIPMigrationProcess']
+    accept_input_from = [AIPMigrations.__name__, SIPValidation.__name__, 'MigrationProcess']
 
     def run_task(self, task_context):
         """
@@ -591,6 +551,9 @@ class MigrationProcess(DefaultTask):
         @param      tc: order:8,type:0,stage:0
         """
 
+        # print 'current worker:'
+        # print multiprocessing.current_process().name
+
         # TODO: logging does not work perfectly.
         # This is because every subtask of AIPMigrations can only write its changes into the logfile,
         # when the instance of MigrationProcess who opened the log file the first time, closes it (or the AIPMigrations
@@ -598,6 +561,8 @@ class MigrationProcess(DefaultTask):
         # Then the next instance of MigrationProcess can write to the file, and so on. This results in a chaotic
         # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
         tl = task_context.task_logger
+
+        tl.addinfo('Migration task called for file: %s' % task_context.additional_input['file'])
 
         try:
             self.args = ''
@@ -611,6 +576,7 @@ class MigrationProcess(DefaultTask):
             target = task_context.additional_input['target']
             file = task_context.additional_input['file']
             #tl = task_context.additional_input['logger']
+            #identification = task_context.additional_input['identifier']
 
             identification = FormatIdentification()
             fido_result = identification.identify_file(os.path.join(source, file))
@@ -629,15 +595,21 @@ class MigrationProcess(DefaultTask):
                              'output_file': os.path.join(target, outputfile)}
                 self.args = CliCommand.get('totiff', cliparams)
             elif fido_result:
-                print 'Unclassified result: ', fido_result
+                tl.addinfo('Unclassified file/fido result: %s' % fido_result)
+                print 'Unclassified result: %s' % fido_result
 
             # TODO: error handling (OSException)
             if self.args != '':
                 self.migrate = subprocess32.Popen(self.args)
-                # note: the following line has to be there, even if nothing is done with out/err messages,
-                # as the process will otherwise deadlock!
+                 # note: the following line has to be there, even if nothing is done with out/err messages,
+                 # as the process will otherwise deadlock!
                 out, err = self.migrate.communicate()
-                if err==None: tl.addinfo('Successfully migrated file %s.' % file)
+                if err == None:
+                    tl.addinfo('Successfully migrated file %s.' % file)
+                    print 'Successfully migrated file %s.' % file
+                else:
+                    tl.addinfo('Migration for file %s caused errors: %s' % (file, err))
+                    print 'Migration for file %s caused errors: %s' % (file, err)
 
             task_context.task_status = 0
             return True
@@ -647,7 +619,11 @@ class MigrationProcess(DefaultTask):
             print 'Time limit exceeded, stopping migration.'
             self.migrate.terminate()
             task_context.task_status = 1
-            return False
+        except Exception:
+            print 'Exception: ', Exception
+            tl.addinfo('Exception: '), Exception
+            task_context.task_status = 1
+        return False
 
 
 class AIPRepresentationMetsCreation(DefaultTask):
