@@ -153,8 +153,8 @@ class SIPPackageMetadataCreation(DefaultTask):
             if os.path.exists(rep_mets_path) and os.path.isfile(rep_mets_path):
                 mets_files.append(rep_mets_path)
 
-        #sipgen = SIPGenerator(task_context.path)
-        #sipgen.createSIPParentMets(mets_files)
+        sipgen = SIPGenerator(task_context.path)
+        sipgen.createSIPParentMets(mets_files)
 
         task_context.task_status = 0
         return {}
@@ -518,7 +518,7 @@ class AIPMigrations(DefaultTask):
                 # TODO: block this task until all child tasks are done (fail, success, time out)
                 # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
                 id = uuid.uuid4().__str__()
-                print 'MAINTASK Calling migration task for file: %s' % filename
+                print 'Calling migration task for file: %s' % filename
                 tl.addinfo('Calling migration task for file: %s' % filename)
                 migrationtask.apply_async((task_context.uuid, task_context.path, input,),
                                           queue='default',
@@ -526,7 +526,7 @@ class AIPMigrations(DefaultTask):
                 migrations.append(id)
                 total += 1
 
-        tl.addinfo('Migrations for rep-001 have been queued, please check for results.')
+        tl.addinfo('Migrations have been queued, please check for results.')
 
         task_context.task_status = 0
 
