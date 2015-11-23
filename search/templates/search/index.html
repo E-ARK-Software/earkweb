@@ -31,8 +31,7 @@
     It is also possible to remove a selected AIP from the selected DIP creation process by clicking on the 'minus' icon.</p>
 <p>By clicking on the bounding boxes in the search result, the hierarchical result list can be folded and unfolded.</p>
 
-{# <form id="search-form" action="{% url 'search:search_form' %}" method="post"> #}
-<form id="select-aip-form"  class="form-horizontal" action="{% url 'search:toggle_select_package' %}" method="post">
+<form id="select-aip-form"  class="form-horizontal" action="{% url 'search:search_form' %}" method="post">
     {% csrf_token %}
     {{ form.non_field_errors }}
     <div style="width: 500px">
@@ -56,7 +55,7 @@
         <span id="load_text">loading...</span>
     </div>
     <div class="tree">
-        DIP creation process: <select data-toggle="tooltip" title="Selected packages will be added to the DIP creation process identified by this name" name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
+        DIP creation process: <select id="dipselect" data-toggle="tooltip" title="Selected packages will be added to the DIP creation process identified by this name" name="dip" onchange="getElementById('sendbutton').focus();getElementById('sendbutton').click()">
 
         {% for dip in dips %}
            <option value="{{ dip.name }}"
@@ -75,7 +74,6 @@
             </li>
         </ul>
     </div>
-    {# <input type="submit" value="add to basket" name="action" /> #}
 </form>
 <div id="loadingpreview" style="display:none"></div>
 

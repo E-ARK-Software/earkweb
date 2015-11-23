@@ -100,10 +100,10 @@ $(document).ready(function() {
                 appendNewElement(packArtListItemSpanElm, "input", {type:'hidden', id: toVarName(key),  value: key});
                 
                 appendNewTextNode(packArtListItemSpanElm, " "+key);
-                var addBtnProps = {id:'add-'+toVarName(key), class:'glyphicon glyphicon-plus', name: 'add-'+toVarName(key), type: 'submit'};
+                var addBtnProps = {id:"add-"+toVarName(key), class:'glyphicon glyphicon-plus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.name, "add")'};
                 if(isSelected) addBtnProps.style = 'display:none'; 
                 appendNewElement(packArtListItemElm, "button", addBtnProps);
-                var remBtnProps = {id:'rem-'+toVarName(key), class:'glyphicon glyphicon-minus', name: 'rem-'+toVarName(key), type: 'submit' };
+                var remBtnProps = {id:"rem-"+toVarName(key), class:'glyphicon glyphicon-minus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.name, "remove")' };
                 if(!isSelected) remBtnProps.style = 'display:none'; 
                 appendNewElement(packArtListItemElm, "button", remBtnProps);
                 var packArtListItemUlElm = appendNewElement(packArtListItemElm, "ul", {id:'package-'+toVarName(key)});
@@ -137,74 +137,7 @@ $(document).ready(function() {
             }, 5000);
         }
     };
-    
-    var options = {
-       
-        beforeSubmit: function(arr, form, options) {
-            var btn = $(document.activeElement).context.id;
-            if(btn.startsWith("sendbutton")) {
-                searchOptions.beforeSubmit();
-                return;
-            }
-            // append additional post variables
-            var cleanIdFormObj = $.grep(arr, function(v) {
-                return v.name.startsWith("add") || v.name.startsWith("rem");
-            });
-            // var actionIdArr = cleanIdFormObj[0].name.substring(4); // .split('-');
-            var cleanId = cleanIdFormObj[0].name.substring(4);
-            window.console.log("cleanId: "+cleanId);
-            var action = cleanIdFormObj[0].name.substring(0,3);
-            window.console.log("action: "+action);
-            var identifier = $("#"+cleanId).attr('value');
-            arr.push({name: "action", value: action });
-            window.console.log("IDENTIFIER: "+identifier);
-            arr.push({name: "identifier", value: identifier });
-            arr.push({name: "cleanid", value: cleanId });
-        },
-        success: function(resp) {
-            var btn = $(document.activeElement).context.id;
-            if(btn.startsWith("sendbutton")) {
-                searchOptions.success(resp);
-                return;
-            }
-            // var sfx = btn.substring(btn.indexOf('-'))
-            var sfx = btn.substring(4);
-            if(btn.startsWith("add")) {
-                $('#result-'+sfx).css("background-color", "green");
-                $('#result-'+sfx).css("color", "white");
-                $('#add-'+sfx).hide();
-                $('#rem-'+sfx).show();onchange="$(this).submit();"
-            } else if(btn.startsWith("rem")) {
-                $('#result-'+sfx).css("background-color", "transparent");
-                $('#result-'+sfx).css("color", "gray");
-                $('#add-'+sfx).show();
-                $('#rem-'+sfx).hide();window.console.log("test ");
-    //    $.ajax({
-    //        url : fileContentPath+identifier,
-    //        success : function(result){
-    //
-    //        }
-    //    });
-    // });
-            }
-            var action = 'remove';
-            if(btn.startsWith('add')) action = "add";
-            window.console.log(action + ' package request for package '+ sfx + ' completed.');
-            $('.top-left').notify({
-                message: { text: 'Package '+action },
-                type: 'success'
-            }).show(); 
-        },
-        error: function(resp) {
-            var btn = $(document.activeElement).context.id;
-            if(btn.startsWith("sendbutton"))
-                searchOptions.error(resp);
-        }
-    };
-    $('#select-aip-form').ajaxForm(options);
-
-
-
+    $('#select-aip-form').ajaxForm(searchOptions);
 });
 
 /**
@@ -256,7 +189,7 @@ show('loadingpreview', true);
     var fileContentPath = "/earkweb/search/filecontent/";
     var selectedItem = ($(this)[0]);
     var identifier = selectedItem.getAttribute("name");
-    var encodedIdentifier = encodeURIComponent(identifier);
+    var encodedIdentifier = encodeURICompmonent(identifier);
     window.console.log("File content path: " + fileContentPath+identifier);
     
     var mime = selectedItem.dataset.mime;
@@ -290,23 +223,32 @@ onchange="$(this).submit();"
  function show(id, value) {
     document.getElementById(id).style.display = value ? 'block' : 'none';
 }
-/*
-function onReady(callback) {
-    var intervalID = window.setInterval(checkReady, 1000);
 
-    function checkReady() {
-        if (document.getElementsByTagName('body')[0] !== undefined) {
-            window.clearInterval(intervalID);
-            callback.call(this);
+/**
+ * Add/remove package.
+ */
+function togglePackage(identifier, action) {
+    var dip = $("#dipselect").val();
+    $.ajax({
+        url: "/earkweb/search/toggle_select_package",
+        type: "POST",
+        data: "identifier="+identifier+"&dip="+dip+"&action="+action,
+    }).success(function(response){
+        var jsonResp = JSON.parse(response);
+        if(jsonResp.success == 'true') {
+            if(action == "add") {
+                $('#result-'+identifier).css("background-color", "green");
+                $('#result-'+identifier).css("color", "white");
+                $('#add-'+identifier).hide();
+                $('#rem-'+identifier).show();onchange="$(this).submit();"
+            } else if(action == "remove") {
+                $('#result-'+identifier).css("background-color", "transparent");
+                $('#result-'+identifier).css("color", "gray");
+                $('#add-'+identifier).show();
+                $('#rem-'+identifier).hide();
+            }
+        } else {
+            window.console.log("Error toggle package")
         }
-    }
+    });
 }
-
-
-
-onReady(function () {
-    show('page', true);
-    show('loading', false);
-});
-*/
-

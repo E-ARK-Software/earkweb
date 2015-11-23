@@ -231,6 +231,7 @@ def search_form(request):
                         documents.append(responseObj)
                 resultDict = {'numFound':numFound, 'start': start, 'rows': rows, 'documents': documents}
                 docsjson = json.dumps(resultDict, indent=4)
+
             except Exception:
                 error = {"error":"Error processing request"}
                 logger.error(traceback.format_exc())
@@ -255,34 +256,41 @@ def search_form(request):
     return render(request, 'search/index.html', context)
 
 @login_required
+@csrf_exempt
 def toggle_select_package(request):
     if request.method == "POST":
-        if request.POST.__contains__("action") and request.POST["action"] == "search":
-            return search_form(request)
-        else:
+        print "identifier:", request.POST["identifier"]
+        print "action:", request.POST["action"]
+        print "dip:", request.POST["dip"]
+
+        if request.POST.__contains__("identifier") and request.POST.__contains__("dip"):
             identifier = request.POST["identifier"]
-            cleanid = request.POST["cleanid"]
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)
             if request.POST["action"] == "add":
                 if AIP.objects.filter(identifier=identifier).count() == 0:
-                    aip = AIP.objects.create(identifier=identifier, cleanid=cleanid, source="unknown", date_selected=timezone.now())
+                    aip = AIP.objects.create(identifier=identifier, cleanid="", source="undefined", date_selected=timezone.now())
                     Inclusion(aip=aip, dip=dip).save()
-                    logger.debug("Added new package %s" % identifier)
+                    print "Added new package %s" % identifier
                 elif dip.aips.filter(identifier=identifier).count() == 0:
                     aip = AIP.objects.filter(identifier=identifier)[0]
                     Inclusion(aip=aip, dip=dip).save()
-                    logger.debug("Added existing package %s" % identifier)
+                    print "Added existing package %s" % identifier
                 else:
-                    logger.debug("Package %s added already" % identifier)
-            elif request.POST["action"] == "rem":
+                    print "Package %s already added" % identifier
+            elif request.POST["action"] == "remove":
                 aip = AIP.objects.filter(identifier=identifier)[0]
                 Inclusion.objects.filter(aip=aip, dip=dip).delete()
                 logger.debug("Removed package %s" % identifier)
-            return HttpResponse("{ \"success\": \"true\" }")
+            else:
+                return HttpResponse("{ \"success\": \"false\",  \"message\": \"action not supported\" }")
+        else:
+            return HttpResponse("{ \"success\": \"false\",  \"message\": \"request method not supported\" }")
+        return HttpResponse("{ \"success\": \"true\" }")
     else:
         return render(request, 'search/index.html')
-    
+
+
 @login_required
 def get_file_content(request, lily_id):
     logger.debug("Get content for lily_id %s" % lily_id)
