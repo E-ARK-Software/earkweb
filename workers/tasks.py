@@ -221,7 +221,7 @@ class SIPtoAIPReset(DefaultTask):
             fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata', 'IP.xml']
+        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata', 'IP.xml', 'migrations.txt']
         for item in items_to_remove:
             remove_fs_item(task_context.uuid, task_context.path, item)
 
@@ -461,7 +461,7 @@ from celery.app import task
 import uuid
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -526,7 +526,12 @@ class AIPMigrations(DefaultTask):
                 migrations.append(id)
                 total += 1
 
-        tl.addinfo('Migrations have been queued, please check for results.')
+        # write list of migration task ids to file
+        migrationlist = os.path.join(task_context.path, 'migrations.txt')
+        with open(migrationlist, 'w') as output_file:
+            output_file.write('\n'.join(migrations))
+
+        tl.addinfo('%d migrations have been queued, please check for results.' % total)
 
         task_context.task_status = 0
 
@@ -542,7 +547,7 @@ class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
     # TODO: make this process "invisible" on the earkweb GUI.
 
-    accept_input_from = [AIPMigrations.__name__, SIPValidation.__name__, 'MigrationProcess']
+    accept_input_from = [AIPMigrations.__name__, SIPValidation.__name__, 'MigrationProcess', 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -620,16 +625,87 @@ class MigrationProcess(DefaultTask):
             self.migrate.terminate()
             task_context.task_status = 1
         except Exception:
-            print 'Exception: ', Exception
-            tl.addinfo('Exception: '), Exception
+            print 'Exception in MigrationProcess(): ', Exception
+            tl.addinfo('Exception in MigrationProcess(): '), Exception
             task_context.task_status = 1
         return False
+
+
+class AIPCheckMigrationProgress(DefaultTask):
+
+    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress']
+
+    def run_task(self, task_context):
+        """
+        AIP Check Migration Progess
+
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:2,stage:2
+        """
+        tl = task_context.task_logger
+
+        try:
+            migrationtasks = os.path.join(task_context.path, 'migrations.txt')
+            with open(migrationtasks, 'r+') as tasks:
+                for taskid in tasks:
+                    #print 'Task %s in state %s' % (taskid, AsyncResult(taskid).status)
+                    #print AsyncResult(taskid).traceback
+                    # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS, PROGRESS
+                    if AsyncResult(taskid).status == 'SUCCESS':
+                        print AsyncResult(taskid).result
+                    elif AsyncResult(taskid).status == 'FAILURE':
+                        pass
+                    elif AsyncResult(taskid).status == 'PENDING':
+                        pass
+                    elif AsyncResult(taskid).status == 'RETRY':
+                        pass
+                    elif AsyncResult(taskid).status == 'FAILURE':
+                        pass
+                    elif AsyncResult(taskid).status == 'PROGRESS':
+                        pass
+                    else:
+                        tl.addinfo('Some kind of error state (migrationtasks).')
+                        print 'Some kind of error state (migrationtasks).'
+
+
+            complete = MigrationsComplete()
+            additional_input = ''
+            complete.apply_async((task_context.uuid, task_context.path, additional_input,), queue='default')
+
+            task_context.task_status = 0
+            return
+        except:
+            tl.addinfo('Something went wrong when checking task status.')
+            print 'Something went wrong when checking task status.'
+            task_context.task_status = 1
+        return
+
+
+class MigrationsComplete(DefaultTask):
+
+    accept_input_from = [AIPCheckMigrationProgress.__name__, 'MigrationsComplete']
+
+    def run_task(self, task_context):
+        """
+        Migrations Complete
+
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:8,type:0,stage:0
+        """
+
+        tl = task_context.task_logger
+
+        tl.addinfo('All migration processes are completed, now allowing Mets creation.')
+
+        task_context.task_status = 0
+        return
 
 
 class AIPRepresentationMetsCreation(DefaultTask):
 
     # accept_input_from = [MigrationProcess.__name__, 'AIPRepresentationMETSCreation']
-    accept_input_from = [AIPMigrations.__name__, 'AIPRepresentationMetsCreation']
+    # accept_input_from = [AIPMigrations.__name__, 'AIPRepresentationMetsCreation']
+    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMETSCreation']
 
     def run_task(self, task_context):
         """
@@ -766,13 +842,14 @@ class AIPPackaging(DefaultTask):
             package_name = task_context.additional_input['packagename']
             delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
             delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
+            migration_tasks = os.path.join(task_context.path, 'migrations.txt')
 
             status_xml = os.path.join(task_context.path, "state.xml")
             tl.addinfo("Ignoring package file: %s" % delivery_file)
             tl.addinfo("Ignoring delivery XML file: %s" % delivery_xml)
             tl.addinfo("Ignoring status XML file: %s" % status_xml)
 
-            ignore_list = [delivery_file, delivery_xml, status_xml]
+            ignore_list = [delivery_file, delivery_xml, status_xml, migration_tasks]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
                 for file in files:

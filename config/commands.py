@@ -11,7 +11,9 @@ commands = {
         ['gs', '-dPDFA', '-dBATCH', '-dNOPAUSE', '-dUseCIEColor', '-sProcessColorModel=DeviceCMYK', '-sDEVICE=pdfwrite',
          '-sPDFACompatibilityPolicy=1', string.Template('$output_file'), string.Template('$input_file')],
     'totiff':
-        ['convert', string.Template('$input_file'), string.Template('$output_file')]
+        ['convert', string.Template('$input_file'), string.Template('$output_file')],
+    'blank':
+        [string.Template('$command')]
 }
 
 # command switches:
