@@ -460,6 +460,7 @@ from celery.result import AsyncResult
 import uuid
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 from lxml import etree, objectify
+import fnmatch
 class AIPMigrations(DefaultTask):
 
     accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
@@ -488,57 +489,58 @@ class AIPMigrations(DefaultTask):
 
         tl = task_context.task_logger
 
-        # begin file migration
+        # list of all representations in submission folder
         rep_path = os.path.join(task_context.path, 'submission/representations/')
-        source_rep_data = 'rep-001/data'
-        target_rep_data = 'representations/rep-002/data'
-
-        migration_source = os.path.join(rep_path, source_rep_data)
-        migration_target = os.path.join(task_context.path, target_rep_data)
-
-        if not os.path.exists(migration_target):
-            os.makedirs(migration_target)
-
-        # copy source metadata for new representation?
-        #if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-001')):
-        #    os.makedirs(os.path.join(task_context.path, 'metadata/rep-001'))
-        #shutil.copytree(os.path.join(rep_path, 'rep-001/metadata'), os.path.join(task_context.path, 'metadata/rep-002'))
-        #for directory, subdirectories, filenames in os.walk(os.path.join(task_context.path, 'submission/metadata')):
-        #    for filename in filenames:
-        #        if not filename == 'earkweb.log':
-        #            short_path = os.path.join(directory.rsplit('/', 1)[1], filename)
-        #            if not os.path.exists(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1]):
-        #                os.mkdir(os.path.join(task_context.path, 'metadata/rep-002/%s') % directory.rsplit('/', 1)[1])
-        #            #shutil.copytree(os.path.join(task_context.path, 'submission/metadata/%s'), os.path.join(task_context.path, 'metadata/rep-002/%s') % dir)
-        #            shutil.copy2(os.path.join(directory, filename), os.path.join(task_context.path, 'metadata/rep-002/%s') % short_path)
+        replist = []
+        for repdir in os.listdir(rep_path):
+            replist.append(repdir)
 
         # begin migrations
         migrationtask = MigrationProcess()
 
         total = 0
 
-        # needs to walk from top-level dir of representation data
-        for directory, subdirectories, filenames in os.walk(migration_source):
-            for filename in filenames:
-                id = uuid.uuid4().__str__()
-                input = {'file': filename,
-                         'source': migration_source,
-                         'target': migration_target,
-                         'taskid': id}
-                         #'logger': task_context.task_logger,
-                         #'identifier': identifier}
-                print 'Calling migration task for file: %s' % filename
-                tl.addinfo('Calling migration task for file: %s' % filename)
-                migrationtask.apply_async((task_context.uuid, task_context.path, input,),
-                                          queue='default',
-                                          task_id=id)
-                migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
-                                                                                      'sourcedir': migration_source,
-                                                                                      'targetdir': migration_target,
-                                                                                      'taskid': id,
-                                                                                      'status': 'queued',
-                                                                                      'time': current_timestamp()})
-                total += 1
+        # start migrations from every representation
+        for rep in replist:
+            source_rep_data = '%s/data' % rep
+            migration_source = os.path.join(rep_path, source_rep_data)
+            migration_target = ''
+
+            # Unix-style pattern matching: if representation directory is in format of <name>#<number>,
+            # the new representation will be <number> + 1. Else, it is just <name>#1.
+            if fnmatch.fnmatch(rep, '*#*'):
+                rep, iteration = rep.rsplit('#', 1)
+                target_rep_data = 'representations/%s#%s' % (rep, (int(iteration)+1).__str__())
+                migration_target = os.path.join(task_context.path, target_rep_data)
+            else:
+                target_rep_data = 'representations/%s#%s' % (rep, '1')
+                migration_target = os.path.join(task_context.path, target_rep_data)
+
+            if not os.path.exists(migration_target):
+                os.makedirs(migration_target)
+
+            # needs to walk from top-level dir of representation data
+            for directory, subdirectories, filenames in os.walk(migration_source):
+                for filename in filenames:
+                    id = uuid.uuid4().__str__()
+                    input = {'file': filename,
+                             'source': migration_source,
+                             'target': migration_target,
+                             'taskid': id}
+                             #'logger': task_context.task_logger,
+                             #'identifier': identifier}
+                    print 'Calling migration task for file: %s' % filename
+                    tl.addinfo('Calling migration task for file: %s' % filename)
+                    migrationtask.apply_async((task_context.uuid, task_context.path, input,),
+                                              queue='default',
+                                              task_id=id)
+                    migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
+                                                                                          'sourcedir': migration_source,
+                                                                                          'targetdir': migration_target,
+                                                                                          'taskid': id,
+                                                                                          'status': 'queued',
+                                                                                          'time': current_timestamp()})
+                    total += 1
 
         migration_root.set('total', total.__str__())
 
