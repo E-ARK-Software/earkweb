@@ -46,7 +46,7 @@ Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscrip
 Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
 
     tar -xzf ghostscript-9.18.tar.gz
-    cd ghostscript-9.18.tar.gz
+    cd ghostscript-9.18
     ./configure
     make
     make install

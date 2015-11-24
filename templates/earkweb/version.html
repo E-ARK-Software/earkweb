@@ -26,6 +26,17 @@
     <tbody>
 
     <tr>
+        <td>0.1.8</td>
+        <td>24.11.2015</td>
+        <td>
+            <ul>
+                <li>DIP creation: bugs in the package selection interface corrected; Chrome compatibility of the interface ensured.</li>
+                <li>SIP to AIP conversion supports migration depending on the file type (current rules: GIF is migrated to TIFF using imagemagick, PDF is migrated to PDF/A using ghostscript)</li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
         <td>0.1.7</td>
         <td>17.11.2015</td>
         <td>
@@ -100,14 +111,47 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/e723c02">e723c02</a> div position corrected in SIP creator gui.
+<pre>2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/178579f">178579f</a> changed representation versioning pattern from *#* to *_mig-*
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/a267b68">a267b68</a> corrected target folder for migrations
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/51c277e">51c277e</a> migration and representation generation now works on any rep-name/any number of submission reps
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/426a024">426a024</a> user can now check on migration progress: * when migration tasks are queued, a xml file is created with info about the tasks * migration tasks create files when they are finished (successful or with errors) ** <taskid>.<extension>, extension shows if successful or failed ** when failed, file should contain error log (in addition to task logger) * MigrationProgress task checks the xml file, and edits (=rewrites) it according to task feedback (=files that they create) * when all migration tasks are successful, a subtask is called so that mets creation is allowed.
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/a3c310b">a3c310b</a> Remove active area css from home
+2015-11-23 <a href="https://github.com/eark-project/earkweb/commit/9442ce8">9442ce8</a> Correct bugs in package selection interface (DIP creation)
+2015-11-23 <a href="https://github.com/eark-project/earkweb/commit/92f940f">92f940f</a> added tasks for migration status checks (currently placeholder)
+2015-11-20 <a href="https://github.com/eark-project/earkweb/commit/810f3d8">810f3d8</a> minor changes
+2015-11-20 <a href="https://github.com/eark-project/earkweb/commit/d57cd74">d57cd74</a> fixed AIPMigrations task deadlocking and its suprocess blocking all workers
+2015-11-19 <a href="https://github.com/eark-project/earkweb/commit/ba29975">ba29975</a> soft timeout for MigrationProcess implemented (clean exit)
+2015-11-19 <a href="https://github.com/eark-project/earkweb/commit/c59215e">c59215e</a> added exception handling for subtasks
+2015-11-18 <a href="https://github.com/eark-project/earkweb/commit/4706d3a">4706d3a</a> small fix for task order
+2015-11-18 <a href="https://github.com/eark-project/earkweb/commit/f068404">f068404</a> migration task now blocking during migrations
+2015-11-18 <a href="https://github.com/eark-project/earkweb/commit/22de8df">22de8df</a> Validation task path adaptation
+2015-11-18 <a href="https://github.com/eark-project/earkweb/commit/8036ed2">8036ed2</a> continued work on Mets generation
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/9cb4c29">9cb4c29</a> Version 0.1.7
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/e723c02">e723c02</a> div position corrected in SIP creator gui.
 2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/21c1a53">21c1a53</a> Finished porting AIP2DIP tasks. Corrected web UI for AIP selection (help from Sven)
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/6cd8bd9">6cd8bd9</a> now adding earkweb.log as digiprovMD
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/3e67d7e">3e67d7e</a> added Mets generation for newly created representation
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/13b8d68">13b8d68</a> fixed MetsValidation only validating one subsequent Mets file
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/accc12f">accc12f</a> removed fileGrp entries, only relying on structMaps now
+2015-11-17 <a href="https://github.com/eark-project/earkweb/commit/774aefc">774aefc</a> changed from uuid1() to uuid4(), because IDs were actually the same everywhere
+2015-11-16 <a href="https://github.com/eark-project/earkweb/commit/9a6ee0a">9a6ee0a</a> various fixes to mets generation/validation and package creation
+2015-11-16 <a href="https://github.com/eark-project/earkweb/commit/dd16ff3">dd16ff3</a> added schemas to mets file
+2015-11-16 <a href="https://github.com/eark-project/earkweb/commit/7eae562">7eae562</a> removed AIP validation being always true
+2015-11-16 <a href="https://github.com/eark-project/earkweb/commit/63614d4">63614d4</a> added workaround for earkweb.log always failing the validation process
+2015-11-16 <a href="https://github.com/eark-project/earkweb/commit/012b75e">012b75e</a> fixed SIP/AIP Mets generation, now creating valid Mets files
+2015-11-13 <a href="https://github.com/eark-project/earkweb/commit/0727bbb">0727bbb</a> fixed a typo
+2015-11-13 <a href="https://github.com/eark-project/earkweb/commit/773033f">773033f</a> added placeholder: optional task to create METS files for representations after file migration
+2015-11-13 <a href="https://github.com/eark-project/earkweb/commit/4462b09">4462b09</a> minor update to mets generation, now including files in representations when no mets.xml present
+2015-11-13 <a href="https://github.com/eark-project/earkweb/commit/f75a0f3">f75a0f3</a> changed migration, each file migration is now a celery task (far from perfect)
 2015-11-12 <a href="https://github.com/eark-project/earkweb/commit/9ea479d">9ea479d</a> SIP creator: parent identifier note only shown if corresponding options are opened.
 2015-11-12 <a href="https://github.com/eark-project/earkweb/commit/26870e9">26870e9</a> SIP creator: corrected error if "representations" directory does not exist.
 2015-11-12 <a href="https://github.com/eark-project/earkweb/commit/faf3bdc">faf3bdc</a> Test file removed
 2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/22967d0">22967d0</a> Test file removed
 2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/301e82c">301e82c</a> Initial representation must be added
 2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/1f280ba">1f280ba</a> SIP creation form (parent identifier, representation switching)
+2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/1283765">1283765</a> added installation instructions for Ghostscript
+2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/d699c04">d699c04</a> added subprocess32 to requirements
+2015-11-11 <a href="https://github.com/eark-project/earkweb/commit/f3c6df3">f3c6df3</a> first commit migration task, very simple (pdf to pdf/a only)
 2015-11-10 <a href="https://github.com/eark-project/earkweb/commit/50d6655">50d6655</a> SIP creation form refactored
 2015-11-10 <a href="https://github.com/eark-project/earkweb/commit/c0f3a4f">c0f3a4f</a> * now deleting processed xml elements * deactivated AIPCreation task (did nothing anyway)
 2015-11-10 <a href="https://github.com/eark-project/earkweb/commit/aaa7ab4">aaa7ab4</a> Completely rewordked MetsValidation(): * now using etree.iterparse() for event-driven validation of files * xml structure is now validated against schema * currently validation output is displayed on earkweb, but has no effect on task status (xml files are created faulty)
