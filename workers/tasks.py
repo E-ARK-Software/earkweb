@@ -221,7 +221,7 @@ class SIPtoAIPReset(DefaultTask):
             fileutils.mkdir_p(task_context.path)
 
         # remove and recreate empty directories
-        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata', 'IP.xml', 'migrations.txt']
+        items_to_remove = ['METS.xml', 'submission', 'representations', 'schemas', 'metadata', 'Content', 'Metadata', 'IP.xml', 'earkweb']
         for item in items_to_remove:
             remove_fs_item(task_context.uuid, task_context.path, item)
 
@@ -457,11 +457,12 @@ class SIPValidation(DefaultTask):
 
 
 from celery.result import AsyncResult
-from celery.app import task
 import uuid
+from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
+from lxml import etree, objectify
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
 
     def run_task(self, task_context):
         """
@@ -469,8 +470,21 @@ class AIPMigrations(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:7,type:2,stage:2
         """
-        # TODO: create mets for new representation
         # TODO: premis
+
+        # make metadata/earkweb dir for temporary files
+        if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb')):
+            os.makedirs(os.path.join(task_context.path, 'metadata/earkweb'))
+        if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations')):
+            os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations'))
+
+        # create xml file for migration logging
+        migration_root = objectify.Element('migrations', attrib={'source': 'source representation',
+                                                       'target': 'target representation',
+                                                       'total': ''})
+
+        #metadata_generator = SIPGenerator(task_context.path)
+        #premis = metadata_generator.createPremis()
 
         tl = task_context.task_logger
 
@@ -498,38 +512,44 @@ class AIPMigrations(DefaultTask):
         #            #shutil.copytree(os.path.join(task_context.path, 'submission/metadata/%s'), os.path.join(task_context.path, 'metadata/rep-002/%s') % dir)
         #            shutil.copy2(os.path.join(directory, filename), os.path.join(task_context.path, 'metadata/rep-002/%s') % short_path)
 
-
-
         # begin migrations
         migrationtask = MigrationProcess()
 
-        migrations = []
         total = 0
 
         # needs to walk from top-level dir of representation data
         for directory, subdirectories, filenames in os.walk(migration_source):
             for filename in filenames:
+                id = uuid.uuid4().__str__()
                 input = {'file': filename,
                          'source': migration_source,
-                         'target': migration_target}
+                         'target': migration_target,
+                         'taskid': id}
                          #'logger': task_context.task_logger,
                          #'identifier': identifier}
-                # migrationtask.backend()
-                # TODO: block this task until all child tasks are done (fail, success, time out)
-                # migrationtask.apply_async((task_context.uuid, task_context.path, file_path,), queue='default', link='success_task', linkerror='error_task')
-                id = uuid.uuid4().__str__()
                 print 'Calling migration task for file: %s' % filename
                 tl.addinfo('Calling migration task for file: %s' % filename)
                 migrationtask.apply_async((task_context.uuid, task_context.path, input,),
                                           queue='default',
                                           task_id=id)
-                migrations.append(id)
+                migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
+                                                                                      'sourcedir': migration_source,
+                                                                                      'targetdir': migration_target,
+                                                                                      'taskid': id,
+                                                                                      'status': 'queued',
+                                                                                      'time': current_timestamp()})
                 total += 1
 
-        # write list of migration task ids to file
-        migrationlist = os.path.join(task_context.path, 'migrations.txt')
-        with open(migrationlist, 'w') as output_file:
-            output_file.write('\n'.join(migrations))
+        migration_root.set('total', total.__str__())
+
+        str = etree.tostring(migration_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+
+        xml_path = os.path.join(task_context.path,'metadata/earkweb/migrations.xml')
+        with open(xml_path, 'w') as output_file:
+            output_file.write(str)
+
+        # TODO: Premis
+        #premis_update = add_PREMIS_event('AIPMigrations', 'success', 'identifier_value', 'linking_agent', task_context.path, )
 
         tl.addinfo('%d migrations have been queued, please check for results.' % total)
 
@@ -567,7 +587,10 @@ class MigrationProcess(DefaultTask):
         # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
         tl = task_context.task_logger
 
-        tl.addinfo('Migration task called for file: %s' % task_context.additional_input['file'])
+        tl.addinfo('Migration task started for file: %s' % task_context.additional_input['file'])
+
+        result = {}
+        taskid = ''
 
         try:
             self.args = ''
@@ -580,6 +603,7 @@ class MigrationProcess(DefaultTask):
             # TODO: additional sub-structure of rep-id/data/... when creating target path
             target = task_context.additional_input['target']
             file = task_context.additional_input['file']
+            taskid = task_context.additional_input['taskid']
             #tl = task_context.additional_input['logger']
             #identification = task_context.additional_input['identifier']
 
@@ -587,21 +611,18 @@ class MigrationProcess(DefaultTask):
             fido_result = identification.identify_file(os.path.join(source, file))
 
             if fido_result in pdf:
-                print 'identified %s as pdf file.' % file
                 tl.addinfo('File %s is now being migrated to PDF/A.' % file)
                 cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
                              'input_file': os.path.join(source, file)}
                 self.args = CliCommand.get('pdftopdfa', cliparams)
             elif fido_result in gif:
-                print 'identified %s as gif file.' % file
                 tl.addinfo('File %s is now being migrated to TIFF.' % file)
                 outputfile = file.rsplit('.', 1)[0] + '.tiff'
                 cliparams = {'input_file': os.path.join(source, file),
                              'output_file': os.path.join(target, outputfile)}
                 self.args = CliCommand.get('totiff', cliparams)
-            elif fido_result:
-                tl.addinfo('Unclassified file/fido result: %s' % fido_result)
-                print 'Unclassified result: %s' % fido_result
+            else:
+                tl.addinfo('Unclassified file %s // fido result: %s' % (file, fido_result))
 
             # TODO: error handling (OSException)
             if self.args != '':
@@ -615,25 +636,39 @@ class MigrationProcess(DefaultTask):
                 else:
                     tl.addinfo('Migration for file %s caused errors: %s' % (file, err))
                     print 'Migration for file %s caused errors: %s' % (file, err)
+                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                        status.write(err)
+                    return
+            else:
+                tl.addinfo('Migration for file %s could not be executed due to missing command line parameters.' % file)
+                task_context.task_status = 1
+                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                    status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
+                return
 
             task_context.task_status = 0
-            return True
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'success')), 'a' ) as status:
+                pass
+            return
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
             tl.addinfo('Time limit exceeded, stopping migration.')
-            print 'Time limit exceeded, stopping migration.'
             self.migrate.terminate()
             task_context.task_status = 1
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                status.write('Time limit exceeded, stopping migration.')
         except Exception:
-            print 'Exception in MigrationProcess(): ', Exception
-            tl.addinfo('Exception in MigrationProcess(): '), Exception
+            e = sys.exc_info()[0]
+            tl.addinfo('Exception in MigrationProcess(): %s' % e)
             task_context.task_status = 1
-        return False
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                status.write('Exception in MigrationProcess(): %s' % e)
+        return
 
 
 class AIPCheckMigrationProgress(DefaultTask):
 
-    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress']
+    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress', 'MigrationsComplete']
 
     def run_task(self, task_context):
         """
@@ -644,35 +679,62 @@ class AIPCheckMigrationProgress(DefaultTask):
         """
         tl = task_context.task_logger
 
+        total = 0
+        successful = 0
+        failed = 0
+
         try:
-            migrationtasks = os.path.join(task_context.path, 'migrations.txt')
-            with open(migrationtasks, 'r+') as tasks:
-                for taskid in tasks:
-                    #print 'Task %s in state %s' % (taskid, AsyncResult(taskid).status)
-                    #print AsyncResult(taskid).traceback
-                    # status can be PENDING, STARTED, RETRY, FAILURE, SUCCESS, PROGRESS
-                    if AsyncResult(taskid).status == 'SUCCESS':
-                        print AsyncResult(taskid).result
-                    elif AsyncResult(taskid).status == 'FAILURE':
-                        pass
-                    elif AsyncResult(taskid).status == 'PENDING':
-                        pass
-                    elif AsyncResult(taskid).status == 'RETRY':
-                        pass
-                    elif AsyncResult(taskid).status == 'FAILURE':
-                        pass
-                    elif AsyncResult(taskid).status == 'PROGRESS':
-                        pass
+            xml = os.path.join(task_context.path, 'metadata/earkweb/migrations.xml')
+            migrations =  etree.iterparse(open(xml), events=('start',))
+            migration_root = ''
+            for event, element in migrations:
+                if element.tag == 'migrations':
+                    total = element.attrib['total']
+                    migration_root = element
+                elif element.tag == 'migration':
+                    if element.attrib['status'] == 'queued':
+                        taskid = element.attrib['taskid']
+                        if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid)):
+                            # TODO: check if there is actually a file at migration target location - problem: different file extensions (at least)
+                            element.set('status', 'successful')
+                            successful += 1
+                            # remove the file, to avoid storing huge numbers of useless files
+                            os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid))
+                        elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.fail' % taskid)):
+                            element.set('status', 'failed')
+                            failed += 1
+                        else:
+                            pass
+                    elif element.attrib['status'] == 'successful':
+                        successful += 1
+                    elif element.attrib['status'] == 'failed':
+                        failed += 1
                     else:
-                        tl.addinfo('Some kind of error state (migrationtasks).')
-                        print 'Some kind of error state (migrationtasks).'
+                        tl.addinfo('Custom status detected, can\'t handle it.')
+                else:
+                    pass
 
+            missing = int(total) - successful - failed
+            tl.addinfo('From a total of %s migrations, %d have been successful and %d failed. Not yet completed: %d migrations.' % (total, successful, failed, missing))
 
-            complete = MigrationsComplete()
-            additional_input = ''
-            complete.apply_async((task_context.uuid, task_context.path, additional_input,), queue='default')
+            # write updated file
+            str = etree.tostring(migration_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+            xml_path = os.path.join(task_context.path,'metadata/earkweb/migrations.xml')
+            with open(xml_path, 'w') as output_file:
+                output_file.write(str)
 
-            task_context.task_status = 0
+            # check if migrations are all completed
+            if int(total) == successful:
+                complete = MigrationsComplete()
+                complete.apply_async((task_context.uuid, task_context.path, None,), queue='default')
+                tl.addinfo('All migrations have been successful.')
+                task_context.task_status = 0
+            elif failed > 0 and missing == 0:
+                tl.addinfo('Migrations are complete, but a number of them failed.')
+                task_context.task_status = 1
+            else:
+                tl.addinfo('Migrations are still running, please check back later.')
+                task_context.task_status = 0
             return
         except:
             tl.addinfo('Something went wrong when checking task status.')
@@ -703,8 +765,6 @@ class MigrationsComplete(DefaultTask):
 
 class AIPRepresentationMetsCreation(DefaultTask):
 
-    # accept_input_from = [MigrationProcess.__name__, 'AIPRepresentationMETSCreation']
-    # accept_input_from = [AIPMigrations.__name__, 'AIPRepresentationMetsCreation']
     accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMETSCreation']
 
     def run_task(self, task_context):
@@ -842,16 +902,22 @@ class AIPPackaging(DefaultTask):
             package_name = task_context.additional_input['packagename']
             delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
             delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
-            migration_tasks = os.path.join(task_context.path, 'migrations.txt')
 
             status_xml = os.path.join(task_context.path, "state.xml")
             tl.addinfo("Ignoring package file: %s" % delivery_file)
             tl.addinfo("Ignoring delivery XML file: %s" % delivery_xml)
             tl.addinfo("Ignoring status XML file: %s" % status_xml)
 
-            ignore_list = [delivery_file, delivery_xml, status_xml, migration_tasks]
+            # ignore files that were only needed to check on migration status
+            ignore_dir = os.path.join(task_context.path, 'metadata/earkweb')
+
+            ignore_list = [delivery_file, delivery_xml, status_xml]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
+                if subdir == ignore_dir:
+                    # remove files and subfolders from loop, so they are not packaged
+                    del dirs[:]
+                    del files[:]
                 for file in files:
                     if os.path.join(subdir, file) not in ignore_list:
                         entry = os.path.join(subdir, file)
