@@ -506,14 +506,14 @@ class AIPMigrations(DefaultTask):
             migration_source = os.path.join(rep_path, source_rep_data)
             migration_target = ''
 
-            # Unix-style pattern matching: if representation directory is in format of <name>#<number>,
-            # the new representation will be <number> + 1. Else, it is just <name>#1.
-            if fnmatch.fnmatch(rep, '*#*'):
-                rep, iteration = rep.rsplit('#', 1)
-                target_rep_data = 'representations/%s#%s/data' % (rep, (int(iteration)+1).__str__())
+            # Unix-style pattern matching: if representation directory is in format of <name>_mig-<number>,
+            # the new representation will be <number> + 1. Else, it is just <name>_mig-1.
+            if fnmatch.fnmatch(rep, '*_mig-*'):
+                rep, iteration = rep.rsplit('_mig-', 1)
+                target_rep_data = 'representations/%s_mig-%s/data' % (rep, (int(iteration)+1).__str__())
                 migration_target = os.path.join(task_context.path, target_rep_data)
             else:
-                target_rep_data = 'representations/%s#%s/data' % (rep, '1')
+                target_rep_data = 'representations/%s_mig-%s/data' % (rep, '1')
                 migration_target = os.path.join(task_context.path, target_rep_data)
 
             if not os.path.exists(migration_target):
