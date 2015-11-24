@@ -510,10 +510,10 @@ class AIPMigrations(DefaultTask):
             # the new representation will be <number> + 1. Else, it is just <name>#1.
             if fnmatch.fnmatch(rep, '*#*'):
                 rep, iteration = rep.rsplit('#', 1)
-                target_rep_data = 'representations/%s#%s' % (rep, (int(iteration)+1).__str__())
+                target_rep_data = 'representations/%s#%s/data' % (rep, (int(iteration)+1).__str__())
                 migration_target = os.path.join(task_context.path, target_rep_data)
             else:
-                target_rep_data = 'representations/%s#%s' % (rep, '1')
+                target_rep_data = 'representations/%s#%s/data' % (rep, '1')
                 migration_target = os.path.join(task_context.path, target_rep_data)
 
             if not os.path.exists(migration_target):
@@ -779,15 +779,16 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
         tl = task_context.task_logger
 
-        # tl.addinfo('Not implemented yet.')
+        # TODO: error handling
 
         # for every REPRESENTATION without METS file:
-        rep_path = os.path.join(task_context.path, 'representations/rep-002')
-        rep_mets_gen = SIPGenerator(rep_path)
-        # TODO: package identifiers (?) for representations
-        rep_mets_gen.createAIPMets('rep-002')
+        for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
+            rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
+            rep_mets_gen = SIPGenerator(rep_path)
+            # TODO: package identifiers (?) for representations
+            rep_mets_gen.createAIPMets('%s' % repdir)
 
-        tl.addinfo('Generated a Mets file for representation rep-002.')
+            tl.addinfo('Generated a Mets file for representation %s.' % repdir)
         task_context.task_status = 0
         return
 

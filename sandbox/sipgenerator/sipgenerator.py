@@ -533,6 +533,10 @@ class SIPGenerator(object):
         workdir_length = len(self.root_path)
         #for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
         for directory, subdirectories, filenames in os.walk(self.root_path):
+            if directory == os.path.join(self.root_path, 'metadata/earkweb'):
+                del directory
+                del filenames[:]
+                del subdirectories[:]
             if len(filenames) > 0:
                 for filename in filenames:
                     # ignore all files on AIP root level (since they wont be packed with the AIP):
