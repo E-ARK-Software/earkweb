@@ -767,7 +767,7 @@ class MigrationsComplete(DefaultTask):
 
 class AIPRepresentationMetsCreation(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMETSCreation']
+    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMetsCreation']
 
     def run_task(self, task_context):
         """
