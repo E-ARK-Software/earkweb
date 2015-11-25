@@ -46,6 +46,8 @@ from workers.ip_state import IpState
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
 
+from sandbox.sipgenerator.premisgenerator import PremisGenerator
+
 from celery.result import ResultSet
 from earkweb.celeryapp import app
 
@@ -156,10 +158,14 @@ class SIPPackageMetadataCreation(DefaultTask):
         for name in os.listdir(reps_path):
             rep_path = os.path.join(reps_path, name)
             if os.path.isdir(rep_path):
+                # Mets
                 mets_data = {'packageid': task_context.uuid,
                              'type': 'SIP'}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
+                # Premis
+                premisgen = PremisGenerator(rep_path)
+                premisgen.createPremis()
 
         #mets_files = []
         #for name in os.listdir(reps_path):
@@ -172,6 +178,9 @@ class SIPPackageMetadataCreation(DefaultTask):
                      'type': 'SIP'}
         metsgen = MetsGenerator(task_context.path)
         metsgen.createMets(mets_data)
+        # also, Premos
+        premisgen = PremisGenerator(task_context.path)
+        premisgen.createPremis()
 
         task_context.task_status = 0
         return {}
@@ -833,7 +842,7 @@ class AIPPackageMetsCreation(DefaultTask):
             #ipgen.createAIPMets(identifier)
 
             mets_data = {'packageid': identifier,
-                         'type': 'SIP'}
+                         'type': 'AIP'}
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 
