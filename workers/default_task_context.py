@@ -13,6 +13,8 @@ class DefaultTaskContext(object):
     additional_input = None
     additional_output = None
 
+    additional_data = None
+
     def __init__(self, uuid, path, task_name, task_logger):
         self.uuid = uuid
         self.path = path

@@ -37,6 +37,7 @@ from django.forms import ModelChoiceField
 from sip2aip import forms
 import urllib2
 #import workers.tasks
+from workers.default_task_context import DefaultTaskContext
 from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
@@ -50,6 +51,7 @@ from config.params import config_path_storage
 from django.utils import dateparse
 
 import logging
+from celery import chain
 
 @login_required
 def index(request):
@@ -156,10 +158,8 @@ def apply_task(request):
     Execute selected task using selected information package as input. Task modules are registered in WorkflowModules.
     The identifier of a workflow module corresponds with the task's class name. The task is executed using celery's
     'apply_async' method.
-
     @type request: django.core.handlers.wsgi.WSGIRequest
     @param request: Request
-
     @rtype: django.http.JsonResponse
     @return: JSON response (task execution metadata)
     """
@@ -230,8 +230,8 @@ def poll_state(request):
                 task_id = request.POST['task_id']
                 task = AsyncResult(task_id)
                 if task.state == "SUCCESS":
-                    aggr_log = '\n'.join(task.result.log)
-                    aggr_err = '\n'.join(task.result.err)
+                    aggr_log = '\n'.join(task.result.task_logger.log)
+                    aggr_err = '\n'.join(task.result.task_logger.err)
                     data = {"success": True, "result": task.result.task_status == 0, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
                     # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
@@ -239,7 +239,7 @@ def poll_state(request):
                     if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
-                        date_obj = dateparse.parse_datetime(task.result.last_change)
+                        date_obj = dateparse.parse_datetime(task.result.ip_state_xml.get_lastchange())
                         ip.last_change = date_obj
                         if task.result.uuid and task.result.additional_output:
 
@@ -250,9 +250,9 @@ def poll_state(request):
                                 ip.storage_loc = task.result.additional_output['storageLoc']
                                 print "Storage location %s" % ip.storage_loc
 
-                        if task.result.last_task:
+                        if task.result.task_name:
                             try:
-                                wf = WorkflowModules.objects.get(identifier=task.result.last_task)
+                                wf = WorkflowModules.objects.get(identifier=task.result.task_name)
                                 ip.last_task = wf
                             except Exception, err:
                                 data[err].append("Last task workflow module not found!")
@@ -276,3 +276,125 @@ def poll_state(request):
 #     uuid = request.POST['uuid']
 #     package_name = os.listdir('/var/data/earkweb/work/'+uuid+'/')[0]
 #     return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid+'/'+package_name) })
+
+@login_required
+@csrf_exempt
+def execute_chain(request):
+    """
+    Execute selected task using selected information package as input. Task modules are registered in WorkflowModules.
+    The identifier of a workflow module corresponds with the task's class name. The task is executed using celery's
+    'apply_async' method.
+
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task execution metadata)
+    """
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        selected_ip = request.POST['selected_ip']
+        selected_actions = request.POST['selected_actions']
+        if not (selected_ip and selected_actions):
+            return JsonResponse({"success": False, "errmsg": "Missing input parameter!"})
+
+        actions = selected_actions.split("+")
+        print actions
+
+        data = {"success": True, "id": "jobid", "msg": selected_actions}
+        # Get module description of the task to be executed from the database
+        ip = InformationPackage.objects.get(pk=selected_ip)
+
+        try:
+            SIPResetType = getattr(tasks, "SIPtoAIPReset")
+            sipresettask = SIPResetType()
+            SIPDeliveryValidationType = getattr(tasks, "SIPDeliveryValidation")
+            sipdeliveryvalidationtask = SIPDeliveryValidationType()
+            job = chain(
+                sipresettask.s(DefaultTaskContext(ip.uuid, ip.path, "", "")),
+                sipdeliveryvalidationtask.s()
+            ).apply_async();
+            data = {"success": True, "id": job.id}
+
+
+            # action_classes = []
+            # for act in actions:
+            #     wfm = WorkflowModules.objects.get(pk=act)
+            #     taskClass = getattr(tasks, wfm.identifier)
+            #     print "Executing task %s" % taskClass.name
+            #     # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
+            #     additional_input = {'packagename': ip.packagename }
+            #     if wfm.identifier == SIPPackaging.__name__:
+            #         additional_input['packagename'] = ip.packagename
+            #     if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
+            #         additional_input['identifier'] = ip.identifier
+            #     if wfm.identifier == AIPStore.__name__:
+            #         additional_input['identifier'] = ip.identifier
+            #         additional_input['storageDest'] = config_path_storage
+            #         print "Storage destination %s" % additional_input['storageDest']
+            #     if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
+            #         dip = DIP.objects.get(name=ip.packagename)
+            #         selected_aips = {}
+            #         for aip in dip.aips.all():
+            #             selected_aips[aip.identifier] = aip.source
+            #         additional_input['selected_aips'] = selected_aips
+            #     if wfm.identifier == AIPPackageMetsCreation.__name__:
+            #         additional_input['identifier'] = ip.identifier
+            #
+            #
+            #
+            #     mul.s.apply_async((10,), queue='default')
+            #
+            #
+            #     (AIPPackaging(ip.uuid, ip.path, additional_input), DIPAcquireAIPs(ip.uuid, ip.path, additional_input)).apply_async(queue='default')
+            #
+            #     # Execute task
+            #     job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
+            #     data = {"success": True, "id": job.id}
+
+        except Exception, err:
+            tb = traceback.format_exc()
+            print str(tb)
+            return JsonResponse({"success": False, "errmsg": "Workflow module not found"})
+
+#         # Get the selected information package from the database
+#         ip = InformationPackage.objects.get(pk=selected_ip)
+#         if request.is_ajax():
+#             try:
+#                 # Get task class from module identifier
+#                 taskClass = getattr(tasks, wfm.identifier)
+#                 print "Executing task %s" % taskClass.name
+#                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
+#                 additional_input = {'packagename': ip.packagename }
+#                 if wfm.identifier == SIPPackaging.__name__:
+#                     additional_input['packagename'] = ip.packagename
+#                 if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
+#                     additional_input['identifier'] = ip.identifier
+#                 if wfm.identifier == AIPStore.__name__:
+#                     additional_input['identifier'] = ip.identifier
+#                     additional_input['storageDest'] = config_path_storage
+#                     print "Storage destination %s" % additional_input['storageDest']
+#                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
+#                     dip = DIP.objects.get(name=ip.packagename)
+#                     selected_aips = {}
+#                     for aip in dip.aips.all():
+#                         selected_aips[aip.identifier] = aip.source
+#                     additional_input['selected_aips'] = selected_aips
+#                 if wfm.identifier == AIPPackageMetsCreation.__name__:
+#                     additional_input['identifier'] = ip.identifier
+#
+#                 # Execute task
+#                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
+#                 data = {"success": True, "id": job.id}
+#             except AttributeError, err:
+#                 errdetail = """The workflow module '%s' does not exist.
+# It might be necessary to run 'python ./workers/scantasks.py' to register new or renamed tasks.""" % wfm.identifier
+#                 data = {"success": False, "errmsg": "Workflow module '%s' does not exist" % wfm.identifier, "errdetail": errdetail}
+#         else:
+#             data = {"success": False, "errmsg": "not ajax"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
+        return JsonResponse(data)
+    return JsonResponse(data)

@@ -3,7 +3,6 @@ from earkcore.utils.datetimeutils import ts_date
 import unittest
 from config.config import root_dir
 from earkcore.utils import randomutils
-from taskresult import TaskResult
 #from earkcore.metadata.premis import PremisUpdate
 
 class TaskLogger(object):
@@ -34,10 +33,6 @@ class TaskLogger(object):
         Add info log message
         @type       message: string
         @param      message: task log message
-        @type       display: boolean
-        @param      display: true if the message should be transferred to the client (default: True)
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
         self.addmsg(message, False, display)
 
@@ -48,8 +43,6 @@ class TaskLogger(object):
         @param      message: task log message
         @type       display: boolean
         @param      display: true if the message should be transferred to the client (default: True)
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
         self.addmsg(message, True, display)
 
@@ -62,8 +55,6 @@ class TaskLogger(object):
         @param      error: true if the message is an error message
         @type       display: boolean
         @param      display: true if the message should be transferred to the client (default: True)
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
         msglist = self.err if error else self.log
         msg_prefix = "ERROR" if error else "INFO"
@@ -77,8 +68,6 @@ class TaskLogger(object):
     def close_logger(self, uuid, ip_state, task_info, add_result_params={}):
         """
         Finalize logging task. Can be called several times to get an updated result object.
-        @rtype:     TaskResult
-        @return:    Task result (success/failure, processing log, error log)
         """
 
         # retrieve TaskResult object

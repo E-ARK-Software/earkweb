@@ -210,6 +210,25 @@ class InformationPackageDetail(DetailView):
         context['config_path_work'] = config_path_work
         return context
 
+class InformationPackageDetail2(DetailView):
+    """
+    Information Package Detail View
+    """
+    model = InformationPackage
+    context_object_name = 'ip'
+    template_name = 'sip2aip/detail2.html'
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageDetail2, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageDetail2, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        context['form'] = forms.SIPtoAIPWorkflowModuleSelectForm2()
+        context['config_path_work'] = config_path_work
+        return context
+
 
 @login_required
 def progress(request):

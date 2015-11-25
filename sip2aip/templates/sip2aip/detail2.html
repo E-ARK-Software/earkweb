@@ -1,0 +1,36 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'sip2aip/js/detail.js' %}"></script>
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+{% include "sip2aip/about_module.html" %}
+
+<h2 class="main">SIP to AIP task/workflow execution</h2>
+
+<div id="ip-detail-table">
+    {% include "sip2aip/iptable.html" %}
+</div>
+
+{% include "workflow/execution_form2.html" %}
+
+<!-- current_ip variable used in subsequent scripts (as the IP is selected, the corresponding form field is hidden) -->
+<script type="text/javascript">var current_ip="{{ ip.id }}"; $("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay();</script>
+
+{% include "workflow/progress_module2.html" %}
+
+<p><a href="{% url 'sip2aip:reception' %}" title='Back to overview'>back</a></p>
+
+{% endblock %}

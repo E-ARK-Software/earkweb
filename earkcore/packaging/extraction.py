@@ -6,7 +6,6 @@ import shutil
 from earkcore.utils import randomutils
 
 from config.config import root_dir
-from workers.taskresult import TaskResult
 
 from earkcore.process.processor import Processor
 

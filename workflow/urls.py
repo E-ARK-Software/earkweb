@@ -16,6 +16,8 @@ urlpatterns= patterns('',
 
     url(r'^apply_task', views.apply_task, name='apply_task'),
 
+    url(r'^execute_chain', views.execute_chain, name='execute_chain'),
+
     url(r'^apply_workflow', views.apply_workflow, name='apply_workflow'),
 
     url(r'^poll_state$', views.poll_state, name='poll_state'),
