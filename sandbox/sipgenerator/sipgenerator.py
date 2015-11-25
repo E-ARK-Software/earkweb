@@ -218,428 +218,430 @@ class SIPGenerator(object):
 
         return premis_ids
 
-    def createSIPParentMets(self, mets_files):
-        #create METS skeleton
-        METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
-        root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
-
-        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
-        root.append(mets_hdr)
-
-
-        mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
-        mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(M.metsDocumentID("METS.xml"))
-
-        mets_dmd = M.dmdSec({"ID":""})
-        root.append(mets_dmd)
-
-        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
-        root.append(mets_amdSec)
-
-        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
-        mets_amdSec.append(mets_techmd)
-        #for id in premis_ids:
-        #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
-        #    mets_techmd.append(mets_mdref)
-
-        mets_fileSec = M.fileSec()
-        root.append(mets_fileSec)
-
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
-        mets_fileSec.append(mets_filegroup)
-
-        #content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
-        #metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
-
-        #mets_ids = []
-        #for file in mets_files:
-        #    print file
-        #    mets_id = self.addFile(file, mets_filegroup)
-        #    mets_ids.append(mets_id)
-
-
-        # checking for cross-representation metadata:
-        #package_root = self.root_path.rsplit('/', 2)
-        #package_metadata = os.path.join(package_root[0], 'metadata')
-        #ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
-
-        mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
-        root.append(mets_structmap)
-
-        mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
-        mets_structmap.append(mets_structmap_div)
-
-        mets_structmap_mets_div = M.div({"LABEL":"Representation Metadata"})
-        mets_structmap_div.append(mets_structmap_mets_div)
-
-        for file in mets_files:
-            file_url = "file://./%s" % os.path.relpath(file, self.root_path)
-            mptr = M.mptr({"LOCTYPE": "URL", q(XLINK_NS, 'href'): file_url })
-            mets_structmap_mets_div.append(mptr)
-
-        #for id in mets_ids:
-        #    mptr = M.mptr({"FILEID": id})
-        #    mets_structmap_mets_div.append(mptr)
-        #    #fptr = M.fptr({"FILEID": id})
-        #    #mets_structmap_mets_div.append(fptr)
-
-        #mets_structmap_content_div = M.div({"LABEL":"Content"})
-        #mets_structmap_div.append(mets_structmap_content_div)
-        #for id in content_ids:
-        #    fptr = M.fptr({"FILEID": id})
-        #    mets_structmap_content_div.append(fptr)
-
-        #mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
-        #mets_structmap_div.append(mets_structmap_metadata_div)
-        #for id in metadata_ids:
-        #    fptr = M.fptr({"FILEID": id})
-        #    mets_structmap_metadata_div.append(fptr)
-        #for id in ext_metadata_ids:
-        #    fptr = M.fptr({"FILEID": id})
-        #    mets_structmap_metadata_div.append(fptr)
-
-        #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
-        #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
-        #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP.xsd")
-        #mets_schema = etree.parse(mets_schema_file)
-        #mets_xsd = etree.XMLSchema(mets_schema)
-
-        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-
-        path_mets = os.path.join(self.root_path,'METS.xml')
-        with open(path_mets, 'w') as output_file:
-            output_file.write(str)
-
-
-    def createSIPMets(self, premis_ids = None):
-        #if premis_ids == None:
-        #    premis_ids = self.createPremis()
-
-        #create METS skeleton
-        # METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
-        METS_ATTRIBUTES = {"OBJID": "placeholder123",
-                           "LABEL": "METS file describing the SIP matching the OBJID.",
-                           "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
-                           "TYPE": "SIP"}
-        root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
-
-        # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
-        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
-        root.append(mets_hdr)
-
-        mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
-        mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(M.metsDocumentID("METS.xml"))
-
-        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
-        root.append(mets_dmd)
-        # this is how to add descriptive metadata entry
-        #file_name = "../schemas/ead.xml"
-        #file_url = unicode(os.path.join("file://",file_name), "utf-8")
-        #checksum = self.sha256(file_name)
-        #file_size = os.path.getsize(file_name)
-        #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
-        #mets_dmd.append(mets_mdref)
-
-        mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid4().__str__()})
-        root.append(mets_amdSec)
-
-        mets_techmd = M.techMD({"ID":"ID" + uuid.uuid4().__str__()})
-        mets_amdSec.append(mets_techmd)
-        #for id in premis_ids:
-        #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
-        #    mets_techmd.append(mets_mdref)
-        #techmd_ids = self.addFiles(os.path.join(self.root_path, 'metadata/preservation'))
+    # def createSIPParentMets(self, mets_files):
+    #     #create METS skeleton
+    #     METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+    #     root = M.mets(METS_ATTRIBUTES)
+    #     root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+    #
+    #     mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+    #     root.append(mets_hdr)
+    #
+    #
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
+    #     mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(M.metsDocumentID("METS.xml"))
+    #
+    #     mets_dmd = M.dmdSec({"ID":""})
+    #     root.append(mets_dmd)
+    #
+    #     mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid1().__str__()})
+    #     root.append(mets_amdSec)
+    #
+    #     mets_techmd = M.techMD({"ID":"ID" + uuid.uuid1().__str__()})
+    #     mets_amdSec.append(mets_techmd)
+    #     #for id in premis_ids:
+    #     #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
+    #     #    mets_techmd.append(mets_mdref)
+    #
+    #     mets_fileSec = M.fileSec()
+    #     root.append(mets_fileSec)
+    #
+    #     mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid1().__str__()})
+    #     mets_fileSec.append(mets_filegroup)
+    #
+    #     #content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
+    #     #metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+    #
+    #     #mets_ids = []
+    #     #for file in mets_files:
+    #     #    print file
+    #     #    mets_id = self.addFile(file, mets_filegroup)
+    #     #    mets_ids.append(mets_id)
+    #
+    #
+    #     # checking for cross-representation metadata:
+    #     #package_root = self.root_path.rsplit('/', 2)
+    #     #package_metadata = os.path.join(package_root[0], 'metadata')
+    #     #ext_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+    #
+    #     mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+    #     root.append(mets_structmap)
+    #
+    #     mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
+    #     mets_structmap.append(mets_structmap_div)
+    #
+    #     mets_structmap_mets_div = M.div({"LABEL":"Representation Metadata"})
+    #     mets_structmap_div.append(mets_structmap_mets_div)
+    #
+    #     for file in mets_files:
+    #         file_url = "file://./%s" % os.path.relpath(file, self.root_path)
+    #         mptr = M.mptr({"LOCTYPE": "URL", q(XLINK_NS, 'href'): file_url })
+    #         mets_structmap_mets_div.append(mptr)
+    #
+    #     #for id in mets_ids:
+    #     #    mptr = M.mptr({"FILEID": id})
+    #     #    mets_structmap_mets_div.append(mptr)
+    #     #    #fptr = M.fptr({"FILEID": id})
+    #     #    #mets_structmap_mets_div.append(fptr)
+    #
+    #     #mets_structmap_content_div = M.div({"LABEL":"Content"})
+    #     #mets_structmap_div.append(mets_structmap_content_div)
+    #     #for id in content_ids:
+    #     #    fptr = M.fptr({"FILEID": id})
+    #     #    mets_structmap_content_div.append(fptr)
+    #
+    #     #mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
+    #     #mets_structmap_div.append(mets_structmap_metadata_div)
+    #     #for id in metadata_ids:
+    #     #    fptr = M.fptr({"FILEID": id})
+    #     #    mets_structmap_metadata_div.append(fptr)
+    #     #for id in ext_metadata_ids:
+    #     #    fptr = M.fptr({"FILEID": id})
+    #     #    mets_structmap_metadata_div.append(fptr)
+    #
+    #     #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
+    #     #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
+    #     #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP.xsd")
+    #     #mets_schema = etree.parse(mets_schema_file)
+    #     #mets_xsd = etree.XMLSchema(mets_schema)
+    #
+    #     str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+    #
+    #     path_mets = os.path.join(self.root_path,'METS.xml')
+    #     with open(path_mets, 'w') as output_file:
+    #         output_file.write(str)
 
 
-        mets_fileSec = M.fileSec()
-        root.append(mets_fileSec)
-
-        # general filegroup
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
-        mets_fileSec.append(mets_filegroup)
-
-        # data, metadata and schemas - package level
-        content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
-        metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
-        schema_ids = self.addFiles(os.path.join(self.root_path, 'schemas'), mets_filegroup)
-
-        # checking for cross-representation metadata and schemas:
-        package_root = self.root_path.rsplit('/', 2)
-        package_metadata = os.path.join(package_root[0], 'metadata')
-        cross_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
-        package_schemas = os.path.join(package_root[0], 'schemas')
-        cross_schemas_ids = self.addFiles(package_schemas, mets_filegroup)
-
-        # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
-        mets_structmap = M.structMap({"LABEL": "Simple SIP structuring", "TYPE": "logical"})
-        root.append(mets_structmap)
-
-        mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
-        mets_structmap.append(mets_structmap_div)
-
-        # files in /data
-        mets_structmap_content_div = M.div({"LABEL":"Content"})
-        mets_structmap_div.append(mets_structmap_content_div)
-        for id in content_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_content_div.append(fptr)
-
-        # files in /metadata and ./../../metadata
-        mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
-        mets_structmap_div.append(mets_structmap_metadata_div)
-        for id in metadata_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_metadata_div.append(fptr)
-        for id in cross_metadata_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_metadata_div.append(fptr)
-
-        # files in /schemas and ./../../schemas
-        mets_structmap_schemas_div = M.div({"LABEL": "Schemas"})
-        mets_structmap_div.append(mets_structmap_schemas_div)
-        for id in schema_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_schemas_div.append(fptr)
-        for id in cross_schemas_ids:
-            fptr = M.fptr({"FILEID": id})
-            mets_structmap_schemas_div.append(fptr)
-
-        #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
-        #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
-        #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP.xsd")
-        #mets_schema = etree.parse(mets_schema_file)
-        #mets_xsd = etree.XMLSchema(mets_schema)
-
-        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-
-        path_mets = os.path.join(self.root_path,'METS.xml')
-        with open(path_mets, 'w') as output_file:
-            output_file.write(str)
+    # def createSIPMets(self, premis_ids = None):
+    #     if premis_ids == None:
+    #         premis_ids = self.createPremis()
+    #
+    #     #create METS skeleton
+    #     # METS_ATTRIBUTES = {"OBJID" : "", "TYPE" : "", "LABEL" : "", "PROFILE" : "http://www.ra.ee/METS/v01/IP.xml", "ID" : "" }
+    #     METS_ATTRIBUTES = {"OBJID": "placeholder123",
+    #                        "LABEL": "METS file describing the SIP matching the OBJID.",
+    #                        "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
+    #                        "TYPE": "SIP"}
+    #     root = M.mets(METS_ATTRIBUTES)
+    #     root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+    #
+    #     # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :""})
+    #     mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
+    #     root.append(mets_hdr)
+    #
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
+    #     mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(M.metsDocumentID("METS.xml"))
+    #
+    #     mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
+    #     root.append(mets_dmd)
+    #     # this is how to add descriptive metadata entry
+    #     #file_name = "../schemas/ead.xml"
+    #     #file_url = unicode(os.path.join("file://",file_name), "utf-8")
+    #     #checksum = self.sha256(file_name)
+    #     #file_size = os.path.getsize(file_name)
+    #     #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
+    #     #mets_dmd.append(mets_mdref)
+    #
+    #     mets_amdSec = M.amdSec({"ID":"ID" + uuid.uuid4().__str__()})
+    #     root.append(mets_amdSec)
+    #
+    #     mets_techmd = M.techMD({"ID":"ID" + uuid.uuid4().__str__()})
+    #     mets_amdSec.append(mets_techmd)
+    #     #for id in premis_ids:
+    #     #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
+    #     #    mets_techmd.append(mets_mdref)
+    #     #techmd_ids = self.addFiles(os.path.join(self.root_path, 'metadata/preservation'))
+    #
+    #
+    #     mets_fileSec = M.fileSec()
+    #     root.append(mets_fileSec)
+    #
+    #     # general filegroup
+    #     mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
+    #     mets_fileSec.append(mets_filegroup)
+    #
+    #     # data, metadata and schemas - package level
+    #     content_ids = self.addFiles(os.path.join(self.root_path, 'data'), mets_filegroup)
+    #     metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+    #     schema_ids = self.addFiles(os.path.join(self.root_path, 'schemas'), mets_filegroup)
+    #
+    #     # checking for cross-representation metadata and schemas:
+    #     package_root = self.root_path.rsplit('/', 2)
+    #     package_metadata = os.path.join(package_root[0], 'metadata')
+    #     cross_metadata_ids = self.addFiles(package_metadata, mets_filegroup)
+    #     package_schemas = os.path.join(package_root[0], 'schemas')
+    #     cross_schemas_ids = self.addFiles(package_schemas, mets_filegroup)
+    #
+    #     # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+    #     mets_structmap = M.structMap({"LABEL": "Simple SIP structuring", "TYPE": "logical"})
+    #     root.append(mets_structmap)
+    #
+    #     mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
+    #     mets_structmap.append(mets_structmap_div)
+    #
+    #     # files in /data
+    #     mets_structmap_content_div = M.div({"LABEL":"Content"})
+    #     mets_structmap_div.append(mets_structmap_content_div)
+    #     for id in content_ids:
+    #         fptr = M.fptr({"FILEID": id})
+    #         mets_structmap_content_div.append(fptr)
+    #
+    #     # files in /metadata and ./../../metadata
+    #     mets_structmap_metadata_div = M.div({"LABEL":"Metadata"})
+    #     mets_structmap_div.append(mets_structmap_metadata_div)
+    #     for id in metadata_ids:
+    #         fptr = M.fptr({"FILEID": id})
+    #         mets_structmap_metadata_div.append(fptr)
+    #     for id in cross_metadata_ids:
+    #         fptr = M.fptr({"FILEID": id})
+    #         mets_structmap_metadata_div.append(fptr)
+    #
+    #     # files in /schemas and ./../../schemas
+    #     mets_structmap_schemas_div = M.div({"LABEL": "Schemas"})
+    #     mets_structmap_div.append(mets_structmap_schemas_div)
+    #     for id in schema_ids:
+    #         fptr = M.fptr({"FILEID": id})
+    #         mets_structmap_schemas_div.append(fptr)
+    #     for id in cross_schemas_ids:
+    #         fptr = M.fptr({"FILEID": id})
+    #         mets_structmap_schemas_div.append(fptr)
+    #
+    #     #my_mets.fileSec.append(M.fileGrp({'USE': 'submission'}))
+    #     #my_mets.fileSec(M.fileGrp({'USE': 'submission'}))
+    #     #mets_schema_file = os.path.join(root_dir, "sandbox/sipgenerator/resources/ENA_RK_TartuLV_141127/schemas/IP.xsd")
+    #     #mets_schema = etree.parse(mets_schema_file)
+    #     #mets_xsd = etree.XMLSchema(mets_schema)
+    #
+    #     str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+    #
+    #     path_mets = os.path.join(self.root_path,'METS.xml')
+    #     with open(path_mets, 'w') as output_file:
+    #         output_file.write(str)
 
 
     #def createAIPMets(self, premis_ids=None):
-    def createAIPMets(self, packageid):
-        '''
-        Create the AIP METS file.
-
-        @param premis_ids:
-        @return:
-        '''
-        #if premis_ids == None:
-        #    premis_ids = self.createPremis()
-
-        # TODO: add metadata files to correct metadata sections!
-
-        # create METS skeleton
-        METS_ATTRIBUTES = {"OBJID": packageid,
-                           "LABEL": "METS file describing the AIP matching the OBJID.",
-                           "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
-                           "TYPE": "AIP"}
-        root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
-
-        # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :"AIP"})
-        mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
-        root.append(mets_hdr)
-
-        mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
-        mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
-        mets_hdr.append(M.metsDocumentID("METS.xml"))
-
-        mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
-        root.append(mets_dmd)
-        # this is how to add descriptive metadata entry
-        #file_name = "../schemas/ead.xml"
-        #file_url = unicode(os.path.join("file://",file_name), "utf-8")
-        #checksum = self.sha256(file_name)
-        #file_size = os.path.getsize(file_name)
-        #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
-        #mets_dmd.append(mets_mdref)
-
-        # create amdSec
-        mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
-        root.append(mets_amdSec)
-
-        # create techMD
-        #mets_techmd = M.techMD({"ID": "ID" + uuid.uuid4().__str__()})
-        #mets_amdSec.append(mets_techmd)
-        #for id in premis_ids:
-        #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
-        #    mets_techmd.append(mets_mdref)
-
-        mets_fileSec = M.fileSec()
-        root.append(mets_fileSec)
-
-        # TODO: metadata entries into correct mets section + structmap: seperate between AIP and rep level metadata!
-        # check if there is another METS file referencing the metadata
-
-        # general filegroup
-        mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
-        mets_fileSec.append(mets_filegroup)
-
-        #metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
-        #submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
-
-        # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
-        mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
-        root.append(mets_structmap)
-
-        mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
-        mets_structmap.append(mets_structmap_div)
-
-        # metadata structmap - IP root level!
-        mets_structmap_metadata_div = M.div({"LABEL": "Metadata"})
-        mets_structmap_div.append(mets_structmap_metadata_div)
-        #for id in metadata_ids:
-        #    fptr = M.fptr({"FILEID": id})
-        #    mets_structmap_metadata_div.append(fptr)
-
-        # metadata structmap - submission level!
-        #mets_structmap_metadata_sub_div = M.div({"LABEL": "Metadata Submission"})
-        #mets_structmap_div.append(mets_structmap_metadata_sub_div)
-        #for id in submission_meta_ids:
-        #    fptr = M.fptr({"FILEID": id})
-        #    mets_structmap_metadata_sub_div.append(fptr)
-
-        # content structmap - all representations! (is only filled if no separate METS exists for the rep)
-        mets_structmap_content_div = M.div({"LABEL": "various files"})
-        mets_structmap_div.append(mets_structmap_content_div)
-
-        # structmap for schema files
-        mets_structmap_schema_div = M.div({"LABEL": "schema files"})
-        mets_structmap_div.append(mets_structmap_schema_div)
-
-        # create structmap for representations
-        # mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
-        mets_structmap_reps = M.structMap({"TYPE":"logical", "LABEL":"representations"})
-        root.append(mets_structmap_reps)
-        mets_div_reps = M.div({'LABEL': 'representations', 'TYPE': 'type'})
-        mets_structmap_reps.append(mets_div_reps)
-
-        # package
-        workdir_length = len(self.root_path)
-        #for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
-        for directory, subdirectories, filenames in os.walk(self.root_path):
-            if directory == os.path.join(self.root_path, 'metadata/earkweb'):
-                del directory
-                del filenames[:]
-                del subdirectories[:]
-            if len(filenames) > 0:
-                for filename in filenames:
-                    # ignore all files on AIP root level (since they wont be packed with the AIP):
-                    if directory == self.root_path:
-                        del filename
-                    else:
-                        # TODO: list rep metadata only in the rep Mets?
-                        rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
-                        if filename.lower() == 'mets.xml':
-                            # delete the subdirectories list to stop os.walk from traversing further;
-                            # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
-                            del subdirectories[:]
-                            rep_name = directory.rsplit('/', 2)
-                            rep_name = os.path.join(rep_name[1], rep_name[2])
-                            # create structMap div and append to representations structMap
-                            mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
-                            mets_div_reps.append(mets_structmap_rep_div)
-                            # add mets file as <mets:mptr>
-                            metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + packageid,
-                                                  q(XLINK_NS,"href"): rel_path_file})
-                                                 #"ID": uuid.uuid4().__str__()})
-                            mets_structmap_rep_div.append(metspointer)
-                            # also add the rep mets to the filegroup, so we can have a fptr
-                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap_rep_div.append(mets_fptr)
-                        elif filename and directory.endswith('schemas'):
-                            # schema files
-                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({'FILEID': id})
-                            mets_structmap_schema_div.append(fptr)
-                        elif filename == 'earkweb.log':
-                            # earkweb log file - currently treated as digiprovMD
-                            mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
-                            mets_amdSec.append(mets_digiprovmd)
-                            checksum = self.sha256(os.path.join(directory,filename))
-                            id = "ID" + uuid.uuid4().__str__()
-                            mets_mdref = M.mdRef({"LOCTYPE":"URL",
-                                                 "MIMETYPE":"text/xml",
-                                                 "CREATED":current_timestamp(),
-                                                 q(XLINK_NS,"type"):"simple",
-                                                 q(XLINK_NS,"href"):rel_path_file,
-                                                 "CHECKSUMTYPE":"SHA-256",
-                                                 "CHECKSUM":checksum,
-                                                 "ID": id,
-                                                  "MDTYPE": "OTHER"})
-                            mets_digiprovmd.append(mets_mdref)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_metadata_div.append(fptr)
-                        elif directory.endswith('descriptive'):
-                            # descriptive metadata
-                            #mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
-                            #root.append(mets_dmd)
-                            checksum = self.sha256(os.path.join(directory,filename))
-                            id = "ID" + uuid.uuid4().__str__()
-                            mets_mdref = M.mdRef({"LOCTYPE":"URL",
-                                                 "MIMETYPE":"text/xml",
-                                                 "CREATED":current_timestamp(),
-                                                 q(XLINK_NS,"type"):"simple",
-                                                 q(XLINK_NS,"href"):rel_path_file,
-                                                 "CHECKSUMTYPE":"SHA-256",
-                                                 "CHECKSUM":checksum,
-                                                 "ID": id,
-                                                  "MDTYPE": "OTHER"})
-                            mets_dmd.append(mets_mdref)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_metadata_div.append(fptr)
-                        elif directory.endswith('preservation'):
-                            # preservation metadata (premis, techMD?)
-                            #mets_techmd = M.techMD({"ID": id})
-                            #mets_amdSec.append(mets_techmd)
-                            mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
-                            mets_amdSec.append(mets_digiprovmd)
-                            checksum = self.sha256(os.path.join(directory,filename))
-                            id = "ID" + uuid.uuid4().__str__()
-                            mets_mdref = M.mdRef({"LOCTYPE":"URL",
-                                                 "MIMETYPE":"text/xml",
-                                                 "CREATED":current_timestamp(),
-                                                 q(XLINK_NS,"type"):"simple",
-                                                 q(XLINK_NS,"href"):rel_path_file,
-                                                 "CHECKSUMTYPE":"SHA-256",
-                                                 "CHECKSUM":checksum,
-                                                 "ID": id,
-                                                  "MDTYPE": "OTHER"})
-                            #mets_techmd.append(mets_mdref)
-                            mets_digiprovmd.append(mets_mdref)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_metadata_div.append(fptr)
-                        elif filename and not (directory.endswith('descriptive') or
-                                               directory.endswith('metadata') or
-                                               directory.endswith('preservation')):
-                            # print 'found a file: ' + os.path.join(directory, filename)
-                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_content_div.append(fptr)
-
-
-        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-
-        path_mets = os.path.join(self.root_path,'METS.xml')
-        with open(path_mets, 'w') as output_file:
-            output_file.write(str)
+    # def createAIPMets(self, packageid):
+    #     '''
+    #     Create the AIP METS file.
+    #
+    #     @param premis_ids:
+    #     @return:
+    #     '''
+    #     #premis_ids = None
+    #
+    #     #if premis_ids == None:
+    #     #    premis_ids = self.createPremis()
+    #
+    #     # TODO: add metadata files to correct metadata sections!
+    #
+    #     # create METS skeleton
+    #     METS_ATTRIBUTES = {"OBJID": packageid,
+    #                        "LABEL": "METS file describing the AIP matching the OBJID.",
+    #                        "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
+    #                        "TYPE": "AIP"}
+    #     root = M.mets(METS_ATTRIBUTES)
+    #     root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+    #
+    #     # mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), q(METSEXT_NS,"OAISSTATUS") :"", "RECORDSTATUS" :"AIP"})
+    #     mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS" :"NEW"})
+    #     root.append(mets_hdr)
+    #
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "ORGANIZATION", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("ARCHIVIST", "OTHER", "" ,"Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK SIP Creator", "VERSION=0.0.1"))
+    #     mets_hdr.append(self.createAgent("PRESERVATION", "ORGANIZATION", "", "Institution", "Note"))
+    #     mets_hdr.append(M.metsDocumentID("METS.xml"))
+    #
+    #     mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
+    #     root.append(mets_dmd)
+    #     # this is how to add descriptive metadata entry
+    #     #file_name = "../schemas/ead.xml"
+    #     #file_url = unicode(os.path.join("file://",file_name), "utf-8")
+    #     #checksum = self.sha256(file_name)
+    #     #file_size = os.path.getsize(file_name)
+    #     #mets_mdref= M.mdRef({"LOCTYPE":"URL", "MDTYPE":"EAD", "MIMETYPE":"text/xml", "CREATED":current_timestamp(), q(XLINK_NS,"type"):"simple", q(XLINK_NS,"href"):file_url, "CHECKSUMTYPE":"SHA-256", "CHECKSUM":file_checksum, "SIZE":file_size})
+    #     #mets_dmd.append(mets_mdref)
+    #
+    #     # create amdSec
+    #     mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
+    #     root.append(mets_amdSec)
+    #
+    #     # create techMD
+    #     #mets_techmd = M.techMD({"ID": "ID" + uuid.uuid4().__str__()})
+    #     #mets_amdSec.append(mets_techmd)
+    #     #for id in premis_ids:
+    #     #    mets_mdref = M.mdRef({"LOCTYPE":"URL", "MDTYPE":"PREMIS:OBJECT", q(XLINK_NS,"href"):"file://./metadata/preservation/PREMIS.xml#"+id.__str__()})
+    #     #    mets_techmd.append(mets_mdref)
+    #
+    #     mets_fileSec = M.fileSec()
+    #     root.append(mets_fileSec)
+    #
+    #     # TODO: metadata entries into correct mets section + structmap: seperate between AIP and rep level metadata!
+    #     # check if there is another METS file referencing the metadata
+    #
+    #     # general filegroup
+    #     mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
+    #     mets_fileSec.append(mets_filegroup)
+    #
+    #     #metadata_ids = self.addFiles(os.path.join(self.root_path, 'metadata'), mets_filegroup)
+    #     #submission_meta_ids = self.addFiles(os.path.join(self.root_path, 'submission/metadata'), mets_filegroup)
+    #
+    #     # mets_structmap = M.structMap({"ID": "", "TYPE":"", "LABEL":"Simple grouping"})
+    #     mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
+    #     root.append(mets_structmap)
+    #
+    #     mets_structmap_div = M.div({"ADMID":"", "LABEL":"Package", "DMDID" : ""})
+    #     mets_structmap.append(mets_structmap_div)
+    #
+    #     # metadata structmap - IP root level!
+    #     mets_structmap_metadata_div = M.div({"LABEL": "Metadata"})
+    #     mets_structmap_div.append(mets_structmap_metadata_div)
+    #     #for id in metadata_ids:
+    #     #    fptr = M.fptr({"FILEID": id})
+    #     #    mets_structmap_metadata_div.append(fptr)
+    #
+    #     # metadata structmap - submission level!
+    #     #mets_structmap_metadata_sub_div = M.div({"LABEL": "Metadata Submission"})
+    #     #mets_structmap_div.append(mets_structmap_metadata_sub_div)
+    #     #for id in submission_meta_ids:
+    #     #    fptr = M.fptr({"FILEID": id})
+    #     #    mets_structmap_metadata_sub_div.append(fptr)
+    #
+    #     # content structmap - all representations! (is only filled if no separate METS exists for the rep)
+    #     mets_structmap_content_div = M.div({"LABEL": "various files"})
+    #     mets_structmap_div.append(mets_structmap_content_div)
+    #
+    #     # structmap for schema files
+    #     mets_structmap_schema_div = M.div({"LABEL": "schema files"})
+    #     mets_structmap_div.append(mets_structmap_schema_div)
+    #
+    #     # create structmap for representations
+    #     # mets_structmap_reps = M.structMap({"ID": "", "TYPE":"", "LABEL":"representations"})
+    #     mets_structmap_reps = M.structMap({"TYPE":"logical", "LABEL":"representations"})
+    #     root.append(mets_structmap_reps)
+    #     mets_div_reps = M.div({'LABEL': 'representations', 'TYPE': 'type'})
+    #     mets_structmap_reps.append(mets_div_reps)
+    #
+    #     # package
+    #     workdir_length = len(self.root_path)
+    #     #for directory, subdirectories, filenames in os.walk(os.path.join(self.root_path, 'submission/representations')):
+    #     for directory, subdirectories, filenames in os.walk(self.root_path):
+    #         if directory == os.path.join(self.root_path, 'metadata/earkweb'):
+    #             del directory
+    #             del filenames[:]
+    #             del subdirectories[:]
+    #         if len(filenames) > 0:
+    #             for filename in filenames:
+    #                 # ignore all files on AIP root level (since they wont be packed with the AIP):
+    #                 if directory == self.root_path:
+    #                     del filename
+    #                 else:
+    #                     # TODO: list rep metadata only in the rep Mets?
+    #                     rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
+    #                     if filename.lower() == 'mets.xml':
+    #                         # delete the subdirectories list to stop os.walk from traversing further;
+    #                         # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
+    #                         del subdirectories[:]
+    #                         rep_name = directory.rsplit('/', 2)
+    #                         rep_name = os.path.join(rep_name[1], rep_name[2])
+    #                         # create structMap div and append to representations structMap
+    #                         mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
+    #                         mets_div_reps.append(mets_structmap_rep_div)
+    #                         # add mets file as <mets:mptr>
+    #                         metspointer = M.mptr({"LOCTYPE": "URL",
+    #                                               q(XLINK_NS,"title"): "mets file describing representation: " + rep_name + " of AIP: " + packageid,
+    #                                               q(XLINK_NS,"href"): rel_path_file})
+    #                                              #"ID": uuid.uuid4().__str__()})
+    #                         mets_structmap_rep_div.append(metspointer)
+    #                         # also add the rep mets to the filegroup, so we can have a fptr
+    #                         id = self.addFile(os.path.join(directory, filename), mets_filegroup)
+    #                         mets_fptr = M.fptr({"FILEID": id})
+    #                         mets_structmap_rep_div.append(mets_fptr)
+    #                     elif filename and directory.endswith('schemas'):
+    #                         # schema files
+    #                         id = self.addFile(os.path.join(directory, filename), mets_filegroup)
+    #                         fptr = M.fptr({'FILEID': id})
+    #                         mets_structmap_schema_div.append(fptr)
+    #                     elif filename == 'earkweb.log':
+    #                         # earkweb log file - currently treated as digiprovMD
+    #                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
+    #                         mets_amdSec.append(mets_digiprovmd)
+    #                         checksum = self.sha256(os.path.join(directory,filename))
+    #                         id = "ID" + uuid.uuid4().__str__()
+    #                         mets_mdref = M.mdRef({"LOCTYPE":"URL",
+    #                                              "MIMETYPE":"text/xml",
+    #                                              "CREATED":current_timestamp(),
+    #                                              q(XLINK_NS,"type"):"simple",
+    #                                              q(XLINK_NS,"href"):rel_path_file,
+    #                                              "CHECKSUMTYPE":"SHA-256",
+    #                                              "CHECKSUM":checksum,
+    #                                              "ID": id,
+    #                                               "MDTYPE": "OTHER"})
+    #                         mets_digiprovmd.append(mets_mdref)
+    #                         fptr = M.fptr({"FILEID": id})
+    #                         mets_structmap_metadata_div.append(fptr)
+    #                     elif directory.endswith('descriptive'):
+    #                         # descriptive metadata
+    #                         #mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
+    #                         #root.append(mets_dmd)
+    #                         checksum = self.sha256(os.path.join(directory,filename))
+    #                         id = "ID" + uuid.uuid4().__str__()
+    #                         mets_mdref = M.mdRef({"LOCTYPE":"URL",
+    #                                              "MIMETYPE":"text/xml",
+    #                                              "CREATED":current_timestamp(),
+    #                                              q(XLINK_NS,"type"):"simple",
+    #                                              q(XLINK_NS,"href"):rel_path_file,
+    #                                              "CHECKSUMTYPE":"SHA-256",
+    #                                              "CHECKSUM":checksum,
+    #                                              "ID": id,
+    #                                               "MDTYPE": "OTHER"})
+    #                         mets_dmd.append(mets_mdref)
+    #                         fptr = M.fptr({"FILEID": id})
+    #                         mets_structmap_metadata_div.append(fptr)
+    #                     elif directory.endswith('preservation'):
+    #                         # preservation metadata (premis, techMD?)
+    #                         #mets_techmd = M.techMD({"ID": id})
+    #                         #mets_amdSec.append(mets_techmd)
+    #                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
+    #                         mets_amdSec.append(mets_digiprovmd)
+    #                         checksum = self.sha256(os.path.join(directory,filename))
+    #                         id = "ID" + uuid.uuid4().__str__()
+    #                         mets_mdref = M.mdRef({"LOCTYPE":"URL",
+    #                                              "MIMETYPE":"text/xml",
+    #                                              "CREATED":current_timestamp(),
+    #                                              q(XLINK_NS,"type"):"simple",
+    #                                              q(XLINK_NS,"href"):rel_path_file,
+    #                                              "CHECKSUMTYPE":"SHA-256",
+    #                                              "CHECKSUM":checksum,
+    #                                              "ID": id,
+    #                                               "MDTYPE": "OTHER"})
+    #                         #mets_techmd.append(mets_mdref)
+    #                         mets_digiprovmd.append(mets_mdref)
+    #                         fptr = M.fptr({"FILEID": id})
+    #                         mets_structmap_metadata_div.append(fptr)
+    #                     elif filename and not (directory.endswith('descriptive') or
+    #                                            directory.endswith('metadata') or
+    #                                            directory.endswith('preservation')):
+    #                         # print 'found a file: ' + os.path.join(directory, filename)
+    #                         id = self.addFile(os.path.join(directory, filename), mets_filegroup)
+    #                         fptr = M.fptr({"FILEID": id})
+    #                         mets_structmap_content_div.append(fptr)
+    #
+    #
+    #     str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+    #
+    #     path_mets = os.path.join(self.root_path,'METS.xml')
+    #     with open(path_mets, 'w') as output_file:
+    #         output_file.write(str)
 
 
     def createDeliveryMets(self, input_archive, output_mets):
