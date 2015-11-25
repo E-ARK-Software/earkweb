@@ -11,8 +11,6 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.metadata.XmlHelper import q, XSI_NS
 import fnmatch
 
-#from sandbox.sipgenerator.sipgenerator import SIPGenerator
-
 METS_NS = 'http://www.loc.gov/METS/'
 METSEXT_NS = 'ExtensionMETS'
 XLINK_NS = "http://www.w3.org/1999/xlink"
@@ -121,11 +119,6 @@ class MetsGenerator(object):
     def createMets(self, mets_data):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
-
-        # if it is an SIP Mets, create a Premis file also:
-        #if packagetype == 'SIP':
-        #    premisgen = SIPGenerator(self.root_path)
-        #    premisgen.createPremis()
 
         ###########################
         # create METS skeleton
