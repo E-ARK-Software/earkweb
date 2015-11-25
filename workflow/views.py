@@ -183,6 +183,7 @@ def apply_task(request):
                 additional_data = {'packagename': ip.packagename }
                 if wfm.identifier == SIPPackaging.__name__:
                     additional_data['packagename'] = ip.packagename
+                    print "additional_data %s" % additional_data['packagename']
                 if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
                     additional_data['identifier'] = ip.identifier
                 if wfm.identifier == AIPStore.__name__:
@@ -199,7 +200,7 @@ def apply_task(request):
                     additional_data['identifier'] = ip.identifier
 
                 # Execute task
-                task_context = DefaultTaskContext(ip.uuid, ip.path, additional_data, None)
+                task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data)
                 job = taskClass().apply_async((task_context,), queue='default')
                 data = {"success": True, "id": job.id}
             except AttributeError, err:
@@ -306,16 +307,35 @@ def execute_chain(request):
         # Get module description of the task to be executed from the database
         ip = InformationPackage.objects.get(pk=selected_ip)
 
+
+
         try:
-            SIPResetType = getattr(tasks, "SIPtoAIPReset")
-            sipresettask = SIPResetType()
-            SIPDeliveryValidationType = getattr(tasks, "SIPDeliveryValidation")
-            sipdeliveryvalidationtask = SIPDeliveryValidationType()
-            job = chain(
-                sipresettask.s(DefaultTaskContext(ip.uuid, ip.path, "", "")),
-                sipdeliveryvalidationtask.s()
-            ).apply_async();
+            action_classes = []
+            task_chain = []
+            for act in actions:
+                wfm = WorkflowModules.objects.get(pk=act)
+                taskClass = getattr(tasks, wfm.identifier)
+                print "Executing task %s" % taskClass.name
+                action_classes.append(taskClass)
+                task_chain.append(taskClass().s())
+
+            task_chain[0] = action_classes[0]().s(DefaultTaskContext(ip.uuid, ip.path, "", "", {}))
+
+            job = chain(task_chain).apply_async()
+
             data = {"success": True, "id": job.id}
+
+
+
+            # SIPResetType = getattr(tasks, "SIPtoAIPReset")
+            # sipresettask = SIPResetType()
+            # SIPDeliveryValidationType = getattr(tasks, "SIPDeliveryValidation")
+            # sipdeliveryvalidationtask = SIPDeliveryValidationType()
+            # job = chain(
+            #     sipresettask.s(DefaultTaskContext(ip.uuid, ip.path, "", "")),
+            #     sipdeliveryvalidationtask.s()
+            # ).apply_async();
+            # data = {"success": True, "id": job.id}
 
 
             # action_classes = []
@@ -332,7 +352,7 @@ def execute_chain(request):
             #     if wfm.identifier == AIPStore.__name__:
             #         additional_data['identifier'] = ip.identifier
             #         additional_data['storageDest'] = config_path_storage
-            #         print "Storage destination %s" % additional_data['storageDest']
+            #         print "Storage destination %s" % addisuccesstional_data['storageDest']
             #     if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
             #         dip = DIP.objects.get(name=ip.packagename)
             #         selected_aips = {}
@@ -350,7 +370,7 @@ def execute_chain(request):
             #     (AIPPackaging(ip.uuid, ip.path, additional_data), DIPAcquireAIPs(ip.uuid, ip.path, additional_data)).apply_async(queue='default')
             #
             #     # Execute task
-            #     job = taskClass().apply_async((ip.uuid, ip.path, additional_data,), queue='default')
+            #     job = taskClass().apply_async((ip.uuid, isuccessp.path, additional_data,), queue='default')
             #     data = {"success": True, "id": job.id}
 
         except Exception, err:

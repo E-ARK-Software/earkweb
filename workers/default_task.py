@@ -6,7 +6,6 @@ from celery import Task
 
 from celery import current_task
 
-from workers.default_task_context import DefaultTaskContext
 from workers.ip_state import IpState
 from tasklogger import TaskLogger
 from earkcore.metadata.premis.PremisManipulate import Premis
