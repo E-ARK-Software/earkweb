@@ -183,10 +183,10 @@ class MetsGenerator(object):
 
         # add the package content to the Mets skeleton
         for directory, subdirectories, filenames in os.walk(self.root_path):
-            if directory.endswith('metadata/earkweb'):
-                # Ignore temp files only needed for IP processing with earkweb
-                del filenames[:]
-                del subdirectories[:]
+            # if directory.endswith('metadata/earkweb'):
+            #     # Ignore temp files only needed for IP processing with earkweb
+            #     del filenames[:]
+            #     del subdirectories[:]
             if directory.endswith('submission/metadata') or directory.endswith('submission/schemas'):
                 del filenames[:]
                 del subdirectories[:]
@@ -217,7 +217,7 @@ class MetsGenerator(object):
                                 for filename in files:
                                     if dir.endswith('descriptive'):
                                         id = "ID" + uuid.uuid4().__str__()
-                                        ref = self.make_mdref(directory, filename, id, 'OTHER')
+                                        ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
                                         mets_dmd.append(mets_mdref)
                                         fptr = M.fptr({"FILEID": id})
@@ -232,41 +232,44 @@ class MetsGenerator(object):
                                             mdtype = 'PREMIS'
                                         else:
                                             mdtype = 'OTHER'
-                                        ref = self.make_mdref(directory, filename, id, mdtype)
+                                        ref = self.make_mdref(dir, filename, id, mdtype)
                                         mets_mdref = M.mdRef(ref)
                                         mets_digiprovmd.append(mets_mdref)
                                         fptr = M.fptr({"FILEID": id})
                                         mets_structmap_metadata_div.append(fptr)
                                     elif filename:
                                         print 'Unclassified metadata file %s in %s.' % (filename, dir)
-                    elif dirname:
+                    else:
                         # metadata that should be listed in the Mets
                         for dir, subdir, files in os.walk(os.path.join(self.root_path, 'metadata/%s') % dirname):
-                            for filename in files:
-                                if dir.endswith('descriptive'):
-                                    id = "ID" + uuid.uuid4().__str__()
-                                    # TODO: change MDTYPE
-                                    ref = self.make_mdref(directory, filename, id, 'OTHER')
-                                    mets_mdref = M.mdRef(ref)
-                                    mets_dmd.append(mets_mdref)
-                                    fptr = M.fptr({"FILEID": id})
-                                    mets_structmap_metadata_div.append(fptr)
-                                elif dir.endswith('preservation'):
-                                    mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
-                                    mets_amdSec.append(mets_digiprovmd)
-                                    id = "ID" + uuid.uuid4().__str__()
-                                    mdtype = ''
-                                    if filename.startswith('premis') or filename.endswith('premis.xml'):
-                                        mdtype = 'PREMIS'
+                            if len(files) > 0:
+                                for filename in files:
+                                    #if dir.endswith('descriptive'):
+                                    if dirname == 'descriptive':
+                                        id = "ID" + uuid.uuid4().__str__()
+                                        # TODO: change MDTYPE
+                                        ref = self.make_mdref(dir, filename, id, 'OTHER')
+                                        mets_mdref = M.mdRef(ref)
+                                        mets_dmd.append(mets_mdref)
+                                        fptr = M.fptr({"FILEID": id})
+                                        mets_structmap_metadata_div.append(fptr)
+                                    #elif dir.endswith('preservation'):
+                                    elif dirname == 'preservation':
+                                        mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
+                                        mets_amdSec.append(mets_digiprovmd)
+                                        id = "ID" + uuid.uuid4().__str__()
+                                        mdtype = ''
+                                        if filename.startswith('premis') or filename.endswith('premis.xml'):
+                                            mdtype = 'PREMIS'
+                                        elif filename:
+                                            mdtype = 'OTHER'
+                                        ref = self.make_mdref(dir, filename, id, mdtype)
+                                        mets_mdref = M.mdRef(ref)
+                                        mets_digiprovmd.append(mets_mdref)
+                                        fptr = M.fptr({"FILEID": id})
+                                        mets_structmap_metadata_div.append(fptr)
                                     elif filename:
-                                        mdtype = 'OTHER'
-                                    ref = self.make_mdref(directory, filename, id, mdtype)
-                                    mets_mdref = M.mdRef(ref)
-                                    mets_digiprovmd.append(mets_mdref)
-                                    fptr = M.fptr({"FILEID": id})
-                                    mets_structmap_metadata_div.append(fptr)
-                                elif filename:
-                                    print 'Unclassified metadata file %s in %s.' % (filename, dir)
+                                        print 'Unclassified metadata file %s in %s.' % (filename, dir)
             else:
                 # Any other folder outside of /<root>/metadata
                 for filename in filenames:
@@ -286,7 +289,7 @@ class MetsGenerator(object):
                             mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS, "title"): "Mets file describing representation: %s of AIP: %s." % (rep_name, packageid),
+                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: %s." % (rep_name, packageid)),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             mets_structmap_rep_div.append(metspointer)
@@ -313,7 +316,7 @@ class MetsGenerator(object):
 
 class testMetsCreation(unittest.TestCase):
     def testCreateMets(self):
-        metsgen = MetsGenerator(os.path.join("/var/data/earkweb/work/bbfc7446-d2af-4ab9-8479-692c270989bb"))
+        metsgen = MetsGenerator(os.path.join("/var/data/earkweb/work/3b7f4c9e-a313-468a-a432-3506147d3829"))
         mets_data = {'packageid': '996ed635-3e13-4ee5-8e5b-e9661e1d9a93',
                      'type': 'AIP'}
         metsgen.createMets(mets_data)
