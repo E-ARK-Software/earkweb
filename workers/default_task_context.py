@@ -10,8 +10,8 @@ class DefaultTaskContext(object):
     premis_manipulate = None
     start_time = 0
     end_time = 0
-    additional_input = None
-    additional_output = None
+    #additional_data = None
+    #additional_data = None
 
     additional_data = None
 

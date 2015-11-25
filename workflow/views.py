@@ -180,26 +180,27 @@ def apply_task(request):
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-                additional_input = {'packagename': ip.packagename }
+                additional_data = {'packagename': ip.packagename }
                 if wfm.identifier == SIPPackaging.__name__:
-                    additional_input['packagename'] = ip.packagename
+                    additional_data['packagename'] = ip.packagename
                 if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
-                    additional_input['identifier'] = ip.identifier
+                    additional_data['identifier'] = ip.identifier
                 if wfm.identifier == AIPStore.__name__:
-                    additional_input['identifier'] = ip.identifier
-                    additional_input['storageDest'] = config_path_storage
-                    print "Storage destination %s" % additional_input['storageDest']
+                    additional_data['identifier'] = ip.identifier
+                    additional_data['storageDest'] = config_path_storage
+                    print "Storage destination %s" % additional_data['storageDest']
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
                     dip = DIP.objects.get(name=ip.packagename)
                     selected_aips = {}
                     for aip in dip.aips.all():
                         selected_aips[aip.identifier] = aip.source
-                    additional_input['selected_aips'] = selected_aips
+                    additional_data['selected_aips'] = selected_aips
                 if wfm.identifier == AIPPackageMetsCreation.__name__:
-                    additional_input['identifier'] = ip.identifier
+                    additional_data['identifier'] = ip.identifier
 
                 # Execute task
-                job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
+                task_context = DefaultTaskContext(ip.uuid, ip.path, additional_data, None)
+                job = taskClass().apply_async((task_context,), queue='default')
                 data = {"success": True, "id": job.id}
             except AttributeError, err:
                 errdetail = """The workflow module '%s' does not exist.
@@ -235,19 +236,19 @@ def poll_state(request):
                     data = {"success": True, "result": task.result.task_status == 0, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
                     # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
-                    # Additional properties are returned by the dictionary additional_output.
+                    # Additional properties are returned by the dictionary additional_data.
                     if task.result.uuid and task.result.task_status >= 0:
                         ip = InformationPackage.objects.get(uuid=task.result.uuid)
                         ip.statusprocess = task.result.task_status
                         date_obj = dateparse.parse_datetime(task.result.ip_state_xml.get_lastchange())
                         ip.last_change = date_obj
-                        if task.result.uuid and task.result.additional_output:
+                        if task.result.uuid and task.result.additional_data:
 
-                            if 'identifier' in task.result.additional_output:
-                                ip.identifier = task.result.additional_output['identifier']
+                            if 'identifier' in task.result.additional_data:
+                                ip.identifier = task.result.additional_data['identifier']
 
-                            if 'storageLoc' in task.result.additional_output:
-                                ip.storage_loc = task.result.additional_output['storageLoc']
+                            if 'storageLoc' in task.result.additional_data:
+                                ip.storage_loc = task.result.additional_data['storageLoc']
                                 print "Storage location %s" % ip.storage_loc
 
                         if task.result.task_name:
@@ -323,33 +324,33 @@ def execute_chain(request):
             #     taskClass = getattr(tasks, wfm.identifier)
             #     print "Executing task %s" % taskClass.name
             #     # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-            #     additional_input = {'packagename': ip.packagename }
+            #     additional_data = {'packagename': ip.packagename }
             #     if wfm.identifier == SIPPackaging.__name__:
-            #         additional_input['packagename'] = ip.packagename
+            #         additional_data['packagename'] = ip.packagename
             #     if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
-            #         additional_input['identifier'] = ip.identifier
+            #         additional_data['identifier'] = ip.identifier
             #     if wfm.identifier == AIPStore.__name__:
-            #         additional_input['identifier'] = ip.identifier
-            #         additional_input['storageDest'] = config_path_storage
-            #         print "Storage destination %s" % additional_input['storageDest']
+            #         additional_data['identifier'] = ip.identifier
+            #         additional_data['storageDest'] = config_path_storage
+            #         print "Storage destination %s" % additional_data['storageDest']
             #     if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
             #         dip = DIP.objects.get(name=ip.packagename)
             #         selected_aips = {}
             #         for aip in dip.aips.all():
             #             selected_aips[aip.identifier] = aip.source
-            #         additional_input['selected_aips'] = selected_aips
+            #         additional_data['selected_aips'] = selected_aips
             #     if wfm.identifier == AIPPackageMetsCreation.__name__:
-            #         additional_input['identifier'] = ip.identifier
+            #         additional_data['identifier'] = ip.identifier
             #
             #
             #
             #     mul.s.apply_async((10,), queue='default')
             #
             #
-            #     (AIPPackaging(ip.uuid, ip.path, additional_input), DIPAcquireAIPs(ip.uuid, ip.path, additional_input)).apply_async(queue='default')
+            #     (AIPPackaging(ip.uuid, ip.path, additional_data), DIPAcquireAIPs(ip.uuid, ip.path, additional_data)).apply_async(queue='default')
             #
             #     # Execute task
-            #     job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
+            #     job = taskClass().apply_async((ip.uuid, ip.path, additional_data,), queue='default')
             #     data = {"success": True, "id": job.id}
 
         except Exception, err:
@@ -365,26 +366,26 @@ def execute_chain(request):
 #                 taskClass = getattr(tasks, wfm.identifier)
 #                 print "Executing task %s" % taskClass.name
 #                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-#                 additional_input = {'packagename': ip.packagename }
+#                 additional_data = {'packagename': ip.packagename }
 #                 if wfm.identifier == SIPPackaging.__name__:
-#                     additional_input['packagename'] = ip.packagename
+#                     additional_data['packagename'] = ip.packagename
 #                 if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
-#                     additional_input['identifier'] = ip.identifier
+#                     additional_data['identifier'] = ip.identifier
 #                 if wfm.identifier == AIPStore.__name__:
-#                     additional_input['identifier'] = ip.identifier
-#                     additional_input['storageDest'] = config_path_storage
-#                     print "Storage destination %s" % additional_input['storageDest']
+#                     additional_data['identifier'] = ip.identifier
+#                     additional_data['storageDest'] = config_path_storage
+#                     print "Storage destination %s" % additional_data['storageDest']
 #                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
 #                     dip = DIP.objects.get(name=ip.packagename)
 #                     selected_aips = {}
 #                     for aip in dip.aips.all():
 #                         selected_aips[aip.identifier] = aip.source
-#                     additional_input['selected_aips'] = selected_aips
+#                     additional_data['selected_aips'] = selected_aips
 #                 if wfm.identifier == AIPPackageMetsCreation.__name__:
-#                     additional_input['identifier'] = ip.identifier
+#                     additional_data['identifier'] = ip.identifier
 #
 #                 # Execute task
-#                 job = taskClass().apply_async((ip.uuid, ip.path, additional_input,), queue='default')
+#                 job = taskClass().apply_async((ip.uuid, ip.path, additional_data,), queue='default')
 #                 data = {"success": True, "id": job.id}
 #             except AttributeError, err:
 #                 errdetail = """The workflow module '%s' does not exist.

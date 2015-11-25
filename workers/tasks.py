@@ -123,7 +123,7 @@ def SIPResetF(self, params):
     print "PATH: %s" % params['path']
     print "UUID: %s" % params['uuid']
 
-    c.run(params['uuid'], params['path'], params['additional_input'])
+    c.run(params['uuid'], params['path'], params['additional_data'])
     return params
 
 class SIPReset(DefaultTask):
@@ -186,13 +186,13 @@ class SIPPackaging(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:3,type:1,stage:3
         """
-        task_context.task_logger.addinfo("Package name: %s" % task_context.additional_input['packagename'])
+        task_context.task_logger.addinfo("Package name: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
         reload(sys)
         sys.setdefaultencoding('utf8')
 
         # append generation number to tar file; if tar file exists, the generation number is incremented
-        storage_tar_file = os.path.join(task_context.path, task_context.additional_input['packagename']+ '.tar')
+        storage_tar_file = os.path.join(task_context.path, task_context.additional_data['packagename']+ '.tar')
         tar = tarfile.open(storage_tar_file, "w:")
         tl.addinfo("Packaging working directory: %s" % task_context.path)
         total = sum([len(files) for (root, dirs, files) in walk(task_context.path)])
@@ -214,7 +214,7 @@ class SIPPackaging(DefaultTask):
         tl.log.append("Package stored: %s" % storage_tar_file)
 
         sipgen = SIPGenerator(task_context.path)
-        delivery_mets_file = os.path.join(task_context.path, task_context.additional_input['packagename']+ '.xml')
+        delivery_mets_file = os.path.join(task_context.path, task_context.additional_data['packagename']+ '.xml')
         sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
         tl.log.append("Delivery METS stored: %s" % delivery_mets_file)
 
@@ -605,7 +605,7 @@ class MigrationProcess(DefaultTask):
         # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
         tl = task_context.task_logger
 
-        tl.addinfo('Migration task started for file: %s' % task_context.additional_input['file'])
+        tl.addinfo('Migration task started for file: %s' % task_context.additional_data['file'])
 
         taskid = ''
 
@@ -616,13 +616,13 @@ class MigrationProcess(DefaultTask):
             pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
             gif = ['fmt/3', 'fmt/4']
 
-            source = task_context.additional_input['source']
+            source = task_context.additional_data['source']
             # TODO: additional sub-structure of rep-id/data/... when creating target path
-            target = task_context.additional_input['target']
-            file = task_context.additional_input['file']
-            taskid = task_context.additional_input['taskid']
-            #tl = task_context.additional_input['logger']
-            #identification = task_context.additional_input['identifier']
+            target = task_context.additional_data['target']
+            file = task_context.additional_data['file']
+            taskid = task_context.additional_data['taskid']
+            #tl = task_context.additional_data['logger']
+            #identification = task_context.additional_data['identifier']
 
             identification = FormatIdentification()
             fido_result = identification.identify_file(os.path.join(source, file))
@@ -828,8 +828,8 @@ class AIPPackageMetsCreation(DefaultTask):
 
         try:
             #ipgen = SIPGenerator(task_context.path)
-            #print task_context.additional_input["identifier"]
-            identifier = task_context.additional_input['identifier']
+            #print task_context.additional_data["identifier"]
+            identifier = task_context.additional_data['identifier']
             #ipgen.createAIPMets(identifier)
 
             mets_data = {'packageid': identifier,
@@ -907,8 +907,8 @@ class AIPPackaging(DefaultTask):
 
             tl.addinfo("Packaging working directory: %s" % task_context.path)
             # append generation number to tar file; if tar file exists, the generation number is incremented
-            new_id = task_context.additional_input["identifier"]
-            #storage_path = task_context.additional_input["storage_path"]
+            new_id = task_context.additional_data["identifier"]
+            #storage_path = task_context.additional_data["storage_path"]
             storage_file = os.path.join(task_context.path, "%s.tar" % new_id)
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
@@ -925,7 +925,7 @@ class AIPPackaging(DefaultTask):
             #tl.addinfo("Extracted file reference: %s" % file_reference)
             #delivery_file = os.path.join(task_context.path, os.path.basename(remove_protocol(file_reference)))
 
-            package_name = task_context.additional_input['packagename']
+            package_name = task_context.additional_data['packagename']
             delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
             delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
 
@@ -985,8 +985,8 @@ class AIPStore(DefaultTask):
 
         result = {"storageLoc": "undefined"}
         try:
-            package_id = task_context.additional_input["identifier"]
-            storePath = task_context.additional_input["storageDest"]
+            package_id = task_context.additional_data["identifier"]
+            storePath = task_context.additional_data["storageDest"]
             task_context.task_status = 0
             result = {"storageLoc": "Geiles string"}
         except Exception as e:
@@ -1009,7 +1009,7 @@ class LilyHDFSUpload(DefaultTask):
         tl = task_context.task_logger
 
         try:
-            new_id = task_context.additional_input["identifier"]
+            new_id = task_context.additional_data["identifier"]
             # identifier (not uuid of the working directory) is used as first part of the tar file
             aip_path = os.path.join(task_context.path, "%s.tar" % new_id)
             #TODO: move to separate task AIPLongtermStore
@@ -1118,7 +1118,7 @@ class DIPAcquireAIPs(DefaultTask):
             if not os.path.exists(task_context.path):
                 os.mkdir(task_context.path)
 
-            selected_aips = task_context.additional_input["selected_aips"]
+            selected_aips = task_context.additional_data["selected_aips"]
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name=task_context.task_name)
             print selected_aips
@@ -1180,7 +1180,7 @@ class DIPExtractAIPs(DefaultTask):
 
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name = ip.packagename)
-            selected_aips = task_context.additional_input["selected_aips"]
+            selected_aips = task_context.additional_data["selected_aips"]
 
             total_members = 0
             for aip_identifier, aip_source in selected_aips.iteritems():

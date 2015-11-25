@@ -7,12 +7,12 @@
 #     err = []
 #     task_status = 0
 #     task_name = ""
-#     additional_output = None
+#     additional_data = None
 #
-#     def __init__(self, uuid, task_status, log, err, additional_output):
+#     def __init__(self, uuid, task_status, log, err, additional_data):
 #         self.uuid = uuid
 #         self.task_status = task_status
-#         self.additional_output = additional_output
+#         self.additional_data = additional_data
 #         self.log = log
 #         self.err = err
 #         #super(TaskResult, self).__init__(success, log, err)
@@ -20,7 +20,7 @@
 #     def __init__(self, task_context):
 #         self.uuid = task_context.uuid
 #         self.task_status = task_context.task_status
-#         self.additional_output = task_context.additional_output
+#         self.additional_data = task_context.additional_data
 #         self.log = task_context.task_logger.log
 #         self.err = task_context.task_logger.err
 #         self.last_task = task_context.task_name
