@@ -50,6 +50,8 @@ from celery.result import ResultSet
 from earkweb.celeryapp import app
 
 
+from sandbox.sipgenerator.metsgenerator import MetsGenerator
+
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
 
@@ -154,17 +156,22 @@ class SIPPackageMetadataCreation(DefaultTask):
         for name in os.listdir(reps_path):
             rep_path = os.path.join(reps_path, name)
             if os.path.isdir(rep_path):
-                sipgen = SIPGenerator(os.path.join(rep_path))
-                sipgen.createSIPMets()
+                mets_data = {'packageid': task_context.uuid,
+                             'type': 'SIP'}
+                metsgen = MetsGenerator(rep_path)
+                metsgen.createMets(mets_data)
 
-        mets_files = []
-        for name in os.listdir(reps_path):
-            rep_mets_path = os.path.join(reps_path, name, "METS.xml")
-            if os.path.exists(rep_mets_path) and os.path.isfile(rep_mets_path):
-                mets_files.append(rep_mets_path)
+        #mets_files = []
+        #for name in os.listdir(reps_path):
+        #    rep_mets_path = os.path.join(reps_path, name, "METS.xml")
+        #    if os.path.exists(rep_mets_path) and os.path.isfile(rep_mets_path):
+        #        mets_files.append(rep_mets_path)
 
-        sipgen = SIPGenerator(task_context.path)
-        sipgen.createSIPParentMets(mets_files)
+        # create SIP parent Mets
+        mets_data = {'packageid': task_context.uuid,
+                     'type': 'SIP'}
+        metsgen = MetsGenerator(task_context.path)
+        metsgen.createMets(mets_data)
 
         task_context.task_status = 0
         return {}
@@ -268,7 +275,7 @@ class SIPDeliveryValidation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:2,stage:2
         """
-        # TODO: rework for new MetsValidation.py
+        # TODO: rework for new MetsValidation.py?
 
         tl = task_context.task_logger
 
@@ -577,7 +584,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 import multiprocessing
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
-    # TODO: make this process "invisible" on the earkweb GUI.
 
     accept_input_from = [AIPMigrations.__name__, SIPValidation.__name__, 'MigrationProcess', 'AIPCheckMigrationProgress']
 
@@ -601,7 +607,6 @@ class MigrationProcess(DefaultTask):
 
         tl.addinfo('Migration task started for file: %s' % task_context.additional_input['file'])
 
-        result = {}
         taskid = ''
 
         try:
@@ -777,7 +782,7 @@ class MigrationsComplete(DefaultTask):
 
 class AIPRepresentationMetsCreation(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMETSCreation']
+    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMetsCreation']
 
     def run_task(self, task_context):
         """
@@ -794,9 +799,14 @@ class AIPRepresentationMetsCreation(DefaultTask):
         # for every REPRESENTATION without METS file:
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
             rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
-            rep_mets_gen = SIPGenerator(rep_path)
-            # TODO: package identifiers (?) for representations
-            rep_mets_gen.createAIPMets('%s' % repdir)
+            # TODO: packageid?
+            # TODO: other type for migrations/representations?
+            mets_data = {'packageid': repdir,
+                         'type': 'AIP'}
+            metsgen = MetsGenerator(rep_path)
+            metsgen.createMets(mets_data)
+            #rep_mets_gen = SIPGenerator(rep_path)
+            #rep_mets_gen.createAIPMets('%s' % repdir)
 
             tl.addinfo('Generated a Mets file for representation %s.' % repdir)
         task_context.task_status = 0
@@ -805,9 +815,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
 class AIPPackageMetsCreation(DefaultTask):
 
-   # accept_input_from = [AIPMigrations.__name__, 'AIPPackageMetsCreation']
-   # accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
-   accept_input_from = [AIPRepresentationMetsCreation.__name__, "AIPPackageMetsCreation"]
+   accept_input_from = [AIPRepresentationMetsCreation.__name__, MigrationsComplete.__name__, "AIPPackageMetsCreation"]
 
    def run_task(self, task_context):
         """
@@ -819,10 +827,15 @@ class AIPPackageMetsCreation(DefaultTask):
         tl = task_context.task_logger
 
         try:
-            ipgen = SIPGenerator(task_context.path)
+            #ipgen = SIPGenerator(task_context.path)
             #print task_context.additional_input["identifier"]
             identifier = task_context.additional_input['identifier']
-            ipgen.createAIPMets(identifier)
+            #ipgen.createAIPMets(identifier)
+
+            mets_data = {'packageid': identifier,
+                         'type': 'SIP'}
+            metsgen = MetsGenerator(task_context.path)
+            metsgen.createMets(mets_data)
 
             task_context.task_status = 0
             # tl.addinfo('METS and PREMIS updated with AIP contents.')
@@ -861,7 +874,7 @@ class AIPValidation(DefaultTask):
                 tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
             # force true validation for showcase
-            valid = True
+            # valid = True
 
             task_context.task_status = 0 if valid else 1
 
