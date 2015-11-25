@@ -823,7 +823,7 @@ class AIPPackageMetsCreation(DefaultTask):
             #ipgen.createAIPMets(identifier)
 
             mets_data = {'packageid': identifier,
-                         'type': 'SIP'}
+                         'type': 'AIP'}
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 
