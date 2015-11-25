@@ -28,7 +28,6 @@ from earkcore.utils import fileutils
 from earkcore.models import InformationPackage
 from earkcore.utils import randomutils
 from earkcore.xml.deliveryvalidation import DeliveryValidation
-from taskresult import TaskResult
 from workers.default_task import DefaultTask
 from workers.statusvalidation import StatusValidation
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -48,6 +47,8 @@ from earkcore.packaging.task_utils import get_deliveries
 from earkcore.utils.fileutils import remove_fs_item
 
 from celery.result import ResultSet
+from earkweb.celeryapp import app
+
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -113,6 +114,15 @@ def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_pr
         output_file.write(package_premis_file.to_string())
     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
+@app.task(bind=True)
+def SIPResetF(self, params):
+    c = SIPReset()
+
+    print "PATH: %s" % params['path']
+    print "UUID: %s" % params['uuid']
+
+    c.run(params['uuid'], params['path'], params['additional_input'])
+    return params
 
 class SIPReset(DefaultTask):
 
@@ -1211,7 +1221,7 @@ class DIPExtractAIPs(DefaultTask):
 #     ted.write_doc(task_doc_task_id_path)
 
 
-from earkweb.celeryapp import app
+
 
 @app.task(bind=True)
 def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
