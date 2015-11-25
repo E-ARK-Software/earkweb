@@ -26,6 +26,14 @@ M = objectify.ElementMaker(
 
 
 class MetsGenerator(object):
+    '''
+    This class generates a Mets file.
+    It has to be instantiated (something = MetsGenerator(path) with the (A/S)IP root path as an argument (to specify
+    the Mets directory; all subfolders will be treated as part of the IP. After this. the createMets can be called
+    (something.createMets(data)) with a dictionary that must contain 'packageid' and 'type', where 'type' must comply
+    with the Mets standard for TYPE attribute of the Mets root.
+    '''
+
     fid = FormatIdentification()
     mime = MimeTypes()
     root_path = ""
@@ -173,12 +181,10 @@ class MetsGenerator(object):
         # add to Mets skeleton
         ###########################
 
-        # TODO: differentiate between cases (when calling this function) - if needed
-
-        # case 1: create a Mets file for a whole package (SIP or AIP)
-        workdir_length = len(self.root_path)
+        # add the package content to the Mets skeleton
         for directory, subdirectories, filenames in os.walk(self.root_path):
             if directory.endswith('metadata/earkweb'):
+                # Ignore temp files only needed for IP processing with earkweb
                 del filenames[:]
                 del subdirectories[:]
             if directory.endswith('submission/metadata') or directory.endswith('submission/schemas'):
@@ -269,19 +275,18 @@ class MetsGenerator(object):
                         del filename
                     else:
                         # TODO: list rep metadata only in the rep Mets?
-                        rel_path_file = ('file://.' + directory[workdir_length:] + '/' + filename).decode('utf-8')
+                        rel_path_file = "file://./%s" % os.path.relpath(os.path.join(directory, filename), self.root_path)
                         if filename.lower() == 'mets.xml':
                             # delete the subdirectories list to stop os.walk from traversing further;
                             # mets file should be added as <mets:mptr> to <structMap> for corresponding rep
                             del subdirectories[:]
                             rep_name = directory.rsplit('/', 1)[1]
                             # create structMap div and append to representations structMap
-                            mets_structmap_rep_div = M.div(
-                                {"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
+                            mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
                             mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS, "title"): "mets file describing representation: " + rep_name + " of AIP: " + packageid,
+                                                  q(XLINK_NS, "title"): "Mets file describing representation: %s of AIP: %s." % (rep_name, packageid),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             mets_structmap_rep_div.append(metspointer)
