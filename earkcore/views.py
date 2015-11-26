@@ -112,7 +112,6 @@ def read_ipfc(request, ip_sub_file_path):
             elif get_mime_type(file_path) == "application/pdf":
                 uuid = randomutils.getUniqueID()
                 html_file = ('/tmp/%s.html' % uuid)
-                print html_file
                 pdftohtml_cmd = CliCommand.get("pdftohtml", {'pdf_file': file_path, 'html_file': html_file})
                 out = check_output(pdftohtml_cmd)
                 file_content = read_file_content(html_file)
