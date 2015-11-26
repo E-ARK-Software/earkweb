@@ -508,8 +508,8 @@ class AIPMigrations(DefaultTask):
 
         # create xml file for migration logging
         migration_root = objectify.Element('migrations', attrib={'source': 'source representation',
-                                                       'target': 'target representation',
-                                                       'total': ''})
+                                                                 'target': 'target representation',
+                                                                 'total': ''})
 
         #metadata_generator = SIPGenerator(task_context.path)
         #premis = metadata_generator.createPremis()
@@ -532,19 +532,35 @@ class AIPMigrations(DefaultTask):
             source_rep_data = '%s/data' % rep
             migration_source = os.path.join(rep_path, source_rep_data)
             migration_target = ''
+            target_rep = ''
 
             # Unix-style pattern matching: if representation directory is in format of <name>_mig-<number>,
             # the new representation will be <number> + 1. Else, it is just <name>_mig-1.
             if fnmatch.fnmatch(rep, '*_mig-*'):
                 rep, iteration = rep.rsplit('_mig-', 1)
-                target_rep_data = 'representations/%s_mig-%s/data' % (rep, (int(iteration)+1).__str__())
+                target_rep = '%s_mig-%s' % (rep, (int(iteration)+1).__str__())
+                target_rep_data = 'representations/%s/data' % target_rep
                 migration_target = os.path.join(task_context.path, target_rep_data)
             else:
-                target_rep_data = 'representations/%s_mig-%s/data' % (rep, '1')
+                target_rep = '%s_mig-%s' % (rep, '1')
+                target_rep_data = 'representations/%s/data' % target_rep
                 migration_target = os.path.join(task_context.path, target_rep_data)
 
+            # create folder for new representation
             if not os.path.exists(migration_target):
                 os.makedirs(migration_target)
+
+            # create folder for migration process task "feedback"
+            if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep):
+                os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep)
+
+            # copy each representations' premis file to the new representations, so it can be updated
+            # after migrations are complete
+            if os.path.exists(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep)):
+                target_rep_metadata = os.path.join(task_context.path, 'representations/%s/metadata' % target_rep)
+                if not os.path.exists(os.path.join(target_rep_metadata, 'preservation')):
+                    os.makedirs(os.path.join(target_rep_metadata, 'preservation'))
+                shutil.copy2(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep), os.path.join(target_rep_metadata, 'preservation'))
 
             # needs to walk from top-level dir of representation data
             for directory, subdirectories, filenames in os.walk(migration_source):
