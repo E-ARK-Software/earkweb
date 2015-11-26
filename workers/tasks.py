@@ -487,6 +487,7 @@ import uuid
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 from lxml import etree, objectify
 import fnmatch
+from workers.default_task_context import DefaultTaskContext
 class AIPMigrations(DefaultTask):
 
     accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
@@ -549,17 +550,20 @@ class AIPMigrations(DefaultTask):
             for directory, subdirectories, filenames in os.walk(migration_source):
                 for filename in filenames:
                     id = uuid.uuid4().__str__()
-                    input = {'file': filename,
+                    input = ({'file': filename,
                              'source': migration_source,
                              'target': migration_target,
-                             'taskid': id}
+                             'taskid': id.decode('utf-8')})
                              #'logger': task_context.task_logger,
                              #'identifier': identifier}
+                    task_context.additional_data = dict(task_context.additional_data.items() + input.items())
+
                     print 'Calling migration task for file: %s' % filename
                     tl.addinfo('Calling migration task for file: %s' % filename)
-                    migrationtask.apply_async((task_context.uuid, task_context.path, input,),
-                                              queue='default',
-                                              task_id=id)
+
+                    context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data)
+                    migrationtask.apply_async((context,), queue='default', task_id=id)
+
                     migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
                                                                                           'sourcedir': migration_source,
                                                                                           'targetdir': migration_target,
@@ -752,7 +756,8 @@ class AIPCheckMigrationProgress(DefaultTask):
             # check if migrations are all completed
             if int(total) == successful:
                 complete = MigrationsComplete()
-                complete.apply_async((task_context.uuid, task_context.path, None,), queue='default')
+                context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationComplete', None, task_context.additional_data)
+                complete.apply_async((context,), queue='default')
                 tl.addinfo('All migrations have been successful.')
                 task_context.task_status = 0
             elif failed > 0 and missing == 0:
