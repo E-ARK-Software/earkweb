@@ -102,11 +102,12 @@ def read_ipfc(request, ip_sub_file_path):
             if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
                 file_content = read_file_content(file_path)
                 file_content = "data:"+mime+";base64,"+base64.b64encode(file_content)
-            elif get_mime_type(file_path) == "image/tiff":
+            elif get_mime_type(file_path) == "image/tiff" or get_mime_type(file_path) == "image/gif":
                 from pgmagick.api import Image
                 img = Image(file_path)
                 uuid = randomutils.getUniqueID()
                 img.write('/tmp/%s.png' % uuid)
+                print '/tmp/%s.png' % uuid
                 file_content = "data:"+mime+";base64,"+base64.b64encode(read_file_content('/tmp/%s.png' % uuid))
             elif get_mime_type(file_path) == "application/pdf":
                 uuid = randomutils.getUniqueID()

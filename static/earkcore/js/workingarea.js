@@ -41,6 +41,10 @@ function show(id, value) {
                              $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
                              document.getElementById("displayimage").src = data;
                             break;
+                        case 'image/gif':
+                             $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
+                             document.getElementById("displayimage").src = data;
+                            break;
                         case 'application/pdf':
 //                             $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
 //                             document.getElementById("displayimage").src = data;
