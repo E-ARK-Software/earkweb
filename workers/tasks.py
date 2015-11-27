@@ -634,6 +634,7 @@ class MigrationProcess(DefaultTask):
             target = task_context.additional_data['target']
             file = task_context.additional_data['file']
             taskid = task_context.additional_data['taskid']
+            self.targetrep = task_context.additional_data['targetrep']
             #tl = task_context.additional_data['logger']
             #identification = task_context.additional_data['identifier']
 
@@ -664,34 +665,41 @@ class MigrationProcess(DefaultTask):
                     tl.addinfo('Successfully migrated file %s.' % file)
                     print 'Successfully migrated file %s.' % file
                 else:
-                    tl.addinfo('Migration for file %s caused errors: %s' % (file, err))
+                    tl.adderr('Migration for file %s caused errors: %s' % (file, err))
                     print 'Migration for file %s caused errors: %s' % (file, err)
-                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
                     return
+            elif self.args == '' and (fido_result not in pdf or gif):
+                # TODO: is this a success or fail case? Depends if the file should have been migrated or not.
+                tl.addinfo('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
+                task_context.task_status = 0
+                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
+                    status.write('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
+                return
             else:
-                tl.addinfo('Migration for file %s could not be executed due to missing command line parameters.' % file)
+                tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
-                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                     status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 return
 
             task_context.task_status = 0
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'success')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
                 pass
             return
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
-            tl.addinfo('Time limit exceeded, stopping migration.')
+            tl.adderr('Time limit exceeded, stopping migration.')
             self.migrate.terminate()
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Time limit exceeded, stopping migration.')
         except Exception:
             e = sys.exc_info()[0]
-            tl.addinfo('Exception in MigrationProcess(): %s' % e)
+            tl.adderr('Exception in MigrationProcess(): %s' % e)
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Exception in MigrationProcess(): %s' % e)
         return
 
