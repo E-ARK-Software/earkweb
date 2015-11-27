@@ -206,7 +206,10 @@ class MetsGenerator(object):
                 del subdirectories[:]  # prevent loop to iterate subfolders outside of this if statement
                 dirlist = os.listdir(os.path.join(self.root_path, 'metadata'))
                 for dirname in dirlist:
-                    if fnmatch.fnmatch(dirname, '*_mig-*'):
+                    if dirname == 'earkweb':
+                        # ignore, those are temp files
+                        pass
+                    elif fnmatch.fnmatch(dirname, '*_mig-*'):
                         # TODO: maybe list it all the time?
                         # this folder contains metadata for a representation/migration, currently:
                         # only listed if no representation Mets file exists

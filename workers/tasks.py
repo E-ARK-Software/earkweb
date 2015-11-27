@@ -511,6 +511,10 @@ class AIPMigrations(DefaultTask):
                                                        'target': 'target representation',
                                                        'total': ''})
 
+        # migration policy
+        pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+        gif = ['fmt/3', 'fmt/4']
+
         #metadata_generator = SIPGenerator(task_context.path)
         #premis = metadata_generator.createPremis()
 
@@ -532,45 +536,73 @@ class AIPMigrations(DefaultTask):
             source_rep_data = '%s/data' % rep
             migration_source = os.path.join(rep_path, source_rep_data)
             migration_target = ''
+            target_rep = ''
 
             # Unix-style pattern matching: if representation directory is in format of <name>_mig-<number>,
             # the new representation will be <number> + 1. Else, it is just <name>_mig-1.
             if fnmatch.fnmatch(rep, '*_mig-*'):
                 rep, iteration = rep.rsplit('_mig-', 1)
-                target_rep_data = 'representations/%s_mig-%s/data' % (rep, (int(iteration)+1).__str__())
+                target_rep = '%s_mig-%s' % (rep, (int(iteration)+1).__str__())
+                target_rep_data = 'representations/%s/data' % target_rep
                 migration_target = os.path.join(task_context.path, target_rep_data)
             else:
-                target_rep_data = 'representations/%s_mig-%s/data' % (rep, '1')
+                target_rep = '%s_mig-%s' % (rep, '1')
+                target_rep_data = 'representations/%s/data' % target_rep
                 migration_target = os.path.join(task_context.path, target_rep_data)
 
             if not os.path.exists(migration_target):
                 os.makedirs(migration_target)
 
+            if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s' % target_rep)):
+                os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s' % target_rep))
+
             # needs to walk from top-level dir of representation data
             for directory, subdirectories, filenames in os.walk(migration_source):
                 for filename in filenames:
-                    id = uuid.uuid4().__str__()
-                    input = ({'file': filename,
-                             'source': migration_source,
-                             'target': migration_target,
-                             'taskid': id.decode('utf-8')})
-                             #'logger': task_context.task_logger,
-                             #'identifier': identifier}
-                    task_context.additional_data = dict(task_context.additional_data.items() + input.items())
+                    # fido, file format identification
+                    identification = FormatIdentification()
+                    fido_result = identification.identify_file(os.path.join(directory, filename))
+                    self.args= ''
+                    if fido_result in pdf:
+                        tl.addinfo('File %s is queued for migration to PDF/A.' % filename)
+                        cliparams = {'output_file': '-sOutputFile=' + os.path.join(migration_target, filename),
+                                     'input_file': os.path.join(directory, filename)}
+                        self.args = CliCommand.get('pdftopdfa', cliparams)
+                    elif fido_result in gif:
+                        tl.addinfo('File %s is queued for migration to TIFF.' % filename)
+                        outputfile = filename.rsplit('.', 1)[0] + '.tiff'
+                        cliparams = {'input_file': os.path.join(directory, filename),
+                                     'output_file': os.path.join(migration_target, outputfile)}
+                        self.args = CliCommand.get('totiff', cliparams)
+                    else:
+                        tl.addinfo('Unclassified file %s, fido result: %s. This file will NOT be migrated.' % (filename, fido_result))
 
-                    print 'Calling migration task for file: %s' % filename
-                    tl.addinfo('Calling migration task for file: %s' % filename)
+                    if self.args != '':
+                        id = uuid.uuid4().__str__()
+                        input = ({'file': filename,
+                                  'source': migration_source,
+                                  'target': migration_target,
+                                  'targetrep': target_rep,
+                                  'taskid': id.decode('utf-8'),
+                                  'commandline': self.args})
+                        task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
-                    context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data)
-                    migrationtask.apply_async((context,), queue='default', task_id=id)
+                        # print 'Calling migration task for file: %s' % filename
+                        # tl.addinfo('Calling migration task for file: %s' % filename)
 
-                    migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
-                                                                                          'sourcedir': migration_source,
-                                                                                          'targetdir': migration_target,
-                                                                                          'taskid': id,
-                                                                                          'status': 'queued',
-                                                                                          'time': current_timestamp()})
-                    total += 1
+                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data)
+                        migrationtask.apply_async((context,), queue='default', task_id=id)
+
+                        migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
+                                                                                              'sourcedir': migration_source,
+                                                                                              'targetdir': migration_target,
+                                                                                              'targetrep': target_rep,
+                                                                                              'taskid': id,
+                                                                                              'status': 'queued',
+                                                                                              'time': current_timestamp()})
+                        total += 1
+                    else:
+                        pass
 
         migration_root.set('total', total.__str__())
 
@@ -623,37 +655,11 @@ class MigrationProcess(DefaultTask):
         taskid = ''
 
         try:
-            self.args = ''
-
-            # TODO: handle file format + migration action properly
-            pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
-            gif = ['fmt/3', 'fmt/4']
-
-            source = task_context.additional_data['source']
             # TODO: additional sub-structure of rep-id/data/... when creating target path
-            target = task_context.additional_data['target']
             file = task_context.additional_data['file']
             taskid = task_context.additional_data['taskid']
             self.targetrep = task_context.additional_data['targetrep']
-            #tl = task_context.additional_data['logger']
-            #identification = task_context.additional_data['identifier']
-
-            identification = FormatIdentification()
-            fido_result = identification.identify_file(os.path.join(source, file))
-
-            if fido_result in pdf:
-                tl.addinfo('File %s is now being migrated to PDF/A.' % file)
-                cliparams = {'output_file': '-sOutputFile=' + os.path.join(target, file),
-                             'input_file': os.path.join(source, file)}
-                self.args = CliCommand.get('pdftopdfa', cliparams)
-            elif fido_result in gif:
-                tl.addinfo('File %s is now being migrated to TIFF.' % file)
-                outputfile = file.rsplit('.', 1)[0] + '.tiff'
-                cliparams = {'input_file': os.path.join(source, file),
-                             'output_file': os.path.join(target, outputfile)}
-                self.args = CliCommand.get('totiff', cliparams)
-            else:
-                tl.addinfo('Unclassified file %s // fido result: %s' % (file, fido_result))
+            self.args = task_context.additional_data['commandline']
 
             # TODO: error handling (OSException)
             if self.args != '':
@@ -670,13 +676,6 @@ class MigrationProcess(DefaultTask):
                     with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
                     return
-            elif self.args == '' and (fido_result not in pdf or gif):
-                # TODO: is this a success or fail case? Depends if the file should have been migrated or not.
-                tl.addinfo('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
-                task_context.task_status = 0
-                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
-                    status.write('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
-                return
             else:
                 tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
@@ -732,16 +731,18 @@ class AIPCheckMigrationProgress(DefaultTask):
                 elif element.tag == 'migration':
                     if element.attrib['status'] == 'queued':
                         taskid = element.attrib['taskid']
-                        if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid)):
+                        target_rep = element.attrib['targetrep']
+                        if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid))):
                             # TODO: check if there is actually a file at migration target location - problem: different file extensions (at least)
                             element.set('status', 'successful')
                             successful += 1
                             # remove the file, to avoid storing huge numbers of useless files
-                            os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid))
-                        elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.fail' % taskid)):
+                            os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
+                        elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.fail' % (target_rep, taskid))):
                             element.set('status', 'failed')
                             failed += 1
                         else:
+                            print 'couldnt find the status file'
                             pass
                     elif element.attrib['status'] == 'successful':
                         successful += 1
