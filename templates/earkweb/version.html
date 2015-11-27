@@ -26,6 +26,16 @@
     <tbody>
 
     <tr>
+        <td>0.1.9</td>
+        <td>27.11.2015</td>
+        <td>
+            <ul>
+                <li>Tasks use context object which allows executing a sequence of tasks (user interface experimental).</li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
         <td>0.1.8</td>
         <td>24.11.2015</td>
         <td>
@@ -111,7 +121,20 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/178579f">178579f</a> changed representation versioning pattern from *#* to *_mig-*
+<pre>2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/0e4561f">0e4561f</a> Working area viewer: convert GIF to PNG
+2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/5cd5601">5cd5601</a> Working area viewer: convert GIF to PNG
+2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/3f2ff1f">3f2ff1f</a> sipcreator: ignore specific files when copying schemas folder
+2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/44c3af3">44c3af3</a> fixed apply_async for two tasks
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/0568c59">0568c59</a> Default task corrections for chaining
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/8643db3">8643db3</a> Replaced additional_input/output by additional_data
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/3e5a6e0">3e5a6e0</a> Initial version of chained task execution (default task refactored and task result obsolete)
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/f7d919b">f7d919b</a> added premis generation to sip creation
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/e1d7527">e1d7527</a> fixed error in metsgenerator.py that would break mets generation if any subfolders in root/metadata exist
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/a7612fd">a7612fd</a> minor changes
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/7216ae3">7216ae3</a> complete rework on mets generation: every earkweb task now creates a valid Mets file (next: structmap rework)
+2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/6bbf09c">6bbf09c</a> fixed a typo
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/17df673">17df673</a> Version 0.1.8
+2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/178579f">178579f</a> changed representation versioning pattern from *#* to *_mig-*
 2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/a267b68">a267b68</a> corrected target folder for migrations
 2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/51c277e">51c277e</a> migration and representation generation now works on any rep-name/any number of submission reps
 2015-11-24 <a href="https://github.com/eark-project/earkweb/commit/426a024">426a024</a> user can now check on migration progress: * when migration tasks are queued, a xml file is created with info about the tasks * migration tasks create files when they are finished (successful or with errors) ** <taskid>.<extension>, extension shows if successful or failed ** when failed, file should contain error log (in addition to task logger) * MigrationProgress task checks the xml file, and edits (=rewrites) it according to task feedback (=files that they create) * when all migration tasks are successful, a subtask is called so that mets creation is allowed.
@@ -223,7 +246,7 @@
 2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/3f24824">3f24824</a> Latest Mets/Premis Generator Task and lib
 2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/d09b29b">d09b29b</a> Add last task workflow module when initializing the sip creation process.
 2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/f7b7858">f7b7858</a> SIP to AIP creation tasks modified
-2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/4391e5d">4391e5d</a> Return value of 'run_task' assigned to  task_context.additional_data so that result variables can be passed through to the frontend.
+2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/4391e5d">4391e5d</a> Return value of 'run_task' assigned to  task_context.additional_output so that result variables can be passed through to the frontend.
 2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/950b06a">950b06a</a> Upload directory changed, state XML created after upload. Obsolete log object removed.
 2015-10-05 <a href="https://github.com/eark-project/earkweb/commit/567ef99">567ef99</a> Templates adapted, minior corrections
 2015-10-02 <a href="https://github.com/eark-project/earkweb/commit/6189b93">6189b93</a> Core InformationPackages and WorkflowModules data models adapted
