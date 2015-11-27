@@ -556,11 +556,11 @@ class AIPMigrations(DefaultTask):
 
             # copy each representations' premis file to the new representations, so it can be updated
             # after migrations are complete
-            if os.path.exists(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep)):
-                target_rep_metadata = os.path.join(task_context.path, 'representations/%s/metadata' % target_rep)
-                if not os.path.exists(os.path.join(target_rep_metadata, 'preservation')):
-                    os.makedirs(os.path.join(target_rep_metadata, 'preservation'))
-                shutil.copy2(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep), os.path.join(target_rep_metadata, 'preservation'))
+            # if os.path.exists(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep)):
+            #     target_rep_metadata = os.path.join(task_context.path, 'representations/%s/metadata' % target_rep)
+            #     if not os.path.exists(os.path.join(target_rep_metadata, 'preservation')):
+            #         os.makedirs(os.path.join(target_rep_metadata, 'preservation'))
+            #     shutil.copy2(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep), os.path.join(target_rep_metadata, 'preservation'))
 
             # needs to walk from top-level dir of representation data
             for directory, subdirectories, filenames in os.walk(migration_source):
@@ -569,7 +569,8 @@ class AIPMigrations(DefaultTask):
                     input = ({'file': filename,
                              'source': migration_source,
                              'target': migration_target,
-                             'taskid': id.decode('utf-8')})
+                             'taskid': id.decode('utf-8'),
+                              'targetrep': target_rep})
                              #'logger': task_context.task_logger,
                              #'identifier': identifier}
                     task_context.additional_data = dict(task_context.additional_data.items() + input.items())
@@ -585,7 +586,8 @@ class AIPMigrations(DefaultTask):
                                                                                           'targetdir': migration_target,
                                                                                           'taskid': id,
                                                                                           'status': 'queued',
-                                                                                          'time': current_timestamp()})
+                                                                                          'time': current_timestamp(),
+                                                                                          'targetrep': target_rep})
                     total += 1
 
         migration_root.set('total', total.__str__())
@@ -650,6 +652,7 @@ class MigrationProcess(DefaultTask):
             target = task_context.additional_data['target']
             file = task_context.additional_data['file']
             taskid = task_context.additional_data['taskid']
+            self.targetrep = task_context.additional_data['targetrep']
             #tl = task_context.additional_data['logger']
             #identification = task_context.additional_data['identifier']
 
@@ -680,34 +683,41 @@ class MigrationProcess(DefaultTask):
                     tl.addinfo('Successfully migrated file %s.' % file)
                     print 'Successfully migrated file %s.' % file
                 else:
-                    tl.addinfo('Migration for file %s caused errors: %s' % (file, err))
+                    tl.adderr('Migration for file %s caused errors: %s' % (file, err))
                     print 'Migration for file %s caused errors: %s' % (file, err)
-                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
                     return
+            elif self.args == '' and (fido_result not in pdf or gif):
+                # TODO: is this a success or fail case? Depends if the file should have been migrated or not.
+                tl.addinfo('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
+                task_context.task_status = 0
+                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
+                    status.write('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
+                return
             else:
-                tl.addinfo('Migration for file %s could not be executed due to missing command line parameters.' % file)
+                tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
-                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                     status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 return
 
             task_context.task_status = 0
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'success')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
                 pass
             return
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
-            tl.addinfo('Time limit exceeded, stopping migration.')
+            tl.adderr('Time limit exceeded, stopping migration.')
             self.migrate.terminate()
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Time limit exceeded, stopping migration.')
         except Exception:
             e = sys.exc_info()[0]
-            tl.addinfo('Exception in MigrationProcess(): %s' % e)
+            tl.adderr('Exception in MigrationProcess(): %s' % e)
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.%s'% (taskid, 'fail')), 'a' ) as status:
+            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Exception in MigrationProcess(): %s' % e)
         return
 
@@ -740,13 +750,22 @@ class AIPCheckMigrationProgress(DefaultTask):
                 elif element.tag == 'migration':
                     if element.attrib['status'] == 'queued':
                         taskid = element.attrib['taskid']
-                        if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid)):
+                        targetrep = element.attrib['targetrep']
+                        if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (targetrep, taskid))):
                             # TODO: check if there is actually a file at migration target location - problem: different file extensions (at least)
+
+                            # # create premis event for successful migration
+                            # premisgen = PremisGenerator(task_context.path)
+                            # event = premisgen.addEvent('representations/%s/metadata/preservation/premis.xml' % targetrep)
+                            # if event == True: tl.addinfo('Premis event added.')
+
+
                             element.set('status', 'successful')
                             successful += 1
+
                             # remove the file, to avoid storing huge numbers of useless files
-                            os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.success' % taskid))
-                        elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s.fail' % taskid)):
+                            # os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (targetrep, taskid)))
+                        elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.fail' % (targetrep, taskid))):
                             element.set('status', 'failed')
                             failed += 1
                         else:
