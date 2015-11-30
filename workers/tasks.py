@@ -828,14 +828,16 @@ class CreatePremisAfterMigration(DefaultTask):
         tl = task_context.task_logger
 
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
-            rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
-            premis_info = {'event': 'migration',
-                           'info': os.path.join(task_context.path, 'metadata/earkweb/migrations.xml'),
-                           'source': 'rep-1'}
-            premisgen = PremisGenerator(rep_path)
-            premisgen.createMigrationPremis(premis_info)
-
-        task_context.task_status = 0
+            try:
+                rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
+                premis_info = {'info': os.path.join(task_context.path, 'metadata/earkweb/migrations.xml')}
+                premisgen = PremisGenerator(rep_path)
+                premisgen.createMigrationPremis(premis_info)
+                tl.addinfo('Generated a Premis file for the representation %s.' % repdir)
+                task_context.task_status = 0
+            except Exception:
+                tl.adderr('Premis generation for representation %s failed.' % repdir)
+                task_context.task_status = 1
         return
 
 
@@ -853,22 +855,21 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
         tl = task_context.task_logger
 
-        # TODO: error handling
-
         # for every REPRESENTATION without METS file:
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
-            rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
-            # TODO: packageid?
-            # TODO: other type for migrations/representations?
-            mets_data = {'packageid': repdir,
-                         'type': 'AIP'}
-            metsgen = MetsGenerator(rep_path)
-            metsgen.createMets(mets_data)
-            #rep_mets_gen = SIPGenerator(rep_path)
-            #rep_mets_gen.createAIPMets('%s' % repdir)
+            try:
+                rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
+                # TODO: packageid?
+                mets_data = {'packageid': repdir,
+                             'type': 'AIP'}
+                metsgen = MetsGenerator(rep_path)
+                metsgen.createMets(mets_data)
 
-            tl.addinfo('Generated a Mets file for representation %s.' % repdir)
-        task_context.task_status = 0
+                tl.addinfo('Generated a Mets file for representation %s.' % repdir)
+                task_context.task_status = 0
+            except Exception:
+                tl.adderr('Mets generation for representation %s failed.' % repdir)
+                task_context.task_status = 1
         return
 
 
