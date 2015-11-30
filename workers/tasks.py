@@ -178,7 +178,7 @@ class SIPPackageMetadataCreation(DefaultTask):
                      'type': 'SIP'}
         metsgen = MetsGenerator(task_context.path)
         metsgen.createMets(mets_data)
-        # also, Premos
+        # also, Premis
         premisgen = PremisGenerator(task_context.path)
         premisgen.createPremis()
 

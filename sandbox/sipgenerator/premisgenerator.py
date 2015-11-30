@@ -176,7 +176,7 @@ class PremisGenerator(object):
             output_file.write(str)
 
 
-    def createPremis(self, premis_info):
+    def createPremis(self):
         PREMIS_ATTRIBUTES = {"version" : "2.0"}
         premis = P.premis(PREMIS_ATTRIBUTES)
         premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd"
@@ -233,14 +233,12 @@ class PremisGenerator(object):
 class testPremisCreation(unittest.TestCase):
     def testCreatePremis(self):
         premisgen = PremisGenerator("/var/data/earkweb/work/c214c594-421d-4026-81b1-d71250eb826b/representations/rep-1_mig-1")
+        # premisgen.createPremis()
 
         premis_info = {'event': 'migration',
                        'info': '/var/data/earkweb/work/c214c594-421d-4026-81b1-d71250eb826b/metadata/earkweb/migrations.xml',
                        'source': 'rep-1'}
         premisgen.createMigrationPremis(premis_info)
-
-        # premis_info = None
-        # premisgen.createPremis(premis_info)
 
 
 if __name__ == '__main__':
