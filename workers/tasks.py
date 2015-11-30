@@ -537,6 +537,7 @@ class AIPMigrations(DefaultTask):
             migration_source = os.path.join(rep_path, source_rep_data)
             migration_target = ''
             target_rep = ''
+            outputfile = ''
 
             # Unix-style pattern matching: if representation directory is in format of <name>_mig-<number>,
             # the new representation will be <number> + 1. Else, it is just <name>_mig-1.
@@ -558,15 +559,6 @@ class AIPMigrations(DefaultTask):
             if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep):
                 os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep)
 
-            # copy each representations' premis file to the new representations, so it can be updated
-            # after migrations are complete
-            # if os.path.exists(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep)):
-            #     target_rep_metadata = os.path.join(task_context.path, 'representations/%s/metadata' % target_rep)
-            #     if not os.path.exists(os.path.join(target_rep_metadata, 'preservation')):
-            #         os.makedirs(os.path.join(target_rep_metadata, 'preservation'))
-            #     shutil.copy2(os.path.join(rep_path, '%s/metadata/preservation/premis.xml' % rep), os.path.join(target_rep_metadata, 'preservation'))
-
-
             # needs to walk from top-level dir of representation data
             for directory, subdirectories, filenames in os.walk(migration_source):
                 for filename in filenames:
@@ -576,6 +568,7 @@ class AIPMigrations(DefaultTask):
                     self.args= ''
                     if fido_result in pdf:
                         tl.addinfo('File %s is queued for migration to PDF/A.' % filename)
+                        outputfile = filename.rsplit('.', 1)[0] + '.pdf'
                         cliparams = {'output_file': '-sOutputFile=' + os.path.join(migration_target, filename),
                                      'input_file': os.path.join(directory, filename)}
                         self.args = CliCommand.get('pdftopdfa', cliparams)
@@ -598,19 +591,21 @@ class AIPMigrations(DefaultTask):
                                   'commandline': self.args})
                         task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
-                        # print 'Calling migration task for file: %s' % filename
-                        # tl.addinfo('Calling migration task for file: %s' % filename)
-
                         context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data)
-                        migrationtask.apply_async((context,), queue='default', task_id=id)
+                        try:
+                            migrationtask.apply_async((context,), queue='default', task_id=id)
+                            tl.addinfo('Migration queued for %s.' %  filename, display=False)
+                        except:
+                            tl.adderr('Migration task %s for file %s could not be queued.' % (id, filename))
 
                         migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
+                                                                                              'output': outputfile,
                                                                                               'sourcedir': migration_source,
                                                                                               'targetdir': migration_target,
                                                                                               'targetrep': target_rep,
                                                                                               'taskid': id,
                                                                                               'status': 'queued',
-                                                                                              'time': current_timestamp()})
+                                                                                              'starttime': current_timestamp()})
                         total += 1
                     else:
                         pass
@@ -626,7 +621,7 @@ class AIPMigrations(DefaultTask):
         # TODO: Premis
         #premis_update = add_PREMIS_event('AIPMigrations', 'success', 'identifier_value', 'linking_agent', task_context.path, )
 
-        tl.addinfo('%d migrations have been queued, please check for results.' % total)
+        tl.addinfo('%d migrations have been queued, please check the progress with the task AIPCheckMigrationProgress.' % total)
 
         task_context.task_status = 0
 
@@ -688,13 +683,6 @@ class MigrationProcess(DefaultTask):
                     with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
                     return
-            elif self.args == '' and (fido_result not in pdf or gif):
-                # TODO: is this a success or fail case? Depends if the file should have been migrated or not.
-                tl.addinfo('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
-                task_context.task_status = 0
-                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
-                    status.write('Could not migrate file %s because its fido result is not included on the migration policy.' % file)
-                return
             else:
                 tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
@@ -751,28 +739,20 @@ class AIPCheckMigrationProgress(DefaultTask):
                     if element.attrib['status'] == 'queued':
                         taskid = element.attrib['taskid']
                         target_rep = element.attrib['targetrep']
+                        target_file = os.path.join(element.attrib['targetdir'], element.attrib['output'])
                         if os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid))):
                             # TODO: check if there is actually a file at migration target location - problem: different file extensions (at least)
-
-                            # # create premis event for successful migration
-                            # premisgen = PremisGenerator(task_context.path)
-                            # event = premisgen.addEvent('representations/%s/metadata/preservation/premis.xml' % targetrep)
-                            # if event == True: tl.addinfo('Premis event added.')
-
-
-                            element.set('status', 'successful')
-                            successful += 1
-
-                            # remove the file, to avoid storing huge numbers of useless files
-
-                            # os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (targetrep, taskid)))
-                            os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
+                            if os.path.isfile(target_file) and os.path.getsize(target_file) > 0:
+                                element.set('status', 'successful')
+                                successful += 1
+                                # remove the file, to avoid storing huge numbers of useless files
+                                os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
+                            else:
+                                tl.adderr('The file %s does not exists, although the migration process reported success!' % target_file)
                         elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.fail' % (target_rep, taskid))):
-
                             element.set('status', 'failed')
                             failed += 1
                         else:
-                            print 'couldnt find the status file'
                             pass
                     elif element.attrib['status'] == 'successful':
                         successful += 1
@@ -833,16 +813,42 @@ class MigrationsComplete(DefaultTask):
         return
 
 
+class CreatePremisAfterMigration(DefaultTask):
+
+    accept_input_from = [MigrationsComplete.__name__, 'CreatePremisAfterMigration']
+
+    def run_task(self, task_context):
+        """
+        Create Premis After Migration
+
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:9,type:2,stage:2
+        """
+
+        tl = task_context.task_logger
+
+        for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
+            rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
+            premis_info = {'event': 'migration',
+                           'info': os.path.join(task_context.path, 'metadata/earkweb/migrations.xml'),
+                           'source': 'rep-1'}
+            premisgen = PremisGenerator(rep_path)
+            premisgen.createMigrationPremis(premis_info)
+
+        task_context.task_status = 0
+        return
+
+
 class AIPRepresentationMetsCreation(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, 'AIPRepresentationMetsCreation']
+    accept_input_from = [MigrationsComplete.__name__, CreatePremisAfterMigration.__name__, 'AIPRepresentationMetsCreation']
 
     def run_task(self, task_context):
         """
         AIP Representation Mets Creation
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
 
         tl = task_context.task_logger
@@ -874,7 +880,7 @@ class AIPPackageMetsCreation(DefaultTask):
         """
         AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
 
         tl = task_context.task_logger
@@ -891,7 +897,6 @@ class AIPPackageMetsCreation(DefaultTask):
             metsgen.createMets(mets_data)
 
             task_context.task_status = 0
-            # tl.addinfo('METS and PREMIS updated with AIP contents.')
             tl.addinfo('METS updated with AIP content.')
         except Exception, err:
             tl.addinfo('error: ', Exception)
@@ -907,7 +912,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
         tl = task_context.task_logger
         try:
@@ -948,7 +953,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -1024,6 +1029,7 @@ class AIPPackaging(DefaultTask):
             task_context.task_status = 0
         return
 
+
 class AIPStore(DefaultTask):
 
     accept_input_from = [AIPPackaging.__name__, "AIPStore"]
@@ -1032,7 +1038,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:2,stage:2
+        @param      tc: order:14,type:2,stage:2
         """
         tl = task_context.task_logger
 
@@ -1057,7 +1063,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:2,stage:2
+        @param      tc: order:15,type:2,stage:2
         """
         tl = task_context.task_logger
 
