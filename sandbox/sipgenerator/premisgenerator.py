@@ -154,12 +154,23 @@ class PremisGenerator(object):
 
                     # object
                     object = self.addObject(target_object_abs)
-                    rel_object = P.relatedObjectIdentification(
-                        P.relatedObjectIdentifierType('local'),
-                        P.relatedObjectIdentifierValue(source_object_rel),
-                        P.relatedObjectIdentifierSequence('not applicable')
+                    # add the relationship to the migration event and the source file
+                    relationship = P.relationship(
+                        P.relationshipType('derivation'),
+                        P.relationshipSubType('has source'),
+                        P.relatedObjectIdentification(
+                            P.relatedObjectIdentifierType('URL'),
+                            P.relatedObjectIdentifierValue(source_object_rel),
+                            P.relatedObjectSequence('0')
+                        ),
+                        P.relatedEventIdentification(
+                            P.relatedEventIdentifierType('local'),
+                            P.relatedEventIdentifierValue(event_id),
+                            P.relatedEventSequence('1')
+                        ),
                     )
-                    object.append(rel_object)
+                    object.append(relationship)
+                    
                     premis.append(object)
                 else:
                     pass
