@@ -148,7 +148,7 @@ class PremisGenerator(object):
                             P.linkingAgentIdentifierValue('should probably come from migrations.xml')),
                         P.linkingObjectIdentifier(
                             P.linkingObjectIdentifierType('local'),
-                            P.linkingObjectIdentifierValue(source_object_rel))
+                            P.linkingObjectIdentifierValue(target_object_rel))
                     )
                     premis.append(event)
 
@@ -170,7 +170,7 @@ class PremisGenerator(object):
                         ),
                     )
                     object.append(relationship)
-                    
+
                     premis.append(object)
                 else:
                     pass
