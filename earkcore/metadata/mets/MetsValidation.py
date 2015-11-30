@@ -92,7 +92,7 @@ class MetsValidation(object):
                                                 parsed_premis = etree.iterparse(open(premis), events=('start',), schema=self.schema_premis)
                                                 for event, element in parsed_premis:
                                                     pass
-                                                #self.schema_premis.validate(etree.parse(premis))
+                                                print 'Successfully validated Premis file: %s' % premis
                                             except etree.XMLSyntaxError, e:
                                                 print 'VALIDATION ERROR: The Premis file %s yielded errors:' % premis
                                                 print e.error_log

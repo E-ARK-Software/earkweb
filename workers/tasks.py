@@ -515,9 +515,6 @@ class AIPMigrations(DefaultTask):
         pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
         gif = ['fmt/3', 'fmt/4']
 
-        #metadata_generator = SIPGenerator(task_context.path)
-        #premis = metadata_generator.createPremis()
-
         tl = task_context.task_logger
 
         # list of all representations in submission folder
