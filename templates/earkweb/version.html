@@ -27,6 +27,16 @@
 
     <tr>
         <td>0.2.0</td>
+        <td>01.12.2015</td>
+        <td>
+            <ul>
+                <li>PREMIS events record executed tasks.</li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
+        <td>0.2.1</td>
         <td>30.11.2015</td>
         <td>
             <ul>
@@ -131,15 +141,29 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/6ac3ce7">6ac3ce7</a> solving merge errors
+<pre>2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/3b9fab2">3b9fab2</a> added Premis to IP root level
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/0c0e19d">0c0e19d</a> minor additions
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/627eae3">627eae3</a> removed dependency from xlink.xsd (as online resource)
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/1adaad1">1adaad1</a> adding PRemis validation to AIPValidation task (called from Mets validation)
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/66f09b8">66f09b8</a> fixed validation errors for premis files
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/f060705">f060705</a> fixed error in event linking object
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/a77564a">a77564a</a> added relationship between the migrated file, its source file and the migration event
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/4e2647c">4e2647c</a> removed not needed attribute when calling createPremis()
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/779faf9">779faf9</a> can now create a Premis file after migrations * pulling event information from migrations.xml * one Premis file for every new representation * small restructuring of premisgenerator.py * TODO: package Premis file
+2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/5cbe6b2">5cbe6b2</a> New version
+2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/ac13e26">ac13e26</a> fixed merge error
+2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/6ac3ce7">6ac3ce7</a> solving merge errors
 2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/6c130fb">6c130fb</a> moved fido stuff from MigrationProcc to AIPMigrations
 2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/801c74c">801c74c</a> hotfix .odt problem
 2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/81a8aa8">81a8aa8</a> Quick fix for migrations being executed for files which are not to be migrated (this will be changed to migrations only triggered for files to be migrated)
+2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/319fe38">319fe38</a> hotfix for master
 2015-11-27 <a href="https://github.com/eark-project/earkweb/commit/1bdbbf5">1bdbbf5</a> New version
 2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/0e4561f">0e4561f</a> Working area viewer: convert GIF to PNG
 2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/5cd5601">5cd5601</a> Working area viewer: convert GIF to PNG
 2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/3f2ff1f">3f2ff1f</a> sipcreator: ignore specific files when copying schemas folder
+2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/3b82610">3b82610</a> copy submission premis files to new representations
 2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/44c3af3">44c3af3</a> fixed apply_async for two tasks
+2015-11-26 <a href="https://github.com/eark-project/earkweb/commit/2db8c80">2db8c80</a> comment block
 2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/0568c59">0568c59</a> Default task corrections for chaining
 2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/8643db3">8643db3</a> Replaced additional_input/output by additional_data
 2015-11-25 <a href="https://github.com/eark-project/earkweb/commit/3e5a6e0">3e5a6e0</a> Initial version of chained task execution (default task refactored and task result obsolete)
