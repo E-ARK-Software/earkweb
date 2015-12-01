@@ -75,6 +75,13 @@ class MetsGenerator(object):
 
         return result, res_stdout, res_stderr
 
+    def createAgent(self,role, type, other_type, name, note):
+        if other_type:
+            agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+        else:
+            agent = M.agent({"ROLE":role,"TYPE":type}, M.name(name), M.note(note))
+        return agent
+
     def addFile(self, file_name, mets_filegroup):
         # reload(sys)
         # sys.setdefaultencoding('utf8')
@@ -135,6 +142,11 @@ class MetsGenerator(object):
         # create Mets header
         mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS": "NEW"})
         root.append(mets_hdr)
+
+        # add an agent
+        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK earkweb", "VERSION=0.0.1"))
+
+        # add document ID
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
         # create dmdSec
