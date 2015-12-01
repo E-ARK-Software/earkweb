@@ -15,13 +15,14 @@ class DefaultTaskContext(object):
 
     additional_data = None
 
-    def __init__(self, uuid, path, task_name, task_logger, additional_data):
+    def __init__(self, uuid, path, task_name, task_logger, additional_data, package_premis):
         self.uuid = uuid
         self.path = path
         self.task_name = task_name
         self.task_logger = task_logger
         self.start_time = time.time()
         self.additional_data = additional_data
+        self.package_premis = package_premis
 
     def set_ip_state_xml(self, ip_state_xml):
         self.ip_state_xml = ip_state_xml

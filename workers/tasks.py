@@ -107,16 +107,16 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
 
-def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
-                     tl, ip_work_dir):
-    '''
-    Add an event to the PREMIS file and update it afterwards.
-    '''
-    package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
-    path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-    with open(path_premis, 'w') as output_file:
-        output_file.write(package_premis_file.to_string())
-    tl.addinfo('PREMIS file updated: %s' % path_premis)
+# def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
+#                      tl, ip_work_dir):
+#     '''
+#     Add an event to the PREMIS file and update it afterwards.
+#     '''
+#     package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
+#     path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
+#     with open(path_premis, 'w') as output_file:
+#         output_file.write(package_premis_file.to_string())
+#     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 @app.task(bind=True)
 def SIPResetF(self, params):
@@ -138,6 +138,10 @@ class SIPReset(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:1,type:1,stage:1
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'reset'
+
         # implementation
         task_context.task_status = 0
         return {}
@@ -154,18 +158,21 @@ class SIPPackageMetadataCreation(DefaultTask):
         @param      tc: order:2,type:1,stage:1
         """
 
+        # Add the event type - will be put into Premis.
+        self.event_type = 'not in vocabulary'
+
         reps_path = os.path.join(task_context.path, 'representations')
         for name in os.listdir(reps_path):
             rep_path = os.path.join(reps_path, name)
             if os.path.isdir(rep_path):
+                # Premis
+                premisgen = PremisGenerator(rep_path)
+                premisgen.createPremis()
                 # Mets
                 mets_data = {'packageid': task_context.uuid,
                              'type': 'SIP'}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
-                # Premis
-                premisgen = PremisGenerator(rep_path)
-                premisgen.createPremis()
 
         #mets_files = []
         #for name in os.listdir(reps_path):
@@ -195,6 +202,10 @@ class SIPPackaging(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:3,type:1,stage:3
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'packing the SIP'
+
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
         reload(sys)
@@ -227,7 +238,6 @@ class SIPPackaging(DefaultTask):
         sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
         tl.log.append("Delivery METS stored: %s" % delivery_mets_file)
 
-
         task_context.task_status = 0
         return {}
 
@@ -242,6 +252,10 @@ class SIPtoAIPReset(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:1,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = ''
+
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
             fileutils.mkdir_p(task_context.path)
@@ -256,6 +270,13 @@ class SIPtoAIPReset(DefaultTask):
         for delivery in deliveries:
             if os.path.exists(os.path.join(task_context.path, str(delivery))):
                 shutil.rmtree(os.path.join(task_context.path, str(delivery)))
+
+        # create a brand-new Premis file and metadata dir, else DefaultTask raises an exception when trying to add an event!
+        os.makedirs(os.path.join(task_context.path, 'metadata/preservation/'))
+        path_premis = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+        premisgen = PremisGenerator(task_context.path)
+        premisgen.createPremis()
+        task_context.package_premis = path_premis
 
         # success status
         task_context.task_status = 0
@@ -284,10 +305,13 @@ class SIPDeliveryValidation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
         # TODO: rework for new MetsValidation.py?
 
         tl = task_context.task_logger
-
 
         file_elements, delivery_xml = getDeliveryFiles(task_context.path)
 
@@ -371,7 +395,12 @@ class IdentifierAssignment(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:3,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'identifier assignment'
+
         # TODO: set identifier in METS file
+        # TODO: change identifiers used in Premis retroactively
         identifier = randomutils.getUniqueID()
         task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
         task_context.task_status = 0
@@ -388,6 +417,10 @@ class SIPExtraction(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:4,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
@@ -420,6 +453,10 @@ class SIPRestructuring(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:5,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
@@ -453,6 +490,10 @@ class SIPValidation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:6,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'SIP validation'
+
         tl = task_context.task_logger
         valid = True
 
@@ -482,7 +523,6 @@ class SIPValidation(DefaultTask):
         return
 
 
-from celery.result import AsyncResult
 import uuid
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 from lxml import etree, objectify
@@ -498,7 +538,9 @@ class AIPMigrations(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:7,type:2,stage:2
         """
-        # TODO: premis
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
 
         # make metadata/earkweb dir for temporary files
         if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb')):
@@ -588,13 +630,14 @@ class AIPMigrations(DefaultTask):
                                   'commandline': self.args})
                         task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
-                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data)
+                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data, None)
                         try:
                             migrationtask.apply_async((context,), queue='default', task_id=id)
                             tl.addinfo('Migration queued for %s.' %  filename, display=False)
                         except:
                             tl.adderr('Migration task %s for file %s could not be queued.' % (id, filename))
 
+                        # migration.xml entry - need this for Premis creation. Can put additional stuff here if desired.
                         migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
                                                                                               'output': outputfile,
                                                                                               'sourcedir': migration_source,
@@ -602,7 +645,8 @@ class AIPMigrations(DefaultTask):
                                                                                               'targetrep': target_rep,
                                                                                               'taskid': id,
                                                                                               'status': 'queued',
-                                                                                              'starttime': current_timestamp()})
+                                                                                              'starttime': current_timestamp(),
+                                                                                              'endtime': ''})
                         total += 1
                     else:
                         pass
@@ -615,13 +659,9 @@ class AIPMigrations(DefaultTask):
         with open(xml_path, 'w') as output_file:
             output_file.write(str)
 
-        # TODO: Premis
-        #premis_update = add_PREMIS_event('AIPMigrations', 'success', 'identifier_value', 'linking_agent', task_context.path, )
-
         tl.addinfo('%d migrations have been queued, please check the progress with the task AIPCheckMigrationProgress.' % total)
 
         task_context.task_status = 0
-
         return
 
 
@@ -641,6 +681,9 @@ class MigrationProcess(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:8,type:0,stage:0
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'migration'
 
         # print 'current worker:'
         # print multiprocessing.current_process().name
@@ -718,6 +761,10 @@ class AIPCheckMigrationProgress(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:8,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
         tl = task_context.task_logger
 
         total = 0
@@ -741,6 +788,8 @@ class AIPCheckMigrationProgress(DefaultTask):
                             # TODO: check if there is actually a file at migration target location - problem: different file extensions (at least)
                             if os.path.isfile(target_file) and os.path.getsize(target_file) > 0:
                                 element.set('status', 'successful')
+                                # TODO:
+                                # element.set('endtime', '')
                                 successful += 1
                                 # remove the file, to avoid storing huge numbers of useless files
                                 os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
@@ -772,7 +821,7 @@ class AIPCheckMigrationProgress(DefaultTask):
             # check if migrations are all completed
             if int(total) == successful:
                 complete = MigrationsComplete()
-                context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationComplete', None, task_context.additional_data)
+                context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationComplete', None, task_context.additional_data, None)
                 complete.apply_async((context,), queue='default')
                 tl.addinfo('All migrations have been successful.')
                 task_context.task_status = 0
@@ -802,6 +851,9 @@ class MigrationsComplete(DefaultTask):
         @param      tc: order:8,type:0,stage:0
         """
 
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
         tl = task_context.task_logger
 
         tl.addinfo('All migration processes are completed, now allowing Mets creation.')
@@ -821,6 +873,9 @@ class CreatePremisAfterMigration(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:9,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
 
         tl = task_context.task_logger
 
@@ -849,6 +904,9 @@ class AIPRepresentationMetsCreation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:10,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
 
         tl = task_context.task_logger
 
@@ -881,13 +939,13 @@ class AIPPackageMetsCreation(DefaultTask):
         @param      tc: order:11,type:2,stage:2
         """
 
+        # Add the event type - will be put into Premis.
+        self.event_type = 'not in vocabulary'
+
         tl = task_context.task_logger
 
         try:
-            #ipgen = SIPGenerator(task_context.path)
-            #print task_context.additional_data["identifier"]
             identifier = task_context.additional_data['identifier']
-            #ipgen.createAIPMets(identifier)
 
             mets_data = {'packageid': identifier,
                          'type': 'AIP'}
@@ -912,7 +970,12 @@ class AIPValidation(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:12,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'AIP validation'
+
         tl = task_context.task_logger
+
         try:
             valid = True
 
@@ -933,13 +996,8 @@ class AIPValidation(DefaultTask):
             # valid = True
 
             task_context.task_status = 0 if valid else 1
-
-        #     # update the PREMIS file at the end of the task - SUCCESS
-        #     add_PREMIS_event('AIPValidation', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
         except Exception, err:
             task_context.status = 1
-        #     # update the PREMIS file at the end of the task - FAILURE
-        #     add_PREMIS_event('AIPValidation', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
         return
 
 
@@ -953,6 +1011,10 @@ class AIPPackaging(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:13,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'not in vocabulary'
+
         tl = task_context.task_logger
 
         try:
@@ -1015,15 +1077,8 @@ class AIPPackaging(DefaultTask):
             #ip.statusprocess = tc.success_status if result.success else tc.error_status
             #ip.save()
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-            # update the PREMIS file at the end of the task - SUCCESS
-            #add_PREMIS_event('AIPPackaging', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
-            #return result
             task_context.task_status = 0
-
         except Exception, err:
-            # update the PREMIS file at the end of the task - FAILURE
-            #add_PREMIS_event('AIPPAckaging', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             task_context.task_status = 0
         return
 
@@ -1038,6 +1093,10 @@ class AIPStore(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'not in vocabulary'
+
         tl = task_context.task_logger
 
         result = {"storageLoc": "undefined"}
@@ -1047,9 +1106,7 @@ class AIPStore(DefaultTask):
             task_context.task_status = 0
             result = {"storageLoc": "Geiles string"}
         except Exception as e:
-            # update the PREMIS file at the end of the task - FAILURE
             tl.adderr("Task failed: %s" % e.message)
-            #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             task_context.task_status = 1
         return result
 
@@ -1063,6 +1120,10 @@ class LilyHDFSUpload(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:15,type:2,stage:2
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'not in vocabulary'
+
         tl = task_context.task_logger
 
         try:
@@ -1100,19 +1161,14 @@ class LilyHDFSUpload(DefaultTask):
                 else:
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
 
-                # update the PREMIS file at the end of the task - SUCCESS
-                #add_PREMIS_event('LilyHDFSUpload', 'SUCCESS', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 task_context.task_status = 0
                 return
             else:
                 tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
-                #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
                 task_context.task_status = 1
                 return
         except Exception:
-            # update the PREMIS file at the end of the task - FAILURE
             tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
-            #add_PREMIS_event('LilyHDFSUpload', 'FAILURE', 'identifier', 'agent', package_premis_file, tl, ip_work_dir)
             task_context.task_status = 1
             return
 
@@ -1128,6 +1184,10 @@ class AIPtoDIPReset(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:12,type:4,stage:4
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'reset'
+
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
             fileutils.mkdir_p(task_context.path)
@@ -1168,6 +1228,10 @@ class DIPAcquireAIPs(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:13,type:4,stage:4
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = '' # TODO: override finalize method?
+
         tl = task_context.task_logger
 
         try:
@@ -1224,6 +1288,10 @@ class DIPExtractAIPs(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:4,stage:4
         """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = '' # TODO: override finalize method?
+
         tl = task_context.task_logger
 
         try:
