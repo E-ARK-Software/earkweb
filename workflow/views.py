@@ -200,7 +200,7 @@ def apply_task(request):
                     additional_data['identifier'] = ip.identifier
 
                 # Execute task
-                task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data)
+                task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)
                 job = taskClass().apply_async((task_context,), queue='default')
                 data = {"success": True, "id": job.id}
             except AttributeError, err:

@@ -9,6 +9,7 @@ from celery import current_task
 from workers.ip_state import IpState
 from tasklogger import TaskLogger
 from earkcore.metadata.premis.PremisManipulate import Premis
+from sandbox.sipgenerator.premisgenerator import PremisGenerator
 
 
 class DefaultTask(Task):
@@ -46,17 +47,13 @@ class DefaultTask(Task):
 
         # create PREMIS file or return handle to task
         # premis_manipulate = None
-        # path_premis = os.path.join(metadata_dir, 'PREMIS.xml')
-        # if os.path.isfile(path_premis):
-        #     premis_file = open(path_premis, 'rw')
-        #     self.package_premis = Premis(premis_file)
-        # else:
-        #     package_premis = Premis()
-        #     package_premis.add_agent('eark-aip-creation')
-        #     with open(path_premis, 'w') as output_file:
-        #          output_file.write(package_premis.to_string())
-        #     premis_file = open(path_premis, 'rw')
-        #     self.package_premis = Premis(premis_file)
+        path_premis = os.path.join(metadata_dir, 'preservation/premis.xml')
+        if os.path.isfile(path_premis):
+            task_context.package_premis = path_premis
+        else:
+            premisgen = PremisGenerator(task_context.path)
+            premisgen.createPremis()
+            task_context.package_premis = path_premis
 
         # get state, try reading current state from state.xml, otherwise set default to is error state,
         # which must then be set to success state explicitely.
@@ -93,16 +90,19 @@ class DefaultTask(Task):
         task_context.ip_state_xml.set_state(task_context.task_status)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
 
+        # add event to PREMIS and write file
+        outcome = 'success' if task_context.task_status == 0 else 'failure'
+        eventinfo = {'outcome': outcome,
+                     'task_name': self.task_name,
+                     'event_type': self.event_type,
+                     'linked_object': task_context.uuid}
+        premisgen = PremisGenerator(task_context.path)
+        premisgen.addEvent(task_context.package_premis, eventinfo)
+
         # set progress
         self.update_state(state='PROGRESS', meta={'process_percent': 100})
         # task result object returned as AsyncResult(task_id).result in celery
         #task_result = TaskResult(task_context)
-
-        # add event to PREMIS and write file
-        # self.package_premis.add_event('identifier_value', task_context.task_status, 'linking_agent', 'linking_object')
-        # if os.path.isfile(os.path.join(task_context.path, 'metadata/PREMIS.xml')):
-        #     with open(os.path.join(task_context.path, 'metadata/PREMIS.xml'), 'w') as output_file:
-        #         output_file.write(self.package_premis.to_string())
 
         #end_time = time.time()
         return task_context
@@ -151,20 +151,8 @@ class DefaultTask(Task):
             task_context.task_logger.adderr("An error occurred: %s" % e)
             traceback.print_exc()
             task_context.task_status = 1
-            #self.add_PREMIS_event(self.task_name, 'FAILURE', 'identifier', 'agent', package_premis_file, tl, path)
 
         return self.finalize(task_context)
 
     def can_connect(self, task):
         return task in self.accept_input_from
-
-    # def add_PREMIS_event(self, task, outcome, identifier_value,  linking_agent, package_premis_file,
-    #                      tl, ip_work_dir):
-    #     '''
-    #     Add an event to the PREMIS file and update it afterwards.
-    #     '''
-    #     package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
-    #     path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-    #     with open(path_premis, 'w') as output_file:
-    #         output_file.write(package_premis_file.to_string())
-    #     tl.addinfo('PREMIS file updated: %s (%s)' % (path_premis, outcome))

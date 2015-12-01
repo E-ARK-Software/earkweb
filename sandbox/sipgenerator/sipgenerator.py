@@ -109,114 +109,114 @@ class SIPGenerator(object):
                 ids.append(file_id)
         return ids
 
-    def createPremis(self, enable_jhove = False):
-        jhove_parser = None
-        if enable_jhove == True:
-            jhove_parser = etree.XMLParser(remove_blank_text=True)
-
-        PREMIS_ATTRIBUTES = {"version" : "2.0"}
-        premis = P.premis(PREMIS_ATTRIBUTES)
-        premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd"
-
-        premis_ids = []
-        for top, dirs, files in os.walk(os.path.join(self.root_path, 'data')):
-            for nm in files:
-                file_name = os.path.join(top,nm)
-                hash = self.sha256(file_name)
-                file_url = "file://./%s" % os.path.relpath(file_name, self.root_path)
-                fmt = self.fid.identify_file(file_name)#os.path.abspath(remove_protocol(file_url)))
-                jhove = None
-                if enable_jhove == True:
-                    try:
-                        result = self.runCommand(["/usr/bin/jhove", "-h", "xml", file_name] )
-                        if result[0] == 0:
-                            jhove = etree.XML(result[1], parser=jhove_parser)
-                    except Exception:
-                        #TODO: handle exception
-                        pass
-
-                size = os.path.getsize(file_name)
-                premis_id = uuid.uuid4()
-                premis_ids.append(premis_id)
-                premis.append(
-                    P.object(
-                        {q(XSI_NS, 'type'): 'file', "xmlID":premis_id},
-                        P.objectIdentifier(
-                            P.objectIdentifierType('LOCAL'),
-                            P.objectIdentifierValue(premis_id)
-                        ),
-                        P.objectIdentifier(
-                            P.objectIdentifierType('FILEPATH'),
-                            P.objectIdentifierValue(file_url)
-                        ),
-                        P.objectCharacteristics(
-                            P.compositionLevel(0),
-                            P.size(size),
-                            P.fixity(
-                                P.messageDigestAlgorithm("SHA-256"),
-                                P.messageDigest(hash),
-                                P.messageDigestOriginator("hashlib")
-                            ),
-                            P.format(
-                                P.formatRegistry(
-                                    P.formatRegistryName("PRONOM"),
-                                    P.formatRegistryKey(fmt),
-                                    P.formatRegistryRole("identification")
-                                )
-                            ),
-                            #P.objectCharacteristicsExtension(
-                                #TODO:// generate id or reference from somewhere
-                            #    P.mdSec({"ID":"ID426087e8-0f79-11e3-847a-34e6d700c47b"},
-                            #        P.mdWrap({"MDTYPE":"OTHER", "OTHERMDTYPE":"JHOVE"},
-                            #            P.xmlData(
-                            #                jhove
-                            #                 )
-                            #                 )
-                            #)
-                        ),
-                    )
-                )
-
-        identifier_value = 'earkweb'
-        premis.append(P.agent(
-                P.agentIdentifier(
-                    P.agentIdentifierType('LOCAL'),
-                    P.agentIdentifierValue(identifier_value)
-                ),
-                P.agentName('E-ARK AIP to DIP Converter'),
-                P.agentType('Software')))
-
-        identifier_value = 'AIP Creation'
-        linking_agent = 'earkweb'
-        linking_object=None
-        premis.append(P.event(
-                P.eventIdentifier(
-                    P.eventIdentifierType('LOCAL'),
-                    P.eventIdentifierValue(identifier_value)
-                ),
-                P.eventType,
-                P.eventDateTime(current_timestamp()),
-                P.linkingAgentIdentifier(
-                    P.linkingAgentIdentifierType('LOCAL'),
-                    P.linkingAgentIdentifierValue(linking_agent)
-                ),
-
-                P.linkingAgentIdentifier(
-                    P.linkingAgentIdentifierType('LOCAL'),
-                    P.linkingAgentIdentifierValue(linking_object)
-                )
-                if linking_object is not None else None
-            ))
-
-        str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        preservation_dir = os.path.join(self.root_path, './metadata/preservation')
-        if not os.path.exists(preservation_dir):
-            os.mkdir(preservation_dir)
-        path_premis = os.path.join(self.root_path, './metadata/preservation/premis.xml')
-        with open(path_premis, 'w') as output_file:
-            output_file.write(str)
-
-        return premis_ids
+    # def createPremis(self, enable_jhove = False):
+    #     jhove_parser = None
+    #     if enable_jhove == True:
+    #         jhove_parser = etree.XMLParser(remove_blank_text=True)
+    #
+    #     PREMIS_ATTRIBUTES = {"version" : "2.0"}
+    #     premis = P.premis(PREMIS_ATTRIBUTES)
+    #     premis.attrib['{%s}schemaLocation' % XSI_NS] = "info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd"
+    #
+    #     premis_ids = []
+    #     for top, dirs, files in os.walk(os.path.join(self.root_path, 'data')):
+    #         for nm in files:
+    #             file_name = os.path.join(top,nm)
+    #             hash = self.sha256(file_name)
+    #             file_url = "file://./%s" % os.path.relpath(file_name, self.root_path)
+    #             fmt = self.fid.identify_file(file_name)#os.path.abspath(remove_protocol(file_url)))
+    #             jhove = None
+    #             if enable_jhove == True:
+    #                 try:
+    #                     result = self.runCommand(["/usr/bin/jhove", "-h", "xml", file_name] )
+    #                     if result[0] == 0:
+    #                         jhove = etree.XML(result[1], parser=jhove_parser)
+    #                 except Exception:
+    #                     #TODO: handle exception
+    #                     pass
+    #
+    #             size = os.path.getsize(file_name)
+    #             premis_id = uuid.uuid4()
+    #             premis_ids.append(premis_id)
+    #             premis.append(
+    #                 P.object(
+    #                     {q(XSI_NS, 'type'): 'file', "xmlID":premis_id},
+    #                     P.objectIdentifier(
+    #                         P.objectIdentifierType('LOCAL'),
+    #                         P.objectIdentifierValue(premis_id)
+    #                     ),
+    #                     P.objectIdentifier(
+    #                         P.objectIdentifierType('FILEPATH'),
+    #                         P.objectIdentifierValue(file_url)
+    #                     ),
+    #                     P.objectCharacteristics(
+    #                         P.compositionLevel(0),
+    #                         P.size(size),
+    #                         P.fixity(
+    #                             P.messageDigestAlgorithm("SHA-256"),
+    #                             P.messageDigest(hash),
+    #                             P.messageDigestOriginator("hashlib")
+    #                         ),
+    #                         P.format(
+    #                             P.formatRegistry(
+    #                                 P.formatRegistryName("PRONOM"),
+    #                                 P.formatRegistryKey(fmt),
+    #                                 P.formatRegistryRole("identification")
+    #                             )
+    #                         ),
+    #                         #P.objectCharacteristicsExtension(
+    #                             #TODO:// generate id or reference from somewhere
+    #                         #    P.mdSec({"ID":"ID426087e8-0f79-11e3-847a-34e6d700c47b"},
+    #                         #        P.mdWrap({"MDTYPE":"OTHER", "OTHERMDTYPE":"JHOVE"},
+    #                         #            P.xmlData(
+    #                         #                jhove
+    #                         #                 )
+    #                         #                 )
+    #                         #)
+    #                     ),
+    #                 )
+    #             )
+    #
+    #     identifier_value = 'earkweb'
+    #     premis.append(P.agent(
+    #             P.agentIdentifier(
+    #                 P.agentIdentifierType('LOCAL'),
+    #                 P.agentIdentifierValue(identifier_value)
+    #             ),
+    #             P.agentName('E-ARK AIP to DIP Converter'),
+    #             P.agentType('Software')))
+    #
+    #     identifier_value = 'AIP Creation'
+    #     linking_agent = 'earkweb'
+    #     linking_object=None
+    #     premis.append(P.event(
+    #             P.eventIdentifier(
+    #                 P.eventIdentifierType('LOCAL'),
+    #                 P.eventIdentifierValue(identifier_value)
+    #             ),
+    #             P.eventType,
+    #             P.eventDateTime(current_timestamp()),
+    #             P.linkingAgentIdentifier(
+    #                 P.linkingAgentIdentifierType('LOCAL'),
+    #                 P.linkingAgentIdentifierValue(linking_agent)
+    #             ),
+    #
+    #             P.linkingAgentIdentifier(
+    #                 P.linkingAgentIdentifierType('LOCAL'),
+    #                 P.linkingAgentIdentifierValue(linking_object)
+    #             )
+    #             if linking_object is not None else None
+    #         ))
+    #
+    #     str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+    #     preservation_dir = os.path.join(self.root_path, './metadata/preservation')
+    #     if not os.path.exists(preservation_dir):
+    #         os.mkdir(preservation_dir)
+    #     path_premis = os.path.join(self.root_path, './metadata/preservation/premis.xml')
+    #     with open(path_premis, 'w') as output_file:
+    #         output_file.write(str)
+    #
+    #     return premis_ids
 
     # def createSIPParentMets(self, mets_files):
     #     #create METS skeleton
