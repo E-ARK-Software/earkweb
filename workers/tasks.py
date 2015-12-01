@@ -930,9 +930,9 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
 class AIPPackageMetsCreation(DefaultTask):
 
-   accept_input_from = [AIPRepresentationMetsCreation.__name__, MigrationsComplete.__name__, "AIPPackageMetsCreation"]
+    accept_input_from = [AIPRepresentationMetsCreation.__name__, MigrationsComplete.__name__, "AIPPackageMetsCreation"]
 
-   def run_task(self, task_context):
+    def run_task(self, task_context):
         """
         AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)

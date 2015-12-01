@@ -139,7 +139,7 @@ class MetsGenerator(object):
 
         # create dmdSec
         mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
-        root.append(mets_dmd)
+        dmd_appended = False
 
         # create amdSec
         mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
@@ -219,6 +219,10 @@ class MetsGenerator(object):
                             for dir, subdir, files in os.walk(os.path.join(self.root_path, 'metadata/%s') % dirname):
                                 for filename in files:
                                     if dir.endswith('descriptive'):
+                                        if dmd_appended == False:
+                                            # add this section
+                                            root.insert(1, mets_dmd)
+                                            dmd_appended = True
                                         id = "ID" + uuid.uuid4().__str__()
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
@@ -226,7 +230,6 @@ class MetsGenerator(object):
                                         fptr = M.fptr({"FILEID": id})
                                         mets_structmap_metadata_div.append(fptr)
                                     elif dir.endswith('preservation'):
-                                        # TODO: find correct location in the Mets document
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
                                         mets_amdSec.append(mets_digiprovmd)
                                         id = "ID" + uuid.uuid4().__str__()
@@ -249,6 +252,10 @@ class MetsGenerator(object):
                                 for filename in files:
                                     #if dir.endswith('descriptive'):
                                     if dirname == 'descriptive':
+                                        if dmd_appended == False:
+                                            # add this section
+                                            root.insert(1, mets_dmd)
+                                            dmd_appended = True
                                         id = "ID" + uuid.uuid4().__str__()
                                         # TODO: change MDTYPE
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
