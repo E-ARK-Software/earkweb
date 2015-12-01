@@ -945,8 +945,14 @@ class AIPPackageMetsCreation(DefaultTask):
         tl = task_context.task_logger
 
         try:
-            identifier = task_context.additional_data['identifier']
+            # copy schema files
+            schemalist = os.listdir(os.path.join(root_dir, 'earkresources/schemas'))
+            os.mkdir(os.path.join(task_context.path, 'schemas'))
+            for schemafile in schemalist:
+                if os.path.isfile(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile)):
+                    shutil.copy2(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile), os.path.join(task_context.path, 'schemas'))
 
+            identifier = task_context.additional_data['identifier']
             mets_data = {'packageid': identifier,
                          'type': 'AIP'}
             metsgen = MetsGenerator(task_context.path)
