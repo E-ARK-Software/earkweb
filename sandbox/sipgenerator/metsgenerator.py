@@ -126,7 +126,9 @@ class MetsGenerator(object):
     def createMets(self, mets_data):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
+        schemafolder = mets_data['schemas']
 
+        print 'creating Mets'
         ###########################
         # create METS skeleton
         ###########################
@@ -137,7 +139,17 @@ class MetsGenerator(object):
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
         root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+
+        if os.path.isfile(os.path.join(schemafolder, 'mets_1_11.xsd')):
+            mets_schema_location = os.path.relpath(os.path.join(schemafolder, 'mets_1_11.xsd'), self.root_path)
+        else:
+            mets_schema_location = 'empty'
+        if os.path.isfile(os.path.join(schemafolder, 'xlink.xsd')):
+            xlink_schema_loaction = os.path.relpath(os.path.join(schemafolder, 'xlink.xsd'), self.root_path)
+        else:
+            xlink_schema_loaction = 'empty'
+
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ %s http://www.w3.org/1999/xlink %s" % (mets_schema_location, xlink_schema_loaction)
 
         # create Mets header
         mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS": "NEW"})

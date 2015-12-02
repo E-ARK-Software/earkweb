@@ -910,13 +910,27 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
         tl = task_context.task_logger
 
+        try:
+            # copy schema files
+            schemalist = os.listdir(os.path.join(root_dir, 'earkresources/schemas'))
+            if not os.path.exists(os.path.join(task_context.path, 'schemas')): os.mkdir(os.path.join(task_context.path, 'schemas'))
+            for schemafile in schemalist:
+                if os.path.isfile(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile)):
+                    shutil.copy2(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile), os.path.join(task_context.path, 'schemas'))
+        except Exception:
+            tl.adderr('Error when copying schema files.')
+
+        # schema file location for Mets generation
+        schemas = os.path.join(task_context.path, 'schemas')
+
         # for every REPRESENTATION without METS file:
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
             try:
                 rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
                 # TODO: packageid?
                 mets_data = {'packageid': repdir,
-                             'type': 'AIP'}
+                             'type': 'AIP',
+                             'schemas': schemas}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
 
@@ -947,14 +961,21 @@ class AIPPackageMetsCreation(DefaultTask):
         try:
             # copy schema files
             schemalist = os.listdir(os.path.join(root_dir, 'earkresources/schemas'))
-            os.mkdir(os.path.join(task_context.path, 'schemas'))
+            if not os.path.exists(os.path.join(task_context.path, 'schemas')): os.mkdir(os.path.join(task_context.path, 'schemas'))
             for schemafile in schemalist:
                 if os.path.isfile(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile)):
                     shutil.copy2(os.path.join(root_dir, 'earkresources/schemas/%s' % schemafile), os.path.join(task_context.path, 'schemas'))
+        except Exception:
+            tl.adderr('Error when copying schema files.')
+
+        try:
+            # schema file location for Mets generation
+            schemas = os.path.join(task_context.path, 'schemas')
 
             identifier = task_context.additional_data['identifier']
             mets_data = {'packageid': identifier,
-                         'type': 'AIP'}
+                         'type': 'AIP',
+                         'schemas': schemas}
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 
