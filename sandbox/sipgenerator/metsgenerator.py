@@ -30,8 +30,8 @@ class MetsGenerator(object):
     This class generates a Mets file.
     It has to be instantiated (something = MetsGenerator(path) with the (A/S)IP root path as an argument (to specify
     the Mets directory; all subfolders will be treated as part of the IP. After this. the createMets can be called
-    (something.createMets(data)) with a dictionary that must contain 'packageid' and 'type', where 'type' must comply
-    with the Mets standard for TYPE attribute of the Mets root.
+    (something.createMets(data)) with a dictionary that must contain 'packageid', 'schemas' (location of the schema
+    folder) and 'type', where 'type' must comply with the Mets standard for TYPE attribute of the Mets root.
     '''
 
     fid = FormatIdentification()
@@ -75,6 +75,13 @@ class MetsGenerator(object):
 
         return result, res_stdout, res_stderr
 
+    def createAgent(self,role, type, other_type, name, note):
+        if other_type:
+            agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+        else:
+            agent = M.agent({"ROLE":role,"TYPE":type}, M.name(name), M.note(note))
+        return agent
+
     def addFile(self, file_name, mets_filegroup):
         # reload(sys)
         # sys.setdefaultencoding('utf8')
@@ -116,10 +123,15 @@ class MetsGenerator(object):
                       "MDTYPE": mdtype}
         return mets_mdref
 
+    # def addToEarkstructmap(self, div, fptr):
+    #     div.append(fptr)
+
     def createMets(self, mets_data):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
+        schemafolder = mets_data['schemas']
 
+        print 'creating Mets'
         ###########################
         # create METS skeleton
         ###########################
@@ -130,16 +142,31 @@ class MetsGenerator(object):
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
         root = M.mets(METS_ATTRIBUTES)
-        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ schemas/IP.xsd ExtensionMETS schemas/ExtensionMETS.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd"
+
+        if os.path.isfile(os.path.join(schemafolder, 'mets_1_11.xsd')):
+            mets_schema_location = os.path.relpath(os.path.join(schemafolder, 'mets_1_11.xsd'), self.root_path)
+        else:
+            mets_schema_location = 'empty'
+        if os.path.isfile(os.path.join(schemafolder, 'xlink.xsd')):
+            xlink_schema_loaction = os.path.relpath(os.path.join(schemafolder, 'xlink.xsd'), self.root_path)
+        else:
+            xlink_schema_loaction = 'empty'
+
+        root.attrib['{%s}schemaLocation' % XSI_NS] = "http://www.loc.gov/METS/ %s http://www.w3.org/1999/xlink %s" % (mets_schema_location, xlink_schema_loaction)
 
         # create Mets header
         mets_hdr = M.metsHdr({"CREATEDATE": current_timestamp(), "RECORDSTATUS": "NEW"})
         root.append(mets_hdr)
+
+        # add an agent
+        mets_hdr.append(self.createAgent("CREATOR", "OTHER", "SOFTWARE", "E-ARK earkweb", "VERSION=0.0.1"))
+
+        # add document ID
         mets_hdr.append(M.metsDocumentID("METS.xml"))
 
         # create dmdSec
         mets_dmd = M.dmdSec({"ID": "ID" + uuid.uuid4().__str__()})
-        root.append(mets_dmd)
+        dmd_appended = False
 
         # create amdSec
         mets_amdSec = M.amdSec({"ID": "ID" + uuid.uuid4().__str__()})
@@ -152,6 +179,13 @@ class MetsGenerator(object):
         # general filegroup
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
+
+        # structMap 'earkstructmap' - default, physical structure
+        mets_earkstructmap = M.structMap({"LABEL": "earkstructmap", "TYPE": "physical"})
+        root.append(mets_earkstructmap)
+        package_div = M.div({"LABEL": packageid})
+        # append physical structMap
+        mets_earkstructmap.append(package_div)
 
         # structMap and div for the whole package (metadata, schema and /data)
         mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
@@ -183,6 +217,12 @@ class MetsGenerator(object):
 
         # add the package content to the Mets skeleton
         for directory, subdirectories, filenames in os.walk(self.root_path):
+            # build the earkstructmap
+            path = os.path.relpath(directory, self.root_path)
+            physical_div = ''
+            if path != '.':
+                physical_div = M.div({"LABEL": path})
+                package_div.append(physical_div)
             # if directory.endswith('metadata/earkweb'):
             #     # Ignore temp files only needed for IP processing with earkweb
             #     del filenames[:]
@@ -201,8 +241,8 @@ class MetsGenerator(object):
                         ref = self.make_mdref(directory, filename, id, 'OTHER')
                         mets_mdref = M.mdRef(ref)
                         mets_digiprovmd.append(mets_mdref)
-                        fptr = M.fptr({"FILEID": id})
-                        mets_structmap_metadata_div.append(fptr)
+                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                        physical_div.append(M.fptr({"FILEID": id}))
                 del subdirectories[:]  # prevent loop to iterate subfolders outside of this if statement
                 dirlist = os.listdir(os.path.join(self.root_path, 'metadata'))
                 for dirname in dirlist:
@@ -219,14 +259,17 @@ class MetsGenerator(object):
                             for dir, subdir, files in os.walk(os.path.join(self.root_path, 'metadata/%s') % dirname):
                                 for filename in files:
                                     if dir.endswith('descriptive'):
+                                        if dmd_appended == False:
+                                            # add this section
+                                            root.insert(1, mets_dmd)
+                                            dmd_appended = True
                                         id = "ID" + uuid.uuid4().__str__()
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
                                         mets_dmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif dir.endswith('preservation'):
-                                        # TODO: find correct location in the Mets document
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
                                         mets_amdSec.append(mets_digiprovmd)
                                         id = "ID" + uuid.uuid4().__str__()
@@ -238,8 +281,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, mdtype)
                                         mets_mdref = M.mdRef(ref)
                                         mets_digiprovmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif filename:
                                         print 'Unclassified metadata file %s in %s.' % (filename, dir)
                     else:
@@ -249,13 +292,17 @@ class MetsGenerator(object):
                                 for filename in files:
                                     #if dir.endswith('descriptive'):
                                     if dirname == 'descriptive':
+                                        if dmd_appended == False:
+                                            # add this section
+                                            root.insert(1, mets_dmd)
+                                            dmd_appended = True
                                         id = "ID" + uuid.uuid4().__str__()
                                         # TODO: change MDTYPE
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
                                         mets_dmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     #elif dir.endswith('preservation'):
                                     elif dirname == 'preservation':
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
@@ -269,8 +316,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, mdtype)
                                         mets_mdref = M.mdRef(ref)
                                         mets_digiprovmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif filename:
                                         print 'Unclassified metadata file %s in %s.' % (filename, dir)
             else:
@@ -298,17 +345,17 @@ class MetsGenerator(object):
                             mets_structmap_rep_div.append(metspointer)
                             # also add the rep mets to the filegroup, so we can have a fptr
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap_rep_div.append(mets_fptr)
+                            mets_structmap_rep_div.append(M.fptr({"FILEID": id}))
+                            physical_div.append(M.fptr({"FILEID": id}))
                         elif filename and directory.endswith('schemas'):
                             # schema files
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({'FILEID': id})
-                            mets_structmap_schema_div.append(fptr)
+                            mets_structmap_schema_div.append(M.fptr({'FILEID': id}))
+                            physical_div.append(M.fptr({'FILEID': id}))
                         elif filename:
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_content_div.append(fptr)
+                            mets_structmap_content_div.append(M.fptr({'FILEID': id}))
+                            physical_div.append(M.fptr({'FILEID': id}))
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
