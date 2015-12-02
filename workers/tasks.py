@@ -928,7 +928,7 @@ class CreatePremisAfterMigration(DefaultTask):
 
 class AIPRepresentationMetsCreation(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, CreatePremisAfterMigration.__name__, 'AIPRepresentationMetsCreation']
+    accept_input_from = [CreatePremisAfterMigration.__name__, 'AIPRepresentationMetsCreation']
 
     def run_task(self, task_context):
         """
@@ -977,7 +977,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
 
 class AIPPackageMetsCreation(DefaultTask):
 
-    accept_input_from = [AIPRepresentationMetsCreation.__name__, MigrationsComplete.__name__, "AIPPackageMetsCreation"]
+    accept_input_from = [AIPRepresentationMetsCreation.__name__, CreatePremisAfterMigration.__name__, "AIPPackageMetsCreation"]
 
     def run_task(self, task_context):
         """
