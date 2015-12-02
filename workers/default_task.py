@@ -90,14 +90,15 @@ class DefaultTask(Task):
         task_context.ip_state_xml.set_state(task_context.task_status)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
 
-        # add event to PREMIS and write file
-        outcome = 'success' if task_context.task_status == 0 else 'failure'
-        eventinfo = {'outcome': outcome,
-                     'task_name': self.task_name,
-                     'event_type': self.event_type,
-                     'linked_object': task_context.uuid}
-        premisgen = PremisGenerator(task_context.path)
-        premisgen.addEvent(task_context.package_premis, eventinfo)
+        # add event to PREMIS and write file (only if PREMIS file exists)
+        if os.path.exists(task_context.package_premis):
+            outcome = 'success' if task_context.task_status == 0 else 'failure'
+            eventinfo = {'outcome': outcome,
+                         'task_name': self.task_name,
+                         'event_type': self.event_type,
+                         'linked_object': task_context.uuid}
+            premisgen = PremisGenerator(task_context.path)
+            premisgen.addEvent(task_context.package_premis, eventinfo)
 
         # set progress
         self.update_state(state='PROGRESS', meta={'process_percent': 100})

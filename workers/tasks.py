@@ -200,7 +200,7 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,stage:3
+        @param      tc: order:3,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
@@ -236,7 +236,37 @@ class SIPPackaging(DefaultTask):
         sipgen = SIPGenerator(task_context.path)
         delivery_mets_file = os.path.join(task_context.path, task_context.additional_data['packagename']+ '.xml')
         sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
-        tl.log.append("Delivery METS stored: %s" % delivery_mets_file)
+        tl.log.append("Delivery METS3 stored: %s" % delivery_mets_file)
+        task_context.task_status = 0
+        return {}
+
+class SIPClose(DefaultTask):
+
+    accept_input_from = [SIPPackaging.__name__, 'SIPClose']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:4,type:1,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'start submission'
+
+        task_context.task_logger.addinfo("Closing package: %s" % task_context.additional_data['packagename'])
+        tl = task_context.task_logger
+
+        def rem_dir(dirname):
+            if dirname:
+                dir = os.path.join(task_context.path, dirname)
+                if os.path.exists(dir) and dir is not task_context.path:
+                    shutil.rmtree(dir)
+                task_context.task_logger.addinfo("Directory deleted: %s" % dir)
+
+        # directories to be removed
+        sip_dirs = ("representations", "metadata")
+        for d in sip_dirs: rem_dir(d)
 
         task_context.task_status = 0
         return {}
@@ -297,7 +327,7 @@ def getDeliveryFiles(context_path):
 
 class SIPDeliveryValidation(DefaultTask):
 
-    accept_input_from = [SIPtoAIPReset.__name__, SIPPackaging.__name__, "SIPDeliveryValidation"]
+    accept_input_from = [SIPtoAIPReset.__name__, SIPClose.__name__, "SIPDeliveryValidation"]
 
     def run_task(self, task_context):
         """
