@@ -30,8 +30,8 @@ class MetsGenerator(object):
     This class generates a Mets file.
     It has to be instantiated (something = MetsGenerator(path) with the (A/S)IP root path as an argument (to specify
     the Mets directory; all subfolders will be treated as part of the IP. After this. the createMets can be called
-    (something.createMets(data)) with a dictionary that must contain 'packageid' and 'type', where 'type' must comply
-    with the Mets standard for TYPE attribute of the Mets root.
+    (something.createMets(data)) with a dictionary that must contain 'packageid', 'schemas' (location of the schema
+    folder) and 'type', where 'type' must comply with the Mets standard for TYPE attribute of the Mets root.
     '''
 
     fid = FormatIdentification()

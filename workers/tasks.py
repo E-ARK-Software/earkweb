@@ -170,7 +170,8 @@ class SIPPackageMetadataCreation(DefaultTask):
                 premisgen.createPremis()
                 # Mets
                 mets_data = {'packageid': task_context.uuid,
-                             'type': 'SIP'}
+                             'type': 'SIP',
+                             'schemas': os.path.join(task_context.path, 'schemas')}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
 
@@ -180,14 +181,16 @@ class SIPPackageMetadataCreation(DefaultTask):
         #    if os.path.exists(rep_mets_path) and os.path.isfile(rep_mets_path):
         #        mets_files.append(rep_mets_path)
 
-        # create SIP parent Mets
-        mets_data = {'packageid': task_context.uuid,
-                     'type': 'SIP'}
-        metsgen = MetsGenerator(task_context.path)
-        metsgen.createMets(mets_data)
         # also, Premis
         premisgen = PremisGenerator(task_context.path)
         premisgen.createPremis()
+
+        # create SIP parent Mets
+        mets_data = {'packageid': task_context.uuid,
+                     'type': 'SIP',
+                     'schemas': os.path.join(task_context.path, 'schemas')}
+        metsgen = MetsGenerator(task_context.path)
+        metsgen.createMets(mets_data)
 
         task_context.task_status = 0
         return {}
