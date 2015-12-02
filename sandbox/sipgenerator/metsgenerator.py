@@ -123,6 +123,9 @@ class MetsGenerator(object):
                       "MDTYPE": mdtype}
         return mets_mdref
 
+    # def addToEarkstructmap(self, div, fptr):
+    #     div.append(fptr)
+
     def createMets(self, mets_data):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
@@ -177,6 +180,13 @@ class MetsGenerator(object):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
+        # structMap 'earkstructmap' - default, physical structure
+        mets_earkstructmap = M.structMap({"LABEL": "earkstructmap", "TYPE": "physical"})
+        root.append(mets_earkstructmap)
+        package_div = M.div({"LABEL": packageid})
+        # append physical structMap
+        mets_earkstructmap.append(package_div)
+
         # structMap and div for the whole package (metadata, schema and /data)
         mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
         root.append(mets_structmap)
@@ -207,6 +217,12 @@ class MetsGenerator(object):
 
         # add the package content to the Mets skeleton
         for directory, subdirectories, filenames in os.walk(self.root_path):
+            # build the earkstructmap
+            path = os.path.relpath(directory, self.root_path)
+            physical_div = ''
+            if path != '.':
+                physical_div = M.div({"LABEL": path})
+                package_div.append(physical_div)
             # if directory.endswith('metadata/earkweb'):
             #     # Ignore temp files only needed for IP processing with earkweb
             #     del filenames[:]
@@ -225,8 +241,8 @@ class MetsGenerator(object):
                         ref = self.make_mdref(directory, filename, id, 'OTHER')
                         mets_mdref = M.mdRef(ref)
                         mets_digiprovmd.append(mets_mdref)
-                        fptr = M.fptr({"FILEID": id})
-                        mets_structmap_metadata_div.append(fptr)
+                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                        physical_div.append(M.fptr({"FILEID": id}))
                 del subdirectories[:]  # prevent loop to iterate subfolders outside of this if statement
                 dirlist = os.listdir(os.path.join(self.root_path, 'metadata'))
                 for dirname in dirlist:
@@ -251,8 +267,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
                                         mets_dmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif dir.endswith('preservation'):
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
                                         mets_amdSec.append(mets_digiprovmd)
@@ -265,8 +281,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, mdtype)
                                         mets_mdref = M.mdRef(ref)
                                         mets_digiprovmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif filename:
                                         print 'Unclassified metadata file %s in %s.' % (filename, dir)
                     else:
@@ -285,8 +301,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, 'OTHER')
                                         mets_mdref = M.mdRef(ref)
                                         mets_dmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     #elif dir.endswith('preservation'):
                                     elif dirname == 'preservation':
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
@@ -300,8 +316,8 @@ class MetsGenerator(object):
                                         ref = self.make_mdref(dir, filename, id, mdtype)
                                         mets_mdref = M.mdRef(ref)
                                         mets_digiprovmd.append(mets_mdref)
-                                        fptr = M.fptr({"FILEID": id})
-                                        mets_structmap_metadata_div.append(fptr)
+                                        mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
+                                        physical_div.append(M.fptr({"FILEID": id}))
                                     elif filename:
                                         print 'Unclassified metadata file %s in %s.' % (filename, dir)
             else:
@@ -329,17 +345,17 @@ class MetsGenerator(object):
                             mets_structmap_rep_div.append(metspointer)
                             # also add the rep mets to the filegroup, so we can have a fptr
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_fptr = M.fptr({"FILEID": id})
-                            mets_structmap_rep_div.append(mets_fptr)
+                            mets_structmap_rep_div.append(M.fptr({"FILEID": id}))
+                            physical_div.append(M.fptr({"FILEID": id}))
                         elif filename and directory.endswith('schemas'):
                             # schema files
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({'FILEID': id})
-                            mets_structmap_schema_div.append(fptr)
+                            mets_structmap_schema_div.append(M.fptr({'FILEID': id}))
+                            physical_div.append(M.fptr({'FILEID': id}))
                         elif filename:
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            fptr = M.fptr({"FILEID": id})
-                            mets_structmap_content_div.append(fptr)
+                            mets_structmap_content_div.append(M.fptr({'FILEID': id}))
+                            physical_div.append(M.fptr({'FILEID': id}))
 
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
 
