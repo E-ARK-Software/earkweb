@@ -408,6 +408,7 @@ class SIPDeliveryValidation(DefaultTask):
         return
 
 
+from earkcore.metadata.XmlHelper import q
 class IdentifierAssignment(DefaultTask):
 
     accept_input_from = [SIPDeliveryValidation.__name__, "IdentifierAssignment"]
@@ -422,11 +423,43 @@ class IdentifierAssignment(DefaultTask):
         # Add the event type - will be put into Premis.
         self.event_type = 'identifier assignment'
 
+        tl = task_context.task_logger
+
         # TODO: set identifier in METS file
         # TODO: change identifiers used in Premis retroactively
         identifier = randomutils.getUniqueID()
-        task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
-        task_context.task_status = 0
+        tl.addinfo("New identifier assigned: %s" % identifier)
+
+        try:
+            if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
+                # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+                # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+                premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+                PREMIS_NS = 'info:lc/xmlns/premis-v2'
+                parsed_premis = etree.parse(premis_path)
+
+                object = parsed_premis.find(q(PREMIS_NS, 'object'))
+                object_id_value = object.find('.//%s' % q(PREMIS_NS, 'objectIdentifierValue'))
+                object_id_value.text = identifier
+
+                events = parsed_premis.findall(q(PREMIS_NS, 'event'))
+                for event in events:
+                    event_rel_obj = event.find('.//%s' % q(PREMIS_NS, 'linkingObjectIdentifierValue'))
+                    event_rel_obj.text = identifier
+
+                # write the changed Premis file
+                str = etree.tostring(parsed_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(premis_path, 'w') as output_file:
+                    output_file.write(str)
+
+                task_context.task_status = 0
+            else:
+                tl.adderr('Can\'t find a Premis file to update it with new identifier!')
+                task_context.task_status = 1
+        except Exception, e:
+            tl.adderr('Some error ocurred when I tried to update the Premis file with the new identifier: %s' % e)
+            task_context.task_status = 1
+
         return {'identifier': identifier}
 
 
