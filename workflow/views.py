@@ -180,14 +180,12 @@ def apply_task(request):
                 taskClass = getattr(tasks, wfm.identifier)
                 print "Executing task %s" % taskClass.name
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
-                additional_data = {'packagename': ip.packagename }
-                if wfm.identifier == SIPPackaging.__name__:
-                    additional_data['packagename'] = ip.packagename
-                    print "additional_data %s" % additional_data['packagename']
-                if wfm.identifier == AIPPackaging.__name__ or wfm.identifier == LilyHDFSUpload.__name__:
-                    additional_data['identifier'] = ip.identifier
+                # IMPORTANT: if you want to use any of these parameters in the finalize() function, the task MUST return:
+                # return task_context.additional_input
+                additional_data = {'packagename': ip.packagename,
+                                   'identifier': ip.identifier}
+
                 if wfm.identifier == AIPStore.__name__:
-                    additional_data['identifier'] = ip.identifier
                     additional_data['storageDest'] = config_path_storage
                     print "Storage destination %s" % additional_data['storageDest']
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
@@ -196,8 +194,6 @@ def apply_task(request):
                     for aip in dip.aips.all():
                         selected_aips[aip.identifier] = aip.source
                     additional_data['selected_aips'] = selected_aips
-                if wfm.identifier == AIPPackageMetsCreation.__name__:
-                    additional_data['identifier'] = ip.identifier
 
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)

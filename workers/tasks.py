@@ -1,58 +1,43 @@
-import time
 import os
-import tarfile
-import traceback
 import shutil
-from os import walk
-import logging
-from functools import partial
-import glob
 import sys
+import tarfile
+import time
+from functools import partial
+from os import walk
 
-from celery import Task
 from celery import current_task
-from celery.contrib.methods import task_method
+
+from config import params
+from config.config import mets_schema_file
+from config.config import root_dir
+from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
+from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.fixity.ChecksumFile import ChecksumFile
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
+from earkcore.fixity.tasklib import check_transfer
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
-
-from earkcore.utils.randomutils import getUniqueID
-from earkcore.utils.fileutils import remove_protocol
-from earkcore.packaging.extraction import Extraction
-from sandbox.sipgenerator.sipgenerator import SIPGenerator
-from config import params
-from config.config import root_dir
-from config.config import mets_schema_file
-from earkcore.utils import fileutils
-from earkcore.models import InformationPackage
-from earkcore.utils import randomutils
-from earkcore.xml.deliveryvalidation import DeliveryValidation
-from workers.default_task import DefaultTask
-from workers.statusvalidation import StatusValidation
-from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.metadata.mets.metsgenerator import MetsGenerator
 from earkcore.metadata.premis.PremisManipulate import Premis
-from earkcore.utils.fileutils import increment_file_name_suffix
-from earkcore.utils.fileutils import latest_aip
-from tasklogger import TaskLogger
-from earkcore.rest.restendpoint import RestEndpoint
-from earkcore.rest.hdfsrestclient import HDFSRestClient
-from search.models import DIP
-from earkcore.filesystem.chunked import FileBinaryDataChunks
-from earkcore.fixity.ChecksumFile import ChecksumFile
-from earkcore.fixity.tasklib import check_transfer
-from earkcore.utils.fileutils import mkdir_p
-from workers.ip_state import IpState
+from earkcore.metadata.premis.premisgenerator import PremisGenerator
+from earkcore.models import InformationPackage
+from earkcore.packaging.extraction import Extraction
 from earkcore.packaging.task_utils import get_deliveries
+from earkcore.rest.hdfsrestclient import HDFSRestClient
+from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.utils import fileutils
+from earkcore.utils import randomutils
+from earkcore.utils.fileutils import mkdir_p
 from earkcore.utils.fileutils import remove_fs_item
-
-from sandbox.sipgenerator.premisgenerator import PremisGenerator
-
-from celery.result import ResultSet
+from earkcore.utils.fileutils import remove_protocol
+from earkcore.xml.deliveryvalidation import DeliveryValidation
 from earkweb.celeryapp import app
+from sandbox.sipgenerator.sipgenerator import SIPGenerator
+from tasklogger import TaskLogger
+from workers.default_task import DefaultTask
 
-
-from sandbox.sipgenerator.metsgenerator import MetsGenerator
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -107,16 +92,6 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
 
-# def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
-#                      tl, ip_work_dir):
-#     '''
-#     Add an event to the PREMIS file and update it afterwards.
-#     '''
-#     package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
-#     path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-#     with open(path_premis, 'w') as output_file:
-#         output_file.write(package_premis_file.to_string())
-#     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 @app.task(bind=True)
 def SIPResetF(self, params):
@@ -418,6 +393,7 @@ class SIPDeliveryValidation(DefaultTask):
         return
 
 
+from earkcore.metadata.XmlHelper import q
 class IdentifierAssignment(DefaultTask):
 
     accept_input_from = [SIPDeliveryValidation.__name__, "IdentifierAssignment"]
@@ -432,11 +408,43 @@ class IdentifierAssignment(DefaultTask):
         # Add the event type - will be put into Premis.
         self.event_type = 'identifier assignment'
 
+        tl = task_context.task_logger
+
         # TODO: set identifier in METS file
         # TODO: change identifiers used in Premis retroactively
         identifier = randomutils.getUniqueID()
-        task_context.task_logger.addinfo("New identifier assigned: %s" % identifier)
-        task_context.task_status = 0
+        tl.addinfo("New identifier assigned: %s" % identifier)
+
+        try:
+            if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
+                # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+                # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+                premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+                PREMIS_NS = 'info:lc/xmlns/premis-v2'
+                parsed_premis = etree.parse(premis_path)
+
+                object = parsed_premis.find(q(PREMIS_NS, 'object'))
+                object_id_value = object.find('.//%s' % q(PREMIS_NS, 'objectIdentifierValue'))
+                object_id_value.text = identifier
+
+                events = parsed_premis.findall(q(PREMIS_NS, 'event'))
+                for event in events:
+                    event_rel_obj = event.find('.//%s' % q(PREMIS_NS, 'linkingObjectIdentifierValue'))
+                    event_rel_obj.text = identifier
+
+                # write the changed Premis file
+                str = etree.tostring(parsed_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(premis_path, 'w') as output_file:
+                    output_file.write(str)
+
+                task_context.task_status = 0
+            else:
+                tl.adderr('Can\'t find a Premis file to update it with new identifier!')
+                task_context.task_status = 1
+        except Exception, e:
+            tl.adderr('Some error ocurred when I tried to update the Premis file with the new identifier: %s' % e)
+            task_context.task_status = 1
+
         return {'identifier': identifier}
 
 
@@ -453,6 +461,7 @@ class SIPExtraction(DefaultTask):
 
         # Add the event type - will be put into Premis.
         self.event_type = 'currently not in vocabulary'
+        print 'identifier: %s' % task_context.additional_data['identifier']
 
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -473,7 +482,7 @@ class SIPExtraction(DefaultTask):
             tl.log += extr.log
             tl.err += extr.err
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class SIPRestructuring(DefaultTask):
@@ -510,7 +519,7 @@ class SIPRestructuring(DefaultTask):
                 os.removedirs(str(delivery))
 
             task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class SIPValidation(DefaultTask):
@@ -553,11 +562,11 @@ class SIPValidation(DefaultTask):
         # valid = True
 
         task_context.task_status = 0 if valid else 1
-        return
+        return task_context.additional_data
 
 
 import uuid
-from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
+from earkcore.utils.datetimeutils import current_timestamp
 from lxml import etree, objectify
 import fnmatch
 from workers.default_task_context import DefaultTaskContext
@@ -695,14 +704,15 @@ class AIPMigrations(DefaultTask):
         tl.addinfo('%d migrations have been queued, please check the progress with the task AIPCheckMigrationProgress.' % total)
 
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
-import multiprocessing
+
+
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
 
@@ -755,18 +765,18 @@ class MigrationProcess(DefaultTask):
                     print 'Migration for file %s caused errors: %s' % (file, err)
                     with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
-                    return
+                    return task_context.additional_data
             else:
                 tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
                 with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                     status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
-                return
+                return task_context.additional_data
 
             task_context.task_status = 0
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
                 pass
-            return
+            return task_context.additional_data
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
             tl.adderr('Time limit exceeded, stopping migration.')
@@ -780,7 +790,7 @@ class MigrationProcess(DefaultTask):
             task_context.task_status = 1
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Exception in MigrationProcess(): %s' % e)
-        return
+        return task_context.additional_data
 
 
 class AIPCheckMigrationProgress(DefaultTask):
@@ -864,12 +874,12 @@ class AIPCheckMigrationProgress(DefaultTask):
             else:
                 tl.addinfo('Migrations are still running, please check back later.')
                 task_context.task_status = 0
-            return
+            return task_context.additional_data
         except:
             tl.addinfo('Something went wrong when checking task status.')
             print 'Something went wrong when checking task status.'
             task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class MigrationsComplete(DefaultTask):
@@ -892,7 +902,7 @@ class MigrationsComplete(DefaultTask):
         tl.addinfo('All migration processes are completed, now allowing Mets creation.')
 
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class CreatePremisAfterMigration(DefaultTask):
@@ -923,7 +933,7 @@ class CreatePremisAfterMigration(DefaultTask):
             except Exception:
                 tl.adderr('Premis generation for representation %s failed.' % repdir)
                 task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPRepresentationMetsCreation(DefaultTask):
@@ -972,7 +982,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
             except Exception:
                 tl.adderr('Mets generation for representation %s failed.' % repdir)
                 task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPPackageMetsCreation(DefaultTask):
@@ -1017,7 +1027,7 @@ class AIPPackageMetsCreation(DefaultTask):
         except Exception, err:
             tl.addinfo('error: ', Exception)
             task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPValidation(DefaultTask):
@@ -1058,7 +1068,7 @@ class AIPValidation(DefaultTask):
             task_context.task_status = 0 if valid else 1
         except Exception, err:
             task_context.status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPPackaging(DefaultTask):
@@ -1142,7 +1152,7 @@ class AIPPackaging(DefaultTask):
             task_context.task_status = 0
         except Exception, err:
             task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class AIPStore(DefaultTask):
@@ -1166,11 +1176,11 @@ class AIPStore(DefaultTask):
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
             task_context.task_status = 0
-            result = {"storageLoc": "Geiles string"}
+            task_context.additional_data["storageLoc"] = "Geiles string"
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1
-        return result
+        return task_context.additional_data
 
 class LilyHDFSUpload(DefaultTask):
 
@@ -1224,15 +1234,15 @@ class LilyHDFSUpload(DefaultTask):
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
 
                 task_context.task_status = 0
-                return
+                return task_context.additional_data
             else:
                 tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
                 task_context.task_status = 1
-                return
+                return task_context.additional_data
         except Exception:
             tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
             task_context.task_status = 1
-            return
+            return task_context.additional_data
 
 
 

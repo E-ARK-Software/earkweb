@@ -1,15 +1,12 @@
-import time
 import os
 import traceback
 
 from celery import Task
-
 from celery import current_task
 
-from workers.ip_state import IpState
+from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from tasklogger import TaskLogger
-from earkcore.metadata.premis.PremisManipulate import Premis
-from sandbox.sipgenerator.premisgenerator import PremisGenerator
+from workers.ip_state import IpState
 
 
 class DefaultTask(Task):
@@ -91,12 +88,17 @@ class DefaultTask(Task):
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
 
         # add event to PREMIS and write file (only if PREMIS file exists)
+        package = task_context.uuid
         if os.path.exists(task_context.package_premis):
             outcome = 'success' if task_context.task_status == 0 else 'failure'
+            if task_context.additional_data is not None and task_context.additional_data['identifier'] is not None:
+                package = task_context.additional_data['identifier']
+                # This construction hopefully means that the IdentifierAssignment can be used at any time in the AIP creation process.
+
             eventinfo = {'outcome': outcome,
                          'task_name': self.task_name,
                          'event_type': self.event_type,
-                         'linked_object': task_context.uuid}
+                         'linked_object': package}
             premisgen = PremisGenerator(task_context.path)
             premisgen.addEvent(task_context.package_premis, eventinfo)
 
@@ -130,7 +132,7 @@ class DefaultTask(Task):
         @param      path: Path where the IP is stored
 
         @type       path: additional_params
-        @param      path: Additional parameters dictionary (passed throuh from actual task implementation to celery result)
+        @param      path: Additional parameters dictionary (passed through from actual task implementation to celery result)
 
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log, additional parameters)
@@ -147,7 +149,7 @@ class DefaultTask(Task):
             # in the dictionary additional_params. This dictionary is stored as part of the celery result
             # and is stored in the result backend (AsyncResult(task_id).result.add_res_parms).
             if task_context.valid(self.accept_input_from, self.task_name):
-                task_context.additional_data = self.run_task(task_context)
+                task_context.additional_data = self.run_task(task_context) # IMPORTANT: task has to return task_context.additional_data!
         except Exception, e:
             task_context.task_logger.adderr("An error occurred: %s" % e)
             traceback.print_exc()
