@@ -107,16 +107,6 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
 
-# def add_PREMIS_event(task, outcome, identifier_value,  linking_agent, package_premis_file,
-#                      tl, ip_work_dir):
-#     '''
-#     Add an event to the PREMIS file and update it afterwards.
-#     '''
-#     package_premis_file.add_event(task, outcome, identifier_value, linking_agent)
-#     path_premis = os.path.join(ip_work_dir, "metadata/PREMIS.xml")
-#     with open(path_premis, 'w') as output_file:
-#         output_file.write(package_premis_file.to_string())
-#     tl.addinfo('PREMIS file updated: %s' % path_premis)
 
 @app.task(bind=True)
 def SIPResetF(self, params):
@@ -453,6 +443,7 @@ class SIPExtraction(DefaultTask):
 
         # Add the event type - will be put into Premis.
         self.event_type = 'currently not in vocabulary'
+        print 'identifier: %s' % task_context.additional_data['identifier']
 
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -473,7 +464,7 @@ class SIPExtraction(DefaultTask):
             tl.log += extr.log
             tl.err += extr.err
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class SIPRestructuring(DefaultTask):
@@ -510,7 +501,7 @@ class SIPRestructuring(DefaultTask):
                 os.removedirs(str(delivery))
 
             task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class SIPValidation(DefaultTask):
@@ -553,7 +544,7 @@ class SIPValidation(DefaultTask):
         # valid = True
 
         task_context.task_status = 0 if valid else 1
-        return
+        return task_context.additional_data
 
 
 import uuid
@@ -695,7 +686,7 @@ class AIPMigrations(DefaultTask):
         tl.addinfo('%d migrations have been queued, please check the progress with the task AIPCheckMigrationProgress.' % total)
 
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 from earkcore.format.formatidentification import FormatIdentification
@@ -755,18 +746,18 @@ class MigrationProcess(DefaultTask):
                     print 'Migration for file %s caused errors: %s' % (file, err)
                     with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
-                    return
+                    return task_context.additional_data
             else:
                 tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
                 with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                     status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
-                return
+                return task_context.additional_data
 
             task_context.task_status = 0
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
                 pass
-            return
+            return task_context.additional_data
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
             tl.adderr('Time limit exceeded, stopping migration.')
@@ -780,7 +771,7 @@ class MigrationProcess(DefaultTask):
             task_context.task_status = 1
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Exception in MigrationProcess(): %s' % e)
-        return
+        return task_context.additional_data
 
 
 class AIPCheckMigrationProgress(DefaultTask):
@@ -864,12 +855,12 @@ class AIPCheckMigrationProgress(DefaultTask):
             else:
                 tl.addinfo('Migrations are still running, please check back later.')
                 task_context.task_status = 0
-            return
+            return task_context.additional_data
         except:
             tl.addinfo('Something went wrong when checking task status.')
             print 'Something went wrong when checking task status.'
             task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class MigrationsComplete(DefaultTask):
@@ -892,7 +883,7 @@ class MigrationsComplete(DefaultTask):
         tl.addinfo('All migration processes are completed, now allowing Mets creation.')
 
         task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class CreatePremisAfterMigration(DefaultTask):
@@ -923,7 +914,7 @@ class CreatePremisAfterMigration(DefaultTask):
             except Exception:
                 tl.adderr('Premis generation for representation %s failed.' % repdir)
                 task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPRepresentationMetsCreation(DefaultTask):
@@ -972,7 +963,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
             except Exception:
                 tl.adderr('Mets generation for representation %s failed.' % repdir)
                 task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPPackageMetsCreation(DefaultTask):
@@ -1017,7 +1008,7 @@ class AIPPackageMetsCreation(DefaultTask):
         except Exception, err:
             tl.addinfo('error: ', Exception)
             task_context.task_status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPValidation(DefaultTask):
@@ -1058,7 +1049,7 @@ class AIPValidation(DefaultTask):
             task_context.task_status = 0 if valid else 1
         except Exception, err:
             task_context.status = 1
-        return
+        return task_context.additional_data
 
 
 class AIPPackaging(DefaultTask):
@@ -1142,7 +1133,7 @@ class AIPPackaging(DefaultTask):
             task_context.task_status = 0
         except Exception, err:
             task_context.task_status = 0
-        return
+        return task_context.additional_data
 
 
 class AIPStore(DefaultTask):
@@ -1166,11 +1157,11 @@ class AIPStore(DefaultTask):
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
             task_context.task_status = 0
-            result = {"storageLoc": "Geiles string"}
+            task_context.additional_data["storageLoc"] = "Geiles string"
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1
-        return result
+        return task_context.additional_data
 
 class LilyHDFSUpload(DefaultTask):
 
@@ -1224,15 +1215,15 @@ class LilyHDFSUpload(DefaultTask):
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
 
                 task_context.task_status = 0
-                return
+                return task_context.additional_data
             else:
                 tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
                 task_context.task_status = 1
-                return
+                return task_context.additional_data
         except Exception:
             tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
             task_context.task_status = 1
-            return
+            return task_context.additional_data
 
 
 
