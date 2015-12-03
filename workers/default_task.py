@@ -1,15 +1,12 @@
-import time
 import os
 import traceback
 
 from celery import Task
-
 from celery import current_task
 
-from workers.ip_state import IpState
+from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from tasklogger import TaskLogger
-from earkcore.metadata.premis.PremisManipulate import Premis
-from sandbox.sipgenerator.premisgenerator import PremisGenerator
+from workers.ip_state import IpState
 
 
 class DefaultTask(Task):

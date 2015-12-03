@@ -1,58 +1,43 @@
-import time
 import os
-import tarfile
-import traceback
 import shutil
-from os import walk
-import logging
-from functools import partial
-import glob
 import sys
+import tarfile
+import time
+from functools import partial
+from os import walk
 
-from celery import Task
 from celery import current_task
-from celery.contrib.methods import task_method
+
+from config import params
+from config.config import mets_schema_file
+from config.config import root_dir
+from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
+from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.fixity.ChecksumFile import ChecksumFile
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
+from earkcore.fixity.tasklib import check_transfer
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
-
-from earkcore.utils.randomutils import getUniqueID
-from earkcore.utils.fileutils import remove_protocol
-from earkcore.packaging.extraction import Extraction
-from sandbox.sipgenerator.sipgenerator import SIPGenerator
-from config import params
-from config.config import root_dir
-from config.config import mets_schema_file
-from earkcore.utils import fileutils
-from earkcore.models import InformationPackage
-from earkcore.utils import randomutils
-from earkcore.xml.deliveryvalidation import DeliveryValidation
-from workers.default_task import DefaultTask
-from workers.statusvalidation import StatusValidation
-from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
+from earkcore.metadata.mets.metsgenerator import MetsGenerator
 from earkcore.metadata.premis.PremisManipulate import Premis
-from earkcore.utils.fileutils import increment_file_name_suffix
-from earkcore.utils.fileutils import latest_aip
-from tasklogger import TaskLogger
-from earkcore.rest.restendpoint import RestEndpoint
-from earkcore.rest.hdfsrestclient import HDFSRestClient
-from search.models import DIP
-from earkcore.filesystem.chunked import FileBinaryDataChunks
-from earkcore.fixity.ChecksumFile import ChecksumFile
-from earkcore.fixity.tasklib import check_transfer
-from earkcore.utils.fileutils import mkdir_p
-from workers.ip_state import IpState
+from earkcore.metadata.premis.premisgenerator import PremisGenerator
+from earkcore.models import InformationPackage
+from earkcore.packaging.extraction import Extraction
 from earkcore.packaging.task_utils import get_deliveries
+from earkcore.rest.hdfsrestclient import HDFSRestClient
+from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.utils import fileutils
+from earkcore.utils import randomutils
+from earkcore.utils.fileutils import mkdir_p
 from earkcore.utils.fileutils import remove_fs_item
-
-from sandbox.sipgenerator.premisgenerator import PremisGenerator
-
-from celery.result import ResultSet
+from earkcore.utils.fileutils import remove_protocol
+from earkcore.xml.deliveryvalidation import DeliveryValidation
 from earkweb.celeryapp import app
+from sandbox.sipgenerator.sipgenerator import SIPGenerator
+from tasklogger import TaskLogger
+from workers.default_task import DefaultTask
 
-
-from sandbox.sipgenerator.metsgenerator import MetsGenerator
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -581,7 +566,7 @@ class SIPValidation(DefaultTask):
 
 
 import uuid
-from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
+from earkcore.utils.datetimeutils import current_timestamp
 from lxml import etree, objectify
 import fnmatch
 from workers.default_task_context import DefaultTaskContext
@@ -726,7 +711,8 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
-import multiprocessing
+
+
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
 
