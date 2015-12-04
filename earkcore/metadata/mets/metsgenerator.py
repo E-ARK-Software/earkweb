@@ -130,6 +130,7 @@ class MetsGenerator(object):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
         schemafolder = mets_data['schemas']
+        parent = mets_data['parent']
 
         print 'creating Mets'
         ###########################
@@ -210,6 +211,19 @@ class MetsGenerator(object):
         root.append(mets_structmap_reps)
         mets_div_reps = M.div({"LABEL": "representations", "TYPE": "type"})
         mets_structmap_reps.append(mets_div_reps)
+
+        # create structmap for parent/child relation, if applicable
+        if parent != '':
+            print 'creating link to parent AIP'
+            mets_structmap_relation = M.structMap({'TYPE': 'logical', 'LABEL': 'parent'})
+            root.append(mets_structmap_relation)
+            mets_div_rel = M.div({'LABEL': 'AIP parent identifier'})
+            mets_structmap_relation.append(mets_div_rel)
+            parent_pointer = M.mptr({"LOCTYPE": "URN",
+                                     q(XLINK_NS, "title"): ("Parent AIP of this AIP (%s)." % packageid),
+                                     q(XLINK_NS, "href"): parent,
+                                     "ID": "ID" + uuid.uuid4().__str__()})
+            mets_div_rel.append(parent_pointer)
 
         ###########################
         # add to Mets skeleton

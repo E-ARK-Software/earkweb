@@ -971,9 +971,11 @@ class AIPRepresentationMetsCreation(DefaultTask):
             try:
                 rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
                 # TODO: packageid?
+                parent = task_context.additional_data['parent']
                 mets_data = {'packageid': repdir,
                              'type': 'AIP',
-                             'schemas': schemas}
+                             'schemas': schemas,
+                             'parent': parent}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
 
@@ -1016,9 +1018,11 @@ class AIPPackageMetsCreation(DefaultTask):
             schemas = os.path.join(task_context.path, 'schemas')
 
             identifier = task_context.additional_data['identifier']
+            parent = task_context.additional_data['parent']
             mets_data = {'packageid': identifier,
                          'type': 'AIP',
-                         'schemas': schemas}
+                         'schemas': schemas,
+                         'parent': parent}
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 

@@ -194,6 +194,8 @@ def apply_task(request):
                     for aip in dip.aips.all():
                         selected_aips[aip.identifier] = aip.source
                     additional_data['selected_aips'] = selected_aips
+                if wfm.identifier == AIPPackageMetsCreation.__name__:
+                    additional_data['parent'] = ip.parent_identifier
 
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)
