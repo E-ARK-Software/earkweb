@@ -168,7 +168,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         metsgen.createMets(mets_data)
 
         task_context.task_status = 0
-        return {}
+        return task_context.additional_data
 
 class SIPPackaging(DefaultTask):
 
@@ -216,7 +216,7 @@ class SIPPackaging(DefaultTask):
         sipgen.createDeliveryMets(storage_tar_file, delivery_mets_file)
         tl.log.append("Delivery METS3 stored: %s" % delivery_mets_file)
         task_context.task_status = 0
-        return {}
+        return task_context.additional_data
 
 class SIPClose(DefaultTask):
 
@@ -247,7 +247,7 @@ class SIPClose(DefaultTask):
         for d in sip_dirs: rem_dir(d)
 
         task_context.task_status = 0
-        return {}
+        return task_context.additional_data
 
 
 class SIPtoAIPReset(DefaultTask):
