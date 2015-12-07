@@ -195,7 +195,13 @@ def apply_task(request):
                         selected_aips[aip.identifier] = aip.source
                     additional_data['selected_aips'] = selected_aips
                 if wfm.identifier == AIPPackageMetsCreation.__name__:
-                    additional_data['parent'] = ip.parent_identifier
+                    additional_data['parent_id'] = ip.parent_identifier
+                if wfm.identifier == AIPStore.__name__:
+                    additional_data['parent_id'] = ip.parent_identifier
+                    # the UUID tells us in which folder the parent AIPs' Mets file is located - only in the dev
+                    # version of course, probably doesnt work in distributed storage
+                    # TODO: this works, find out how to avoid stupid errors
+                    additional_data['parent_path'] = InformationPackage.objects.get(identifier=ip.parent_identifier)
 
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)

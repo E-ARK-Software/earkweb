@@ -971,11 +971,11 @@ class AIPRepresentationMetsCreation(DefaultTask):
             try:
                 rep_path = os.path.join(task_context.path, 'representations/%s' % repdir)
                 # TODO: packageid?
-                parent = task_context.additional_data['parent']
+                # parent = task_context.additional_data['parent_id']
                 mets_data = {'packageid': repdir,
                              'type': 'AIP',
                              'schemas': schemas,
-                             'parent': parent}
+                             'parent': ''}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
 
@@ -1018,7 +1018,7 @@ class AIPPackageMetsCreation(DefaultTask):
             schemas = os.path.join(task_context.path, 'schemas')
 
             identifier = task_context.additional_data['identifier']
-            parent = task_context.additional_data['parent']
+            parent = task_context.additional_data['parent_id']
             mets_data = {'packageid': identifier,
                          'type': 'AIP',
                          'schemas': schemas,
@@ -1174,6 +1174,21 @@ class AIPStore(DefaultTask):
         self.event_type = 'not in vocabulary'
 
         tl = task_context.task_logger
+
+        # TODO: now that this AIP is 'done', update the parent AIP with a link:
+        # <structMap 'children'>
+        #   <mptr 'childAIP identifier/METS.xml (?)'/>
+        # </structMap>
+
+        print 'PARENT IDENTIFIER: %s' % task_context.additional_data['parent_id']
+        parent_path = task_context.additional_data['parent_path'].__str__()
+
+        # mets_data = {'packageid': repdir,
+        #              'type': 'AIP',
+        #              'schemas': schemas,
+        #              'parent': ''}
+        metsgen = MetsGenerator(parent_path)
+        metsgen.addChildRelation(task_context.additional_data['identifier'])
 
         result = {"storageLoc": "undefined"}
         try:
