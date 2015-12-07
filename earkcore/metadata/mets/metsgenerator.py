@@ -123,13 +123,38 @@ class MetsGenerator(object):
                       "MDTYPE": mdtype}
         return mets_mdref
 
-    # def addToEarkstructmap(self, div, fptr):
-    #     div.append(fptr)
+    def addChildRelation(self, identifier):
+        parentmets = os.path.join(self.root_path, 'METS.xml')
+        if os.path.exists(parentmets):
+            parent_parse = etree.parse(parentmets)
+            parent_root = parent_parse.getroot()
+
+            child = M.div({'LABEL': 'child AIP'})
+            pointer = M.mptr({"LOCTYPE": "URN",
+                              q(XLINK_NS, "title"): ("Referencing a child AIP."),
+                              q(XLINK_NS, "href"): identifier,
+                              "ID": "ID" + uuid.uuid4().__str__()})
+            child.append(pointer)
+
+            children_map = parent_root.find("%s[@LABEL='child AIPs']" % q(METS_NS, 'structMap'))
+            if children_map is not None:
+                children_map.append(child)
+            else:
+                children_map = M.structMap({'LABEL': 'child AIPs', 'TYPE': 'logical'})
+                children_map.append(child)
+                parent_root.insert(len(parent_root), children_map)
+
+            str = etree.tostring(parent_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+            with open(parentmets, 'w') as output_file:
+                output_file.write(str)
+        else:
+            print 'Couldn\'t find the parent AIPs Mets file.'
 
     def createMets(self, mets_data):
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
         schemafolder = mets_data['schemas']
+        parent = mets_data['parent']
 
         print 'creating Mets'
         ###########################
@@ -210,6 +235,19 @@ class MetsGenerator(object):
         root.append(mets_structmap_reps)
         mets_div_reps = M.div({"LABEL": "representations", "TYPE": "type"})
         mets_structmap_reps.append(mets_div_reps)
+
+        # create structmap for parent/child relation, if applicable
+        if parent != '':
+            print 'creating link to parent AIP'
+            mets_structmap_relation = M.structMap({'TYPE': 'logical', 'LABEL': 'parent'})
+            root.append(mets_structmap_relation)
+            mets_div_rel = M.div({'LABEL': 'AIP parent identifier'})
+            mets_structmap_relation.append(mets_div_rel)
+            parent_pointer = M.mptr({"LOCTYPE": "URN",
+                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this AIP (%s)." % packageid),
+                                     q(XLINK_NS, "href"): parent,
+                                     "ID": "ID" + uuid.uuid4().__str__()})
+            mets_div_rel.append(parent_pointer)
 
         ###########################
         # add to Mets skeleton
