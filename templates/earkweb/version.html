@@ -26,6 +26,16 @@
     <tbody>
 
     <tr>
+        <td>0.2.2</td>
+        <td>04.12.2015</td>
+        <td>
+            <ul>
+                <li>SIP to AIP conversion: PREMIS generation improved.</li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
         <td>0.2.1</td>
         <td>02.12.2015</td>
         <td>
@@ -151,7 +161,20 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/79ac97c">79ac97c</a> Issue 418: representations folder has all representations
+<pre>2015-12-04 <a href="https://github.com/eark-project/earkweb/commit/5686efe">5686efe</a> fixed an error that occurred during SIP creation, because task_context.additional_data['identifier'] was missing
+2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/f482028">f482028</a> moved premisgenerator.py and metsgenerator.py out of the sandbox
+2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/ecb561c">ecb561c</a> IdentifierAssignment will now change the appropriate elements' text in an existing Premis file to the new identifier.
+2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/4546728">4546728</a> all tasks after IdentifierAssignment now use the correct package identifier
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/b492dc4">b492dc4</a> changed accepted input for metadata tasks
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/e6580bb">e6580bb</a> implemented structMap 'earkstructmap', describes physical structure of the IP - solves redmine #412
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/ef3fc01">ef3fc01</a> Ignore submission status xml
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/933f298">933f298</a> version 0.2.1
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/79ac97c">79ac97c</a> Issue 418: representations folder has all representations
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/2d5e7a9">2d5e7a9</a> minor fixes for Mets creation
+2015-12-02 <a href="https://github.com/eark-project/earkweb/commit/287cef6">287cef6</a> schema locations in Mets root are now relative paths pointing at existing files, solves redmine #414
+2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/1a9732f">1a9732f</a> creating /schemas folder on AIP root level, solves redmine #413
+2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/36e08be">36e08be</a> added an agent to metsHdr, fixes redmine #411
+2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/1631474">1631474</a> dmdSec now created dynamically, fixed redmine #410
 2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/3334dc0">3334dc0</a> New version
 2015-12-01 <a href="https://github.com/eark-project/earkweb/commit/3b9fab2">3b9fab2</a> added Premis to IP root level
 2015-11-30 <a href="https://github.com/eark-project/earkweb/commit/0c0e19d">0c0e19d</a> minor additions
