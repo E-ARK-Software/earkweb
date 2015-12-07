@@ -1175,18 +1175,8 @@ class AIPStore(DefaultTask):
 
         tl = task_context.task_logger
 
-        # TODO: now that this AIP is 'done', update the parent AIP with a link:
-        # <structMap 'children'>
-        #   <mptr 'childAIP identifier/METS.xml (?)'/>
-        # </structMap>
-
-        print 'PARENT IDENTIFIER: %s' % task_context.additional_data['parent_id']
         parent_path = task_context.additional_data['parent_path'].__str__()
-
-        # mets_data = {'packageid': repdir,
-        #              'type': 'AIP',
-        #              'schemas': schemas,
-        #              'parent': ''}
+        
         metsgen = MetsGenerator(parent_path)
         metsgen.addChildRelation(task_context.additional_data['identifier'])
 
