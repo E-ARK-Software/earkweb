@@ -1176,16 +1176,21 @@ class AIPStore(DefaultTask):
         tl = task_context.task_logger
 
         parent_path = task_context.additional_data['parent_path'].__str__()
-        
-        metsgen = MetsGenerator(parent_path)
-        metsgen.addChildRelation(task_context.additional_data['identifier'])
+
+        if os.path.isfile(os.path.join(parent_path, 'METS.xml')):
+            metsgen = MetsGenerator(parent_path)
+            metsgen.addChildRelation(task_context.additional_data['identifier'])
+        else:
+            tl.adderr('No Mets file found in the parent AIP, you must create one.')
+            task_context.task_status = 1
+            return task_context.additional_data
 
         result = {"storageLoc": "undefined"}
         try:
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
             task_context.task_status = 0
-            task_context.additional_data["storageLoc"] = "Geiles string"
+            task_context.additional_data["storageLoc"] = "empty string"
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1

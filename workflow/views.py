@@ -200,7 +200,6 @@ def apply_task(request):
                     additional_data['parent_id'] = ip.parent_identifier
                     # the UUID tells us in which folder the parent AIPs' Mets file is located - only in the dev
                     # version of course, probably doesnt work in distributed storage
-                    # TODO: this works, find out how to avoid stupid errors
                     additional_data['parent_path'] = InformationPackage.objects.get(identifier=ip.parent_identifier)
 
                 # Execute task
