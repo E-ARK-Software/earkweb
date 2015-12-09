@@ -26,6 +26,16 @@
     <tbody>
 
     <tr>
+        <td>0.2.3</td>
+        <td>09.12.2015</td>
+        <td>
+            <ul>
+                <li>Creating parent/child AIPs.</li>
+            </ul>
+        </td>
+    </tr>
+
+    <tr>
         <td>0.2.2</td>
         <td>04.12.2015</td>
         <td>
@@ -161,7 +171,15 @@
 
 <h2>Commit log</h2>
 
-<pre>2015-12-04 <a href="https://github.com/eark-project/earkweb/commit/5686efe">5686efe</a> fixed an error that occurred during SIP creation, because task_context.additional_data['identifier'] was missing
+<pre>2015-12-09 <a href="https://github.com/eark-project/earkweb/commit/04ebd5e">04ebd5e</a> added OTHERLOCTYPE
+2015-12-09 <a href="https://github.com/eark-project/earkweb/commit/4d3d520">4d3d520</a> changed LOCTYPE from URN to OTHER (parent/child relation)
+2015-12-09 <a href="https://github.com/eark-project/earkweb/commit/24d6c4a">24d6c4a</a> fixed errors in SIP creation due to latest changes (missing values etc)
+2015-12-09 <a href="https://github.com/eark-project/earkweb/commit/56301ac">56301ac</a> error handling: no parent AIP Mets file
+2015-12-07 <a href="https://github.com/eark-project/earkweb/commit/43f2df5">43f2df5</a> removed comments
+2015-12-07 <a href="https://github.com/eark-project/earkweb/commit/94bc3c1">94bc3c1</a> Executing the StoreAIP task will now update the parents' Mets file with reference to the child AIP. Requires that the parent AIP has a Mets file on the root level!
+2015-12-04 <a href="https://github.com/eark-project/earkweb/commit/ee9ddfd">ee9ddfd</a> realtion to parent AIP now added in Mets file
+2015-12-04 <a href="https://github.com/eark-project/earkweb/commit/e64181f">e64181f</a> version 0.2.2
+2015-12-04 <a href="https://github.com/eark-project/earkweb/commit/5686efe">5686efe</a> fixed an error that occurred during SIP creation, because task_context.additional_data['identifier'] was missing
 2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/f482028">f482028</a> moved premisgenerator.py and metsgenerator.py out of the sandbox
 2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/ecb561c">ecb561c</a> IdentifierAssignment will now change the appropriate elements' text in an existing Premis file to the new identifier.
 2015-12-03 <a href="https://github.com/eark-project/earkweb/commit/4546728">4546728</a> all tasks after IdentifierAssignment now use the correct package identifier
