@@ -1,7 +1,8 @@
 from itertools import izip
 
 
-ns = {'ogr': 'http://ogr.maptools.org/', 'gml': 'http://www.opengis.net/gml/3.2'}
+#ns = {'ogr': 'http://ogr.maptools.org/', 'gml': 'http://www.opengis.net/gml/3.2'}
+ns = {'ogr': 'http://ogr.maptools.org/', 'gml': 'http://www.opengis.net/gml'}
 
 
 def format_location_name(location_name):

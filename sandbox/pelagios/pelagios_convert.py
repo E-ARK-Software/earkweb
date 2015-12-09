@@ -6,8 +6,8 @@ from rdflib import Namespace, Literal, URIRef
 from rdflib.graph import Graph, ConjunctiveGraph
 from rdflib.plugins.memory import IOMemory
 from rdflib import RDF, BNode
-from sandbox.pelagios.gml_to_wkt import GMLtoWKT
-from sandbox.pelagios.gml_to_wkt_helper import whsp_to_unsc
+from gml_to_wkt import GMLtoWKT
+from gml_to_wkt_helper import whsp_to_unsc
 
 
 if __name__ == '__main__':
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     graph_slovenian_districts = Graph(store=store, identifier=slovenia)
 
-    gml_to_wkt = GMLtoWKT('./Obcine1994.gml')
+    gml_to_wkt = GMLtoWKT('/home/shs/Development/EARK/data/pelagios_gml_to_wkt_testdata/obcine-2015-12-03/obcine/ob_1994/ob_1994.gml')
     district_included = {}
     for district_wkt in gml_to_wkt.get_wkt_linear_ring():
         techname = whsp_to_unsc(district_wkt["name"])
@@ -57,7 +57,7 @@ if __name__ == '__main__':
             g.add((polygons, geosparql_ns['asWKT'], Literal(district_wkt["linearring"])))
             district_included[techname] = True
     # print graph
-    output_file = "Opcine1994.rdf"
+    output_file = "/home/shs/Development/EARK/data/pelagios_gml_to_wkt_testdata/obcine-2015-12-03/obcine/ob_1994/slov.rdf"
     with open(output_file, 'w') as f:
         f.write(g.serialize(format='n3'))
     f.close()
