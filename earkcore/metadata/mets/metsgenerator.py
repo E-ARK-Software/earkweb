@@ -130,7 +130,7 @@ class MetsGenerator(object):
             parent_root = parent_parse.getroot()
 
             child = M.div({'LABEL': 'child AIP'})
-            pointer = M.mptr({"LOCTYPE": "URN",
+            pointer = M.mptr({"LOCTYPE": "OTHER",
                               q(XLINK_NS, "title"): ("Referencing a child AIP."),
                               q(XLINK_NS, "href"): identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
@@ -243,7 +243,7 @@ class MetsGenerator(object):
             root.append(mets_structmap_relation)
             mets_div_rel = M.div({'LABEL': 'AIP parent identifier'})
             mets_structmap_relation.append(mets_div_rel)
-            parent_pointer = M.mptr({"LOCTYPE": "URN",
+            parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      q(XLINK_NS, "title"): ("Referencing the parent AIP of this AIP (%s)." % packageid),
                                      q(XLINK_NS, "href"): parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
