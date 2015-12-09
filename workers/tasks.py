@@ -119,7 +119,7 @@ class SIPReset(DefaultTask):
 
         # implementation
         task_context.task_status = 0
-        return {}
+        return {'identifier': ""}
 
 
 class SIPPackageMetadataCreation(DefaultTask):
@@ -146,7 +146,8 @@ class SIPPackageMetadataCreation(DefaultTask):
                 # Mets
                 mets_data = {'packageid': task_context.uuid,
                              'type': 'SIP',
-                             'schemas': os.path.join(task_context.path, 'schemas')}
+                             'schemas': os.path.join(task_context.path, 'schemas'),
+                             'parent': ''}
                 metsgen = MetsGenerator(rep_path)
                 metsgen.createMets(mets_data)
 
@@ -163,7 +164,8 @@ class SIPPackageMetadataCreation(DefaultTask):
         # create SIP parent Mets
         mets_data = {'packageid': task_context.uuid,
                      'type': 'SIP',
-                     'schemas': os.path.join(task_context.path, 'schemas')}
+                     'schemas': os.path.join(task_context.path, 'schemas'),
+                     'parent': ''}
         metsgen = MetsGenerator(task_context.path)
         metsgen.createMets(mets_data)
 
