@@ -128,7 +128,7 @@ class InformationPackageList(ListView):
     inner join earkcore_informationpackage as ip
     on wf.identifier=ip.last_task_id
     where wf.tstage & 2
-    order by wf.ordval;
+    order by ip.last_change desc;
     """
     queryset = InformationPackage.objects.raw(sql_query)
 
