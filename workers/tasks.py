@@ -1179,13 +1179,16 @@ class AIPStore(DefaultTask):
 
         parent_path = task_context.additional_data['parent_path'].__str__()
 
-        if os.path.isfile(os.path.join(parent_path, 'METS.xml')):
-            metsgen = MetsGenerator(parent_path)
-            metsgen.addChildRelation(task_context.additional_data['identifier'])
+        if len(parent_path) > 0:
+            if os.path.isfile(os.path.join(parent_path, 'METS.xml')):
+                metsgen = MetsGenerator(parent_path)
+                metsgen.addChildRelation(task_context.additional_data['identifier'])
+            else:
+                tl.adderr('No Mets file found in the parent AIP, you must create one.')
+                task_context.task_status = 1
+                return task_context.additional_data
         else:
-            tl.adderr('No Mets file found in the parent AIP, you must create one.')
-            task_context.task_status = 1
-            return task_context.additional_data
+            tl.addinfo('There is no parent AIP for this AIP.')
 
         result = {"storageLoc": "undefined"}
         try:
