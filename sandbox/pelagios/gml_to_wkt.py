@@ -40,10 +40,7 @@ def get_pos_list_from_gml(elm, geometry_path, pos_list_path):
     :return: list of position tuples (flat list)
     """
     geometry_elm = elm.find(geometry_path, ns)
-    print "Find " + pos_list_path + " in " + geometry_elm.tag
     pos_list_elms = geometry_elm.findall(pos_list_path, ns)
-
-    print len(pos_list_elms)
     p_list = None
     if len(pos_list_elms) == 1:
         pos_list_elm = pos_list_elms[0]
@@ -69,21 +66,17 @@ class GMLtoWKT(object):
         """
         for feature_member in self.tree.iter('{http://www.opengis.net/gml}featureMember'):
             for district in feature_member:
-                district_name_elm = district.find("ogr:D46_ATR_utf8_D46_IME", ns)
+                district_name_elm = district.find("ogr:OB_ATR_OB_IME", ns) #
                 distr_name = format_location_name(district_name_elm.text)
                 print "Region: %s" % distr_name
-
-                print district.tag
-                # <ogr:geometryProperty><gml:Polygon srsName="EPSG:3794"><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>
                 pos_list = get_pos_list_from_gml(district, 'ogr:geometryProperty', 'gml:Polygon/gml:outerBoundaryIs/gml:LinearRing/gml:coordinates')
-                #pos_list = get_pos_list_from_gml(district, 'ogr:geometryProperty', 'gml:Polygon/gml:exterior/gml:LinearRing/gml:posList')
                 linearing = flat_pos_list_to_coord_tuples(pos_list)
                 year = get_number_suffix(tagname(district))
-                yield {"name": distr_name, "year": year,  "linearring": Polygon(linearing).wkt}
+                yield {"name": distr_name, "year": year,  "polygon": Polygon(linearing).wkt}
 
 
 if __name__ == '__main__':
-    gml_to_wkt = GMLtoWKT('/home/shs/Development/EARK/data/pelagios_gml_to_wkt_testdata/obcine-2015-12-03/obcine/ob_1994/slov.gml')
+    gml_to_wkt = GMLtoWKT('/home/shs/slovenia/ob_1995.ttl')
     i = 0
     for district in gml_to_wkt.get_wkt_linear_ring():
         print "%s (%d) %d" % (district["name"], district["year"], i)
