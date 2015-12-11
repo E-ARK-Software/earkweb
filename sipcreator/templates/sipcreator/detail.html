@@ -32,7 +32,7 @@
 
     <h1 class="main">SIP Creator</h1>
 
-    <div id="sctable" style="float:left">
+    <div id="sctable" style="float:left; margin-right: 10px">
     <table id="tblsc" class="table table-striped table-bordered table-condensed">
       <tr><td colspan="2">
         {% csrf_token %}
@@ -157,30 +157,33 @@
     </div>
 
     </div>
-    <div style="width: 17em">
-        <table class="table table-striped table-bordered table-condensed" style="height: 627px">
-            <tr><td style="background-color: white">
+    <!-- help div -->
+    <div>
+
+        <table>
+            <tr><td>
                 <p><b>Help</b></p>
 
-                <p>The E-ARK SIP stores representations in separate folders which are located in the "representations" directory of the SIP.</p>
+                <p>In the E-ARK SIP, each representation - as a set of files needed to render an intellectual entity - is stored in a separate directory under the "representations"
+                    directory.</p>
 
-                <p>Each representation must be given a name to store a representation unit which consists of the actual data, additional documentation, and schemas which can be uploaded into the
-                corresponding directories.
+                <p>It is required to give a name to the representation which will be used as the name of the directory where the actual data, additional
+                    documentation, and schemas can be uploaded to.</p>
 
-                 <p>To create a new representation enter the name in the editable select box and click the "plus" symbol which will enable the upload area of the new representation.</p>
+                 <p>To create a new representation, enter the name (at least 4 characters long) in the editable select box and click the "plus" symbol which will enable the upload
+                     area of the new representation.</p>
 
                  <p>To switch between existing representations choose the representation from the select box ('caret' symbol next to the "plus" symbol).</p>
 
                 <p>If the upload area of the representation is loaded, files can be uploaded by clicking on 'Browse ...' and selecting a file from the local file system.</p>
 
-                <p>Use <a href="https://en.wikipedia.org/wiki/Tar_(computing)">tar</a> to upload a collection of files which are extracted automatically.</p>
+                <p>Package a set of files using the <a href="https://en.wikipedia.org/wiki/Tar_(computing)">tar</a> format to upload a collection of files which are automatically
+                    extracted in the upload directory.</p>
 
             </td></tr>
         </table>
 
     </div>
-    <script>
 
-    </script>
 
 {% endblock %}
