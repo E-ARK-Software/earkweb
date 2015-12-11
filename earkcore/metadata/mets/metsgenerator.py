@@ -139,10 +139,13 @@ class MetsGenerator(object):
 
             children_map = parent_root.find("%s[@LABEL='child AIPs']" % q(METS_NS, 'structMap'))
             if children_map is not None:
-                children_map.append(child)
+                children_div = children_map.find("%s[@LABEL='child AIP identifiers']" % q(METS_NS, 'div'))
+                children_div.append(child)
             else:
                 children_map = M.structMap({'LABEL': 'child AIPs', 'TYPE': 'logical'})
-                children_map.append(child)
+                children_div = M.div({'LABEL': 'child AIP identifiers'})
+                children_map.append(children_div)
+                children_div.append(child)
                 parent_root.insert(len(parent_root), children_map)
 
             str = etree.tostring(parent_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
