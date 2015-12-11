@@ -634,14 +634,6 @@ class AIPMigrations(DefaultTask):
                 target_rep_data = 'representations/%s/data' % target_rep
                 migration_target = os.path.join(task_context.path, target_rep_data)
 
-            # create folder for new representation
-            if not os.path.exists(migration_target):
-                os.makedirs(migration_target)
-
-            # create folder for migration process task "feedback"
-            if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep):
-                os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep)
-
             # needs to walk from top-level dir of representation data
             for directory, subdirectories, filenames in os.walk(migration_source):
                 for filename in filenames:
@@ -675,6 +667,16 @@ class AIPMigrations(DefaultTask):
                         task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
                         context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data, None)
+
+                        # create folder for new representation (if it doesnt exist already)
+                        if not os.path.exists(migration_target):
+                            os.makedirs(migration_target)
+
+                        # create folder for migration process task "feedback" (if it doesnt exist)
+                        if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep):
+                            os.makedirs(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s') % target_rep)
+
+                        # queue the MigrationProcess task
                         try:
                             migrationtask.apply_async((context,), queue='default', task_id=id)
                             tl.addinfo('Migration queued for %s.' %  filename, display=False)
