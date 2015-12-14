@@ -386,11 +386,11 @@ class MetsGenerator(object):
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             #mets_structmap_rep_div.append(metspointer)
-                            # also add the rep mets to the filegroup, so we can have a fptr
-                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
                             #mets_structmap_rep_div.append(M.fptr({"FILEID": id}))
+                            physical_div.append(metspointer) # IMPORTANT: The <mptr> element needs to be the first entry in a <div>, or the Mets will be invalid!
+                            # also create a <fptr> for the Mets file
+                            id = self.addFile(os.path.join(directory, filename), mets_filegroup)
                             physical_div.append(M.fptr({"FILEID": id}))
-                            physical_div.append(metspointer)
                         elif filename and directory.endswith('schemas'):
                             # schema files
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
