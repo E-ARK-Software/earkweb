@@ -1192,12 +1192,24 @@ class AIPStore(DefaultTask):
         else:
             tl.addinfo('There is no parent AIP for this AIP.')
 
+
+        # print 'Objects at root level: %s' % os.listdir(task_context.path)
+
         result = {"storageLoc": "undefined"}
         try:
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
+
+            # copy the .tar
+            # TODO: remove tar from working area? Need to adapt LilyHDFSUpload in this case.
+            if not os.path.exists(os.path.join(storePath, '%s.tar' % package_id)):
+                shutil.copy2(os.path.join(task_context.path, '%s.tar' % package_id), storePath)
+                tl.addinfo('The tar container for %s has been copied to: %s' % (package_id, task_context.additional_data['storageDest']))
+            else:
+                tl.adderr('A tar container with the same name already exists at the storage location, nothing has been copied. Please check if this is the same tar or not!')
+
             task_context.task_status = 0
-            task_context.additional_data["storageLoc"] = "empty string"
+            task_context.additional_data["storageLoc"] = os.path.join(storePath, '%s.tar' % package_id)
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1
