@@ -444,7 +444,7 @@ class IdentifierAssignment(DefaultTask):
                 tl.adderr('Can\'t find a Premis file to update it with new identifier!')
                 task_context.task_status = 1
         except Exception, e:
-            tl.adderr('Some error ocurred when I tried to update the Premis file with the new identifier: %s' % e)
+            tl.adderr('An error ocurred when trying to update the Premis file with the new identifier: %s' % e)
             task_context.task_status = 1
 
         return {'identifier': identifier}
@@ -509,6 +509,9 @@ class SIPRestructuring(DefaultTask):
         else:
             for delivery in deliveries:
                 tl.addinfo("Restructuring content of package: %s" % str(delivery))
+
+                # TODO: maybe remove the state.xml already during SIP packaging
+                os.remove(os.path.join(str(delivery), 'state.xml'))
 
                 fs_childs =  os.listdir(str(delivery))
                 for fs_child in fs_childs:
@@ -1191,9 +1194,6 @@ class AIPStore(DefaultTask):
                 return task_context.additional_data
         else:
             tl.addinfo('There is no parent AIP for this AIP.')
-
-
-        # print 'Objects at root level: %s' % os.listdir(task_context.path)
 
         result = {"storageLoc": "undefined"}
         try:
