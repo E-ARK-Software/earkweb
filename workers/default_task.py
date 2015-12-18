@@ -23,7 +23,6 @@ class DefaultTask(Task):
         self.task_name = str(self.__name__)
 
     def initialize(self, task_context):
-        print "TYPE (task_context): %s " % type(task_context)
         # create directories if they do not exist
         if not os.path.exists(task_context.path):
             os.mkdir(task_context.path)
@@ -137,9 +136,6 @@ class DefaultTask(Task):
         @rtype:     TaskResult
         @return:    Task result (success/failure, processing log, error log, additional parameters)
         """
-
-        print "TYPE (task_context): %s " % type(task_context)
-        print "task_context: %s " % task_context
 
         # initialize task
         print "Executing %s task." % self.task_name
