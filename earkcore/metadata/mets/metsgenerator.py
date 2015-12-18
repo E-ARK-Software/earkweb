@@ -235,10 +235,10 @@ class MetsGenerator(object):
         mets_structmap_div.append(mets_structmap_content_div)
 
         # create structmap and div for Mets files from representations
-        mets_structmap_reps = M.structMap({"TYPE": "logical", "LABEL": "representations"})
-        root.append(mets_structmap_reps)
-        mets_div_reps = M.div({"LABEL": "representations", "TYPE": "type"})
-        mets_structmap_reps.append(mets_div_reps)
+        # mets_structmap_reps = M.structMap({"TYPE": "logical", "LABEL": "representations"})
+        # root.append(mets_structmap_reps)
+        # mets_div_reps = M.div({"LABEL": "representations", "TYPE": "type"})
+        # mets_structmap_reps.append(mets_div_reps)
 
         # create structmap for parent/child relation, if applicable
         if parent != '':
@@ -378,17 +378,18 @@ class MetsGenerator(object):
                             del subdirectories[:]
                             rep_name = directory.rsplit('/', 1)[1]
                             # create structMap div and append to representations structMap
-                            mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
-                            mets_div_reps.append(mets_structmap_rep_div)
+                            # mets_structmap_rep_div = M.div({"LABEL": rep_name, "TYPE": "representation mets", "ID": "ID" + uuid.uuid4().__str__()})
+                            # mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
                                                   q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: %s." % (rep_name, packageid)),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
-                            mets_structmap_rep_div.append(metspointer)
-                            # also add the rep mets to the filegroup, so we can have a fptr
+                            #mets_structmap_rep_div.append(metspointer)
+                            #mets_structmap_rep_div.append(M.fptr({"FILEID": id}))
+                            physical_div.append(metspointer) # IMPORTANT: The <mptr> element needs to be the first entry in a <div>, or the Mets will be invalid!
+                            # also create a <fptr> for the Mets file
                             id = self.addFile(os.path.join(directory, filename), mets_filegroup)
-                            mets_structmap_rep_div.append(M.fptr({"FILEID": id}))
                             physical_div.append(M.fptr({"FILEID": id}))
                         elif filename and directory.endswith('schemas'):
                             # schema files

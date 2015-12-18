@@ -444,7 +444,7 @@ class IdentifierAssignment(DefaultTask):
                 tl.adderr('Can\'t find a Premis file to update it with new identifier!')
                 task_context.task_status = 1
         except Exception, e:
-            tl.adderr('Some error ocurred when I tried to update the Premis file with the new identifier: %s' % e)
+            tl.adderr('An error ocurred when trying to update the Premis file with the new identifier: %s' % e)
             task_context.task_status = 1
 
         return {'identifier': identifier}
@@ -509,6 +509,9 @@ class SIPRestructuring(DefaultTask):
         else:
             for delivery in deliveries:
                 tl.addinfo("Restructuring content of package: %s" % str(delivery))
+
+                # TODO: maybe remove the state.xml already during SIP packaging
+                os.remove(os.path.join(str(delivery), 'state.xml'))
 
                 fs_childs =  os.listdir(str(delivery))
                 for fs_child in fs_childs:
@@ -1196,8 +1199,17 @@ class AIPStore(DefaultTask):
         try:
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
+
+            # copy the .tar
+            # TODO: remove tar from working area? Need to adapt LilyHDFSUpload in this case.
+            if not os.path.exists(os.path.join(storePath, '%s.tar' % package_id)):
+                shutil.copy2(os.path.join(task_context.path, '%s.tar' % package_id), storePath)
+                tl.addinfo('The tar container for %s has been copied to: %s' % (package_id, task_context.additional_data['storageDest']))
+            else:
+                tl.adderr('A tar container with the same name already exists at the storage location, nothing has been copied. Please check if this is the same tar or not!')
+
             task_context.task_status = 0
-            task_context.additional_data["storageLoc"] = "empty string"
+            task_context.additional_data["storageLoc"] = os.path.join(storePath, '%s.tar' % package_id)
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1
