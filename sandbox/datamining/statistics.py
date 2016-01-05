@@ -12,7 +12,7 @@ class EntityStatistics(object):
 
     def idf(self):
         # calculate inverse document frequency (idf) for every entity in geocodes.xml
-        # idf(term, corpus) = log(<number of documents in corpus> / <number of documents that contain term>)
+        # idf(term, corpus) = log10(<number of documents in corpus> / <number of documents that contain term>)
         locs = etree.parse('/var/data/nlp/presse_subset/geocodes.xml').getroot()
 
         with open('/var/data/nlp/presse_subset/locations.txt', 'r') as input:
@@ -21,7 +21,7 @@ class EntityStatistics(object):
             for location in locs.getchildren():
                 # find out how often the entities name occurs and get the idf value
                 # TODO: for this subset, we have 50 issues, so this is hardcoded
-                idf = math.log(50/frequency[location.attrib['name'].encode('utf-8')])
+                idf = math.log10(50/frequency[location.attrib['name'].encode('utf-8')])
                 location.set('idf', idf.__str__())
 
         str = etree.tostring(locs, encoding='UTF-8', pretty_print=True, xml_declaration=True)
@@ -47,7 +47,6 @@ class EntityStatistics(object):
                 str = etree.tostring(entities, encoding='UTF-8', pretty_print=True, xml_declaration=True)
                 with open('/var/data/nlp/presse_subset/tokens/%s' % file, 'w') as output:
                     output.write(str)
-
 
 
 
