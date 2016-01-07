@@ -601,8 +601,14 @@ class ExperimentalDatamining(DefaultTask):
                 print 'Decoding Json failed.', Exception
 
             # STEP 2: perform NER
-            print 'Performing NER on previously tokenized files.'
-
+            try:
+                print 'Performing NER on previously tokenized files.'
+                tagger = NETagger(os.path.join(task_context.path, 'submission/representations/newspapers'))
+                for file in os.listdir(os.path.join(task_context.path, 'submission/representations/newspapers/ner')):
+                    tagger.assign_tags(os.path.join(task_context.path, 'submission/representations/newspapers/ner/%s' % file))
+                tagger.removeDuplicates()
+            except Exception:
+                print 'NER failed.', Exception
 
             # STEP 3: use the NER result, here: geocode the extracted locations
             print 'Retrieving locations for extracted locations.'
