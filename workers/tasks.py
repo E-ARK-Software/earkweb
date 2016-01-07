@@ -570,6 +570,10 @@ class SIPValidation(DefaultTask):
         return task_context.additional_data
 
 
+from sandbox.datamining.jsondecoder import JsonDecoder
+from sandbox.datamining.geocoder import Geocoder
+from sandbox.datamining.netagger import NETagger
+from sandbox.datamining.statistics import EntityStatistics
 class ExperimentalDatamining(DefaultTask):
 
     accept_input_from = [SIPValidation.__name__, 'ExperimentalDatamining']
@@ -587,13 +591,26 @@ class ExperimentalDatamining(DefaultTask):
         tl = task_context.task_logger
         tl.addinfo('Performing an NER-based datamining showcase.')
 
-        # STEP 1: retrieve data (test set is in json format) and prepare it for NER
+        if os.path.exists(os.path.join(task_context.path, 'submission/representations/newspapers')):
+            # STEP 1: retrieve data (test set is in json format) and prepare it for NER
+            try:
+                print 'Decoding Json files and tokenizing them.'
+                decoder = JsonDecoder(os.path.join(task_context.path, 'submission/representations/newspapers'))
+                decoder.decode()
+            except Exception:
+                print 'Decoding Json failed.', Exception
 
-        # STEP 2: perform NER
+            # STEP 2: perform NER
+            print 'Performing NER on previously tokenized files.'
 
-        # STEP 3: use the NER result, here: geocode the extracted locations
 
-        # STEP 4: create some statistics: how important is a location for the text (tf-idf)
+            # STEP 3: use the NER result, here: geocode the extracted locations
+            print 'Retrieving locations for extracted locations.'
+
+            # STEP 4: create some statistics: how important is a location for the text (tf-idf)
+            print 'Calculating some statistical values.'
+        else:
+            pass
 
         task_context.task_status = 0
         return task_context.additional_data

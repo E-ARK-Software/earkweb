@@ -104,6 +104,10 @@ Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
         
         sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
         sudo easy_install --upgrade pytz
+        
+   For the datamining/NER showcase, you need `nltk`. Download here: https://pypi.python.org/pypi/nltk/3.1 and in the vitualenv:
+   
+        pip install ~/Downloads/nltk-3.1.tar.gz 
 
 4. Enable CAS in Django
 

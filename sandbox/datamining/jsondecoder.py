@@ -7,8 +7,11 @@ import codecs
 
 class JsonDecoder(object):
     def __init__(self, source):
-        self.newspaper_location = os.path.join('/var/data/nlp/', source)
+        self.newspaper_location = source
         self.newspaper_list = os.listdir(self.newspaper_location)
+
+        if not os.path.exists(os.path.join(source, 'ner')):
+            os.makedirs(os.path.join(source, 'ner'))
 
     def decode(self):
         for issue in self.newspaper_list:
@@ -22,7 +25,7 @@ class JsonDecoder(object):
                         tokenized_text += ('%s\n' % token)
                         if token in '!?.':
                             tokenized_text += '\n'
-                    with codecs.open(os.path.join(self.newspaper_location, 'tokens/%s_tokenized' % issue), 'w',
+                    with codecs.open(os.path.join(self.newspaper_location, 'ner/%s_tokenized' % issue), 'w',
                                      'utf-8') as output:
                         tokenized_text.encode('utf-8')
                         output.write(tokenized_text)
@@ -32,7 +35,7 @@ class JsonDecoder(object):
 class TestJsonDecoder(unittest.TestCase):
 
     def test_decoding(self):
-        decoder = JsonDecoder('presse_subset')
+        decoder = JsonDecoder('/var/data/nlp/presse_subset')
         decoder.decode()
 
 
