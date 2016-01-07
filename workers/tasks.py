@@ -570,6 +570,35 @@ class SIPValidation(DefaultTask):
         return task_context.additional_data
 
 
+class ExperimentalDatamining(DefaultTask):
+
+    accept_input_from = [SIPValidation.__name__, 'ExperimentalDatamining']
+
+    def run_task(self, task_context):
+        """
+        Data Mining Showcase / NER
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:2,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'datamining'
+
+        tl = task_context.task_logger
+        tl.addinfo('Performing an NER-based datamining showcase.')
+
+        # STEP 1: retrieve data (test set is in json format) and prepare it for NER
+
+        # STEP 2: perform NER
+
+        # STEP 3: use the NER result, here: geocode the extracted locations
+
+        # STEP 4: create some statistics: how important is a location for the text (tf-idf)
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
 import uuid
 from earkcore.utils.datetimeutils import current_timestamp
 from lxml import etree, objectify
@@ -577,7 +606,7 @@ import fnmatch
 from workers.default_task_context import DefaultTaskContext
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete', 'ExperimentalDatamining']
 
     def run_task(self, task_context):
         """
@@ -718,8 +747,6 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
-
-
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
 
