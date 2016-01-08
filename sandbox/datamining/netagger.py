@@ -13,7 +13,7 @@ class NETagger(object):
         model = '/opt/Projects/nlp/stanford-ner-2015-04-20/classifiers/german/german.hgc_175m_600.crf.ser.gz'
         jar = '/opt/Projects/nlp/stanford-ner-2015-04-20/stanford-ner.jar'
 
-        self.tagger = StanfordNERTagger(model, jar, encoding='utf-8')
+        self.tagger = StanfordNERTagger(model, jar, encoding='utf-8', java_options='-mx8000m')
         self.path = path
 
     def assign_tags(self, file):

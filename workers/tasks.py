@@ -581,7 +581,7 @@ from sandbox.datamining.netagger import NETagger
 from sandbox.datamining.statistics import EntityStatistics
 class ExperimentalDatamining(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'ExperimentalDatamining']
+    accept_input_from = [SIPValidation.__name__, 'ExperimentalDatamining', 'ExperimentalDataminingNER']
 
     def run_task(self, task_context):
         """
@@ -597,13 +597,13 @@ class ExperimentalDatamining(DefaultTask):
         tl.addinfo('Preparing NER-based datamining.')
 
         if os.path.exists(os.path.join(task_context.path, 'submission/representations/newspapers')):
-            # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
-            try:
-                print 'Decoding Json files and tokenizing them.'
-                normalizer = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
-                normalizer.json_input()
-            except Exception:
-                print 'Decoding Json failed.', Exception
+            # # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
+            # try:
+            #     print 'Decoding Json files and tokenizing them.'
+            #     normalizer = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
+            #     normalizer.json_input()
+            # except Exception:
+            #     print 'Decoding Json failed.', Exception
 
             # STEP 2: perform NER
             try:
@@ -652,6 +652,8 @@ class ExperimentalDataminingNER(DefaultTask):
         # Add the event type - will be put into Premis.
         self.event_type = 'datamining_ner'
 
+        starttime = time.time()
+
         tl = task_context.task_logger
 
         tagger = task_context.additional_data['tagger']
@@ -659,6 +661,7 @@ class ExperimentalDataminingNER(DefaultTask):
 
         try:
             tagger.assign_tags(tokenized_file)
+            print 'Finished tagging %s, time elapsed: %d seconds.' % (tokenized_file, time.time()-starttime)
         except Exception, e:
             print('NER failed for %s.' % tokenized_file), e
             tl.adderr('NER failed for %s.' % tokenized_file, e)
