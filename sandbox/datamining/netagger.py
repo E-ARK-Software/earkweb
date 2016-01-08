@@ -59,17 +59,17 @@ class NETagger(object):
                 output.write('%s\n' % name.decode('utf-8'))
             print 'Extracted locations for %s ...' % file
 
-    def removeDuplicates(self):
-        names_no_duplicates = ''
-        with codecs.open(os.path.join(self.path, 'locations.txt'), 'rw') as loc:
-            all_names = loc.readlines()
-            # remove all entries that appear more than once - to avoid superfluous geocoder API calls
-            for name in list(set(all_names)):
-                names_no_duplicates += name
-
-        with codecs.open(os.path.join(self.path, 'clean_locations.txt'), 'w') as output:
-            for name in names_no_duplicates:
-                output.write(name)
+    # def removeDuplicates(self):
+    #     names_no_duplicates = ''
+    #     with codecs.open(os.path.join(self.path, 'locations.txt'), 'rw') as loc:
+    #         all_names = loc.readlines()
+    #         # remove all entries that appear more than once - to avoid superfluous geocoder API calls
+    #         for name in list(set(all_names)):
+    #             names_no_duplicates += name
+    #
+    #     with codecs.open(os.path.join(self.path, 'clean_locations.txt'), 'w') as output:
+    #         for name in names_no_duplicates:
+    #             output.write(name)
 
 
 

@@ -597,13 +597,13 @@ class ExperimentalDatamining(DefaultTask):
         tl.addinfo('Preparing NER-based datamining.')
 
         if os.path.exists(os.path.join(task_context.path, 'submission/representations/newspapers')):
-            # # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
-            # try:
-            #     print 'Decoding Json files and tokenizing them.'
-            #     normalizer = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
-            #     normalizer.json_input()
-            # except Exception:
-            #     print 'Decoding Json failed.', Exception
+            # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
+            try:
+                print 'Decoding Json files and tokenizing them.'
+                normalizer = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
+                normalizer.json_input()
+            except Exception:
+                print 'Decoding Json failed.', Exception
 
             # STEP 2: perform NER
             try:
@@ -662,6 +662,7 @@ class ExperimentalDataminingNER(DefaultTask):
         try:
             tagger.assign_tags(tokenized_file)
             print 'Finished tagging %s, time elapsed: %d seconds.' % (tokenized_file, time.time()-starttime)
+            tl.addinfo('Finished tagging %s, time elapsed: %d seconds.' % (tokenized_file, time.time()-starttime))
         except Exception, e:
             print('NER failed for %s.' % tokenized_file), e
             tl.adderr('NER failed for %s.' % tokenized_file, e)
@@ -689,12 +690,25 @@ class ExperimentalDataminingGeoAndStats(DefaultTask):
         # STEP 3: use the NER result, here: geocode the extracted locations
         try:
             print 'Retrieving locations for extracted locations.'
-            geocoder = Geocoder()
-        except Exception:
-            print 'Geocoding failed.', Exception
+            geocoder = Geocoder(os.path.join(task_context.path, 'submission/representations/newspapers'))
+
+            # first, remove duplicate entries in location list, reason: avoid redundant calls to Nominatim
+            geocoder.removeDuplicates()
+
+            # second, get the coordinates
+            geocoder.get_coordinates()
+        except Exception, e:
+            print 'Geocoding failed.', e
 
         # STEP 4: create some statistics: how important is a location for the text (tf-idf)
-        print 'Calculating some statistical values.'
+        try:
+            print 'Calculating some statistical values.'
+            stats = EntityStatistics(os.path.join(task_context.path, 'submission/representations/newspapers'))
+            stats.idf(32)
+            stats.tfidf()
+        except Exception, e:
+            print 'Statistics failed.', e
+
 
         task_context.task_status = 0
         return task_context.additional_data
@@ -712,7 +726,7 @@ import fnmatch
 from workers.default_task_context import DefaultTaskContext
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete', 'ExperimentalDatamining']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete', 'ExperimentalDataminingGeoAndStats']
 
     def run_task(self, task_context):
         """
