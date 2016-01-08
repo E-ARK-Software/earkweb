@@ -13,7 +13,7 @@ class InputNormalization(object):
         if not os.path.exists(os.path.join(source, 'ner')):
             os.makedirs(os.path.join(source, 'ner'))
 
-    def input_json(self):
+    def json_input(self):
         for issue in self.newspaper_list:
             # if issue == 'tokens': self.newspaper_list.pop(self.newspaper_list.index(issue))
             issue_json = os.listdir(os.path.join(self.newspaper_location, issue))[0]
@@ -36,7 +36,7 @@ class TestJsonDecoder(unittest.TestCase):
 
     def test_decoding(self):
         decoder = InputNormalization('/var/data/nlp/presse_subset')
-        decoder.input_json()
+        decoder.json_input()
 
 
 if __name__ == '__main__':

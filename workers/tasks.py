@@ -600,20 +600,37 @@ class ExperimentalDatamining(DefaultTask):
             # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
             try:
                 print 'Decoding Json files and tokenizing them.'
-                decoder = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
-                decoder.input_json()
+                normalizer = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
+                normalizer.json_input()
             except Exception:
                 print 'Decoding Json failed.', Exception
 
             # STEP 2: perform NER
             try:
-                print 'Performing NER on previously tokenized files.'
+                print 'Creating celery tasks to perform NER on previously tokenized files.'
+
+                nertask = ExperimentalDataminingNER()
                 tagger = NETagger(os.path.join(task_context.path, 'submission/representations/newspapers'))
+
+                # queue a celery task for every file that should be processed with NER
                 for file in os.listdir(os.path.join(task_context.path, 'submission/representations/newspapers/ner')):
-                    tagger.assign_tags(os.path.join(task_context.path, 'submission/representations/newspapers/ner/%s' % file))
+                    # tagger.assign_tags(os.path.join(task_context.path, 'submission/representations/newspapers/ner/%s' % file))
+                    ner_target = os.path.join(task_context.path, 'submission/representations/newspapers/ner/%s' % file)
+                    input = ({'tagger': tagger,
+                              'target': ner_target})
+
+                    task_context.additional_data = dict(task_context.additional_data.items() + input.items())
+                    context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.ExperimentalDataminingNER', None, task_context.additional_data, None)
+
+                    id = uuid.uuid4().__str__() # TODO: maybe use this like with the migrations?
+                    nertask.apply_async((context,), queue='default', task_id=id)
+
+                    tl.addinfo('NER queued for %s.' %  ner_target, display=False)
+                    print 'NER queued for %s.' %  ner_target
+
                 # tagger.removeDuplicates() # TODO
-            except Exception:
-                print 'NER failed.', Exception
+            except Exception, e:
+                print 'NER failed.', e
         else:
             pass
 
@@ -623,7 +640,7 @@ class ExperimentalDatamining(DefaultTask):
 
 class ExperimentalDataminingNER(DefaultTask):
 
-    accept_input_from = [ExperimentalDatamining.__name__, 'ExperimentalDataminingNER']
+    accept_input_from = [ExperimentalDatamining.__name__, SIPValidation.__name__, 'ExperimentalDataminingNER']
 
     def run_task(self, task_context):
         """
@@ -636,6 +653,15 @@ class ExperimentalDataminingNER(DefaultTask):
         self.event_type = 'datamining_ner'
 
         tl = task_context.task_logger
+
+        tagger = task_context.additional_data['tagger']
+        tokenized_file = task_context.additional_data['target']
+
+        try:
+            tagger.assign_tags(tokenized_file)
+        except Exception, e:
+            print('NER failed for %s.' % tokenized_file), e
+            tl.adderr('NER failed for %s.' % tokenized_file, e)
 
         task_context.task_status = 0
         return task_context.additional_data
@@ -771,7 +797,7 @@ class AIPMigrations(DefaultTask):
                                   'source': migration_source,
                                   'target': migration_target,
                                   'targetrep': target_rep,
-                                  'taskid': id.input_json('utf-8'),
+                                  'taskid': id.decode('utf-8'),
                                   'commandline': self.args})
                         task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 

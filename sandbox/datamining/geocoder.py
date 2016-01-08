@@ -35,7 +35,7 @@ class testGeocoder(unittest.TestCase):
                 entity.strip('\n')
                 print 'Nominatim call for: %s' % entity
                 lat, long = coords.get_coordinates(entity)
-                geo = L.georesult({'name': entity.input_json('utf-8'),
+                geo = L.georesult({'name': entity.decode('utf-8'),
                                    'latitude': lat,
                                    'longitude': long,
                                    'idf': ''})

@@ -56,7 +56,7 @@ class NETagger(object):
                 # This ensures the following: if in the central file a name is duplicated, it means that it shows up
                 # in more than one source file. Number of occurrences = number of files (newspaper issues) that
                 # contain this word. This information is needed to calculate the tf-idf.
-                output.write('%s\n' % name.input_json('utf-8'))
+                output.write('%s\n' % name.decode('utf-8'))
             print 'Extracted locations for %s ...' % file
 
     def removeDuplicates(self):
