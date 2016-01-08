@@ -108,6 +108,10 @@ Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
    For the datamining/NER showcase, you need `nltk`. Download here: https://pypi.python.org/pypi/nltk/3.1 and in the vitualenv:
    
         pip install ~/Downloads/nltk-3.1.tar.gz 
+        
+   Also:
+   
+        pip install geopy
 
 4. Enable CAS in Django
 

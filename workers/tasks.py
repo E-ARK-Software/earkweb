@@ -570,7 +570,12 @@ class SIPValidation(DefaultTask):
         return task_context.additional_data
 
 
-from sandbox.datamining.jsondecoder import JsonDecoder
+#########################################
+##### Experimental Datamining: Start ####
+#########################################
+
+
+from sandbox.datamining.inputnormalization import InputNormalization
 from sandbox.datamining.geocoder import Geocoder
 from sandbox.datamining.netagger import NETagger
 from sandbox.datamining.statistics import EntityStatistics
@@ -580,23 +585,23 @@ class ExperimentalDatamining(DefaultTask):
 
     def run_task(self, task_context):
         """
-        Data Mining Showcase / NER
+        Data Mining Showcase / NER: Input Normalization
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:6,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'datamining'
+        self.event_type = 'datamining_preparation'
 
         tl = task_context.task_logger
-        tl.addinfo('Performing an NER-based datamining showcase.')
+        tl.addinfo('Preparing NER-based datamining.')
 
         if os.path.exists(os.path.join(task_context.path, 'submission/representations/newspapers')):
-            # STEP 1: retrieve data (test set is in json format) and prepare it for NER
+            # STEP 1: Input Normalization - retrieve data (test set is in json format) and prepare it for NER
             try:
                 print 'Decoding Json files and tokenizing them.'
-                decoder = JsonDecoder(os.path.join(task_context.path, 'submission/representations/newspapers'))
-                decoder.decode()
+                decoder = InputNormalization(os.path.join(task_context.path, 'submission/representations/newspapers'))
+                decoder.input_json()
             except Exception:
                 print 'Decoding Json failed.', Exception
 
@@ -606,20 +611,69 @@ class ExperimentalDatamining(DefaultTask):
                 tagger = NETagger(os.path.join(task_context.path, 'submission/representations/newspapers'))
                 for file in os.listdir(os.path.join(task_context.path, 'submission/representations/newspapers/ner')):
                     tagger.assign_tags(os.path.join(task_context.path, 'submission/representations/newspapers/ner/%s' % file))
-                tagger.removeDuplicates()
+                # tagger.removeDuplicates() # TODO
             except Exception:
                 print 'NER failed.', Exception
-
-            # STEP 3: use the NER result, here: geocode the extracted locations
-            print 'Retrieving locations for extracted locations.'
-
-            # STEP 4: create some statistics: how important is a location for the text (tf-idf)
-            print 'Calculating some statistical values.'
         else:
             pass
 
         task_context.task_status = 0
         return task_context.additional_data
+
+
+class ExperimentalDataminingNER(DefaultTask):
+
+    accept_input_from = [ExperimentalDatamining.__name__, 'ExperimentalDataminingNER']
+
+    def run_task(self, task_context):
+        """
+        Data Mining Showcase / NER: Perform NER
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:0,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'datamining_ner'
+
+        tl = task_context.task_logger
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
+class ExperimentalDataminingGeoAndStats(DefaultTask):
+
+    accept_input_from = [ExperimentalDataminingNER.__name__, 'ExperimentalDataminingGeoAndStats']
+
+    def run_task(self, task_context):
+        """
+        Data Mining Showcase / NER: Input Normalization
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:2,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'datamining_geo_stats'
+
+        tl = task_context.task_logger
+
+        # STEP 3: use the NER result, here: geocode the extracted locations
+        try:
+            print 'Retrieving locations for extracted locations.'
+            geocoder = Geocoder()
+        except Exception:
+            print 'Geocoding failed.', Exception
+
+        # STEP 4: create some statistics: how important is a location for the text (tf-idf)
+        print 'Calculating some statistical values.'
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
+#########################################
+##### Experimental Datamining: End  #####
+#########################################
 
 
 import uuid
@@ -717,7 +771,7 @@ class AIPMigrations(DefaultTask):
                                   'source': migration_source,
                                   'target': migration_target,
                                   'targetrep': target_rep,
-                                  'taskid': id.decode('utf-8'),
+                                  'taskid': id.input_json('utf-8'),
                                   'commandline': self.args})
                         task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
