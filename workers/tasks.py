@@ -570,9 +570,9 @@ class SIPValidation(DefaultTask):
         return task_context.additional_data
 
 
-#########################################
-##### Experimental Datamining: Start ####
-#########################################
+###############################################
+##### Experimental Datamining (NER): Start ####
+###############################################
 
 
 from sandbox.datamining.inputnormalization import InputNormalization
@@ -587,7 +587,7 @@ class ExperimentalDatamining(DefaultTask):
         """
         Data Mining Showcase / NER: Input Normalization
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:2,stage:2
+        @param      tc: order:7,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -646,7 +646,7 @@ class ExperimentalDataminingNER(DefaultTask):
         """
         Data Mining Showcase / NER: Perform NER
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:0,stage:2
+        @param      tc: order:8,type:0,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -679,7 +679,7 @@ class ExperimentalDataminingGeoAndStats(DefaultTask):
         """
         Data Mining Showcase / NER: Input Normalization
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:2,stage:2
+        @param      tc: order:9,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -714,9 +714,85 @@ class ExperimentalDataminingGeoAndStats(DefaultTask):
         return task_context.additional_data
 
 
-#########################################
-##### Experimental Datamining: End  #####
-#########################################
+###############################################
+##### Experimental Datamining (NER): End  #####
+###############################################
+
+
+##################################
+### Text Classification: Start ###
+##################################
+
+from sklearn.externals import joblib
+import numpy
+class ExperimentalTextClassifier(DefaultTask):
+
+    accept_input_from = [SIPValidation.__name__, 'ExperimentalTextClassifier']
+
+    def run_task(self, task_context):
+        """
+        Experimental Text Classifier
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:10,type:2,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        self.event_type = 'currently not in vocabulary'
+
+        tl = task_context.task_logger
+        tl.addinfo('Starting the text classification task.')
+
+        # get a list of text that should be categorized
+        uncategorized_texts = os.listdir(os.path.join(task_context.path, 'submission/representations/uncategorized'))
+
+        # list of categories
+        categories = ['AutoMobil', 'Bildung', 'Etat', 'Familie', 'Finanzen', 'Gesundheit', 'Greenlife', 'Immobilien',
+                      'Inland', 'International', 'Karriere', 'Kultur', 'Lifestyle', 'Meinung', 'Panorama', 'Politik',
+                      'Reise', 'Sport', 'Stil', 'Technik', 'Web', 'Wirtschaft', 'Wissenschaft']
+
+        # load the model
+        classifier = joblib.load('/opt/Projects/EARK/earkweb/sandbox/machinelearning_scikit/newspapers.pkl')
+
+        # get categories (using confidence to extract the two highest-rated categories)
+        confidence = classifier.decision_function(uncategorized_texts)
+
+        # create an xml file for categorization results
+        N = objectify.ElementMaker(annotate=False)
+        root = N.categories({'title': 'categories for text files'})
+
+        # category for each text
+        for textfile in uncategorized_texts:
+            # get category with highest confidence rating
+            result = confidence[uncategorized_texts.index(textfile)].tolist()
+            max_value = float(max(result))
+            max_value_index = result.index(max_value)
+            print 'Highest confidence: %f for category <%s>.' % (max_value, categories[max_value_index])
+
+            # get second highest confidence rating
+            result[max_value_index] = -2
+            second_value = float(max(result))
+            second_value_index = result.index(second_value)
+            print 'Second highest confidence: %f for category <%s>.' % (second_value, categories[second_value_index])
+
+            # create xml element
+            categorization = N.categorization({'file': textfile,
+                                               'category': categories[max_value_index],
+                                               'alternative': categories[second_value_index]})
+            root.append(categorization)
+
+        # write xml file to disk
+        str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+        path_loc_xml = os.path.join(os.path.join(task_context.path, 'submission/representations/uncategorized/categories.xml'))
+        with open(path_loc_xml, 'w') as output_file:
+            output_file.write(str)
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
+################################
+### Text Classification: End ###
+################################
 
 
 import uuid
@@ -726,13 +802,13 @@ import fnmatch
 from workers.default_task_context import DefaultTaskContext
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete', 'ExperimentalDataminingGeoAndStats']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete', 'ExperimentalDataminingGeoAndStats', 'ExperimentalTextClassifier']
 
     def run_task(self, task_context):
         """
         AIP File Migration
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -876,7 +952,7 @@ class MigrationProcess(DefaultTask):
         """
         File Migration
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:0,stage:0
+        @param      tc: order:12,type:0,stage:0
         """
 
         # Add the event type - will be put into Premis.
@@ -956,7 +1032,7 @@ class AIPCheckMigrationProgress(DefaultTask):
         AIP Check Migration Progess
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1045,7 +1121,7 @@ class MigrationsComplete(DefaultTask):
         Migrations Complete
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:0,stage:0
+        @param      tc: order:14,type:0,stage:0
         """
 
         # Add the event type - will be put into Premis.
@@ -1068,7 +1144,7 @@ class CreatePremisAfterMigration(DefaultTask):
         Create Premis After Migration
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:15,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1099,7 +1175,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
         AIP Representation Mets Creation
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:16,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1149,7 +1225,7 @@ class AIPPackageMetsCreation(DefaultTask):
         """
         AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:17,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1196,7 +1272,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:18,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1237,7 +1313,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:2,stage:2
+        @param      tc: order:19,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1321,7 +1397,7 @@ class AIPStore(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:2,stage:2
+        @param      tc: order:20,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1370,7 +1446,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:2,stage:2
+        @param      tc: order:21,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1434,7 +1510,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:4,stage:4
+        @param      tc: order:22,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -1478,7 +1554,7 @@ class DIPAcquireAIPs(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:4,stage:4
+        @param      tc: order:23,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -1538,7 +1614,7 @@ class DIPExtractAIPs(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4,stage:4
+        @param      tc: order:24,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.

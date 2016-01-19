@@ -112,6 +112,17 @@ Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm)
    Also:
    
         pip install geopy
+        
+   The datamining/text classification requires `numpy`, `scipy` and `scikit-learn`. A requirement for SciPy is `lapack`, which also requires a `Fortran` compiler:
+   
+       sudo apt-get install gfortran
+       sudo apt-get install liblapack-dev
+       
+   And then in the virtual environment:
+   
+       pip install numpy
+       pip install scipy
+       pip install -U scikit-learn
 
 4. Enable CAS in Django
 
