@@ -753,32 +753,34 @@ class ExperimentalTextClassifier(DefaultTask):
         # load the model
         classifier = joblib.load('/opt/Projects/EARK/earkweb/sandbox/machinelearning_scikit/newspapers.pkl')
 
-        # get categories (using confidence to extract the two highest-rated categories)
-        confidence = classifier.decision_function(uncategorized_texts)
-
         # create an xml file for categorization results
         N = objectify.ElementMaker(annotate=False)
         root = N.categories({'title': 'categories for text files'})
 
         # category for each text
         for textfile in uncategorized_texts:
-            # get category with highest confidence rating
-            result = confidence[uncategorized_texts.index(textfile)].tolist()
-            max_value = float(max(result))
-            max_value_index = result.index(max_value)
-            print 'Highest confidence: %f for category <%s>.' % (max_value, categories[max_value_index])
+            with open(os.path.join(task_context.path, 'submission/representations/uncategorized/%s' % textfile), 'r') as input:
+                # get categories (using confidence to extract the two highest-rated categories)
+                confidence = classifier.decision_function(input.readlines())
+                result = confidence[0].tolist()
+                
+                # get category with highest confidence rating
+                max_value = float(max(result))
+                max_value_index = result.index(max_value)
+                print '---------- File: %s' % textfile
+                print 'Highest confidence: %f for category <%s>.' % (max_value, categories[max_value_index])
 
-            # get second highest confidence rating
-            result[max_value_index] = -2
-            second_value = float(max(result))
-            second_value_index = result.index(second_value)
-            print 'Second highest confidence: %f for category <%s>.' % (second_value, categories[second_value_index])
+                # get second highest confidence rating
+                result[max_value_index] = -2
+                second_value = float(max(result))
+                second_value_index = result.index(second_value)
+                print 'Second highest confidence: %f for category <%s>.' % (second_value, categories[second_value_index])
 
-            # create xml element
-            categorization = N.categorization({'file': textfile,
-                                               'category': categories[max_value_index],
-                                               'alternative': categories[second_value_index]})
-            root.append(categorization)
+                # create xml element
+                categorization = N.categorization({'file': textfile,
+                                                   'category': categories[max_value_index],
+                                                   'alternative': categories[second_value_index]})
+                root.append(categorization)
 
         # write xml file to disk
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
