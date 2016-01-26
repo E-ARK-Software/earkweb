@@ -209,8 +209,8 @@ class MetsGenerator(object):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
-        # structMap 'earkstructmap' - default, physical structure
-        mets_earkstructmap = M.structMap({"LABEL": "earkstructmap", "TYPE": "physical"})
+        # structMap 'E-ARK structural map' - default, physical structure
+        mets_earkstructmap = M.structMap({"LABEL": "E-ARK structural map", "TYPE": "physical"})
         root.append(mets_earkstructmap)
         package_div = M.div({"LABEL": packageid})
         # append physical structMap
