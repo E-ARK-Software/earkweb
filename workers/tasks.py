@@ -29,7 +29,7 @@ from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
-from earkcore.utils.fileutils import mkdir_p
+from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
@@ -1404,8 +1404,8 @@ class AIPStore(DefaultTask):
         @param      tc: order:20,type:2,stage:2
         """
 
-        # Add the event type - will be put into Premis.
-        self.event_type = 'not in vocabulary'
+        # no premis event
+        self.event_type = ''
 
         tl = task_context.task_logger
 
@@ -1422,21 +1422,27 @@ class AIPStore(DefaultTask):
         else:
             tl.addinfo('There is no parent AIP for this AIP.')
 
-        result = {"storageLoc": "undefined"}
         try:
             package_id = task_context.additional_data["identifier"]
             storePath = task_context.additional_data["storageDest"]
-
-            # copy the .tar
-            # TODO: remove tar from working area? Need to adapt LilyHDFSUpload in this case.
-            if not os.path.exists(os.path.join(storePath, '%s.tar' % package_id)):
-                shutil.copy2(os.path.join(task_context.path, '%s.tar' % package_id), storePath)
-                tl.addinfo('The tar container for %s has been copied to: %s' % (package_id, task_context.additional_data['storageDest']))
+            if not task_context.additional_data['storageDest']:
+                tl.adderr("Storage root must be defined to execute this task.")
             else:
-                tl.adderr('A tar container with the same name already exists at the storage location, nothing has been copied. Please check if this is the same tar or not!')
-
-            task_context.task_status = 0
-            task_context.additional_data["storageLoc"] = os.path.join(storePath, '%s.tar' % package_id)
+                # copy the package
+                tarfile_path = "%s/%s.tar" % (task_context.path, package_id)
+                if not os.path.exists(tarfile_path):
+                    tl.adderr("Unable to store package. The package container file does not exist: %s." % tarfile_path)
+                else:
+                    abspath_basename = "%s/%s" % (storePath, package_id)
+                    tarfile_dest = increment_file_name_suffix(abspath_basename, "tar")
+                    shutil.copy2(tarfile_path, tarfile_dest)
+                    tl.addinfo('The tar container for %s has been copied to: %s' % (tarfile_path, tarfile_dest))
+                    if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(tarfile_dest).get(ChecksumAlgorithm.SHA256):
+                        tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
+                        task_context.additional_data["storageLoc"] = tarfile_dest
+                    else:
+                        tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+            task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
             task_context.task_status = 1
@@ -1452,57 +1458,39 @@ class LilyHDFSUpload(DefaultTask):
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:21,type:2,stage:2
         """
-
-        # Add the event type - will be put into Premis.
-        self.event_type = 'not in vocabulary'
-
+        # no premis event
+        self.event_type = ''
         tl = task_context.task_logger
-
         try:
-            new_id = task_context.additional_data["identifier"]
-            # identifier (not uuid of the working directory) is used as first part of the tar file
-            aip_path = os.path.join(task_context.path, "%s.tar" % new_id)
-            #TODO: move to separate task AIPLongtermStore
-            #aip_path = latest_aip(ip_storage_dir, 'tar')
-
-            tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
-
-            if aip_path is not None:
-
+            aip_path = task_context.additional_data["storage_loc"]
+            if not aip_path:
+                tl.adderr("Required context parameter \"storage location\" (storage_loc) is missing")
+            if not (aip_path and os.path.exists(aip_path)):
+                tl.adderr("Unable to access container package at the given storage location: %s" % aip_path)
+            if len(tl.err) == 0:
+                tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-
                 rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
-
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.
                 partial_custom_progress_reporter = partial(custom_progress_reporter, self)
                 hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
                 rest_resource_path = "hsink/fileresource/files/{0}"
-
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - task_context.start_time, upload_result.status_code, upload_result.hdfs_path_id))
-
                 checksum_resource_uri = "hsink/fileresource/files/%s/digest/sha-256" % upload_result.hdfs_path_id
                 tl.addinfo("Verifying checksum at %s" % (checksum_resource_uri))
                 hdfs_sha256_checksum = hdfs_rest_client.get_string(checksum_resource_uri)
-
                 if ChecksumFile(aip_path).get(ChecksumAlgorithm.SHA256) == hdfs_sha256_checksum:
                     tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
                 else:
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
-
-                task_context.task_status = 0
-                return task_context.additional_data
-            else:
-                tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
-                task_context.task_status = 1
-                return task_context.additional_data
-        except Exception:
-            tl.adderr("No AIP file found for identifier: %s" % task_context.uuid)
-            task_context.task_status = 1
-            return task_context.additional_data
+        except Exception, err:
+            tl.adderr("An error occurred: %s" % err)
+        task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        return task_context.additional_data
 
 
 

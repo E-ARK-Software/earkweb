@@ -77,9 +77,9 @@ class MetsGenerator(object):
 
     def createAgent(self,role, type, other_type, name, note):
         if other_type:
-            agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+            agent = M.agent({"ROLE": role, "TYPE": type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
         else:
-            agent = M.agent({"ROLE":role,"TYPE":type}, M.name(name), M.note(note))
+            agent = M.agent({"ROLE": role, "TYPE": type}, M.name(name), M.note(note))
         return agent
 
     def addFile(self, file_name, mets_filegroup):
@@ -133,7 +133,7 @@ class MetsGenerator(object):
             pointer = M.mptr({"LOCTYPE": "OTHER",
                               "OTHERLOCTYPE": "UUID",
                               q(XLINK_NS, "title"): ("Referencing a child AIP."),
-                              q(XLINK_NS, "href"): identifier,
+                              q(XLINK_NS, "href"): "urn:uuid:" + identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
             child.append(pointer)
 
@@ -166,7 +166,7 @@ class MetsGenerator(object):
         ###########################
 
         # create Mets root
-        METS_ATTRIBUTES = {"OBJID": packageid,
+        METS_ATTRIBUTES = {"OBJID": "urn:uuid:" + packageid,
                            "LABEL": "METS file describing the AIP matching the OBJID.",
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
@@ -209,8 +209,8 @@ class MetsGenerator(object):
         mets_filegroup = M.fileGrp({"ID": "ID" + uuid.uuid4().__str__(), "USE": "general filegroup"})
         mets_fileSec.append(mets_filegroup)
 
-        # structMap 'earkstructmap' - default, physical structure
-        mets_earkstructmap = M.structMap({"LABEL": "earkstructmap", "TYPE": "physical"})
+        # structMap 'E-ARK structural map' - default, physical structure
+        mets_earkstructmap = M.structMap({"LABEL": "E-ARK structural map", "TYPE": "physical"})
         root.append(mets_earkstructmap)
         package_div = M.div({"LABEL": packageid})
         # append physical structMap
@@ -231,7 +231,7 @@ class MetsGenerator(object):
         mets_structmap_div.append(mets_structmap_schema_div)
 
         # content structmap - all representations! (is only filled if no separate METS exists for the rep)
-        mets_structmap_content_div = M.div({"LABEL": "files from /data"})
+        mets_structmap_content_div = M.div({"LABEL": "content files"})
         mets_structmap_div.append(mets_structmap_content_div)
 
         # create structmap and div for Mets files from representations
@@ -249,8 +249,8 @@ class MetsGenerator(object):
             mets_structmap_relation.append(mets_div_rel)
             parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      "OTHERLOCTYPE": "UUID",
-                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this AIP (%s)." % packageid),
-                                     q(XLINK_NS, "href"): parent,
+                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this (urn:uuid:%s) AIP." % packageid),
+                                     q(XLINK_NS, "href"): "urn:uuid:" + parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
             mets_div_rel.append(parent_pointer)
 
@@ -382,7 +382,7 @@ class MetsGenerator(object):
                             # mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: %s." % (rep_name, packageid)),
+                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: urn:uuid:%s." % (rep_name, packageid)),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             #mets_structmap_rep_div.append(metspointer)

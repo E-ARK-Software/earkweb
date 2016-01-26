@@ -204,7 +204,8 @@ def apply_task(request):
                         additional_data['parent_path'] = InformationPackage.objects.get(identifier=ip.parent_identifier)
                     else:
                         additional_data['parent_path'] = ''
-
+                if wfm.identifier == LilyHDFSUpload.__name__:
+                    additional_data['storage_loc'] = ip.storage_loc
 
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)
