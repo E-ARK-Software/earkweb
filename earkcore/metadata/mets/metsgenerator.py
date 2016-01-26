@@ -77,9 +77,9 @@ class MetsGenerator(object):
 
     def createAgent(self,role, type, other_type, name, note):
         if other_type:
-            agent = M.agent({"ROLE":role,"TYPE":type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
+            agent = M.agent({"ROLE": role, "TYPE": type, "OTHERTYPE": other_type}, M.name(name), M.note(note))
         else:
-            agent = M.agent({"ROLE":role,"TYPE":type}, M.name(name), M.note(note))
+            agent = M.agent({"ROLE": role, "TYPE": type}, M.name(name), M.note(note))
         return agent
 
     def addFile(self, file_name, mets_filegroup):
@@ -166,7 +166,7 @@ class MetsGenerator(object):
         ###########################
 
         # create Mets root
-        METS_ATTRIBUTES = {"OBJID": packageid,
+        METS_ATTRIBUTES = {"OBJID": "URN:UUID:" + packageid,
                            "LABEL": "METS file describing the AIP matching the OBJID.",
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
@@ -249,7 +249,7 @@ class MetsGenerator(object):
             mets_structmap_relation.append(mets_div_rel)
             parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      "OTHERLOCTYPE": "UUID",
-                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this (%s) AIP." % packageid),
+                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this (URN:UUID:%s) AIP." % packageid),
                                      q(XLINK_NS, "href"): "URN:UUID:" + parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
             mets_div_rel.append(parent_pointer)
@@ -382,7 +382,7 @@ class MetsGenerator(object):
                             # mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: %s." % (rep_name, packageid)),
+                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: URN:UUID:%s." % (rep_name, packageid)),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             #mets_structmap_rep_div.append(metspointer)
