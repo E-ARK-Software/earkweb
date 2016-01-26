@@ -763,18 +763,18 @@ class ExperimentalTextClassifier(DefaultTask):
                 # get categories (using confidence to extract the two highest-rated categories)
                 confidence = classifier.decision_function(input.readlines())
                 result = confidence[0].tolist()
-                
+
                 # get category with highest confidence rating
                 max_value = float(max(result))
                 max_value_index = result.index(max_value)
-                print '---------- File: %s' % textfile
-                print 'Highest confidence: %f for category <%s>.' % (max_value, categories[max_value_index])
+                # print '---------- File: %s' % textfile
+                # print 'Highest confidence: %f for category <%s>.' % (max_value, categories[max_value_index])
 
                 # get second highest confidence rating
                 result[max_value_index] = -2
                 second_value = float(max(result))
                 second_value_index = result.index(second_value)
-                print 'Second highest confidence: %f for category <%s>.' % (second_value, categories[second_value_index])
+                # print 'Second highest confidence: %f for category <%s>.' % (second_value, categories[second_value_index])
 
                 # create xml element
                 categorization = N.categorization({'file': textfile,
@@ -784,9 +784,11 @@ class ExperimentalTextClassifier(DefaultTask):
 
         # write xml file to disk
         str = etree.tostring(root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-        path_loc_xml = os.path.join(os.path.join(task_context.path, 'submission/representations/uncategorized/categories.xml'))
+        path_loc_xml = os.path.join(os.path.join(task_context.path, 'submission/representations/uncategorized/textcategories.xml'))
         with open(path_loc_xml, 'w') as output_file:
             output_file.write(str)
+
+        tl.addinfo('Done classifying all text files.')
 
         task_context.task_status = 0
         return task_context.additional_data
