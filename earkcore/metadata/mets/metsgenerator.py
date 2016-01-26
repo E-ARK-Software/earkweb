@@ -133,7 +133,7 @@ class MetsGenerator(object):
             pointer = M.mptr({"LOCTYPE": "OTHER",
                               "OTHERLOCTYPE": "UUID",
                               q(XLINK_NS, "title"): ("Referencing a child AIP."),
-                              q(XLINK_NS, "href"): identifier,
+                              q(XLINK_NS, "href"): "URN:UUID:" + identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
             child.append(pointer)
 
@@ -231,7 +231,7 @@ class MetsGenerator(object):
         mets_structmap_div.append(mets_structmap_schema_div)
 
         # content structmap - all representations! (is only filled if no separate METS exists for the rep)
-        mets_structmap_content_div = M.div({"LABEL": "files from /data"})
+        mets_structmap_content_div = M.div({"LABEL": "content files"})
         mets_structmap_div.append(mets_structmap_content_div)
 
         # create structmap and div for Mets files from representations
@@ -249,8 +249,8 @@ class MetsGenerator(object):
             mets_structmap_relation.append(mets_div_rel)
             parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      "OTHERLOCTYPE": "UUID",
-                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this AIP (%s)." % packageid),
-                                     q(XLINK_NS, "href"): parent,
+                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this (%s) AIP." % packageid),
+                                     q(XLINK_NS, "href"): "URN:UUID:" + parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
             mets_div_rel.append(parent_pointer)
 
