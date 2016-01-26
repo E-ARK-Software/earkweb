@@ -77,6 +77,9 @@ class PremisGenerator(object):
         size = os.path.getsize(abs_path)
         premis_id = 'ID' + uuid.uuid4().__str__()
 
+        if not fmt:
+            fmt = 'fmt/000'
+
         # create a Premis object
         object = P.object(
             {q(XSI_NS, 'type'): 'file', "xmlID": premis_id},
