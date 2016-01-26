@@ -8,6 +8,7 @@ __author__ = 'shsdev'
 import unittest
 import os
 import lxml
+import fnmatch
 
 from config.config import mets_schema_file
 from config.config import premis_schema_file
@@ -61,11 +62,11 @@ class MetsValidation(object):
                     element.clear()
                     while element.getprevious() is not None:
                         del element.getparent()[0]
-                elif event == 'end' and element.tag == q(METS_NS, 'div') and element.attrib['LABEL'] == 'representations':
-                    # representation mets files
-                    for element in element.getchildren():
-                        rep = element.attrib['LABEL']
-                        for child in element:
+                elif event == 'end' and element.tag == q(METS_NS, 'div') and element.attrib['LABEL'].startswith('representations/'):
+                    if fnmatch.fnmatch(element.attrib['LABEL'].rsplit('/', 1)[1], '*_mig-*'):
+                        # representation mets files
+                        rep = element.attrib['LABEL'].rsplit('/', 1)[1]
+                        for child in element.getchildren():
                             if child.tag == q(METS_NS, 'mptr'):
                                 metspath = child.attrib[q(XLINK_NS, 'href')]
                                 sub_mets = rep, metspath
@@ -169,7 +170,7 @@ class MetsValidation(object):
 
 class TestMetsValidation(unittest.TestCase):
     # TODO: add one test each for a valid and a faulty Mets
-    rootpath = '/var/data/earkweb/work/c214c594-421d-4026-81b1-d71250eb826b/'
+    rootpath = '/var/data/earkweb/work/63590252-4701-4a68-a90a-c518e2a897da/'
 
     def test_IP_mets(self):
         mets_validator = MetsValidation(self.rootpath)
