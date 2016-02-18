@@ -18,7 +18,7 @@ class NETagger(object):
         self.path = path
 
     def assign_tags(self, file):
-        starttime = time.time()
+        # starttime = time.time()
         with open(file, 'r') as f:
             tokens = f.readlines()
             ne_result = self.tagger.tag(tokens)
@@ -59,7 +59,7 @@ class NETagger(object):
                 # in more than one source file. Number of occurrences = number of files (newspaper issues) that
                 # contain this word. This information is needed to calculate the tf-idf.
                 output.write('%s\n' % name.decode('utf-8'))
-            print 'Extracted locations for %s, it took %d seconds. ...' % (file, time.time()-starttime)
+            # print 'Extracted locations for %s, it took %d seconds. ...' % (file, time.time()-starttime)
 
     # def removeDuplicates(self):
     #     names_no_duplicates = ''
