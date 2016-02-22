@@ -2,6 +2,7 @@ var blobField = 'content';
 var titleField = 'path';
 var bytesField = 'size';
 var typeField = 'contentType';
+var textCategoryField = 'textCategory'
 var rows = 20;
 
 function callback(data) {
@@ -84,7 +85,16 @@ function askSolr(start) {
     else
       query = contentTypesQuery;
   }
-  
+
+  // text category
+  // TODO: current: <last query term> AND category - should be: (<all query terms>) AND category
+  var category = document.forms.find.categoryString.value;
+  var categoryQuery = textCategoryField + ':"' + category + '"'; // enable more than one category
+  if (query)
+    query += ' AND ' + categoryQuery;
+   else
+    query = categoryQuery;
+
   if (!query) query = '*:*';
   
   var sort = document.forms.find.sort.value;
