@@ -733,7 +733,7 @@ class ExperimentalTextClassifier(DefaultTask):
         """
         Experimental Text Classifier
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:10,type:0,stage:2
         """
 
         # Add the event type - will be put into Premis.
