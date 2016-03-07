@@ -511,7 +511,8 @@ class SIPRestructuring(DefaultTask):
                 tl.addinfo("Restructuring content of package: %s" % str(delivery))
 
                 # TODO: maybe remove the state.xml already during SIP packaging
-                os.remove(os.path.join(str(delivery), 'state.xml'))
+                if os.path.exists(os.path.join(str(delivery), 'state.xml')):
+                    os.remove(os.path.join(str(delivery), 'state.xml'))
 
                 fs_childs =  os.listdir(str(delivery))
                 for fs_child in fs_childs:
