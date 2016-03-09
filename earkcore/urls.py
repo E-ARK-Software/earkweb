@@ -10,5 +10,4 @@ urlpatterns= patterns('',
     url(r'^save_parent_identifier/(?P<uuid>[0-9a-zA-Z-_/\.]{3,200})/$', views.save_parent_identifier, name='save_parent_identifier'),
     url(r'^read_ipfc/(?P<ip_sub_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.read_ipfc, name='read_ipfc'),
     url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
-
 )

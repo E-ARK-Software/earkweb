@@ -1,4 +1,5 @@
 import os
+
 from django.views.generic.detail import DetailView
 from django.contrib.auth.decorators import login_required
 from config.params import config_path_work
@@ -19,6 +20,15 @@ from django.http import JsonResponse
 from earkcore.utils import randomutils
 from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
+
+#from xml.xmlvalidation import XmlValidation
+#import lxml
+
+#from earkcore.models import DIP
+#from earkcore.utils.randomutils import getUniqueID
+#from workflow.models import WorkflowModules
+#from workers.tasks import AIPtoDIPReset
+#from django.core.urlresolvers import reverse
 
 class InformationPackageDetailView(DetailView):
     model = InformationPackage
@@ -133,3 +143,6 @@ def get_directory_json(request):
     else:
         package_name = dirlist
     return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/'), "check_callback" : "true" })
+
+
+
