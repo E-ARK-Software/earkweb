@@ -10,6 +10,7 @@ from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC,
 from earkcore.format.formatidentification import FormatIdentification
 from earkcore.metadata.XmlHelper import q, XSI_NS
 import fnmatch
+from earkcore.fixity.ChecksumFile import get_sha256_hash
 
 METS_NS = 'http://www.loc.gov/METS/'
 METSEXT_NS = 'ExtensionMETS'
@@ -42,12 +43,15 @@ class MetsGenerator(object):
         print "Working in rootdir %s" % root_path
         self.root_path = root_path
 
-    def sha256(self, fname):
-        hash = hashlib.sha256()
-        with open(fname) as f:
-            for chunk in iter(lambda: f.read(4096), ""):
-                hash.update(chunk)
-        return hash.hexdigest()
+    # def sha256(self, fname):
+    #     hash = hashlib.sha256()
+    #     with open(fname, 'rb') as f:
+    #         while True:
+    #             buf = f.read(65536)
+    #             if not buf:
+    #                 break
+    #             hash.update(buf)
+    #     return hash.hexdigest()
 
     def runCommand(self, program, stdin=PIPE, stdout=PIPE, stderr=PIPE):
         result, res_stdout, res_stderr = None, None, None
@@ -87,7 +91,7 @@ class MetsGenerator(object):
         # sys.setdefaultencoding('utf8')
         file_url = "file://./%s" % os.path.relpath(file_name, self.root_path)
         file_mimetype, _ = self.mime.guess_type(file_url)
-        file_checksum = self.sha256(file_name)
+        file_checksum = get_sha256_hash(file_name)
         file_size = os.path.getsize(file_name)
         file_cdate = get_file_ctime_iso_date_str(file_name, DT_ISO_FMT_SEC_PREC)
         file_id = "ID" + uuid.uuid4().__str__()
@@ -118,7 +122,7 @@ class MetsGenerator(object):
                       q(XLINK_NS, "type"): "simple",
                       q(XLINK_NS, "href"): rel_path,
                       "CHECKSUMTYPE": "SHA-256",
-                      "CHECKSUM": self.sha256(os.path.join(path, file)),
+                      "CHECKSUM": get_sha256_hash(os.path.join(path, file)),
                       "ID": id,
                       "MDTYPE": mdtype}
         return mets_mdref
