@@ -18,8 +18,13 @@ def get_sha256_hash(file):
     hash = hashlib.sha256()
     print file
     with open(file, 'rb') as file:
-        for block in iter(lambda: file.read(blocksize), ''):
-            hash.update(block)
+        # for block in iter(lambda: file.read(blocksize), ''):
+        #     hash.update(block)
+        while True:
+            buf = file.read(blocksize)
+            if not buf:
+                break
+            hash.update(buf)
     return hash.hexdigest()
 
 def checksum(file_path, wd=None, alg=ChecksumAlgorithm.SHA256):
