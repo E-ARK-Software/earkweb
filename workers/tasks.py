@@ -33,6 +33,7 @@ from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
+from earkcore.metadata.task_utils import validate_ead_metadata
 from earkweb.celeryapp import app
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from tasklogger import TaskLogger
@@ -155,16 +156,38 @@ class SIPReset(DefaultTask):
         task_context.task_status = 0
         return {'identifier': ""}
 
+class SIPDescriptiveMetadataConsistency(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataConsistency']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:2,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'SIPMetadataConsistency'
+
+        tl = task_context.task_logger
+        tl.addinfo("EAD metadata file validation.")
+        metadata_dir = os.path.join(task_context.path, 'metadata')
+        valid = validate_ead_metadata(metadata_dir, 'EAD.xml', None, tl)
+
+        task_context.task_status = 0 if valid else 1
+        return task_context.additional_data
 
 class SIPPackageMetadataCreation(DefaultTask):
 
-    accept_input_from = [SIPReset.__name__, 'SIPPackageMetadataCreation']
+    # Descriptive metadata check can be skipped
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataConsistency.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:1,stage:1
+        @param      tc: order:3,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
@@ -206,6 +229,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         task_context.task_status = 0
         return task_context.additional_data
 
+
 class SIPPackaging(DefaultTask):
 
     accept_input_from = [SIPPackageMetadataCreation.__name__, 'SIPPackaging']
@@ -214,7 +238,7 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,stage:1
+        @param      tc: order:4,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
@@ -254,6 +278,8 @@ class SIPPackaging(DefaultTask):
         task_context.task_status = 0
         return task_context.additional_data
 
+
+
 class SIPClose(DefaultTask):
 
     accept_input_from = [SIPPackaging.__name__, 'SIPClose']
@@ -262,7 +288,7 @@ class SIPClose(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,stage:2
+        @param      tc: order:5,type:1,stage:2
         """
 
         # Add the event type - will be put into Premis.

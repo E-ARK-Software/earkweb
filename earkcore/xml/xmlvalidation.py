@@ -5,16 +5,51 @@ __copyright__ = "Copyright 2015, The E-ARK Project"
 __license__ = "GPL"
 __version__ = "0.0.1"
 
-import lxml
-from lxml.etree import XMLSyntaxError
+import os
 import unittest
 from config.config import root_dir
 from validationresult import ValidationResult
+from earkcore.utils.fileutils import read_file_content
+from xmlschemanotfound import XMLSchemaNotFound
+
+import lxml.etree as ET
 
 class XmlValidation(object):
     """
     XML validation class
     """
+
+    XSI = "http://www.w3.org/2001/XMLSchema-instance"
+    XS = '{http://www.w3.org/2001/XMLSchema}'
+
+    SCHEMA_TEMPLATE = """<?xml version = "1.0" encoding = "UTF-8"?>
+    <schema xmlns="http://www.w3.org/2001/XMLSchema">
+    </schema>"""
+
+    def get_schema_from_instance(self, xml):
+        print xml
+        xml_dir, tail = os.path.split(xml)
+
+        xml_content = read_file_content(xml)
+        tree = ET.XML(xml_content)
+        schema_tree = ET.XML(self.SCHEMA_TEMPLATE)
+
+        #Find instances of xsi:schemaLocation
+        schema_locations = set(tree.xpath("//*/@xsi:schemaLocation", namespaces={'xsi': self.XSI}))
+        for schema_location in schema_locations:
+            namespaces_locations = schema_location.strip().split()
+            # Import all fnamspace/schema location pairs
+            for namespace, location in zip(*[iter(namespaces_locations)] * 2):
+                loc = os.path.abspath(os.path.join(xml_dir, location))
+                if not os.path.exists(loc):
+                    print "ERROR: XML-Schema file not found: %s" % loc
+                    raise XMLSchemaNotFound("XML-Schema file not found: %s" % loc)
+                xs_import = ET.Element(self.XS + "import")
+                xs_import.attrib['namespace'] = namespace
+                xs_import.attrib['schemaLocation'] = loc
+                schema_tree.append(xs_import)
+        return schema_tree
+
     def validate_XML_by_path(self, xml_path, schema_path):
         """
         This function validates the XML meta data file (parsed_mfile) describing the SIP against the .xsd (sfile),
@@ -28,15 +63,20 @@ class XmlValidation(object):
         @return:    Validation result (valid: true/false, processing log, error log)
         """
         validationResult = ValidationResult(False, [], [])
+        if schema_path is None:
+            validationResult.log.append("XML validation using schemata defined by the schemaLocation attribute.")
         try:
-            parsed_schema = lxml.etree.parse(schema_path)
-            parsed_xml = lxml.etree.parse(xml_path)
+            parsed_schema = ET.parse(schema_path) if schema_path is not None else self.get_schema_from_instance(xml_path)
+            parsed_xml = ET.parse(xml_path)
             validationResult = self.validate_XML(parsed_xml, parsed_schema)
-        except lxml.etree.XMLSchemaParseError, xspe:
+        except XMLSchemaNotFound, (instance):
+            validationResult.err.append("The XML file contains invalid XML-Schema file references. Please verify 'schemaLocation' attribute.")
+            validationResult.err.append(instance.parameter)
+        except ET.XMLSchemaParseError, xspe:
             # Something wrong with the schema (getting from URL/parsing)
             validationResult.err.append("XMLSchemaParseError occurred!")
             validationResult.err.append(xspe)
-        except lxml.etree.XMLSyntaxError, xse:
+        except ET.XMLSyntaxError, xse:
             # XML not well formed
             validationResult.err.append("XMLSyntaxError occurred!")
             validationResult.err.append(xse)
@@ -60,20 +100,20 @@ class XmlValidation(object):
         err = []
         try:
             # Validate parsed XML against schema returning a readable message on failure
-            schema = lxml.etree.XMLSchema(parsed_schema)
+            schema = ET.XMLSchema(parsed_schema)
             # Validate parsed XML against schema returning boolean value indicating success/failure
             log.append('Schema validity: "%s"' % schema.validate(parsed_xml))
             schema.assertValid(parsed_xml)
             valid_xml = True
-        except lxml.etree.XMLSchemaParseError, xspe:
+        except ET.XMLSchemaParseError, xspe:
             # Something wrong with the schema (getting from URL/parsing)
             err.append("XMLSchemaParseError occurred!")
             err.append(xspe)
-        except lxml.etree.XMLSyntaxError, xse:
+        except ET.XMLSyntaxError, xse:
             # XML not well formed
             err.append("XMLSyntaxError occurred!")
             err.append(xse)
-        except lxml.etree.DocumentInvalid, di:
+        except ET.DocumentInvalid, di:
             # XML failed to validate against schema
             err.append("DocumentInvalid occurred!")
             error = schema.error_log.last_error

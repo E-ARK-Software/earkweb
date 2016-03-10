@@ -93,6 +93,13 @@ def read_file_content(file_path):
     file_content = fh.read()
     return file_content
 
+import os, fnmatch
+
+def locate(pattern, root_path):
+    for path, dirs, files in os.walk(os.path.abspath(root_path)):
+        for filename in fnmatch.filter(files, pattern):
+            yield os.path.join(path, filename)
+
 def main():
     print remove_protocol("file://./test")
 
