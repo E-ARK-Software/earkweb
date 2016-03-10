@@ -127,6 +127,15 @@
             </form>
         </td>
       </tr>
+      <tr>
+        <td id="rootschemas-folder" colspan="2">
+            <div class="directorytree" id="dirtree-rootschemas"></div>
+            <form  onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'schemas' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <span style="float:left">{{ uploadFileForm.as_p }}</span>
+            </form>
+        </td>
+      </tr>
       {% endif %}
     </table>
 

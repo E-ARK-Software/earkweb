@@ -37,6 +37,8 @@ if(rep != "") {
 
     loadDir($('#dirtree-metadata'), uuid, 'metadata/descriptive');
 
+    loadDir($('#dirtree-rootschemas'), uuid, 'schemas');
+
 }
 //(function(){
 //    $.ajax({
