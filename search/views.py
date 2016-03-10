@@ -23,7 +23,7 @@ from forms import SearchForm, UploadFileForm
 from models import AIP, DIP, Inclusion
 from query import get_query_string
 
-from config.params import config_path_work
+from config.params import config_path_work, aip_folders
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt
@@ -39,6 +39,10 @@ from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
 from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import AIPtoDIPReset
+
+from earkcore.xml.xmlvalidation import XmlValidation
+from io import BytesIO
+import lxml
 
 @login_required
 def index(request, procname):
@@ -267,9 +271,12 @@ def toggle_select_package(request):
             identifier = request.POST["identifier"]
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)
+            ip = InformationPackage.objects.get(identifier=identifier)
+            if not ip:
+                return HttpResponse("{ \"success\": \"false\",  \"message\": \"missing package for identifier %s \" }" % identifier)
             if request.POST["action"] == "add":
                 if AIP.objects.filter(identifier=identifier).count() == 0:
-                    aip = AIP.objects.create(identifier=identifier, cleanid="", source="undefined", date_selected=timezone.now())
+                    aip = AIP.objects.create(identifier=identifier, cleanid="", source=ip.storage_loc, date_selected=timezone.now())
                     Inclusion(aip=aip, dip=dip).save()
                     print "Added new package %s" % identifier
                 elif dip.aips.filter(identifier=identifier).count() == 0:
@@ -434,3 +441,55 @@ def dip_detail_table(request):
         "config_path_work": config_path_work
     })
     return render_to_response('search/diptable.html', locals(), context_instance=context)
+
+@login_required
+@csrf_exempt
+def submit_order(request):
+    print 'received request' + request.method
+    validator = XmlValidation()
+    if request.method == 'POST':
+        order_xml = BytesIO(request.body)
+        parsed_order_xml = lxml.etree.parse(order_xml)
+        parsed_order_schema = lxml.etree.parse("./earkcore/xml/resources/order.xsd")
+        result = validator.validate_XML(parsed_order_xml, parsed_order_schema)
+        root = parsed_order_xml.getroot()
+
+        # verify that all necessary AIPs exist return error otherwise
+        for child in root.iterchildren('UnitOfDescription'):
+            aip_identifier = child.iterchildren('ReferenceCode').next().text
+            if AIP.objects.filter(identifier=aip_identifier).count() == 0:
+                return HttpResponse("Unknown AIP for provided UUID %s" % aip_identifier)
+
+
+        order_title = root.iterchildren('OrderTitle').next().text
+        dip = DIP.objects.create(name=order_title)
+        uuid = getUniqueID()
+        wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
+        InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=order_title, last_task=wf)
+        print "Created DIP with UUID %s" % aip_identifier
+
+        for child in root.iterchildren('UnitOfDescription'):
+            aip_identifier = child.iterchildren('ReferenceCode').next().text
+            aip = AIP.objects.get(identifier=aip_identifier)
+            Inclusion(aip=aip, dip=dip).save()
+            print "Added existing package %s" % aip_identifier
+
+        return HttpResponse(uuid)
+    else:
+        return HttpResponse("Unsupported GET request.")
+
+@login_required
+@csrf_exempt
+def order_status(request):
+    print 'received request' + request.method
+    if request.method == 'POST':
+        pkg_uuid = request.POST['pkg_uuid']
+        ip = InformationPackage.objects.get(uuid=pkg_uuid)
+        dip = DIP.objects.get(name=ip.packagename)
+        print "Found DIP for provided UUID %s = %s" % (pkg_uuid, dip.name)
+
+        stat_proc_choices = dict(StatusProcess_CHOICES)
+        print stat_proc_choices[ip.statusprocess]
+        return HttpResponse(stat_proc_choices[ip.statusprocess])
+    else:
+        return HttpResponse("Unsupported GET request.")

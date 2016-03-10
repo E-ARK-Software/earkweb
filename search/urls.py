@@ -28,4 +28,6 @@ urlpatterns= patterns('',
     url(r'^dip/([^/]+)/aip/([^/]+)$', views.aip, name='aip'),
     url(r'^dip_detail_table$', views.dip_detail_table, name='dip_detail_table'),
     url(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uuid>[a-z0-9-]{36,36})/$', earkcore.views.working_area, name='working_area'),
+    url(r'^submit_order/', views.submit_order, name='submit_order'),
+    url(r'^order_status/', views.order_status, name='order_status'),
 )
