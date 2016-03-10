@@ -1,10 +1,8 @@
 import os
 from lxml import etree, objectify
 import unittest
-import hashlib
 import uuid
 from mimetypes import MimeTypes
-from config.config import root_dir
 from subprocess import Popen, PIPE
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 from earkcore.format.formatidentification import FormatIdentification
@@ -42,16 +40,6 @@ class MetsGenerator(object):
     def __init__(self, root_path):
         print "Working in rootdir %s" % root_path
         self.root_path = root_path
-
-    # def sha256(self, fname):
-    #     hash = hashlib.sha256()
-    #     with open(fname, 'rb') as f:
-    #         while True:
-    #             buf = f.read(65536)
-    #             if not buf:
-    #                 break
-    #             hash.update(buf)
-    #     return hash.hexdigest()
 
     def runCommand(self, program, stdin=PIPE, stdout=PIPE, stderr=PIPE):
         result, res_stdout, res_stderr = None, None, None
