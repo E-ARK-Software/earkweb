@@ -128,9 +128,9 @@ class MetsValidation(object):
         log = []
 
         # get information about the file
-        attr_path =  file.getchildren()[0].attrib[q(XLINK_NS,'href')]
+        attr_path = file.getchildren()[0].attrib[q(XLINK_NS, 'href')]
         attr_size = file.attrib['SIZE']
-        attr_checksum = file.attrib['CHECKSUM']
+        attr_checksum = file.attrib['CHECKSUM'].lower() # just in case someone creates a checksum with uppercase letters
         attr_checksumtype = file.attrib['CHECKSUMTYPE']
         # mimetpye = file.attrib['MIMETYPE']
 
