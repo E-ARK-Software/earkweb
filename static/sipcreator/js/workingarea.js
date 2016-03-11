@@ -35,7 +35,7 @@ if(rep != "") {
     loadDir($('#dirtree-documentation'), uuid, 'representations/'+rep+'/documentation');
     loadDir($('#dirtree-schemas'), uuid, 'representations/'+rep+'/schemas');
 
-    loadDir($('#dirtree-metadata'), uuid, 'metadata/descriptive');
+    loadDir($('#dirtree-metadata'), uuid, 'metadata');
 
     loadDir($('#dirtree-rootschemas'), uuid, 'schemas');
 

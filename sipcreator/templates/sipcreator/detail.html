@@ -73,10 +73,10 @@
                 <div id="reprnote"style="width: 195px"></div>
 
                 <div class="input-group">
-                    <input id="repval" type="text" style="width: 120px" class="form-control small" value="{{ rep }}">
+                    <input id="repval" type="text" style="width: 120px" class="form-control small" value="{{ rep }}"  data-toggle="tooltip" title="The text field shows the current representation with the corresponding subfolder directory tree views on the right or it can be used to create a new representation by typing in another representation name and adding it by clicking on the 'plus' symbol beneath.">
                     <div class="input-group-btn">
-                        <button type="button" class="btn btn-default dropdown-toggle" onclick="addRep($(this), add_rep_url)"><span class="glyphicon-plus"></span></button>
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                        <button type="button" class="btn btn-default dropdown-toggle" onclick="addRep($(this), add_rep_url)" data-toggle="tooltip" title="Add a new representation with the new name given in the text box beneath."><span class="glyphicon-plus"></span></button>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-toggle="tooltip" title="Choose another existing representation and load the corresponding subfolder directory tree views."><span class="caret"></span></button>
                         <ul id="color-dropdown-menu" class="dropdown-menu dropdown-menu-right" role="menu">
                             {% for repr_dir in repr_dirs %}
                                 <li ng-repeat="color in colors" class="input-sm"><a href="#" onclick="changeRep($(this)[0].text, sip_detail_url)">{{ repr_dir }}</a></li>
@@ -87,7 +87,7 @@
             </div>
         </td>
         <td id="content-folder">
-            <div class="directorytree" id="dirtree-content"></div>
+            <div class="directorytree" id="dirtree-content" data-toggle="tooltip" title="The actual content data of this representation."></div>
             <form onchange="$('#content-folder-rep').val($('#repval').val()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
                 <input id="content-folder-rep" name="rep" type="hidden" value=""/>
                 <input id="content-folder-sf" name="subdir" type="hidden" value="data"/>
@@ -98,7 +98,7 @@
       </tr>
       <tr>
         <td id="documentation-folder">
-            <div class="directorytree" id="dirtree-documentation"></div>
+            <div class="directorytree" id="dirtree-documentation" data-toggle="tooltip" title="Documentation which relates to this representation."></div>
             <form onchange="$('#documentation-folder-rep').val($('#repval').val()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
                 <input id="documentation-folder-rep" name="rep" type="hidden" value=""/>
                 <input id="documentation-folder-sf" name="subdir" type="hidden" value="documentation"/>
@@ -109,7 +109,7 @@
       </tr>
       <tr>
         <td id="schemas-folder">
-            <div class="directorytree" id="dirtree-schemas"></div>
+            <div class="directorytree" id="dirtree-schemas" data-toggle="tooltip" title="The XML schemas used to validate to XML instances of this representation."></div>
             <form onchange="$('#schemas-folder-rep').val($('#repval').val()); $(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'representations' %}" method="post" enctype="multipart/form-data">
                 <input id="schemas-folder-rep" name="rep" type="hidden" value=""/>
                 <input id="schemas-folder-sf" name="subdir" type="hidden" value="schemas"/>
@@ -120,7 +120,7 @@
       </tr>
       <tr>
         <td id="metadata-folder" colspan="2">
-            <div class="directorytree" id="dirtree-metadata"></div>
+            <div class="directorytree" id="dirtree-metadata" data-toggle="tooltip" title="The metadata which relates to the information package as a whole. Note that only descriptive metadata can be uploaded to the 'metadata/descriptive' folder.!"></div>
             <form  onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'metadata/descriptive' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
@@ -129,7 +129,7 @@
       </tr>
       <tr>
         <td id="rootschemas-folder" colspan="2">
-            <div class="directorytree" id="dirtree-rootschemas"></div>
+            <div class="directorytree" id="dirtree-rootschemas" data-toggle="tooltip" title="The XML schemas which relate to the information package as a whole."></div>
             <form  onchange="$(this).submit();" action="{% url 'sipcreator:add_file' ip.uuid 'schemas' %}" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <span style="float:left">{{ uploadFileForm.as_p }}</span>
@@ -188,6 +188,8 @@
 
                 <p>Package a set of files using the <a href="https://en.wikipedia.org/wiki/Tar_(computing)">tar</a> format to upload a collection of files which are automatically
                     extracted in the upload directory.</p>
+
+                <p>Hover your mouse over the user interface widgets to get more information about the individiual elements.</p>
 
             </td></tr>
         </table>
