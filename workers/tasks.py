@@ -395,10 +395,11 @@ class SIPDeliveryValidation(DefaultTask):
         valid_checksum = csval.validate_checksum(file_path, checksum_expected, ChecksumAlgorithm.get(checksum_algorithm))
         #tl.append("Checksum validity: \"%s\"" % str(valid_checksum))
         if not valid_checksum:
-            tl.addinfo("Checksum is invalid.")
+            tl.adderr("Checksum of the SIP tar file is invalid.")
+            task_context.task_status = 1
         else:
             tl.addinfo("Checksum is valid.")
-        task_context.task_status = 0
+            task_context.task_status = 0
 
         # we have a SIC (collection) so split delivery into subparts containing
         # individual SIPS (generate delivery xmls and tasks)
