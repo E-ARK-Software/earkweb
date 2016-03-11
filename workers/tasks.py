@@ -158,7 +158,7 @@ class SIPReset(DefaultTask):
 
 class SIPDescriptiveMetadataValidation(DefaultTask):
 
-    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataConsistency']
+    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataValidation']
 
     def run_task(self, task_context):
         """
