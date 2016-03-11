@@ -1,6 +1,6 @@
 .directorytree{
     overflow-y: scroll;
-    height: 100px;
+    height: 80px;
     border: 1px solid gray;
     background-color: white;
 }

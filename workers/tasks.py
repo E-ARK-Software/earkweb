@@ -33,11 +33,21 @@ from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
+from earkcore.metadata.task_utils import validate_ead_metadata
 from earkweb.celeryapp import app
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from tasklogger import TaskLogger
 from workers.default_task import DefaultTask
-
+from earkcore.metadata.XmlHelper import q
+import uuid
+from earkcore.utils.datetimeutils import current_timestamp
+from lxml import etree, objectify
+import fnmatch
+from workers.default_task_context import DefaultTaskContext
+from earkcore.format.formatidentification import FormatIdentification
+from earkcore.process.cli.CliCommand import CliCommand
+import subprocess32
+from celery.exceptions import SoftTimeLimitExceeded
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -92,6 +102,17 @@ def init_task2(ip_work_dir, task_name, task_logfile_name):
     tl.addinfo(("%s task %s" % (task_name, current_task.request.id)))
     return tl, start_time, package_premis_file
 
+import glob
+def getDeliveryFiles(context_path):
+    xml_files = glob.glob("%s/*.xml" % context_path)
+    #print xml_files
+    for delivery_xml in xml_files:
+        sdv = DeliveryValidation()
+        file_elements = sdv.getFileElements(context_path, delivery_xml, mets_schema_file)
+        if file_elements:
+            return file_elements, delivery_xml
+    return None, None
+
 
 @app.task(bind=True)
 def SIPResetF(self, params):
@@ -102,6 +123,20 @@ def SIPResetF(self, params):
 
     c.run(params['uuid'], params['path'], params['additional_data'])
     return params
+
+@app.task(bind=True)
+def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
+    tl = TaskLogger(proc_logfile)
+    extr = Extraction()
+    proc_res = extr.extract(package_file_path, target_directory)
+    if proc_res.success:
+        tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
+    else:
+        tl.adderr("An error occurred while trying to extract package %s extracted to %s" % (package_file_path, target_directory))
+    # delete file after extraction
+    os.remove(package_file_path)
+    return proc_res.success
+
 
 class SIPReset(DefaultTask):
 
@@ -115,26 +150,48 @@ class SIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'reset'
+        #task_context.event_type = 'SIPReset'
 
         # implementation
         task_context.task_status = 0
         return {'identifier': ""}
 
+class SIPDescriptiveMetadataConsistency(DefaultTask):
 
-class SIPPackageMetadataCreation(DefaultTask):
-
-    accept_input_from = [SIPReset.__name__, 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataConsistency']
 
     def run_task(self, task_context):
         """
-        SIP Package metadata creation run task
+        SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:2,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'not in vocabulary'
+        #task_context.event_type = 'SIPMetadataConsistency'
+
+        tl = task_context.task_logger
+        tl.addinfo("EAD metadata file validation.")
+        metadata_dir = os.path.join(task_context.path, 'metadata')
+        valid = validate_ead_metadata(metadata_dir, 'EAD.xml', None, tl)
+
+        task_context.task_status = 0 if valid else 1
+        return task_context.additional_data
+
+class SIPPackageMetadataCreation(DefaultTask):
+
+    # Descriptive metadata check can be skipped
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataConsistency.__name__, 'SIPPackageMetadataCreation']
+
+    def run_task(self, task_context):
+        """
+        SIP Package metadata creation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:3,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'SIPPackageMetadataCreation'
 
         reps_path = os.path.join(task_context.path, 'representations')
         for name in os.listdir(reps_path):
@@ -172,6 +229,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         task_context.task_status = 0
         return task_context.additional_data
 
+
 class SIPPackaging(DefaultTask):
 
     accept_input_from = [SIPPackageMetadataCreation.__name__, 'SIPPackaging']
@@ -180,11 +238,11 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,stage:1
+        @param      tc: order:4,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'packing the SIP'
+        #task_context.event_type = 'SIPPackaging'
 
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
@@ -220,6 +278,8 @@ class SIPPackaging(DefaultTask):
         task_context.task_status = 0
         return task_context.additional_data
 
+
+
 class SIPClose(DefaultTask):
 
     accept_input_from = [SIPPackaging.__name__, 'SIPClose']
@@ -228,11 +288,11 @@ class SIPClose(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,stage:2
+        @param      tc: order:5,type:1,stage:2
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'start submission'
+        #task_context.event_type = 'SIPClose'
 
         task_context.task_logger.addinfo("Closing package: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
@@ -264,7 +324,7 @@ class SIPtoAIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = ''
+        #task_context.event_type = SIPtoAIPReset
 
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -292,19 +352,6 @@ class SIPtoAIPReset(DefaultTask):
         task_context.task_status = 0
         return {'identifier': ""}
 
-import glob
-def getDeliveryFiles(context_path):
-    xml_files = glob.glob("%s/*.xml" % context_path)
-    #print xml_files
-    for delivery_xml in xml_files:
-        sdv = DeliveryValidation()
-        file_elements = sdv.getFileElements(context_path, delivery_xml, mets_schema_file)
-        if file_elements:
-            return file_elements, delivery_xml
-    return None, None
-
-
-
 class SIPDeliveryValidation(DefaultTask):
 
     accept_input_from = [SIPtoAIPReset.__name__, SIPClose.__name__, "SIPDeliveryValidation"]
@@ -317,7 +364,7 @@ class SIPDeliveryValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        #task_context.event_type = 'SIPDeliveryValidation'
 
         # TODO: rework for new MetsValidation.py?
 
@@ -395,7 +442,7 @@ class SIPDeliveryValidation(DefaultTask):
         return
 
 
-from earkcore.metadata.XmlHelper import q
+
 class IdentifierAssignment(DefaultTask):
 
     accept_input_from = [SIPDeliveryValidation.__name__, "IdentifierAssignment"]
@@ -408,7 +455,7 @@ class IdentifierAssignment(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'identifier assignment'
+        #task_context.event_type = 'IdentifierAssignment'
 
         tl = task_context.task_logger
 
@@ -462,7 +509,7 @@ class SIPExtraction(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        #task_context.event_type = 'SIPExtraction'
         print 'identifier: %s' % task_context.additional_data['identifier']
 
         tl = task_context.task_logger
@@ -499,7 +546,7 @@ class SIPRestructuring(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        #task_context.event_type = 'SIPRestructuring'
 
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -540,7 +587,7 @@ class SIPValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'SIP validation'
+        #task_context.event_type = 'SIPValidation'
 
         tl = task_context.task_logger
         valid = True
@@ -552,17 +599,20 @@ class SIPValidation(DefaultTask):
                 tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
 
         submission_path = os.path.join(task_context.path, "submission")
-        check_file("SIP METS file", os.path.join(submission_path, "METS.xml"))
+        check_file("submission METS file", os.path.join(submission_path, "METS.xml"))
         #check_file("Data directory", os.path.join(reps_path, "data"))
 
         #check_file("Documentation directory", os.path.join(path, "documentation"))
         #check_file("Metadata directory", os.path.join(path, "metadata"))
-        representations_path = os.path.join(task_context.path, "submission/representations")
-        for name in os.listdir(representations_path):
-            rep_path = os.path.join(representations_path, name)
-            if os.path.isdir(rep_path):
-                mets_validator = MetsValidation(rep_path)
-                valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+
+        # submission is not mandatory in an AIP:
+        if os.path.exists(os.path.join(task_context.path, "submission/representations")):
+            representations_path = os.path.join(task_context.path, "submission/representations")
+            for name in os.listdir(representations_path):
+                rep_path = os.path.join(representations_path, name)
+                if os.path.isdir(rep_path):
+                    mets_validator = MetsValidation(rep_path)
+                    valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
 
         # currently: forced valid = True, until valid mets files are created by the SIP creator!
         # valid = True
@@ -570,12 +620,6 @@ class SIPValidation(DefaultTask):
         task_context.task_status = 0 if valid else 1
         return task_context.additional_data
 
-
-import uuid
-from earkcore.utils.datetimeutils import current_timestamp
-from lxml import etree, objectify
-import fnmatch
-from workers.default_task_context import DefaultTaskContext
 class AIPMigrations(DefaultTask):
 
     accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
@@ -588,7 +632,7 @@ class AIPMigrations(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        task_context.event_type = 'AIPMigrations'
 
         # make metadata/earkweb dir for temporary files
         if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb')):
@@ -715,12 +759,6 @@ class AIPMigrations(DefaultTask):
         return task_context.additional_data
 
 
-from earkcore.format.formatidentification import FormatIdentification
-from earkcore.process.cli.CliCommand import CliCommand
-import subprocess32
-from celery.exceptions import SoftTimeLimitExceeded
-
-
 class MigrationProcess(DefaultTask):
     # TODO: maybe move this class/task to another file? Or call external migration classes for each migration type.
 
@@ -734,7 +772,7 @@ class MigrationProcess(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'migration'
+        task_context.event_type = 'MigrationProcess'
 
         # print 'current worker:'
         # print multiprocessing.current_process().name
@@ -814,7 +852,7 @@ class AIPCheckMigrationProgress(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        #task_context.event_type = 'AIPCheckMigrationProgress'
 
         tl = task_context.task_logger
 
@@ -903,7 +941,7 @@ class MigrationsComplete(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        #task_context.event_type = 'MigrationsComplete'
 
         tl = task_context.task_logger
 
@@ -925,10 +963,13 @@ class CreatePremisAfterMigration(DefaultTask):
         @param      tc: order:9,type:2,stage:2
         """
 
-        # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
-
         tl = task_context.task_logger
+        if not os.path.exists(os.path.join(task_context.path, 'representations')):
+            task_context.task_status = 0
+            return task_context.additional_data
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'CreatePremisAfterMigration'
 
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
             try:
@@ -956,8 +997,12 @@ class AIPRepresentationMetsCreation(DefaultTask):
         @param      tc: order:10,type:2,stage:2
         """
 
+        if not os.path.exists(os.path.join(task_context.path, 'representations')):
+            task_context.task_status = 0
+            return task_context.additional_data
+
         # Add the event type - will be put into Premis.
-        self.event_type = 'currently not in vocabulary'
+        task_context.event_type = 'AIPRepresentationMetsCreation'
 
         tl = task_context.task_logger
 
@@ -1007,7 +1052,7 @@ class AIPPackageMetsCreation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'not in vocabulary'
+        task_context.event_type = 'AIPPackageMetsCreation'
 
         tl = task_context.task_logger
 
@@ -1054,7 +1099,7 @@ class AIPValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'AIP validation'
+        task_context.event_type = 'AIPValidation'
 
         tl = task_context.task_logger
 
@@ -1095,7 +1140,7 @@ class AIPPackaging(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'not in vocabulary'
+        #task_context.event_type = 'AIPPackaging'
 
         tl = task_context.task_logger
 
@@ -1179,7 +1224,7 @@ class AIPStore(DefaultTask):
         """
 
         # no premis event
-        self.event_type = ''
+        #task_context.event_type = 'AIPStore'
 
         tl = task_context.task_logger
 
@@ -1233,7 +1278,8 @@ class LilyHDFSUpload(DefaultTask):
         @param      tc: order:15,type:2,stage:2
         """
         # no premis event
-        self.event_type = ''
+        #task_context.event_type = 'LilyHDFSUpload'
+
         tl = task_context.task_logger
         try:
             aip_path = task_context.additional_data["storage_loc"]
@@ -1280,7 +1326,7 @@ class AIPtoDIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = 'reset'
+        #task_context.event_type = 'AIPtoDIPReset'
 
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -1324,7 +1370,7 @@ class DIPAcquireAIPs(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = '' # TODO: override finalize method?
+        #task_context.event_type = 'DIPAcquireAIPs'
 
         tl = task_context.task_logger
 
@@ -1336,7 +1382,7 @@ class DIPAcquireAIPs(DefaultTask):
             selected_aips = task_context.additional_data["selected_aips"]
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name=task_context.task_name)
-            print selected_aips
+            print "selected AIPs: %s" % selected_aips
 
             total_bytes_read = 0
             aip_total_size = 0
@@ -1384,7 +1430,7 @@ class DIPExtractAIPs(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        self.event_type = '' # TODO: override finalize method?
+        #task_context.event_type = 'DIPExtractAIPs'
 
         tl = task_context.task_logger
 
@@ -1446,24 +1492,102 @@ class DIPExtractAIPs(DefaultTask):
             task_context.task_status = 1
             pass
 
-# def finalize(tl, ted):
-#     task_doc_path = os.path.join(ted.get_path(), "task.xml")
-#     task_doc_task_id_path = os.path.join(ted.get_path(), "task-%s.xml"  % current_task.request.id)
-#     ted.write_doc(task_doc_path)
-#     ted.write_doc(task_doc_task_id_path)
+from subprocess import Popen, PIPE
+def runCommand(args, stdin=PIPE, stdout=PIPE, stderr=PIPE):
+        result, res_stdout, res_stderr = None, None, None
+        try:
+            # quote the executable otherwise we run into troubles
+            # when the path contains spaces and additional arguments
+            # are presented as well.
+            # special: invoking bash as login shell here with
+            # an unquoted command does not execute /etc/profile
+
+            print 'Launching: %s' % args
+            process = Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, shell=False)
+
+            res_stdout, res_stderr = process.communicate()
+            result = process.returncode
+            print 'Finished: %s' % args
+
+        except Exception as ex:
+            res_stderr = ''.join(str(ex.args))
+            result = 1
+
+        if result != 0:
+            print 'Command failed:' + ''.join(res_stderr)
+            raise Exception('Command failed:' + ''.join(res_stderr))
+
+        return result, res_stdout, res_stderr
+
+class DIPImportSIARD(DefaultTask):
+
+    accept_input_from = ['All', DIPExtractAIPs.__name__, "DIPImportSIARD"]
+
+    def run_task(self, task_context):
+        """
+        DIP Extract AIPs
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:15,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIPImportSIARD'
+
+        tl = task_context.task_logger
+
+        try:
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
+            # create dip working directory
+            #if not os.path.exists(task_context.path):
+            #    os.mkdir(task_context.path)
 
 
+            dbptk='/home/bartham/siard/dbptk-app-2.0.0-beta3.2.5.jar'
+            db_user = 'root'
+            db_passwd='arkiv'
+            db_type = 'mysql'
+            db_host = 'localhost'
+            # find SIARD2 file in working dir
+            for root, dirs, files in os.walk(task_context.path):
+                for file in files:
+                    if file.endswith(".siard2"):
+                        siard_path = os.path.join(root, file)
+                        print siard_path
+                        db_name = os.path.splitext(file)[0]
 
+                        print "Database name: %s" % db_name
+                        # drop database if existing
+                        command = [
+                            'mysql',
+                            'mysql',
+                            '-u', db_user,
+                            '-p%s' % db_passwd,
+                            '-e', 'DROP DATABASE IF EXISTS %s;' % db_name,
+                            ]
+                        runCommand(command)
+                        # create database
+                        command = [
+                            'mysql',
+                            'mysql',
+                            '-u', db_user,
+                            '-p%s' % db_passwd,
+                            '-e', 'CREATE DATABASE IF NOT EXISTS %s;' % db_name,
+                            ]
+                        runCommand(command)
+                        # import file to database
+                        command = [
+                            'java', '-jar', dbptk, '-i', 'siard-2', '-if', siard_path, '-e', db_type, '-eh', db_host, '-edb', db_name, '-eu', db_user, '-ep', db_passwd,
+                        ]
+                        runCommand(command)
+                        #java -jar $DBPTK -i siard-2 --import-file=world.siard2 -e mysql --export-hostname=localhost --export-database=world --export-user=$USER --export-password=$PASSWORD
 
-@app.task(bind=True)
-def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
-    tl = TaskLogger(proc_logfile)
-    extr = Extraction()
-    proc_res = extr.extract(package_file_path, target_directory)
-    if proc_res.success:
-        tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
-    else:
-        tl.adderr("An error occurred while trying to extract package %s extracted to %s" % (package_file_path, target_directory))
-    # delete file after extraction
-    os.remove(package_file_path)
-    return proc_res.success
+        except Exception as e:
+            tl.adderr("Task failed %s" % task_context.uuid)
+            tl.adderr("Task failed %s" % e.message)
+            task_context.task_status = 1
+            pass
+
+        task_context.task_status = 0

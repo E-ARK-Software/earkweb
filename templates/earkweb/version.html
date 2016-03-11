@@ -14,177 +14,30 @@
 
 <h1 class="main"><i>earkweb</i></h1>
 
-<h2>Release history</h2>
-<table class="table table-striped table-bordered table-condensed">
-    <thead>
-    <tr>
-        <th>Version</th>
-        <th>Release date</th>
-        <th>Description of changes</th>
-    </tr>
-    </thead>
-    <tbody>
-
-    <tr>
-        <td>0.2.4</td>
-        <td>11.12.2015</td>
-        <td>
-            <ul>
-                <li>Bugfixes</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.2.3</td>
-        <td>09.12.2015</td>
-        <td>
-            <ul>
-                <li>Creating parent/child AIPs.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.2.2</td>
-        <td>04.12.2015</td>
-        <td>
-            <ul>
-                <li>SIP to AIP conversion: PREMIS generation improved.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.2.1</td>
-        <td>02.12.2015</td>
-        <td>
-            <ul>
-                <li>Bugfix: representations folder has all representations.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.2.0</td>
-        <td>01.12.2015</td>
-        <td>
-            <ul>
-                <li>PREMIS events record executed tasks.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.2.1</td>
-        <td>30.11.2015</td>
-        <td>
-            <ul>
-                <li>File format migration during SIP to AIP transformation improved.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.9</td>
-        <td>27.11.2015</td>
-        <td>
-            <ul>
-                <li>Tasks use context object which allows executing a sequence of tasks (user interface experimental).</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.8</td>
-        <td>24.11.2015</td>
-        <td>
-            <ul>
-                <li>DIP creation: bugs in the package selection interface corrected; Chrome compatibility of the interface ensured.</li>
-                <li>SIP to AIP conversion supports migration depending on the file type (current rules: GIF is migrated to TIFF using imagemagick, PDF is migrated to PDF/A using ghostscript)</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.7</td>
-        <td>17.11.2015</td>
-        <td>
-            <ul>
-                <li>SIP creator improved.</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.6</td>
-        <td>09.11.2015</td>
-        <td>
-            <ul>
-                <li>SIP to AIP conversion tasks improved</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.5</td>
-        <td>16.10.2015</td>
-        <td>
-            <ul>
-                <li>Task interface simplified</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.4</td>
-        <td>25.09.2015</td>
-        <td>
-            <ul>
-                <li>Documentation and texts added</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.3</td>
-        <td>01.03.2015</td>
-        <td>
-            <ul>
-                <li>LilyHDFSUpload available</li>
-            </ul>
-        </td>
-    </tr>
-
-    <tr>
-        <td>0.1.2</td>
-        <td>01.03.2015</td>
-        <td>
-            <ul>
-                <li>CAS authentication</li>
-                <li>WireIt workflow editor</li>
-                <li>Celery task execution</li>
-            </ul>
-        </td>
-    </tr>
-    <tr>
-        <td>0.1.0</td>
-        <td>25.07.2015</td>
-        <td>
-            <ul>
-                <li>Initial version deployed</li>
-            </ul>
-        </td>
-    </tr>
-    </tbody>
-</table>
-
 <h2>Commit log</h2>
 
-<pre>2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/dfc28f3">dfc28f3</a> SIP creator: help div position corrected
+<pre>2016-03-10 <a href="https://github.com/eark-project/earkweb/commit/6aa5d22">6aa5d22</a> version 0.2.5
+2016-03-10 <a href="https://github.com/eark-project/earkweb/commit/48a2691">48a2691</a> EAD metadata validation task added to SIP creator
+2016-03-10 <a href="https://github.com/eark-project/earkweb/commit/232e92f">232e92f</a> code cleanup
+2016-03-10 <a href="https://github.com/eark-project/earkweb/commit/a5300c5">a5300c5</a> fixed faulty checksum creation
+2016-03-10 <a href="https://github.com/eark-project/earkweb/commit/fccf622">fccf622</a> missing state.xml no longer fails validation (important if SIP was not created with earkweb)
+2016-03-09 <a href="https://github.com/eark-project/earkweb/commit/bb6ff08">bb6ff08</a> -Corrections to task and AIP2DIP -Order Submission interface -SIARD DIP creation task
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/3660040">3660040</a> Fixed Format identification bug
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/42c7695">42c7695</a> changed to lowercase "urn:uuid:" prefix
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/edb9e5e">edb9e5e</a> consistent use of "URN:UUID:" prefix
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/71d7cef">71d7cef</a> fixed representation METS files not being found and validated (solves redmine #455)
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/58b436d">58b436d</a> added a prefix: "URN:UUID:<identifier>" if referencing another package (parent/child relation), solves redmine #453
+2016-01-26 <a href="https://github.com/eark-project/earkweb/commit/eb8b2aa">eb8b2aa</a> changed name of the mandatory physical structmap to "E-ARK structural map" (fixes redmine #454)
+2015-12-18 <a href="https://github.com/eark-project/earkweb/commit/5593b8a">5593b8a</a> SIP to AIP conversion: Store and LilyHDFSUpload tasks improved
+2015-12-14 <a href="https://github.com/eark-project/earkweb/commit/00bd1f7">00bd1f7</a> deleting state.xml from delivery
+2015-12-14 <a href="https://github.com/eark-project/earkweb/commit/1cee7b3">1cee7b3</a> AIPStore task now moves a copy of the packaged AIP (.tar) to the storage locaiton.
+2015-12-14 <a href="https://github.com/eark-project/earkweb/commit/80937ee">80937ee</a> fixed validation error: <mptr> element must be the first element in a <div> or the file will be invalid
+2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/be46170">be46170</a> merged reprentation Mets structmap/metspointers into earkstructmap, solves redmine #430
+2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/081e3d8">081e3d8</a> version 0.2.4
+2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/dfc28f3">dfc28f3</a> SIP creator: help div position corrected
 2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/30c1167">30c1167</a> no longer creating unneccessary representation folders (solves redmine #428)
 2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/a4984a8">a4984a8</a> fixed: adding child AIPs causes a validation error
-2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/98e57b1">98e57b1</a> fixed an error that occurred when an AIP had no parent identifier, solves redmine #429
+2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/98e57b1">98e57b1</a> fixed an erorr that occurred when an AIP had no parent identifier, solves redmine #429
 2015-12-11 <a href="https://github.com/eark-project/earkweb/commit/44570eb">44570eb</a> Simple script to check if there is a working directory for every ip in the database and vice versa.
 2015-12-10 <a href="https://github.com/eark-project/earkweb/commit/230eb20">230eb20</a> Change list order to last change
 2015-12-10 <a href="https://github.com/eark-project/earkweb/commit/0b0c36e">0b0c36e</a> Change list order
@@ -547,6 +400,7 @@
 2015-03-26 <a href="https://github.com/eark-project/earkweb/commit/5947238">5947238</a> Using modal XML viewer
 2015-03-25 <a href="https://github.com/eark-project/earkweb/commit/27df97c">27df97c</a> Highlight-plugin added, search interface improved
 2015-03-18 <a href="https://github.com/eark-project/earkweb/commit/15e2c87">15e2c87</a> Initial status
-2015-03-03 <a href="https://github.com/eark-project/earkweb/commit/6c94bc5">6c94bc5</a> Initial commit</pre>
+2015-03-03 <a href="https://github.com/eark-project/earkweb/commit/6c94bc5">6c94bc5</a> Initial commit
+</pre>
 
 {% endblock %}

@@ -94,12 +94,15 @@ class DefaultTask(Task):
                 package = task_context.additional_data['identifier']
                 # This construction hopefully means that the IdentifierAssignment can be used at any time in the AIP creation process.
 
-            eventinfo = {'outcome': outcome,
-                         'task_name': self.task_name,
-                         'event_type': self.event_type,
-                         'linked_object': package}
-            premisgen = PremisGenerator(task_context.path)
-            premisgen.addEvent(task_context.package_premis, eventinfo)
+            # TODO: clarify relationship between task and event 1->1 or 1->m
+            # currently if event_type is set the premis_event gets persisted
+            if task_context.event_type:
+                eventinfo = {'outcome': outcome,
+                             'task_name': self.task_name,
+                             'event_type': task_context.event_type,
+                             'linked_object': package}
+                premisgen = PremisGenerator(task_context.path)
+                premisgen.addEvent(task_context.package_premis, eventinfo)
 
         # set progress
         self.update_state(state='PROGRESS', meta={'process_percent': 100})

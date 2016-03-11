@@ -188,14 +188,17 @@ def apply_task(request):
                 if wfm.identifier == AIPStore.__name__:
                     additional_data['storageDest'] = config_path_storage
                     print "Storage destination %s" % additional_data['storageDest']
+
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
                     dip = DIP.objects.get(name=ip.packagename)
                     selected_aips = {}
                     for aip in dip.aips.all():
                         selected_aips[aip.identifier] = aip.source
                     additional_data['selected_aips'] = selected_aips
+
                 if wfm.identifier == AIPPackageMetsCreation.__name__:
                     additional_data['parent_id'] = ip.parent_identifier
+
                 if wfm.identifier == AIPStore.__name__:
                     additional_data['parent_id'] = ip.parent_identifier
                     # the UUID tells us in which folder the parent AIPs' Mets file is located - only in the dev
