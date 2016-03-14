@@ -81,11 +81,13 @@ class MetsValidation(object):
                     # pass
                     if len(element.getchildren()) > 0:
                         for element in element.getchildren():
-                            # element = didiprovMD
+                            # elements are: didiprovMD
                             if len(element.getchildren()) > 0:
                                 for element in element.getchildren():
-                                    # element = mdRef
-                                    if element.attrib['MDTYPE'] == 'PREMIS':
+                                    # elements are: mdRef
+                                    if element.tag == etree.Comment or element.tag == etree.PI:  # filter out comments (they also count as children)
+                                        pass
+                                    elif element.attrib['MDTYPE'] == 'PREMIS':
                                         if element.attrib[q(XLINK_NS, 'href')].startswith('file://./'):
                                             rel_path = element.attrib[q(XLINK_NS, 'href')]
                                             premis = os.path.join(self.rootpath, rel_path[9:])
@@ -138,14 +140,14 @@ class MetsValidation(object):
         fitem = remove_protocol(attr_path)
         file_path = os.path.join(self.rootpath, fitem).replace('\\', '/')
         if not os.path.exists(file_path):
-            err.append("Unable to find file referenced in delivery METS file: %s" % file_path)
+            err.append("Unable to find file referenced in METS: %s" % file_path)
         else:
             self.total_files -= 1
             # check if file size is valid
             # TODO: is this even needed?
             file_size = os.path.getsize(file_path)
             if not int(file_size) == int(attr_size):
-                err.append("Actual file size %s does not equal file size attribute value %s" % (file_size, attr_size))
+                err.append("Actual file size %s does not equal file size attribute value %s, file: %s" % (file_size, attr_size, file_path))
                 # workaround for earkweb.log in AIP metadata/ folder on IP root level
                 if file_path[-22:] == './metadata/earkweb.log':
                     err.pop()
@@ -170,7 +172,8 @@ class MetsValidation(object):
 
 class TestMetsValidation(unittest.TestCase):
     # TODO: add one test each for a valid and a faulty Mets
-    rootpath = '/var/data/earkweb/work/63590252-4701-4a68-a90a-c518e2a897da/'
+    rootpath = '/var/data/earkweb/work/SIP_example_DNA/Godfather_style/IP.AVID.RA.18005.rep0.seg0/'
+    # rootpath = '/var/data/earkweb/work/b0787deb-a70b-41af-98e4-784a18e2137f/'
 
     def test_IP_mets(self):
         mets_validator = MetsValidation(self.rootpath)
