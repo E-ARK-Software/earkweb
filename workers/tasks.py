@@ -156,9 +156,9 @@ class SIPReset(DefaultTask):
         task_context.task_status = 0
         return {'identifier': ""}
 
-class SIPDescriptiveMetadataConsistency(DefaultTask):
+class SIPDescriptiveMetadataValidation(DefaultTask):
 
-    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataConsistency']
+    accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataValidation']
 
     def run_task(self, task_context):
         """
@@ -181,7 +181,7 @@ class SIPDescriptiveMetadataConsistency(DefaultTask):
 class SIPPackageMetadataCreation(DefaultTask):
 
     # Descriptive metadata check can be skipped
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataConsistency.__name__, 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
