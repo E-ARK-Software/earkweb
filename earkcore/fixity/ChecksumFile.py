@@ -68,9 +68,14 @@ class ChecksumFile(object):
         #elif checksum_algorithm == 'MD5':
         #    hash = hashlib.md5()
 
-        with open(self.file_path, 'rb') as file:
-            for block in iter(lambda: file.read(self.blocksize), ''):
-                hash.update(block)
+        with open(self.file_path, 'rb') as f:
+            # for block in iter(lambda: file.read(self.blocksize), ''):
+            #     hash.update(block)
+            while True:
+                buf = f.read(self.blocksize)
+                if not buf:
+                    break
+                hash.update(buf)
         return hash.hexdigest()
 
 class TestChecksum(unittest.TestCase):
