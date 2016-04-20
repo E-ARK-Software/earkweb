@@ -135,6 +135,7 @@ INSTALLED_APPS = (
     'workflow',
     'sip2aip',
     'config',
+    'mrinterface',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -266,6 +267,13 @@ LOGGING = {
             'propagate': True,
         },
         'sip2aip.watchdir': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'loggers': {
+        'mrinterface.views': {
             'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,

@@ -22,6 +22,7 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/login/$', 'django_cas.views.login'), 
     url(r'^accounts/logout/$', 'django_cas.views.logout'),
+    url(r'^mrinterface/', include('mrinterface.urls', namespace="mrinterface")),
 )
 
 # Development server starts at http://127.0.0.1:8888/ so this rule is adds
