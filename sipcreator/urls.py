@@ -27,8 +27,6 @@ urlpatterns= patterns('',
 
     url(r'^help_processing_status$', views.HelpProcessingStatus.as_view(), name='help_processing_status'),
 
-
-
     url(r'^ip_detail_table$', views.ip_detail_table, name='ip_detail_table'),
 
     url(r'^add_representation/(?P<pk>\d+)/$', views.add_representation, name='add_representation'),
@@ -36,4 +34,8 @@ urlpatterns= patterns('',
     url(r'^delete/(?P<pk>\d+)/$', views.delete, name='delete'),
 
     url(r'^update_parent_identifier/(?P<pk>\d+)/$', views.update_parent_identifier, name='update_parent_identifier'),
+
+    url(r'^uuid/(?P<pk>\d+)/$', views.sip_uuid, name='sip_uuid'),
+    url(r'^ins_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})', views.ins_file, name='ins_file'),
+    url(r'^finalize/(?P<pk>\d+)/$', views.finalize, name='finalize'),
 )
