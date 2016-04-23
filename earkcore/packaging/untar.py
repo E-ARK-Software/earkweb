@@ -12,7 +12,7 @@ from earkcore.process.processor import Processor
 def default_reporter(percent):
     print "\r{percent:3.0f}%".format(percent=percent)
 
-class Extraction(Processor):
+class Untar(Processor):
     """
     Extract SIP
     """
@@ -89,7 +89,7 @@ class TestExtraction(unittest.TestCase):
     def test_extract_sip(self):
         package_file = self.delivery_dir + 'SIP-sqldump.tar.gz'
         contained_sip_dir = './SIP-1f594d58-d09f-46dd-abac-8432068a7f6d/'
-        sip_extraction = Extraction()
+        sip_extraction = Untar()
         result = sip_extraction.extract(package_file, TestExtraction.temp_extract_dir)
         self.assertTrue(result.success)
         print result.log[0]
@@ -109,7 +109,7 @@ class TestExtraction(unittest.TestCase):
     def test_extract_sip_with_report(self):
         package_file = self.delivery_dir + 'SIP-sqldump.tar.gz'
         contained_sip_dir = './SIP-1f594d58-d09f-46dd-abac-8432068a7f6d/'
-        sip_extraction = Extraction()
+        sip_extraction = Untar()
         result = sip_extraction.extract_with_report(package_file, TestExtraction.temp_extract_dir)
         self.assertTrue(result.success)
         print result.log[0]

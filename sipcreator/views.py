@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedire
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from config.config import root_dir
-from earkcore.packaging.extraction import Extraction
+from earkcore.packaging.untar import Untar
 from forms import TinyUploadFileForm
 from forms import UploadFileForm
 from config.params import config_path_work

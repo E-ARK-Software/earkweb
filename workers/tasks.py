@@ -23,7 +23,8 @@ from earkcore.metadata.mets.metsgenerator import MetsGenerator
 from earkcore.metadata.premis.PremisManipulate import Premis
 from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from earkcore.models import InformationPackage
-from earkcore.packaging.extraction import Extraction
+from earkcore.packaging.untar import Untar
+from earkcore.packaging.extract import Extract
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
@@ -127,7 +128,7 @@ def SIPResetF(self, params):
 @app.task(bind=True)
 def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
     tl = TaskLogger(proc_logfile)
-    extr = Extraction()
+    extr = Untar()
     proc_res = extr.extract(package_file_path, target_directory)
     if proc_res.success:
         tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
@@ -504,34 +505,43 @@ class SIPExtraction(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Extraction run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
+        SIP Untar run task
+        @type       tc: task configuration line (used to insert read tl.addinfo("New identifier assigned: %s" % identifier)task properties in database table)
         @param      tc: order:4,type:2,stage:2
         """
 
+        tl = task_context.task_logger
+
         # Add the event type - will be put into Premis.
         #task_context.event_type = 'SIPExtraction'
+        if not 'identifier' in task_context.additional_data:
+            task_context.task_status = 1
+            tl.adderr("Parameter 'identifier' is not defined in additional data!")
+            return task_context.additional_data
+
         print 'identifier: %s' % task_context.additional_data['identifier']
 
-        tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
             task_context.task_status = 1
         else:
-            extr = Extraction()
             for delivery in deliveries:
-                tar_file = deliveries[delivery]['tar_file']
+                package_file = deliveries[delivery]['package_file']
+                _, file_extension = os.path.splitext(package_file)
+                extr = Extract.factory(file_extension)
                 custom_reporter = partial(custom_progress_reporter, self)
                 target_folder = os.path.join(task_context.path, str(delivery))
-                extr.extract_with_report(tar_file, target_folder, progress_reporter=custom_reporter)
+                package_file_abs_path = os.path.join(task_context.path, package_file)
+                tl.addinfo("Extracting package file %s to %s" % (package_file_abs_path,target_folder))
+                extr.extract_with_report(package_file_abs_path, target_folder, progress_reporter=custom_reporter)
                 #remove packaged state.xml. No need for it anymore
                 #state_path = os.path.join(target_folder, "state.xml")
                 #if os.path.exists(state_path):
                 #    os.remove(state_path)
             tl.log += extr.log
             tl.err += extr.err
-        task_context.task_status = 0
+            task_context.task_status = 0
         return task_context.additional_data
 
 
@@ -1483,8 +1493,8 @@ class DIPExtractAIPs(DefaultTask):
                     current_package_total_members += 1
                 # ip.statusprocess = tc.success_status
                 # ip.save()
-                tl.addinfo("Extraction of %d items from package %s finished" % (current_package_total_members, aip_identifier))
-            tl.addinfo(("Extraction of %d items in total finished" % total_processed_members))
+                tl.addinfo("Untar of %d items from package %s finished" % (current_package_total_members, aip_identifier))
+            tl.addinfo(("Untar of %d items in total finished" % total_processed_members))
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception as e:
