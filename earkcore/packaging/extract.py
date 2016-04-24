@@ -10,6 +10,8 @@ from earkcore.utils import randomutils
 
 from config.config import root_dir
 
+from earkcore.packaging.packageformat import PackageFormat
+
 """
 Base extraction class.
 
@@ -17,10 +19,10 @@ Extract implementation class must implement method:
 extract_with_report(package_file, target_folder, progress_reporter=custom_reporter)
 """
 class Extract(object):
-    def factory(type):
-        if type == ".tar": return Untar()
-        if type == ".zip": return Unzip()
-        assert 0, "Package format not supported: " + type
+    def factory(filename):
+        if PackageFormat.get(filename) == PackageFormat.TAR: return Untar()
+        if PackageFormat.get(filename) == PackageFormat.ZIP: return Unzip()
+        assert 0, "Package format not supported"
     factory = staticmethod(factory)
 
 class TestExtract(unittest.TestCase):

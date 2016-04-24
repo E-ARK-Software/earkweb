@@ -528,8 +528,7 @@ class SIPExtraction(DefaultTask):
         else:
             for delivery in deliveries:
                 package_file = deliveries[delivery]['package_file']
-                _, file_extension = os.path.splitext(package_file)
-                extr = Extract.factory(file_extension)
+                extr = Extract.factory(package_file)
                 custom_reporter = partial(custom_progress_reporter, self)
                 target_folder = os.path.join(task_context.path, str(delivery))
                 package_file_abs_path = os.path.join(task_context.path, package_file)
