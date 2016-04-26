@@ -24,11 +24,11 @@ def init_param(model_obj, name, default):
     except model_obj.DoesNotExist:
         return default
 
-config_path_reception = init_param(Path, "path_reception", "/var/data/earkweb/reception")
-config_path_ingest = init_param(Path, "path_ingest", "/var/data/earkweb/ingest")
-config_path_work = init_param(Path, "path_work", "/var/data/earkweb/work")
-config_path_storage = init_param(Path, "path_storage", "/var/data/earkweb/storage")
-config_path_access = init_param(Path, "path_access", "/var/data/earkweb/access")
+config_path_reception = init_param(Path, "path_reception", "/mnt/DISK/eark/reception")
+config_path_ingest = init_param(Path, "path_ingest", "/mnt/DISK/eark/ingest")
+config_path_work = init_param(Path, "path_work", "/mnt/DISK/eark/work")
+config_path_storage = init_param(Path, "path_storage", "/mnt/DISK/eark/storage")
+config_path_access = init_param(Path, "path_access", "/mnt/DISK/eark/access")
 
 config_max_filesize_viewer = 4194304
 

@@ -161,6 +161,8 @@ class IndexingStatusList(ListView):
     template_name = 'sip2aip/indexing_status.html'
     context_object_name = 'ips'
 
+    logger.info("Trying to get index")
+
     queryset=InformationPackage.objects.extra(where=["identifier!='' and last_task_id='%s'" % LilyHDFSUpload.__name__]).order_by('last_change')
 
     @method_decorator(login_required)
