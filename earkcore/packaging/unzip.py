@@ -56,7 +56,7 @@ class Unzip(Processor):
                     outfile.write(zf.read(name))
                     outfile.flush()
                     outfile.close()
-            num_f = sum([len(files) for r, d, files in os.walk(TestExtraction.temp_extract_dir)])
+            num_f = sum([len(files) for r, d, files in os.walk(dir)])
             self.log.append("%s files extracted." % num_f)
             self.success = True
         except (ValueError, OSError, IOError),why:
