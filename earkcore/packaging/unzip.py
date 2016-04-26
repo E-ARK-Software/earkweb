@@ -25,7 +25,6 @@ def default_reporter(percent):
 class Unzip(Processor):
 
     def extract_with_report(self, file, dir, progress_reporter=default_reporter):
-        self.log.append ("Extracting package %s to %s" % (file, dir))
         self.percent = 10
         try:
             if not dir.endswith(':') and not os.path.exists(dir):
@@ -57,7 +56,7 @@ class Unzip(Processor):
                     outfile.flush()
                     outfile.close()
             num_f = sum([len(files) for r, d, files in os.walk(dir)])
-            self.log.append("%s files extracted." % num_f)
+            self.log.append("Extracted %s files" % num_f)
             self.success = True
         except (ValueError, OSError, IOError),why:
             self.err.append('Problem to extract %s, why: %s' % (file,str(why)))
