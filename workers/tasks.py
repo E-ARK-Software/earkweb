@@ -1277,7 +1277,6 @@ class AIPStore(DefaultTask):
             task_context.task_status = 1
         return task_context.additional_data
 
-
 class LilyHDFSUpload(DefaultTask):
 
     accept_input_from = [AIPStore.__name__, "LilyHDFSUpload"]
@@ -1302,14 +1301,13 @@ class LilyHDFSUpload(DefaultTask):
                 tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                rest_endpoint = RestEndpoint("http://10.20.77.1:8081", "") # "hsink/fileresource")
+                rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.
                 partial_custom_progress_reporter = partial(custom_progress_reporter, self)
                 hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
                 rest_resource_path = "hsink/fileresource/files/{0}"
-                tl.addinfo("rest: %s" % rest_resource_path)
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - task_context.start_time, upload_result.status_code, upload_result.hdfs_path_id))
                 checksum_resource_uri = "hsink/fileresource/files/%s/digest/sha-256" % upload_result.hdfs_path_id
@@ -1323,6 +1321,7 @@ class LilyHDFSUpload(DefaultTask):
             tl.adderr("An error occurred: %s" % err)
         task_context.task_status = 1 if (len(tl.err) > 0) else 0
         return task_context.additional_data
+
 
 
 class AIPtoDIPReset(DefaultTask):
