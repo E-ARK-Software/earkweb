@@ -1,4 +1,4 @@
-# earkweb
+# earkweb (hna)
 
 [E-ARK Web](https://github.com/eark-project/earkweb) is a web application together with a task execution backend which allows synchronous and asynchronous processing of 
 information packages.
