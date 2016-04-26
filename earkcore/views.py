@@ -136,13 +136,13 @@ def read_ipfc(request, ip_sub_file_path):
 @csrf_exempt
 def get_directory_json(request):
     uuid = request.POST['uuid']
-    uuid_work_dir = os.path.join(config_path_work,uuid)
-    dirlist = os.listdir(uuid_work_dir)
+    directory = '/var/data/earkweb/work/'+uuid+'/'
+    dirlist = os.listdir(directory)
     if len(dirlist) > 0:
         package_name = dirlist[0]
     else:
         package_name = dirlist
-    return JsonResponse({ "data": path_to_dict(uuid_work_dir, strip_path_part=config_path_work+'/'), "check_callback" : "true" })
+    return JsonResponse({ "data": path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work+'/'), "check_callback" : "true" })
 
 
 

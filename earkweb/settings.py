@@ -14,8 +14,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 TIME_ZONE = 'Europe/Stockholm'
 
-LOGIN_URL='/earkweb/accounts/login/'
-
 import celeryapp
 
 
@@ -23,7 +21,7 @@ import celeryapp
 
 SERVER_PROTOCOL_PREFIX = "http://"
 
-SERVER_IP = "10.20.77.1"
+SERVER_IP = "81.189.135.189"
 
 # repository
 
@@ -80,9 +78,9 @@ STATICFILES_DIRS = (
 )
 
 
-#CAS_REDIRECT_URL = '/earkweb/search'
-#LOGIN_URL = '/earkweb/accounts/login/'
-#LOGOUT_URL = '/earkweb/accounts/logout/'
+CAS_REDIRECT_URL = '/earkweb/search'
+LOGIN_URL = '/earkweb/accounts/login/'
+LOGOUT_URL = '/earkweb/accounts/logout/'
 
 import djcelery
 djcelery.setup_loader()
@@ -148,16 +146,16 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
-#    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
+    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
 )
 
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    # 'django_cas.backends.CASBackend',
+    'django.contrib.auth.backends.ModelBackend', 'django_cas.backends.CASBackend',
+
 )
 
-#CAS_SERVER_URL = 'https://earkdev.ait.ac.at:8443/cas/login'
+CAS_SERVER_URL = 'https://earkdev.ait.ac.at:8443/cas/login'
 
 ROOT_URLCONF = 'earkweb.urls'
 
@@ -222,13 +220,6 @@ LOGGING = {
         'console': {
             'class': 'logging.StreamHandler',
         },
-    },
-    'loggers': {
-        'earkcore.models': { 
-		'handlers': ['file', 'console'], 
-		'level': 'DEBUG', 
-		'propagate': True,
-	},
     },
     'loggers': {
         'django.request': {
