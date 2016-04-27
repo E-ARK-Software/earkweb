@@ -1,6 +1,20 @@
 # earkweb
 
-E-ARK integrated prototype web application
+The project [E-ARK Web](https://github.com/eark-project/earkweb) is a web application together with a task execution system which allows synchronous and asynchronous processing of 
+information packages by means of processing units which are called *tasks*. The purpose of E-ARK Web is, on the one hand, to provide a user interface for the integrated prototype 
+in order to showcase archival information package transformation workflows which are being developed in the E-ARK project in an integrated way. On the other hand, the goal is to 
+provide an architecture which allows reliable, asynchronous, and parallel creation and transformation of E-ARK information packages (E-ARK SIP, AIP, and DIP) integrated with 
+E-ARK backend services for scalable and distributed search and access.
+
+
+The components of the E-ARK Web project coordinate package transformations between the package formats SIP, AIP, and DIP, and uses [Celery](http://www.celeryproject.org), a 
+distributed task queue, as its main backend. Tasks are designed to perform atomic operations on information packages and any dependency to a database is intentionally avoided to 
+increase processing efficiency. The outcome and status of a task's process is persisted as part of the package. The E-ARK Web project also provides a web interface that allows one 
+to orchestrate and monitor tasks by being loosely coupled with the backend. The backend can also be controlled via remote command execution without using the web frontend. The 
+outcomes of operations performed by a task are stored immediately and the [PREMIS](http://www.loc.gov/standards/premis/) format is used to record digital provenance information. It 
+is possible to introduce additional steps, for example, to perform a roll-back operation to get back to a previous processing state in case an error occurs.
+
+![alt tag](https://raw.githubusercontent.com/eark-project/earkweb/master/doc/img/earkweb_home.png)
 
 ## Dependencies
 
