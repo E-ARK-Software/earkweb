@@ -624,10 +624,13 @@ class SIPValidation(DefaultTask):
                     mets_validator = MetsValidation(rep_path)
                     valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
 
-        # currently: forced valid = True, until valid mets files are created by the SIP creator!
-        # valid = True
-
-        task_context.task_status = 0 if valid else 1
+        # task_context.task_status = 0 if valid else 1
+        if valid:
+            task_context.task_status = 0
+        else:
+            task_context.task_status = 1
+            for error in mets_validator.validation_errors:
+                tl.adderr(error)
         return task_context.additional_data
 
 class AIPMigrations(DefaultTask):
