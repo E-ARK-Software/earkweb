@@ -29,6 +29,10 @@ from operator import itemgetter, attrgetter, methodcaller
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
+from django.views.generic import FormView
+#from .forms import MRJobSelectForm
+#from .models import PostAd
+from .models import JobSelect, JOBS
 @login_required
 @csrf_exempt
 
@@ -38,3 +42,12 @@ def start(request):
     context = RequestContext(request, {
     })
     return HttpResponse(template.render(context))
+    # return HttpResponse("Hello world.")
+
+# class PostAdPage(FormView):
+#     template_name = 'earkweb/start.html'
+#     success_url = '/awesome/'
+#     form_class = MRJobSelectForm
+#
+#     def form_valid(self, form):
+#         return HttpResponse('Works.')
