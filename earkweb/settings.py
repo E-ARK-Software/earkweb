@@ -171,8 +171,8 @@ DATABASES = {
         'NAME': 'eark',                    # Or path to database file if using sqlite3.
         'USER': 'arkiv',                      # Not used with sqlite3.
         'PASSWORD': 'arkiv',               # Not used with sqlite3.
-        'HOST': '172.17.0.2',                           # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '3306',                           # Set to empty string for default. Not used with sqlite3.
+        'HOST': '',                           # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                           # Set to empty string for default. Not used with sqlite3.
         # This options for storage_engine have to be set for "south migrate" to work.
         'OPTIONS': {
            "init_command": "SET storage_engine=MyISAM",
