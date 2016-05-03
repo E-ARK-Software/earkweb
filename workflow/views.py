@@ -186,8 +186,8 @@ def apply_task(request):
                                    'identifier': ip.identifier}
 
                 if wfm.identifier == AIPStore.__name__:
-                    additional_data['storageDest'] = config_path_storage
-                    print "Storage destination %s" % additional_data['storageDest']
+                    additional_data['storage_dest'] = config_path_storage
+                    print "Storage destination %s" % additional_data['storage_dest']
 
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
                     dip = DIP.objects.get(name=ip.packagename)
@@ -259,8 +259,8 @@ def poll_state(request):
                             if 'identifier' in task.result.additional_data:
                                 ip.identifier = task.result.additional_data['identifier']
 
-                            if 'storageLoc' in task.result.additional_data:
-                                ip.storage_loc = task.result.additional_data['storageLoc']
+                            if 'storage_loc' in task.result.additional_data:
+                                ip.storage_loc = task.result.additional_data['storage_loc']
                                 print "Storage location %s" % ip.storage_loc
 
                         if task.result.task_name:
@@ -362,8 +362,8 @@ def execute_chain(request):
             #         additional_data['identifier'] = ip.identifier
             #     if wfm.identifier == AIPStore.__name__:
             #         additional_data['identifier'] = ip.identifier
-            #         additional_data['storageDest'] = config_path_storage
-            #         print "Storage destination %s" % addisuccesstional_data['storageDest']
+            #         additional_data['storage_dest'] = config_path_storage
+            #         print "Storage destination %s" % addisuccesstional_data['storage_dest']
             #     if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
             #         dip = DIP.objects.get(name=ip.packagename)
             #         selected_aips = {}
@@ -404,8 +404,8 @@ def execute_chain(request):
 #                     additional_data['identifier'] = ip.identifier
 #                 if wfm.identifier == AIPStore.__name__:
 #                     additional_data['identifier'] = ip.identifier
-#                     additional_data['storageDest'] = config_path_storage
-#                     print "Storage destination %s" % additional_data['storageDest']
+#                     additional_data['storage_dest'] = config_path_storage
+#                     print "Storage destination %s" % additional_data['storage_dest']
 #                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
 #                     dip = DIP.objects.get(name=ip.packagename)
 #                     selected_aips = {}

@@ -155,7 +155,8 @@ class SIPReset(DefaultTask):
 
         # implementation
         task_context.task_status = 0
-        return {'identifier': ""}
+        task_context.additional_data['identifier'] = ""
+        return task_context.additional_data
 
 class SIPDescriptiveMetadataValidation(DefaultTask):
 
@@ -351,7 +352,9 @@ class SIPtoAIPReset(DefaultTask):
 
         # success status
         task_context.task_status = 0
-        return {'identifier': ""}
+        task_context.additional_data['identifier'] = "1"
+        return task_context.additional_data
+
 
 class SIPDeliveryValidation(DefaultTask):
 
@@ -370,13 +373,13 @@ class SIPDeliveryValidation(DefaultTask):
         # TODO: rework for new MetsValidation.py?
 
         tl = task_context.task_logger
-
+        tl.addinfo("Marker %s" % task_context.path)
         file_elements, delivery_xml = getDeliveryFiles(task_context.path)
 
         if not file_elements:
             tl.addinfo("No valid delivery validation xml found. Aborting.")
-            task_context.task_status = 0
-            return
+            task_context.task_status = 1
+            return task_context.additional_data
 
         # continue normally we have only one tar
         delivery_file = file_elements[0]
@@ -441,7 +444,9 @@ class SIPDeliveryValidation(DefaultTask):
         #             task_context.task_status = 1
         #         else:
         #             task_context.task_status = 0
-        return
+        task_context.task_status = 0
+        task_context.additional_data['identifier'] = "2"
+        return task_context.additional_data
 
 
 
@@ -496,7 +501,9 @@ class IdentifierAssignment(DefaultTask):
             tl.adderr('An error ocurred when trying to update the Premis file with the new identifier: %s' % e)
             task_context.task_status = 1
 
-        return {'identifier': identifier}
+        task_context.additional_data['identifier'] = identifier
+        tl.addinfo('Assigned identifier %s' % identifier)
+        return task_context.additional_data
 
 
 class SIPExtraction(DefaultTask):
@@ -524,7 +531,7 @@ class SIPExtraction(DefaultTask):
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
-            task_context.task_status = 1
+            task_context.task_status = 0
         else:
             for delivery in deliveries:
                 package_file = deliveries[delivery]['package_file']
@@ -568,18 +575,20 @@ class SIPRestructuring(DefaultTask):
                 tl.addinfo("Restructuring content of package: %s" % str(delivery))
 
                 # TODO: maybe remove the state.xml already during SIP packaging
-                if os.path.exists(os.path.join(str(delivery), 'state.xml')):
-                    os.remove(os.path.join(str(delivery), 'state.xml'))
+                delivery_path = os.path.join(task_context.path, str(delivery))
+                state_xml_path = os.path.join(delivery_path, 'state.xml')
+                if os.path.exists(state_xml_path):
+                    os.remove(state_xml_path)
 
-                fs_childs =  os.listdir(str(delivery))
+                fs_childs = os.listdir(str(delivery_path))
                 for fs_child in fs_childs:
-                    source_item = os.path.join(str(delivery), fs_child)
+                    source_item = os.path.join(delivery_path, fs_child)
                     target_folder = os.path.join(task_context.path, "submission")
                     if not os.path.exists(target_folder):
                         os.mkdir(target_folder)
                     tl.addinfo("Move SIP folder '%s' to '%s" % (source_item, target_folder))
                     shutil.move(source_item, target_folder)
-                os.removedirs(str(delivery))
+                os.removedirs(delivery_path)
 
             task_context.task_status = 0
         return task_context.additional_data
@@ -632,7 +641,7 @@ class SIPValidation(DefaultTask):
 
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -668,8 +677,6 @@ class AIPMigrations(DefaultTask):
             replist.append(repdir)
 
         # begin migrations
-        migrationtask = MigrationProcess()
-
         total = 0
 
         # start migrations from every representation
@@ -722,9 +729,10 @@ class AIPMigrations(DefaultTask):
                                   'targetrep': target_rep,
                                   'taskid': id.decode('utf-8'),
                                   'commandline': self.args})
-                        task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
-                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data, None)
+                        additional_data = dict(task_context.additional_data.items() + input.items())
+                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, additional_data, None)
+
 
                         # create folder for new representation (if it doesnt exist already)
                         if not os.path.exists(migration_target):
@@ -736,12 +744,14 @@ class AIPMigrations(DefaultTask):
 
                         # queue the MigrationProcess task
                         try:
+                            migrationtask = MigrationProcess()
                             migrationtask.apply_async((context,), queue='default', task_id=id)
                             tl.addinfo('Migration queued for %s.' %  filename, display=False)
                         except:
                             tl.adderr('Migration task %s for file %s could not be queued.' % (id, filename))
 
                         # migration.xml entry - need this for Premis creation. Can put additional stuff here if desired.
+                        #TODO: check this out. Not used anywhere Jan??
                         migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
                                                                                               'output': outputfile,
                                                                                               'sourcedir': migration_source,
@@ -851,7 +861,7 @@ class MigrationProcess(DefaultTask):
 
 class AIPCheckMigrationProgress(DefaultTask):
 
-    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress', 'MigrationsComplete']
+    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -919,51 +929,29 @@ class AIPCheckMigrationProgress(DefaultTask):
 
             # check if migrations are all completed
             if int(total) == successful:
-                complete = MigrationsComplete()
-                context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationComplete', None, task_context.additional_data, None)
-                complete.apply_async((context,), queue='default')
-                tl.addinfo('All migrations have been successful.')
+                tl.addinfo('Migrations completed successfully.')
+                task_context.additional_data['migration_complete']=True
                 task_context.task_status = 0
             elif failed > 0 and missing == 0:
                 tl.addinfo('Migrations are complete, but a number of them failed.')
+                task_context.additional_data['migration_complete']=False
                 task_context.task_status = 1
             else:
                 tl.addinfo('Migrations are still running, please check back later.')
+                task_context.additional_data['migration_complete']=False
                 task_context.task_status = 0
-            return task_context.additional_data
+
         except:
             tl.addinfo('Something went wrong when checking task status.')
             print 'Something went wrong when checking task status.'
+            task_context.additional_data['migration_complete']=False
             task_context.task_status = 1
+
         return task_context.additional_data
-
-
-class MigrationsComplete(DefaultTask):
-
-    accept_input_from = [AIPCheckMigrationProgress.__name__, 'MigrationsComplete']
-
-    def run_task(self, task_context):
-        """
-        Migrations Complete
-
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:0,stage:0
-        """
-
-        # Add the event type - will be put into Premis.
-        #task_context.event_type = 'MigrationsComplete'
-
-        tl = task_context.task_logger
-
-        tl.addinfo('All migration processes are completed, now allowing Mets creation.')
-
-        task_context.task_status = 0
-        return task_context.additional_data
-
 
 class CreatePremisAfterMigration(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, 'CreatePremisAfterMigration']
+    accept_input_from = [AIPCheckMigrationProgress.__name__, 'CreatePremisAfterMigration']
 
     def run_task(self, task_context):
         """
@@ -1080,20 +1068,29 @@ class AIPPackageMetsCreation(DefaultTask):
             # schema file location for Mets generation
             schemas = os.path.join(task_context.path, 'schemas')
 
+            if not 'identifier' in task_context.additional_data:
+                tl.adderr('Missing identifier property in task_context.additional_data.')
             identifier = task_context.additional_data['identifier']
+
+            if not 'parent_id' in task_context.additional_data:
+                tl.adderr('Missing parent_id property in task_context.additional_data.')
             parent = task_context.additional_data['parent_id']
+
             mets_data = {'packageid': identifier,
                          'type': 'AIP',
                          'schemas': schemas,
                          'parent': parent}
+
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 
             task_context.task_status = 0
             tl.addinfo('METS updated with AIP content.')
-        except Exception, err:
-            tl.addinfo('error: ', Exception)
+
+        except Exception as err:
+            tl.addinfo('error: %s' % str(err))
             task_context.task_status = 1
+
         return task_context.additional_data
 
 
@@ -1253,8 +1250,8 @@ class AIPStore(DefaultTask):
 
         try:
             package_id = task_context.additional_data["identifier"]
-            storePath = task_context.additional_data["storageDest"]
-            if not task_context.additional_data['storageDest']:
+            storePath = task_context.additional_data["storage_dest"]
+            if not task_context.additional_data['storage_dest']:
                 tl.adderr("Storage root must be defined to execute this task.")
             else:
                 # copy the package
@@ -1268,7 +1265,7 @@ class AIPStore(DefaultTask):
                     tl.addinfo('The tar container for %s has been copied to: %s' % (tarfile_path, tarfile_dest))
                     if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(tarfile_dest).get(ChecksumAlgorithm.SHA256):
                         tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
-                        task_context.additional_data["storageLoc"] = tarfile_dest
+                        task_context.additional_data["storage_loc"] = tarfile_dest
                     else:
                         tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
             task_context.task_status = 1 if (len(tl.err) > 0) else 0

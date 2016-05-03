@@ -40,7 +40,7 @@ class DefaultTaskContext(object):
     def valid(self, accept_input_from, current_task_name):
         status = self.ip_state_xml.get_state()
         if status != 0 and not "Reset" in current_task_name:
-            self.task_logger.adderr("An error occurred ('task status=%d')" % status)
+            self.task_logger.adderr("Skipping task execution ('package task_status=%d')" % status)
 
         last_task = self.ip_state_xml.get_last_task()
         if not "Reset" in current_task_name and last_task != 'All' and last_task not in accept_input_from:

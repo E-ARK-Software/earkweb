@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:simpleType name="UniqueIdType">
+    <xs:restriction base="xs:string" />
+  </xs:simpleType>
+
+    <xs:simpleType name="ReferenceCodeType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="OriginType">
+        <!-- TODO: Review this value list -->
+        <!-- Kuldar: Implementation specific, let's deal with it in the end. Btw - I would fill this enumeration with system names, i.e. in Estonia with valued like FIS, AIS, FOTIS etc. -->
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Email" />
+            <xs:enumeration value="Fax" />
+            <xs:enumeration value="Web" />
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="UserReferenceType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="ArchivistReferenceType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="OrderStatusType">
+        <xs:restriction base="xs:string">
+            <!-- TODO: Review this list -->
+            <!--Kuldar: Next to Created you can have Sent/Received. Next to Ready you can have Declined, Approved, Delivered to User. Any examples from other Order Processing applications in e-commerce or so?  -->
+            <xs:enumeration value="Created"/>
+            <xs:enumeration value="Processing"/>
+            <xs:enumeration value="Ready"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="AccessRestrictionType">
+        <xs:sequence>
+            <xs:element name="AccessRestrictionCode" type="xs:integer" minOccurs="1" maxOccurs="1"/>
+
+            <!--TODO: Shouldn't this be mandatory?-->
+            <!-- Kuldar: No, an explanation is not always necessary. Especially when a code refers to an established code list / vocabulary which explains the restriction in detail -->
+            <xs:element name="AccessRestrictionTextExplanation" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="DeliveryFormatType">
+        <!-- TODO: Should this be an enumeration? -->
+        <!-- Kuldar: yes, but it's implementation specific so let's deal with it when we know which methods are supported by the tools -->
+        <xs:restriction base="xs:string">
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Kuldar: Archival objects/items are hierarchical - archive, series, file, record, computer file. These hierarchies are called "Level of Description"  -->
+    <xs:simpleType name="LevelOfDescriptionType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Package" />
+            <xs:enumeration value="File"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="UnitOfDescriptionType">
+        <xs:sequence>
+            <xs:element name="ReferenceCode" type="ReferenceCodeType"/>
+            <xs:element name="LevelOfDescription" type="LevelOfDescriptionType"/>
+            <xs:element name="Title" type="xs:string"/>
+            <xs:element name="AipUri" type="xs:anyURI"/>
+            <xs:element name="AipTitle" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="InternalNoteType">
+        <xs:sequence>
+            <xs:element name="NoteText" type="xs:string"/>
+            <xs:element name="Timestamp" type="xs:dateTime"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="OrderType">
+        <xs:sequence>
+
+            <xs:element name="OrderUniqueID" type="UniqueIdType" />
+            <xs:element name="OrderTitle" type="xs:string" /><!-- Automatically generated dummy value, to be changed by Archivist-->
+
+            <!--Actual order contents-->
+            <xs:element name="UnitOfDescription" type="UnitOfDescriptionType" minOccurs="1" maxOccurs="unbounded"/>
+
+            <xs:element name="OrderOrigin" type="OriginType" minOccurs="0"/>
+            <xs:element name="EndUserOrderNotes" type="xs:string" minOccurs="0" maxOccurs="1" /><!--Comments by user to archivist-->
+            <xs:element name="ArchivistOrderNotes" type="xs:string" minOccurs="0" maxOccurs="1" /><!--By archivists, visible to the public/order requestor -->
+            <xs:element name="OrderDate" type="xs:dateTime" minOccurs="1" maxOccurs="1"/><!-- Issue date -->
+
+            <!-- TODO: How does this differ from EndUserReference ? -->
+            <!-- Kuldar: Needs to be discussed together with all  order/user related elements -->
+            <xs:element name="OrderUserDossier" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+            <xs:element name="ValidationDate" type="xs:dateTime" minOccurs="0" maxOccurs="1"/><!-- Initially empty, but must be filled by archivist/order management tool -->
+            <xs:element name="PlannedDate" type="xs:dateTime" minOccurs="0" maxOccurs="1" /><!-- When end user want the order completed -->
+            <xs:element name="AccessDate" type="xs:dateTime" minOccurs="0" maxOccurs="1" /><!-- When order is expected to be ready, initially empty, but must be set by archivist/order management tool -->
+            <xs:element name="AccessDateComments" type="xs:string" minOccurs="0" maxOccurs="1"/>
+
+            <xs:element name="EndUserReference" type="UserReferenceType" minOccurs="0" maxOccurs="1" />
+            <xs:element name="ResponsiblePerson" type="ArchivistReferenceType" minOccurs="0" maxOccurs="1" /><!-- Initially empty, but must be filled in order management system-->
+
+            <xs:element name="OrderStatus" type="OrderStatusType" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="AccessRestriction" type="AccessRestrictionType" minOccurs="1" maxOccurs="unbounded"/><!-- There might be multiple restrictions on an item (example: Personal Data + Business Sensitivity) -->
+
+            <xs:element name="InternalNote" type="InternalNoteType" minOccurs="0" maxOccurs="unbounded"/>
+
+            <!-- TODO: Why is this an array? Is it related to AccessRestrictions? Can it be added to OrderedItemReferenceCode?-->
+            <!-- Kuldar: It's about the end of access (example: if access to an object is only granted for 14 days).
+            The end date can be extended but it should still not be "unbounded";
+            instead a group EndDate which includes the origina date, extensions, reason for extension and archivist making the extension? -->
+            <xs:element name="AccessEndDate" type="xs:dateTime" minOccurs="0" maxOccurs="unbounded" />
+
+            <xs:element name="DeliveryFormat" type="DeliveryFormatType" minOccurs="0" maxOccurs="1" />
+
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="Order" type="OrderType">
+  </xs:element>
+</xs:schema>
+

@@ -82,6 +82,15 @@ class DefaultTask(Task):
             task_context.task_logger.task_logfile.close()
 
         # persist IP state (error, success)
+        #ip_state_doc_path = os.path.join(task_context.path, "state.xml")
+        #if os.path.exists(ip_state_doc_path):
+        #    new_state = IpState.from_path(ip_state_doc_path)
+
+        #if (self.task_name == 'AIPCheckMigrationProgress') and (new_state.get_last_task() == 'MigrationsComplete'):
+        #    task_context.task_logger.addinfo("Migration Complete")
+        #    task_context.ip_state_xml.set_last_task(new_state.get_last_task())
+        #else:
+
         task_context.ip_state_xml.set_last_task(self.task_name)
         task_context.ip_state_xml.set_state(task_context.task_status)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
