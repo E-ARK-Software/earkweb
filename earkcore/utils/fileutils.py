@@ -41,7 +41,13 @@ def remove_fs_item(uuid, working_dir, rel_path):
 
 
 def remove_protocol(path_with_protocol):
-    return lstrip_substring(path_with_protocol, 'file://')
+    # expand this array if necessary (more complex ones come first, subsets of complex ones after them)
+    protocols = ['file://', 'file:', 'file/']
+    for prot in protocols:
+        stripped_path = path_with_protocol.replace(prot, '')
+        if len(stripped_path) < len(path_with_protocol):
+            return stripped_path
+    return path_with_protocol
 
 def copy_tree_content(source_dir, target_dir):
     fs_childs = os.listdir(source_dir)

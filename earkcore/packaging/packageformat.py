@@ -12,7 +12,6 @@ class PackageFormat:
         @rtype:     PackageFormat
         @return:    Package type
         """
-
         if filename.endswith("tar.gz"):
             return PackageFormat.TARGZ
         elif filename.endswith("tar"):

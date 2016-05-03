@@ -632,11 +632,22 @@ class SIPValidation(DefaultTask):
                 if os.path.isdir(rep_path):
                     mets_validator = MetsValidation(rep_path)
                     valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+                    # TODO: validate possible sub-METS files:
+                    # for rep, metspath in mets_validator.subsequent_mets:
+                    #     print 'METS file for representation: %s at path: %s' % (rep, metspath)
+                    #     subsequent_mets_validator = MetsValidation(task_context.path)
+                    #     sub_result = subsequent_mets_validator.validate_mets(metspath)
+                    #     if valid == True and sub_result == False:
+                    #         valid = False
+                    #     tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
-        # currently: forced valid = True, until valid mets files are created by the SIP creator!
-        # valid = True
-
-        task_context.task_status = 0 if valid else 1
+        # task_context.task_status = 0 if valid else 1
+        if valid:
+            task_context.task_status = 0
+        else:
+            task_context.task_status = 1
+            for error in mets_validator.validation_errors:
+                tl.adderr(error)
         return task_context.additional_data
 
 class AIPMigrations(DefaultTask):
