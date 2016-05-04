@@ -1,12 +1,13 @@
 from django.http import HttpResponse
 from django.template import RequestContext, loader
 from django.contrib.auth.decorators import login_required
+from config.configuration import server_ip
 
 def public_search(request):
     print request.user
     template = loader.get_template('earkweb/pubsearch.html')
     context = RequestContext(request, {
-
+        'server_ip': server_ip,
     })
     return HttpResponse(template.render(context))
 

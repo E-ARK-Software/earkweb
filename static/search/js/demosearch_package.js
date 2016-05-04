@@ -5,7 +5,7 @@ var typeField = 'contentType';
 var rows = 20;
 
 function callback(data) {
-  var lilyEndpoint = 'http://earkdev.ait.ac.at:12060/repository/table/eark1/record/';
+  var lilyEndpoint = 'http://'+serverip+':12060/repository/table/eark1/record/';
   var lilyNamespace = 'org.eu.eark';
   
   var results = data.response.numFound;
@@ -49,7 +49,8 @@ function callback(data) {
 }
 
 function askSolr(start) {
-  var solrEndpoint = 'http://earkdev.ait.ac.at:8983/solr/eark1/';
+  var solrEndpoint = 'http://'+serverip+':8983/solr/eark1/';
+  window.console.log("solrEndpoint: " + solrEndpoint)
   var queryString = document.forms.find.queryString.value;
   var blobQuery = '';
   if (queryString)
