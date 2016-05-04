@@ -9,6 +9,7 @@ from earkcore.views import InformationPackageDetailView
 urlpatterns= patterns('',
 
     url(r'^$', views.InformationPackageList.as_view(), name='reception'),
+    url(r'^overview$', views.InformationPackageList.as_view(), name='reception'),
 
     url(r'^detail/(?P<pk>\d+)/$', views.InformationPackageDetail.as_view(), name='ip_detail'),
     url(r'^detail2/(?P<pk>\d+)/$', views.InformationPackageDetail2.as_view(), name='ip_detail2'),
