@@ -352,7 +352,7 @@ class SIPtoAIPReset(DefaultTask):
 
         # success status
         task_context.task_status = 0
-        task_context.additional_data['identifier'] = "1"
+        task_context.additional_data['identifier'] = ""
         return task_context.additional_data
 
 
@@ -445,7 +445,7 @@ class SIPDeliveryValidation(DefaultTask):
         #         else:
         #             task_context.task_status = 0
         task_context.task_status = 0
-        task_context.additional_data['identifier'] = "2"
+        task_context.additional_data['identifier'] = ""
         return task_context.additional_data
 
 
