@@ -6,11 +6,11 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from config.config import root_dir
+from config.configuration import root_dir
 from earkcore.packaging.untar import Untar
 from forms import TinyUploadFileForm
 from forms import UploadFileForm
-from config.params import config_path_work
+from config.configuration import config_path_work
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p, copy_tree_content
 from django.views.decorators.csrf import csrf_exempt

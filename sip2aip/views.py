@@ -22,7 +22,7 @@ from workers.ip_state import IpState
 from workers.taskconfig import TaskConfig
 from workers.tasks import SIPtoAIPReset
 from workflow.models import WorkflowModules
-from config.params import config_path_work, config_path_reception
+from config.configuration import config_path_work, config_path_reception
 import logging
 logger = logging.getLogger(__name__)
 from operator import itemgetter, attrgetter, methodcaller

@@ -23,7 +23,7 @@ from forms import SearchForm, UploadFileForm
 from models import AIP, DIP, Inclusion
 from query import get_query_string
 
-from config.params import config_path_work, aip_folders
+from config.configuration import config_path_work
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt

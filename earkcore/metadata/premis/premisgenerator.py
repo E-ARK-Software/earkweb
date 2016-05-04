@@ -6,7 +6,7 @@ import hashlib
 import uuid
 from mimetypes import MimeTypes
 
-from config.config import root_dir
+from config.configuration import root_dir
 from subprocess import Popen, PIPE
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 
@@ -314,11 +314,11 @@ class PremisGenerator(object):
 
         return
 
-from config import config
+from config import configuration
 class testPremisCreation(unittest.TestCase):
     def validateThis(self, file):
         validation_errors = []
-        xmlschema = etree.XMLSchema(etree.parse(config.premis_schema_file))
+        xmlschema = etree.XMLSchema(etree.parse(configuration.premis_schema_file))
         try:
             xmlschema.assertValid(etree.parse(file))
             print 'Validation result: %s' % xmlschema.validate(etree.parse(file))

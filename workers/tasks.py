@@ -8,9 +8,9 @@ from os import walk
 
 from celery import current_task
 
-from config import params
-from config.config import mets_schema_file
-from config.config import root_dir
+from config.configuration import mets_schema_file
+from config.configuration import root_dir
+from config.configuration import config_path_work
 from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -58,7 +58,7 @@ def init_task(pk_id, task_name, task_logfile_name):
     ip = InformationPackage.objects.get(pk=pk_id)
     if not ip.uuid:
         ip.uuid = randomutils.getUniqueID()
-    ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+    ip_work_dir = os.path.join(config_path_work, ip.uuid)
     task_log_file_dir = os.path.join(ip_work_dir, 'metadata')
     task_log_file = os.path.join(task_log_file_dir, "%s.log" % task_logfile_name)
     # create working directory

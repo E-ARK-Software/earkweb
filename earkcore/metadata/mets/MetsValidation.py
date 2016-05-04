@@ -10,8 +10,8 @@ import os
 import lxml
 import fnmatch
 
-from config.config import mets_schema_file
-from config.config import premis_schema_file
+from config.configuration import mets_schema_file
+from config.configuration import premis_schema_file
 from lxml import etree
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.XmlHelper import q

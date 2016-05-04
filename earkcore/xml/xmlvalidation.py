@@ -7,7 +7,7 @@ __version__ = "0.0.1"
 
 import os
 import unittest
-from config.config import root_dir
+from config.configuration import root_dir
 from validationresult import ValidationResult
 from earkcore.utils.fileutils import read_file_content
 from xmlschemanotfound import XMLSchemaNotFound

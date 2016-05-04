@@ -10,7 +10,7 @@ from lxml.etree import XMLSyntaxError
 import unittest
 from ChecksumAlgorithm import ChecksumAlgorithm
 import hashlib
-from config.config import root_dir
+from config.configuration import root_dir
 from earkcore.utils.fileutils import remove_protocol
 
 def get_sha256_hash(file):

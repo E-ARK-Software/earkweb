@@ -17,7 +17,7 @@ from earkcore.process.processor import Processor
 
 from earkcore.utils import randomutils
 
-from config.config import root_dir
+from config.configuration import root_dir
 
 def default_reporter(percent):
     print "\rProgress: {percent:3.0f}%".format(percent=percent)

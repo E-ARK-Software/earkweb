@@ -1,7 +1,7 @@
 import os
 from earkcore.utils.datetimeutils import ts_date
 import unittest
-from config.config import root_dir
+from config.configuration import root_dir
 from earkcore.utils import randomutils
 #from earkcore.metadata.premis import PremisUpdate
 

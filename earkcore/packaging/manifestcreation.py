@@ -9,7 +9,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from earkcore.utils import randomutils
 import unittest
 import re
-from config.config import root_dir
+from config.configuration import root_dir
 
 class ManifestCreation(object):
     """

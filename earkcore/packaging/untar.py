@@ -5,7 +5,7 @@ import shutil
 
 from earkcore.utils import randomutils
 
-from config.config import root_dir
+from config.configuration import root_dir
 
 from earkcore.process.processor import Processor
 

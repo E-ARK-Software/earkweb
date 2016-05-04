@@ -265,10 +265,5 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
-        'sip2aip.watchdir': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
     },
 }

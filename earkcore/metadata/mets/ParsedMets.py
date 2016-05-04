@@ -7,7 +7,7 @@ __author__ = 'shsdev'
 import unittest
 import lxml
 from lxml.etree import XMLSyntaxError
-from config.config import root_dir
+from config.configuration import root_dir
 
 
 class ParsedMets(object):

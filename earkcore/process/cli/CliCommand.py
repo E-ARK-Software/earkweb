@@ -7,7 +7,7 @@ __version__ = "0.0.1"
 
 import unittest
 import string
-from config.commands import commands
+from config.configuration import commands
 
 
 class CliCommand(object):

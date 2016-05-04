@@ -44,9 +44,9 @@ from workflow.models import WorkflowModules
 from workflow.models import Wirings
 import json
 
-from config.params import config_path_work
+from config.configuration import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
-from config.params import config_path_storage
+from config.configuration import config_path_storage
 
 from django.utils import dateparse
 

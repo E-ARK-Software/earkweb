@@ -7,7 +7,7 @@ __author__ = 'shs'
 import unittest
 from ChecksumAlgorithm import ChecksumAlgorithm
 from ChecksumFile import ChecksumFile
-from config.config import root_dir
+from config.configuration import root_dir
 
 class ChecksumValidation(object):
     """

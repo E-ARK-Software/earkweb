@@ -2,8 +2,8 @@ import os
 
 from django.views.generic.detail import DetailView
 from django.contrib.auth.decorators import login_required
-from config.params import config_path_work
-from config.params import config_path_reception
+from config.configuration import config_path_work
+from config.configuration import config_path_reception
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseBadRequest
@@ -11,7 +11,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from earkcore.models import InformationPackage
 from earkcore.utils.fileutils import read_file_content
 from earkcore.filesystem.fsinfo import fsize, get_mime_type
-from config.params import config_max_filesize_viewer
+from config.configuration import config_max_filesize_viewer
 import base64
 from django.template import RequestContext, loader
 import json

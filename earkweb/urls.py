@@ -5,7 +5,6 @@ import socket
 from django.contrib import admin
 
 from earkcore.process.thread.backgroundthread import BackgroundThread
-from sip2aip.watchdir import watchdir
 
 from earkweb import views
 
@@ -31,5 +30,3 @@ if socket.gethostname() != "earkdev":
         url(r'^$', RedirectView.as_view(url='earkweb/')),
         url(r'^earkweb/', include(urlpatterns)),
     )
-
-BackgroundThread(watchdir)

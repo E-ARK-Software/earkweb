@@ -7,7 +7,7 @@ Created on June 9, 2015
 
 import os
 
-from config.config import root_dir
+from config.configuration import root_dir
 
 import unittest
 import glob, os
