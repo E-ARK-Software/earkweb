@@ -43,6 +43,9 @@ from workers.tasks import AIPtoDIPReset
 from earkcore.xml.xmlvalidation import XmlValidation
 from io import BytesIO
 import lxml
+from config.configuration import server_hdfs_aip_query
+
+from config.configuration import server_repo_record_content_query
 
 @login_required
 def index(request, procname):
@@ -302,7 +305,7 @@ def toggle_select_package(request):
 def get_file_content(request, lily_id):
     logger.debug("Get content for lily_id %s" % lily_id)
     if request.is_ajax():
-        query_url =  settings.SERVER_REPO_RECORD_CONTENT_QUERY.format(lily_id)
+        query_url =  server_repo_record_content_query.format(lily_id)
         logger.debug("Get file content query: %s" % query_url)
         r = requests.get(query_url, stream=True)
         logger.debug("Get file content query status code: %d" % r.status_code)
@@ -405,7 +408,7 @@ def copy_to_local(aips):
     for aip in aips:
         filename = aip.identifier + '.tar'
         logger.info('copying AIP %s from HDFS' % aip)
-        r = requests.get(settings.SERVER_HDFS_AIP_QUERY.format(filename))
+        r = requests.get(server_hdfs_aip_query.format(filename))
         with open('working_area/' + filename, 'w') as f:
             for chunk in r.iter_content(1024 * 1024):
                 f.write(chunk)

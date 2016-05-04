@@ -19,6 +19,10 @@ config_path_access = "/var/data/earkweb/access"
 
 server_solr_query_url = "http://10.20.77.1:8983/solr/eark1/select?q={0}&wt=json"
 
+server_repo_record_content_query = "http://10.20.77.1:12060/repository/table/eark1/record/{0}/field/n$content/data?ns.n=org.eu.eark"
+
+server_hdfs_aip_query = "http://localhost:8081/hsink/fileresource/retrieve_newest?file={0}"
+
 commands = {
     'summain':
         ["/usr/bin/summain", "-c", "SHA256", "-c", "MD5", "--exclude=Ino,Dev,Uid,Username,Gid,Group,Nlink,Mode",

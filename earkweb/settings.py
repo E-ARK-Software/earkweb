@@ -12,43 +12,11 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-TIME_ZONE = 'Europe/Stockholm'
+TIME_ZONE = 'Europe/Vienna'
 
 LOGIN_URL='/earkweb/accounts/login/'
 
 import celeryapp
-
-
-# server settings
-
-SERVER_PROTOCOL_PREFIX = "http://"
-
-SERVER_IP = "10.20.77.1"
-
-# repository
-
-SERVER_REPO_PORT = "12060"
-
-SERVER_REPO = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_REPO_PORT
-
-SERVER_REPO_PATH= "/repository"
-
-SERVER_TABLE_PATH = "/table"
-
-SERVER_RECORD_PATH = "/record"
-
-SERVER_COLLECTION1 = "/eark1"
-
-
-SERVER_REPO_RECORD_PATH = SERVER_REPO_PATH + SERVER_TABLE_PATH + SERVER_COLLECTION1 + SERVER_RECORD_PATH
-
-SERVER_REPO_RECORD_CONTENT_QUERY = SERVER_REPO + SERVER_REPO_RECORD_PATH + "/{0}/field/n$content/data?ns.n=org.eu.eark"
-
-# hdfs storage service
-
-SERVER_HDFS = SERVER_PROTOCOL_PREFIX + "localhost" + ":8081/hsink/fileresource"
-
-SERVER_HDFS_AIP_QUERY = SERVER_HDFS + "/retrieve_newest?file={0}"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
@@ -68,11 +36,6 @@ ALLOWED_HOSTS = []
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
-
-
-#CAS_REDIRECT_URL = '/earkweb/search'
-#LOGIN_URL = '/earkweb/accounts/login/'
-#LOGOUT_URL = '/earkweb/accounts/logout/'
 
 import djcelery
 djcelery.setup_loader()
@@ -137,17 +100,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
-#    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
 )
 
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
-    # 'django_cas.backends.CASBackend',
 )
-
-#CAS_SERVER_URL = 'https://earkdev.ait.ac.at:8443/cas/login'
 
 ROOT_URLCONF = 'earkweb.urls'
 
@@ -171,14 +129,6 @@ DATABASES = {
         }
     }
 }
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#    }
-#}
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -215,10 +165,10 @@ LOGGING = {
     },
     'loggers': {
         'earkcore.models': { 
-		'handlers': ['file', 'console'], 
-		'level': 'DEBUG', 
-		'propagate': True,
-	},
+        'handlers': ['file', 'console'],
+        'level': 'DEBUG',
+        'propagate': True,
+    },
     },
     'loggers': {
         'django.request': {
