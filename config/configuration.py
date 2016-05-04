@@ -5,6 +5,9 @@ import socket
 server_ip = "81.189.135.189"
 if socket.gethostname() == "hadoop-1":
     server_ip = "10.20.77.1"
+mysql_server_ip = "127.0.0.1"
+if socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto":
+    mysql_server_ip = "172.17.0.2"
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
