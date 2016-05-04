@@ -1,6 +1,7 @@
 import logging
 from django.conf import settings
 logger = logging.getLogger(__name__)
+from config.configuration import server_solr_query_url
 
 def get_query_string(keyword, content_type, start, rows):
     
@@ -34,6 +35,6 @@ def get_query_string(keyword, content_type, start, rows):
     
     query_part = conjunctions + "&" + limit
         
-    query_string = settings.SERVER_SOLR_QUERY_URL.format(query_part)
+    query_string = server_solr_query_url.format(query_part)
     logger.info("Solr query string: %s" % query_string)
     return query_string

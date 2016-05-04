@@ -1,7 +1,6 @@
 import os
 import string
 
-
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
 premis_schema_file = os.path.join(root_dir, 'earkresources/schemas/premis-v2-2.xsd')
@@ -17,6 +16,8 @@ config_path_ingest = "/var/data/earkweb/ingest"
 config_path_work = "/var/data/earkweb/work"
 config_path_storage = "/var/data/earkweb/storage"
 config_path_access = "/var/data/earkweb/access"
+
+server_solr_query_url = "http://10.20.77.1:8983/solr/eark1/select?q={0}&wt=json"
 
 commands = {
     'summain':
