@@ -39,3 +39,7 @@ commands = {
     'blank':
         [string.Template('$command')]
 }
+
+# Test settings
+
+test_rest_endpoint_hdfs_upload = "http://81.189.135.189"

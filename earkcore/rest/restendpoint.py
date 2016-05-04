@@ -1,6 +1,7 @@
 import os
 from urlparse import urljoin
 import unittest
+from config.configuration import test_rest_endpoint_hdfs_upload
 
 class RestEndpoint:
 
@@ -22,11 +23,10 @@ class RestEndpoint:
 
 class TestRestEndpoint(unittest.TestCase):
 
-
     def test_rest_endpoint(self):
-        rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
-        self.assertEqual(rest_endpoint.to_string(), "http://81.189.135.189/dm-hdfs-storage")
-        self.assertEqual(rest_endpoint.get_resource_uri("hsink/fileresource/files/{0}"), "http://81.189.135.189/dm-hdfs-storage/hsink/fileresource/files/{0}")
+        rest_endpoint = RestEndpoint(test_rest_endpoint_hdfs_upload, "dm-hdfs-storage")
+        self.assertEqual(rest_endpoint.to_string(), "%s/dm-hdfs-storage" % test_rest_endpoint_hdfs_upload)
+        self.assertEqual(rest_endpoint.get_resource_uri("hsink/fileresource/files/{0}"), "%s/dm-hdfs-storage/hsink/fileresource/files/{0}" % test_rest_endpoint_hdfs_upload)
 
 if __name__ == '__main__':
     unittest.main()

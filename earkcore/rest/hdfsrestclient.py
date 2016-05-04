@@ -4,7 +4,7 @@ from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.chunked import default_reporter
 from earkcore.rest.restresponsewrapper import ResponseWrapper
-
+from config.configuration import test_rest_endpoint_hdfs_upload
 
 class HDFSRestClient(object):
     """
@@ -59,7 +59,7 @@ def main():
     def custom_progress_reporter(percent):
         print "\rProgress:{percent:3.0f}%".format(percent=percent)
 
-    rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
+    rest_endpoint = RestEndpoint(test_rest_endpoint_hdfs_upload, "dm-hdfs-storage")
     hdfs_rest_client = HDFSRestClient(rest_endpoint, custom_progress_reporter)
 
     aip_path = "/var/data/earkweb/storage/2d93fe6b-2c92-4a5d-a033-48d0709826b3_00001.tar"
