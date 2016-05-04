@@ -32,13 +32,13 @@ CELERYD_LOG_FILE="/var/log/earkweb/log/celery_%N.log"
 CELERYD_PID_FILE="/var/log/earkweb/log/proc/celery_%N.pid"
 
 # Workers should run as an unprivileged user.
-CELERYD_USER="shs"
-CELERYD_GROUP="epp"
+CELERYD_USER="eark"
+CELERYD_GROUP="eark"
 
 # CELERYBEAT configuration
 CELERYBEAT_LOG_LEVEL=INFO
-CELERYBEAT_LOG_FILE="/var/log/ESSArch/log/celerybeat.log"
-CELERYBEAT_PID_FILE="/var/log/ESSArch/log/proc/celerybeat.pid"
+CELERYBEAT_LOG_FILE="/var/log/earkweb/log/celerybeat.log"
+CELERYBEAT_PID_FILE="/var/log/earkweb/log/proc/celerybeat.pid"
 CELERYBEAT_USER=${CELERYD_USER}
 CELERYBEAT_GROUP=${CELERYD_GROUP}
 CELERYBEAT_CHDIR=${CELERYD_CHDIR}
