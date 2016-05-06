@@ -28,6 +28,7 @@ from earkcore.packaging.extract import Extract
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.search.solrclient import SolrClient
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
@@ -1290,6 +1291,43 @@ class AIPStore(DefaultTask):
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+        return task_context.additional_data
+
+class AIPIndexing(DefaultTask):
+
+    accept_input_from = [AIPStore.__name__, "AIPIndexing"]
+
+    def run_task(self, task_context):
+        """
+        AIP Index
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:15,type:2,stage:2
+        """
+
+        # no premis event
+        task_context.event_type = None
+
+        tl = task_context.task_logger
+
+        if not task_context.has_required_parameters("storage_dest", "identifier"):
+            task_context.task_status = 0
+            return task_context.report_parameter_errors()
+
+        storage_dest = task_context.additional_data["storage_dest"]
+        identifier = task_context.additional_data["identifier"]
+        pts = PairtreeStorage(storage_dest)
+        if not pts.identifier_object_exists(identifier):
+            tl.adderr("Object for identifier does not exist in repository.")
+            task_context.task_status = 0
+            return task_context.additional_data
+        try:
+            solr_client = SolrClient("http://172.17.0.2:8983/solr/", "earkstorage")
+            solr_client.post_tar_file(pts.get_object_path(identifier), identifier)
+            task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        except Exception as e:
+            tl.adderr("AIP indexing task failed: %s" % e.message)
             tl.adderr(traceback.format_exc())
             task_context.task_status = 1
         return task_context.additional_data

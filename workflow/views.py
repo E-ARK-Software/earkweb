@@ -38,7 +38,7 @@ from sip2aip import forms
 import urllib2
 #import workers.tasks
 from workers.default_task_context import DefaultTaskContext
-from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation, AIPIndexing
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -185,7 +185,7 @@ def apply_task(request):
                 additional_data = {'packagename': ip.packagename,
                                    'identifier': ip.identifier}
 
-                if wfm.identifier == AIPStore.__name__:
+                if wfm.identifier == AIPStore.__name__ or wfm.identifier == AIPIndexing.__name__:
                     additional_data['storage_dest'] = config_path_storage
                     print "Storage destination %s" % additional_data['storage_dest']
 

@@ -13,7 +13,7 @@ import requests
 from earkcore.utils import randomutils
 
 
-class Solr(object):
+class SolrClient(object):
 
     """
     Constructor to initialise solr client API URL
@@ -143,7 +143,7 @@ class TestSolr(unittest.TestCase):
         pass
 
     # def test_solr_post_document(self):
-    #     slr = Solr("http://localhost:8983/solr/samplecollection")
+    #     slr = SolrClient("http://localhost:8983/solr/", "samplecollection")
     #     docs = []
     #     document = {"id":"1234abcde",
     #             "cat":"journal",
@@ -153,12 +153,12 @@ class TestSolr(unittest.TestCase):
     #     slr.update(docs)
     #     slr.commit()
 
-    def test_extract(self):
-        slr = Solr("http://localhost:8983/solr/", "samplecollection")
-        tar_file_path = "/opt/python_wsgi_apps/earkweb/earkresources/storage-test/bar.tar"
-        identifier = "739f9c5f-c402-42af-a18b-3d0bdc4e8751"
-        results = slr.post_tar_file(tar_file_path, identifier)
-        print results
+    # def test_extract(self):
+    #     slr = SolrClient("http://localhost:8983/solr/", "samplecollection")
+    #     tar_file_path = "/opt/python_wsgi_apps/earkweb/earkresources/storage-test/bar.tar"
+    #     identifier = "739f9c5f-c402-42af-a18b-3d0bdc4e8751"
+    #     results = slr.post_tar_file(tar_file_path, identifier)
+    #     print results
 
 if __name__ == '__main__':
     unittest.main()
