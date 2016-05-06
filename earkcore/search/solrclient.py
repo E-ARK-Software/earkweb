@@ -12,6 +12,8 @@ import requests
 
 from earkcore.utils import randomutils
 
+def default_reporter(percent):
+    print "\rProgress: {percent:3.0f}%".format(percent=percent)
 
 class SolrClient(object):
 
@@ -102,11 +104,18 @@ class SolrClient(object):
     @rtype: list(dict(string, int))
     @return: Return list of urls and return codes
     """
-    def post_tar_file(self, tar_file_path, identifier):
+    def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter):
+        progress_reporter(0)
         import tarfile
         tfile = tarfile.open(tar_file_path, 'r')
         extract_dir = '/tmp/temp-' + randomutils.randomword(10)
         results = []
+
+        numfiles = sum(1 for tarinfo in tfile if tarinfo.isreg())
+        print "NUMFILES: %s " % numfiles
+
+
+        num = 0
         for t in tfile:
             tfile.extract(t, extract_dir)
             afile = os.path.join(extract_dir, t.name)
@@ -116,8 +125,12 @@ class SolrClient(object):
                 response = requests.post(post_url, files=files)
                 result = {"url": post_url, "status": response.status_code}
                 results.append(result)
+                num += 1
+                percent = (num) * 100 / numfiles
+                progress_reporter(percent)
         self.commit()
         shutil.rmtree(extract_dir)
+        progress_reporter(100)
         return results
 
     """

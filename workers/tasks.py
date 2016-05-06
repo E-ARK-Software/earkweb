@@ -52,6 +52,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
 from config.configuration import server_ip
+import requests
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -1309,22 +1310,39 @@ class AIPIndexing(DefaultTask):
         # no premis event
         task_context.event_type = None
 
+        # task logger
         tl = task_context.task_logger
 
-        if not task_context.has_required_parameters("storage_dest", "identifier"):
+        # check required parameters in task context
+        parameters = ["storage_dest", "identifier"]
+        if not task_context.has_required_parameters(parameters):
             task_context.task_status = 0
-            return task_context.report_parameter_errors()
+            return task_context.report_parameter_errors(parameters)
+
+        # check solr server availability
+        from config.configuration import local_solr
+        r = requests.get(local_solr)
+        if not r.status_code == 200:
+            tl.adderr("Solr server is not available at: %s" % local_solr)
+            task_context.task_status = 0
+            return task_context.additional_data
 
         storage_dest = task_context.additional_data["storage_dest"]
         identifier = task_context.additional_data["identifier"]
         pts = PairtreeStorage(storage_dest)
+
+        # check if the repository container is available for the given identifier
         if not pts.identifier_object_exists(identifier):
             tl.adderr("Object for identifier does not exist in repository.")
             task_context.task_status = 0
             return task_context.additional_data
+
         try:
-            solr_client = SolrClient("http://172.17.0.2:8983/solr/", "earkstorage")
-            solr_client.post_tar_file(pts.get_object_path(identifier), identifier)
+            # initialize solr client
+            solr_client = SolrClient(local_solr, "earkstorage")
+            # post documents of repository container to solr server
+            partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+            solr_client.post_tar_file(pts.get_object_path(identifier), identifier, partial_custom_progress_reporter)
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("AIP indexing task failed: %s" % e.message)

@@ -8,6 +8,8 @@ if socket.gethostname() == "hadoop-1":
 mysql_server_ip = "127.0.0.1"
 if socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto":
     mysql_server_ip = "172.17.0.2"
+local_solr_server_ip = "172.17.0.2"
+local_solr = "http://%s:8983/solr/" % local_solr_server_ip
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
