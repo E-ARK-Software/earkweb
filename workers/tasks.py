@@ -5,7 +5,7 @@ import tarfile
 import time
 from functools import partial
 from os import walk
-
+import traceback
 from celery import current_task
 
 from config.configuration import mets_schema_file
@@ -28,6 +28,7 @@ from earkcore.packaging.extract import Extract
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
 from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
@@ -49,6 +50,7 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
+from config.configuration import server_ip
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -1219,7 +1221,7 @@ class AIPPackaging(DefaultTask):
                             self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     i += 1
             tar.close()
-            tl.log.append("Package stored: %s" % storage_file)
+            tl.log.append("Package created: %s" % storage_file)
 
             #ip.statusprocess = tc.success_status if result.success else tc.error_status
             #ip.save()
@@ -1236,7 +1238,7 @@ class AIPStore(DefaultTask):
 
     def run_task(self, task_context):
         """
-        AIP Validation
+        Store AIP
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:2,stage:2
         """
@@ -1270,18 +1272,25 @@ class AIPStore(DefaultTask):
                 if not os.path.exists(tarfile_path):
                     tl.adderr("Unable to store package. The package container file does not exist: %s." % tarfile_path)
                 else:
-                    abspath_basename = "%s/%s" % (storePath, package_id)
-                    tarfile_dest = increment_file_name_suffix(abspath_basename, "tar")
-                    shutil.copy2(tarfile_path, tarfile_dest)
-                    tl.addinfo('The tar container for %s has been copied to: %s' % (tarfile_path, tarfile_dest))
-                    if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(tarfile_dest).get(ChecksumAlgorithm.SHA256):
-                        tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
-                        task_context.additional_data["storage_loc"] = tarfile_dest
+                    # abspath_basename = "%s/%s" % (storePath, package_id)
+                    # tarfile_dest = increment_file_name_suffix(abspath_basename, "tar")
+                    # shutil.copy2(tarfile_path, tarfile_dest)
+                    pts = PairtreeStorage(storePath)
+                    pts.store(package_id, tarfile_path)
+                    package_object_path = pts.get_object_path(package_id)
+                    if os.path.exists(package_object_path):
+                        tl.addinfo('Storage path: %s' % (package_object_path))
+                        if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(package_object_path).get(ChecksumAlgorithm.SHA256):
+                            tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
+                            task_context.additional_data["storage_loc"] = package_object_path
+                        else:
+                            tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
                     else:
-                        tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+                        tl.adderr("Error storing package")
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
             task_context.task_status = 1
         return task_context.additional_data
 
@@ -1293,7 +1302,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:2,stage:2
+        @param      tc: order:16,type:2,stage:2
         """
         # no premis event
         #task_context.event_type = 'LilyHDFSUpload'
@@ -1309,7 +1318,7 @@ class LilyHDFSUpload(DefaultTask):
                 tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
+                rest_endpoint = RestEndpoint("http://%s" % server_ip, "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.

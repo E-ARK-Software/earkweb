@@ -121,6 +121,15 @@ def aip(request, dip_name, identifier):
     context = RequestContext(request, {'dip': dip, 'aip': aip})
     return HttpResponse(template.render(context))
 
+
+@login_required
+def localrepo(request):
+    template = loader.get_template('search/localrepo.html')
+    context = RequestContext(request, {
+
+    })
+    return HttpResponse(template.render(context))
+
 @login_required
 def demosearch(request):
     template = loader.get_template('search/demosearch.html')

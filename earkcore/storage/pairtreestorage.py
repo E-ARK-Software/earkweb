@@ -4,8 +4,10 @@ Created on April 30, 2016
 
 @author: Sven Schlarb (https://github.com/shsdev)
 """
+import logging
+logger = logging.getLogger(__name__)
+
 import shutil
-from earkcore.filesystem.chunked import FileBinaryDataChunks
 
 from earkcore.fixity.ChecksumFile import ChecksumFile
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -17,7 +19,7 @@ import ntpath
 import tarfile
 from earkcore.utils import randomutils
 
-from config.config import root_dir
+from config.configuration import root_dir
 
 from pairtree import PairtreeStorageFactory, ObjectNotFoundException
 
@@ -81,7 +83,8 @@ class PairtreeStorage(object):
     @rtype:     boolean
     @return:    True if the object exists, false otherwise
     """
-    def _identifier_object_exists(self, identifier):
+    def identifier_object_exists(self, identifier):
+        logger.debug("Looking for object at path: %s/data" % self.repo_storage_client._id_to_dirpath(identifier))
         return self.repo_storage_client.exists(identifier, "data")
 
     """
@@ -94,7 +97,7 @@ class PairtreeStorage(object):
     @rtype:     boolean
     @return:    True if the object exists, false otherwise
     """
-    def _version_exists(self, identifier, version_num):
+    def identifier_version_object_exists(self, identifier, version_num):
         version = '%05d' % version_num
         return self.repo_storage_client.exists(identifier, "data/%s" % version)
 
@@ -118,10 +121,10 @@ class PairtreeStorage(object):
     @return:    Formatted version string (constant VersionDirFormat)
     """
     def _next_version(self, identifier):
-        if not self._identifier_object_exists(identifier):
+        if not self.identifier_object_exists(identifier):
             return VersionDirFormat % 1
         version_num = 1
-        while self._version_exists(identifier, version_num):
+        while self.identifier_version_object_exists(identifier, version_num):
             version_num += 1
         return VersionDirFormat % version_num
 
@@ -145,10 +148,10 @@ class PairtreeStorage(object):
     @return:    Current version number
     """
     def curr_version_num(self, identifier):
-        if not self._identifier_object_exists(identifier):
+        if not self.identifier_object_exists(identifier):
             raise ValueError("No repository object for id '%s'. Unable to get current version number." % identifier)
         version_num = 1
-        while self._version_exists(identifier, version_num):
+        while self.identifier_version_object_exists(identifier, version_num):
             version_num += 1
         version_num -= 1
         return version_num
@@ -166,11 +169,11 @@ class PairtreeStorage(object):
     @raise      ObjectNotFoundException if the file is not available
     """
     def get_object_path(self, identifier, version_num=0):
-        if not self._identifier_object_exists(identifier):
+        if not self.identifier_object_exists(identifier):
             raise ValueError("No repository object for id '%s'. Unable to get requested version object path." % identifier)
         if version_num == 0:
             version_num = self.curr_version_num(identifier)
-        if not self._version_exists(identifier, version_num):
+        if not self.identifier_version_object_exists(identifier, version_num):
             raise ValueError("Repository object '%s' has no version %d." % (identifier, version_num))
         version = '%05d' % version_num
         repo_obj = self.repo_storage_client.get_object(identifier, False)
@@ -194,20 +197,15 @@ class PairtreeStorage(object):
     def get_object_item_stream(self, identifier, entry):
         object_path = self.get_object_path(identifier)
         t = tarfile.open(object_path, 'r')
-        for filename in [ entry ]:
-            try:
-                info = t.getmember(filename)
-                print info
-                f=t.extractfile(info)
-                return f.read()
-            except KeyError:
-                print 'ERROR: Did not find %s in tar archive' % filename
-            else:
-                print '%s is %d bytes' % (info.name, info.size)
-
+        try:
+            info = t.getmember(entry)
+            f=t.extractfile(info)
+            return f.read()
+        except KeyError:
+            logging.error('ERROR: Did not find %s in tar archive' % entry)
+            raise ObjectNotFoundException("Entry not found in repository object")
 
 class TestPairtreeStorage(unittest.TestCase):
-
     source_dir = root_dir + '/earkresources/storage-test/'
     package_file = "bar.tar"
     repository_storage_dir = root_dir + '/tmp/temp-' + randomutils.randomword(10)
@@ -217,56 +215,54 @@ class TestPairtreeStorage(unittest.TestCase):
     def setUpClass(cls):
         if not os.path.exists(TestPairtreeStorage.repository_storage_dir):
             os.makedirs(TestPairtreeStorage.repository_storage_dir)
-        print TestPairtreeStorage.repository_storage_dir
         shutil.copy(os.path.join(TestPairtreeStorage.test_repo, "pairtree_version0_1"), TestPairtreeStorage.repository_storage_dir)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(TestPairtreeStorage.repository_storage_dir)
 
-    # def test_identifier_object_exists(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.test_repo)
-    #     existing_identifier = "bar"
-    #     nonexisting_identifier = "foo"
-    #     self.assertEquals(pts._identifier_object_exists(existing_identifier),True)
-    #     self.assertEquals(pts._identifier_object_exists(nonexisting_identifier),False)
-    #
-    # def test_version_exists(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.test_repo)
-    #     identifier = "bar"
-    #     self.assertEquals(pts._version_exists(identifier, 3),False)
-    #     self.assertEquals(pts._version_exists(identifier, 2),True)
-    #
-    # def test_next_version(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.test_repo)
-    #     identifier = "bar"
-    #     self.assertEquals("00003", pts._next_version(identifier))
-    #
-    # def test_curr_version(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.test_repo)
-    #     identifier = "bar"
-    #     self.assertEquals("00002", pts.curr_version(identifier))
-    #
-    # def test_store(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.repository_storage_dir)
-    #     pts.store("bar", os.path.join(self.source_dir, self.package_file))
-    #     self.assertEqual(1, pts.curr_version_num("bar"))
-    #     pts.store("bar", os.path.join(self.source_dir, self.package_file))
-    #     self.assertEqual(2, pts.curr_version_num("bar"))
-    #
-    # def test_get_object_path(self):
-    #     pts = PairtreeStorage(TestPairtreeStorage.test_repo)
-    #     expected = os.path.join(TestPairtreeStorage.test_repo, "pairtree_root/ba/r/data/00002/bar.tar")
-    #     actual = pts.get_object_path("bar")
-    #     self.assertEqual(expected, actual)
+    def test_identifier_object_exists(self):
+        pts = PairtreeStorage(TestPairtreeStorage.test_repo)
+        existing_identifier = "bar"
+        nonexisting_identifier = "foo"
+        self.assertEquals(pts.identifier_object_exists(existing_identifier),True)
+        self.assertEquals(pts.identifier_object_exists(nonexisting_identifier),False)
+
+    def test_version_exists(self):
+        pts = PairtreeStorage(TestPairtreeStorage.test_repo)
+        identifier = "bar"
+        self.assertEquals(pts.identifier_version_object_exists(identifier, 3),False)
+        self.assertEquals(pts.identifier_version_object_exists(identifier, 2),True)
+
+    def test_next_version(self):
+        pts = PairtreeStorage(TestPairtreeStorage.test_repo)
+        identifier = "bar"
+        self.assertEquals("00003", pts._next_version(identifier))
+
+    def test_curr_version(self):
+        pts = PairtreeStorage(TestPairtreeStorage.test_repo)
+        identifier = "bar"
+        self.assertEquals("00002", pts.curr_version(identifier))
+
+    def test_store(self):
+        pts = PairtreeStorage(TestPairtreeStorage.repository_storage_dir)
+        pts.store("bar", os.path.join(self.source_dir, self.package_file))
+        self.assertEqual(1, pts.curr_version_num("bar"))
+        pts.store("bar", os.path.join(self.source_dir, self.package_file))
+        self.assertEqual(2, pts.curr_version_num("bar"))
+
+    def test_get_object_path(self):
+        pts = PairtreeStorage(TestPairtreeStorage.test_repo)
+        expected = os.path.join(TestPairtreeStorage.test_repo, "pairtree_root/ba/r/data/00002/bar.tar")
+        actual = pts.get_object_path("bar")
+        self.assertEqual(expected, actual)
 
     def test_get_object_item_stream(self):
         pts = PairtreeStorage(TestPairtreeStorage.test_repo)
 
         content = pts.get_object_item_stream("bar", "739f9c5f-c402-42af-a18b-3d0bdc4e8751/METS.xml")
         self.assertTrue(content.startswith("<?xml"))
-        print content
-
+        logger.debug(content)
 
 if __name__ == '__main__':
     unittest.main()

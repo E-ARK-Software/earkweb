@@ -3,12 +3,14 @@ import os
 from django.views.generic.detail import DetailView
 from django.contrib.auth.decorators import login_required
 from config.configuration import config_path_work
+from config.configuration import config_path_storage
 from config.configuration import config_path_reception
 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound, HttpResponseBadRequest
 
 from earkcore.models import InformationPackage
+from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils.fileutils import read_file_content
 from earkcore.filesystem.fsinfo import fsize, get_mime_type
 from config.configuration import config_max_filesize_viewer
@@ -20,6 +22,7 @@ from django.http import JsonResponse
 from earkcore.utils import randomutils
 from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
+import logging
 
 #from xml.xmlvalidation import XmlValidation
 #import lxml
@@ -131,6 +134,18 @@ def read_ipfc(request, ip_sub_file_path):
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
 
+@login_required
+@csrf_exempt
+def access_local_repo_item(request, identifier, mime, entry):
+    logging.debug("Accessing local repository object: %s " % identifier)
+    logging.debug("Entry mime-type: %s " % mime)
+    logging.debug("entry path: %s " % entry)
+    pts = PairtreeStorage(config_path_storage)
+    if not pts.identifier_object_exists(identifier):
+        return HttpResponseNotFound("Package file for identifier '%s' does not exist" % (identifier))
+    else:
+        content = pts.get_object_item_stream(identifier, entry)
+        return HttpResponse(content, content_type=mime)
 
 @login_required
 @csrf_exempt

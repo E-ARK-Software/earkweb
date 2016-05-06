@@ -153,67 +153,48 @@ STATIC_ROOT = '/var/www/static/earkweb/'
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+        'default': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/earkweb/earkweb.log',
+            'maxBytes': 1024*1024*5, # 5 MB
+            'backupCount': 5,
+            'formatter':'standard',
+        },
+        'request_handler': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'filename': '/var/log/earkweb/request.log',
+            'maxBytes': 1024*1024*5, # 5 MB
+            'backupCount': 5,
+            'formatter':'standard',
         },
         'console': {
-            'class': 'logging.StreamHandler',
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter':'standard',
         },
     },
-    'loggers': {
-        'earkcore.models': { 
-        'handlers': ['file', 'console'],
-        'level': 'DEBUG',
-        'propagate': True,
-    },
+    'root': {
+        'handlers': ['default', 'console'],
+        'level': 'DEBUG'
     },
     'loggers': {
         'django.request': {
-            'handlers': ['file', 'console'],
+            'handlers': ['request_handler', 'console'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False
         },
-    },
-    'loggers': {
-        'sipcreator.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'sipcreator.query': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'search.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'search.query': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'workflow.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'sip2aip.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+        'earkcore.storage.pairtreestorage': {
+                'handlers': ['default', 'console'],
+                'level': 'DEBUG',
+            },
+    }
 }
