@@ -137,6 +137,14 @@ def read_ipfc(request, ip_sub_file_path):
 @login_required
 @csrf_exempt
 def access_local_repo_item(request, identifier, mime, entry):
+
+    mime = mime.strip()
+    import re
+    def matches(s):
+        return re.match("^[a-z]{2,20}/[a-zA-Z0-9-+\.]{2,40}$", s) is not None
+    if not matches(mime):
+        mime = "application/octet-stream"
+        logging.info("warning: using default mime type for access: application/octet-stream")
     logging.debug("Accessing local repository object: %s " % identifier)
     logging.debug("Entry mime-type: %s " % mime)
     logging.debug("entry path: %s " % entry)

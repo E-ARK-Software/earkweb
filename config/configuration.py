@@ -2,12 +2,24 @@ import os
 import string
 import socket
 
+
+
+# earkweb django server
 server_ip = "81.189.135.189"
 if socket.gethostname() == "hadoop-1":
     server_ip = "10.20.77.1"
+if socket.gethostname() == "pluto":
+    server_ip = "127.0.0.1"
+
+# mysql server
 mysql_server_ip = "127.0.0.1"
 if socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto":
     mysql_server_ip = "172.17.0.2"
+
+# access solr server
+access_solr_server_ip = "81.189.135.189"
+
+# storage solr server
 local_solr_server_ip = "172.17.0.2"
 local_solr = "http://%s:8983/solr/" % local_solr_server_ip
 

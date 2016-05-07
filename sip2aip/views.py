@@ -29,6 +29,10 @@ from operator import itemgetter, attrgetter, methodcaller
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
+from config.configuration import local_solr_server_ip
+from config.configuration import server_ip
+
+
 @login_required
 @csrf_exempt
 def ip_detail_table(request):
@@ -170,6 +174,16 @@ class IndexingStatusList(ListView):
     def get_context_data(self, **kwargs):
         context = super(IndexingStatusList, self).get_context_data(**kwargs)
         return context
+
+
+@login_required
+def aipsearch_package(request):
+    template = loader.get_template('sip2aip/aipsearch_package.html')
+    context = RequestContext(request, {
+        'local_solr_server_ip': local_solr_server_ip,
+        'server_ip': server_ip,
+    })
+    return HttpResponse(template.render(context))
 
 
 class HelpProcessingStatus(ListView):

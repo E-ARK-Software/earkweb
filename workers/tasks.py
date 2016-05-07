@@ -1352,7 +1352,7 @@ class AIPIndexing(DefaultTask):
 
 class LilyHDFSUpload(DefaultTask):
 
-    accept_input_from = [AIPStore.__name__, "LilyHDFSUpload"]
+    accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, "LilyHDFSUpload"]
 
     def run_task(self, task_context):
         """

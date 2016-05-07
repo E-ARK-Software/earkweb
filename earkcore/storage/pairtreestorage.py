@@ -197,6 +197,7 @@ class PairtreeStorage(object):
     def get_object_item_stream(self, identifier, entry):
         object_path = self.get_object_path(identifier)
         t = tarfile.open(object_path, 'r')
+        logger.debug("Trying to access entry %s" % entry)
         try:
             info = t.getmember(entry)
             f=t.extractfile(info)

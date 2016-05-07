@@ -36,4 +36,6 @@ urlpatterns= patterns('',
 
     url(r'^indexing_status$', views.IndexingStatusList.as_view(), name='indexing_status'),
 
+    url(r'^aipsearch/package$', views.aipsearch_package, name='aipsearch_package$'),
+
 )
