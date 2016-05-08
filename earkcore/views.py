@@ -136,7 +136,7 @@ def read_ipfc(request, ip_sub_file_path):
 
 @login_required
 @csrf_exempt
-def access_local_repo_item(request, identifier, mime, entry):
+def access_aip_item(request, identifier, mime, entry):
 
     mime = mime.strip()
     import re

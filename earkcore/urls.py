@@ -10,6 +10,6 @@ urlpatterns= patterns('',
     url(r'^save_parent_identifier/(?P<uuid>[0-9a-zA-Z-_/\.]{3,200})/$', views.save_parent_identifier, name='save_parent_identifier'),
     url(r'^read_ipfc/(?P<ip_sub_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.read_ipfc, name='read_ipfc'),
     # access url pattern: <repo-access-endpoint>/<identifier>/<mime-type>/<package-entry>/
-    url(r'^access_local_repo_item/(?P<identifier>[0-9a-zA-Z_\-\. ]{3,500})/(?P<mime>([0-9a-zA-Z_\-\. ]{2,20}/[0-9a-zA-Z_\-\. ]{2,20}))/(?P<entry>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.access_local_repo_item, name='access_local_repo_item'),
+    url(r'^access_aip_item/(?P<identifier>[0-9a-zA-Z_\-\. ]{3,500})/(?P<mime>([0-9a-zA-Z_\-\. ]{2,20}/[0-9a-zA-Z_\-\. ]{2,20}))/(?P<entry>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.access_aip_item, name='access_aip_item'),
     url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
 )
