@@ -1,4 +1,4 @@
-"""Simple model of Apache Solr 1.4 and 3.x"""
+"""Solr client"""
 import os
 import json
 import shutil
@@ -12,50 +12,52 @@ import requests
 
 from earkcore.utils import randomutils
 
+
 def default_reporter(percent):
     print "\rProgress: {percent:3.0f}%".format(percent=percent)
 
+
 class SolrClient(object):
 
-    """
-    Constructor to initialise solr client API URL
-
-    @type       base_url: string
-    @param      base_url: Solr base url, e.g. "http://localhost:8983/solr/"
-
-    @type       collection: string
-    @param      collection: Collection identifier, e.g. "samplecollection"
-    """
     def __init__(self, base_url, collection):
+        """
+        Constructor to initialise solr client API URL
+
+        @type       base_url: string
+        @param      base_url: Solr base url, e.g. "http://localhost:8983/solr/"
+
+        @type       collection: string
+        @param      collection: Collection identifier, e.g. "samplecollection"
+        """
         if base_url[-1] != '/':
             base_url += '/'
         self.url = base_url + collection
 
-    """
-    Search Solr, return URL and JSON response
-
-    @type       params: string
-    @param      params: Query parameters
-
-    @rtype: string, int
-    @return: Return url and return code
-    """
     def select(self, params):
+        """
+        Search Solr, return URL and JSON response
+
+        @type       params: string
+        @param      params: Query parameters
+
+        @rtype: string, int
+        @return: Return url and return code
+        """
         params['wt'] = 'json'
         url = self.url + '/select?' + urllib.urlencode(params)
         conn = urllib2.urlopen(url)
         return url, json.load(conn)
 
-    """
-    Delete query result documents
-
-    @type       query: string
-    @param      query: query
-
-    @rtype: string, int
-    @return: Return url and return code
-    """
     def delete(self, query):
+        """
+        Delete query result documents
+
+        @type       query: string
+        @param      query: query
+
+        @rtype: string, int
+        @return: Return url and return code
+        """
         params = {}
         url = self.url + '/update?' + urllib.urlencode(params)
         request = urllib2.Request(url)
@@ -65,16 +67,16 @@ class SolrClient(object):
         status = etree.XML(response).findtext('lst/int')
         return url, status
 
-    """
-    Post a list of documents
-
-    @type       docs: list
-    @param      docs: List of solr documents
-
-    @rtype: string, int
-    @return: Return url and return code
-    """
     def update(self, docs):
+        """
+        Post a list of documents
+
+        @type       docs: list
+        @param      docs: List of solr documents
+
+        @rtype: string, int
+        @return: Return url and return code
+        """
         url = self.url + '/update?commit=true'
         add_xml = etree.Element('add')
         for doc in docs:
@@ -92,19 +94,19 @@ class SolrClient(object):
         status = etree.XML(response).findtext('lst/int')
         return url, status
 
-    """
-    Iterate over tar file and post documents it contains to Solr API (extract)
-
-    @type       tar_file_path: string
-    @param      tar_file_path: Absolute path to tar file
-
-    @type       identifier: string
-    @param      identifier: Identifier of the tar package
-
-    @rtype: list(dict(string, int))
-    @return: Return list of urls and return codes
-    """
     def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter):
+        """
+        Iterate over tar file and post documents it contains to Solr API (extract)
+
+        @type       tar_file_path: string
+        @param      tar_file_path: Absolute path to tar file
+
+        @type       identifier: string
+        @param      identifier: Identifier of the tar package
+
+        @rtype: list(dict(string, int))
+        @return: Return list of urls and return codes
+        """
         progress_reporter(0)
         import tarfile
         tfile = tarfile.open(tar_file_path, 'r')
@@ -113,7 +115,6 @@ class SolrClient(object):
 
         numfiles = sum(1 for tarinfo in tfile if tarinfo.isreg())
         print "NUMFILES: %s " % numfiles
-
 
         num = 0
         for t in tfile:
@@ -126,20 +127,20 @@ class SolrClient(object):
                 result = {"url": post_url, "status": response.status_code}
                 results.append(result)
                 num += 1
-                percent = (num) * 100 / numfiles
+                percent = num * 100 / numfiles
                 progress_reporter(percent)
         self.commit()
         shutil.rmtree(extract_dir)
         progress_reporter(100)
         return results
 
-    """
-    Commit changes to Solr
-
-    @rtype: string, int
-    @return: Return url and return code
-    """
     def commit(self):
+        """
+        Commit changes to Solr
+
+        @rtype: string, int
+        @return: Return url and return code
+        """
         url = self.url + '/update?commit=true'
         response = urllib2.urlopen(url)
         return url, response.code

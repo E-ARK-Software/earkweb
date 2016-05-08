@@ -73,7 +73,7 @@ function askSolr(start) {
   var package = document.forms.find.package.value;
   var packageQuery = '';
   if (package) {
-    packageQuery += titleField + ':"' + package + '"';
+    packageQuery += identifier_field + ':' + package + '';
   }
   
   var query = '';

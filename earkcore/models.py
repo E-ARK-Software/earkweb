@@ -1,11 +1,19 @@
-import os
+import logging
+from earkcore.search.solrquery import SolrQuery
+
+from config.configuration import access_solr_server_ip
+from config.configuration import access_solr_port
+from config.configuration import access_solr_core
+
+from config.configuration import local_solr_server_ip
+from config.configuration import local_solr_port
+from config.configuration import local_solr_core
+
 from django.db import models
 from workflow.models import WorkflowModules
-from datetime import datetime
 import json
 import urllib2
-from django.conf import settings
-from config.configuration import server_solr_query_url
+
 
 StatusProcess_CHOICES = (
 
@@ -14,6 +22,7 @@ StatusProcess_CHOICES = (
     (0, 'Success'),
     (1, 'Error'),
 )
+
 
 class InformationPackage(models.Model):
     # primary key database
@@ -36,8 +45,25 @@ class InformationPackage(models.Model):
         else:
             try:
                 query_part = "path%3A%22"+self.identifier+"%22"
+                sq = SolrQuery(access_solr_server_ip, access_solr_port)
+                server_solr_query_url = sq.get_select_pattern(access_solr_core)
                 query_string = server_solr_query_url.format(query_part)
-                print ("Solr query string: %s" % query_string)
+                logging.debug("Solr query: %s" % query_string)
+                data = json.load(urllib2.urlopen(query_string))
+                return int(data['response']['numFound'])
+            except ValueError as verr:
+                return 0
+
+    def num_indexed_docs_storage(self):
+        if not self.identifier:
+            return 0
+        else:
+            try:
+                query_part = "package%3A%22"+self.identifier+"%22"
+                sq = SolrQuery(local_solr_server_ip, local_solr_port)
+                server_solr_query_url = sq.get_select_pattern(local_solr_core)
+                query_string = server_solr_query_url.format(query_part)
+                logging.debug("Solr query: %s" % query_string)
                 data = json.load(urllib2.urlopen(query_string))
                 return int(data['response']['numFound'])
             except ValueError as verr:

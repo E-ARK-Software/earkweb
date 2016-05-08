@@ -73,8 +73,9 @@
                         <li class="menu-item"><a href="/earkweb/sip2aip/overview">Active SIP to AIP conversion processes</a></li>
                         {% if user.is_active and user.is_staff %}
                         <li class="menu-item"><a href="/earkweb/sip2aip/aipsearch/package">AIP package search</a></li>
+                        <li class="menu-item"><a href="/earkweb/sip2aip/indexing_status">Indexing status</a></li>
                         {% endif %}
-                        <li class="menu-item"><a href="/earkweb/sip2aip/indexing_status">Public search indexing status (Lily)</a></li>
+
                     </ul>
                 </li>
 
@@ -101,7 +102,7 @@
                         <!--li class="menu-item"><a href="/earkweb/search/demosearch/news">News Corpus File Search</a></li-->
                         <li class="menu-item"><a href="/earkweb/public">Package File Search</a></li>
                         {% if user.is_active and user.is_staff %}
-                        <li class="menu-item"><a href="/earkweb/search/localrepo">Local Repository Search</a></li>
+                        <li class="menu-item"><a href="/earkweb/indexing_status">Indexing status</a></li>
                         {% endif %}
 
                     </ul>
