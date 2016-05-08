@@ -2,19 +2,12 @@ import os
 import string
 import socket
 
-
-
 # earkweb django server
-server_ip = "81.189.135.189"
-if socket.gethostname() == "hadoop-1":
-    server_ip = "10.20.77.1"
-if socket.gethostname() == "pluto":
-    server_ip = "127.0.0.1"
+django_service_ip = "127.0.0.1" if socket.gethostname() == "pluto" else "10.20.77.1" if socket.gethostname() == "hadoop-1" else "81.189.135.189"
+django_service_port = 8000
 
 # mysql server
-mysql_server_ip = "127.0.0.1"
-if socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto":
-    mysql_server_ip = "172.17.0.2"
+mysql_server_ip = "172.17.0.2" if (socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto") else "127.0.0.1"
 
 # access solr server
 access_solr_server_ip = "81.189.135.189"
@@ -25,7 +18,15 @@ access_solr_core = "eark1"
 local_solr_server_ip = "172.17.0.2"
 local_solr_port = 8983
 local_solr_core = "earkstorage"
-#local_solr = "http://%s:8983/solr/" % local_solr_server_ip
+
+# lily content access
+lily_content_access_ip = "81.189.135.189"
+lily_content_access_port = 12060
+lily_content_access_core = "eark1"
+
+# hdfs upload service
+hdfs_upload_service_ip = "81.189.135.189"
+hdfs_upload_service_port = 8081
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
@@ -43,12 +44,9 @@ config_path_work = "/var/data/earkweb/work"
 config_path_storage = "/var/data/earkweb/storage"
 config_path_access = "/var/data/earkweb/access"
 
-# TODO: Create query urls based on Solr classes
-server_solr_query_url = "http://%s:8983/solr/eark1/select?q={0}&wt=json" % access_solr_server_ip
+server_repo_record_content_query = "http://%s:%d/repository/table/%s/record/{0}/field/n$content/data?ns.n=org.eu.eark" % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
 
-server_repo_record_content_query = "http://%s:12060/repository/table/eark1/record/{0}/field/n$content/data?ns.n=org.eu.eark" % server_ip
-
-server_hdfs_aip_query = "http://%s:8081/hsink/fileresource/retrieve_newest?file={0}" % server_ip
+server_hdfs_aip_query = "http://%s:%d/hsink/fileresource/retrieve_newest?file={0}" % (hdfs_upload_service_ip, hdfs_upload_service_port)
 
 commands = {
     'summain':
@@ -69,4 +67,4 @@ commands = {
 
 # Test settings
 
-test_rest_endpoint_hdfs_upload = "http://%s" % server_ip
+test_rest_endpoint_hdfs_upload = "http://%s" % hdfs_upload_service_ip

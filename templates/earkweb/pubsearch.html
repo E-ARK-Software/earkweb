@@ -7,7 +7,10 @@
     <!-- AIP to DIP javascript -->
     <script type="text/javascript" src="{% static 'search/js/pubsearch.js' %}"></script>
     <script language="JavaScript">
-        var serverip = '{{ server_ip }}';
+        var access_solr_server_ip = '{{ access_solr_server_ip }}';
+        var access_solr_port = '{{ access_solr_port }}';
+        var lily_content_access_ip = '{{ lily_content_access_ip }}';
+        var lily_content_access_port = '{{ lily_content_access_port }}';
     </script>
     <script type="text/javascript"
         src="{% static 'search/js/demosearch_package.js' %}">

@@ -28,7 +28,9 @@ from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
 from config.configuration import local_solr_server_ip
-from config.configuration import server_ip
+from config.configuration import django_service_port
+from config.configuration import django_service_ip
+from config.configuration import local_solr_port
 
 
 @login_required
@@ -185,7 +187,9 @@ def aipsearch_package(request):
     template = loader.get_template('sip2aip/aipsearch_package.html')
     context = RequestContext(request, {
         'local_solr_server_ip': local_solr_server_ip,
-        'server_ip': server_ip,
+        'django_service_ip': django_service_ip,
+        'django_service_port': django_service_port,
+        'local_solr_port': local_solr_port,
     })
     return HttpResponse(template.render(context))
 

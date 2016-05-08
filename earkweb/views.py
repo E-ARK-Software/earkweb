@@ -7,12 +7,18 @@ from earkcore.models import InformationPackage
 from django.utils.decorators import method_decorator
 from workers.tasks import LilyHDFSUpload
 from config.configuration import local_solr_server_ip
+from config.configuration import access_solr_port
+from config.configuration import lily_content_access_ip
+from config.configuration import lily_content_access_port
 
 def public_search(request):
     print request.user
     template = loader.get_template('earkweb/pubsearch.html')
     context = RequestContext(request, {
-        'server_ip': access_solr_server_ip,
+        'access_solr_server_ip': access_solr_server_ip,
+        'access_solr_port': access_solr_port,
+        'lily_content_access_ip': lily_content_access_ip,
+        'lily_content_access_port': lily_content_access_port,
     })
     return HttpResponse(template.render(context))
 

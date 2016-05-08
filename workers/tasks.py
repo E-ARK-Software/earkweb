@@ -53,7 +53,7 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
-from config.configuration import server_ip
+from config.configuration import hdfs_upload_service_ip
 import requests
 
 def custom_progress_reporter(task, percent):
@@ -1391,7 +1391,7 @@ class LilyHDFSUpload(DefaultTask):
                 tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                rest_endpoint = RestEndpoint("http://%s" % server_ip, "dm-hdfs-storage")
+                rest_endpoint = RestEndpoint("http://%s" % hdfs_upload_service_ip, "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.

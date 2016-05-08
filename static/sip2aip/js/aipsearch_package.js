@@ -6,7 +6,7 @@ var typeField = 'content_type';
 var rows = 20;
 
 function callback(data) {
-  var repo_item_access_endpoint = 'http://'+server_ip+':8000/earkweb/earkcore/access_local_repo_item/';
+  var repo_item_access_endpoint = 'http://'+django_service_ip+':'+django_service_port+'/earkweb/earkcore/access_local_repo_item/';
 
   //var lilyNamespace = 'org.eu.eark';
   
@@ -53,8 +53,8 @@ function callback(data) {
 }
 
 function askSolr(start) {
-  var solrEndpoint = 'http://'+local_solr_server_ip+':8983/solr/earkstorage/';
-  window.console.log("solrEndpoint: " + solrEndpoint)
+  var solrEndpoint = 'http://'+local_solr_server_ip+':'+local_solr_port+'/solr/earkstorage/';
+  window.console.log("solr endpoint: " + solrEndpoint)
   var queryString = document.forms.find.queryString.value;
 
   var blobQuery = '';

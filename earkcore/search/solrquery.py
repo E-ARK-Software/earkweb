@@ -39,8 +39,8 @@ class SolrQuery(object):
         @rtype: string
         @return: select url pattern
         """
-        server_solr_query_url = "http://%s:%d/solr/%s/select?q={0}&wt=json" % (self.solr_server.server, self.solr_server.port, core)
-        return server_solr_query_url
+        qurl = "http://%s:%d/solr/%s/select?q={0}&wt=json" % (self.solr_server.server, self.solr_server.port, core)
+        return qurl
 
 
 class TestSolrQuery(unittest.TestCase):

@@ -47,8 +47,8 @@ class InformationPackage(models.Model):
             try:
                 query_part = "path%3A%22"+self.identifier+"%22"
                 sq = SolrQuery(SolrServer(access_solr_server_ip, access_solr_port))
-                server_solr_query_url = sq.get_select_pattern(access_solr_core)
-                query_string = server_solr_query_url.format(query_part)
+                query_url = sq.get_select_pattern(access_solr_core)
+                query_string = query_url.format(query_part)
                 logging.debug("Solr query: %s" % query_string)
                 data = json.load(urllib2.urlopen(query_string))
                 return int(data['response']['numFound'])
@@ -62,8 +62,8 @@ class InformationPackage(models.Model):
             try:
                 query_part = "package%3A%22"+self.identifier+"%22"
                 sq = SolrQuery(SolrServer(local_solr_server_ip, local_solr_port))
-                server_solr_query_url = sq.get_select_pattern(local_solr_core)
-                query_string = server_solr_query_url.format(query_part)
+                query_url = sq.get_select_pattern(local_solr_core)
+                query_string = query_url.format(query_part)
                 logging.debug("Solr query: %s" % query_string)
                 data = json.load(urllib2.urlopen(query_string))
                 return int(data['response']['numFound'])

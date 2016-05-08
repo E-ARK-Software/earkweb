@@ -8,7 +8,10 @@
     <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
     <script language="JavaScript">
         var local_solr_server_ip = '{{ local_solr_server_ip }}';
-        var server_ip = '{{ server_ip }}';
+        var django_service_ip = '{{ django_service_ip }}';
+        var django_service_port = '{{ django_service_port }}';
+        var local_solr_port = '{{ local_solr_port }}';
+
     </script>
     <script type="text/javascript"
         src="{% static 'sip2aip/js/aipsearch_package.js' %}">
