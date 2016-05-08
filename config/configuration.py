@@ -25,7 +25,7 @@ access_solr_core = "eark1"
 local_solr_server_ip = "172.17.0.2"
 local_solr_port = 8983
 local_solr_core = "earkstorage"
-local_solr = "http://%s:8983/solr/" % local_solr_server_ip
+#local_solr = "http://%s:8983/solr/" % local_solr_server_ip
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
@@ -43,6 +43,7 @@ config_path_work = "/var/data/earkweb/work"
 config_path_storage = "/var/data/earkweb/storage"
 config_path_access = "/var/data/earkweb/access"
 
+# TODO: Create query urls based on Solr classes
 server_solr_query_url = "http://%s:8983/solr/eark1/select?q={0}&wt=json" % access_solr_server_ip
 
 server_repo_record_content_query = "http://%s:12060/repository/table/eark1/record/{0}/field/n$content/data?ns.n=org.eu.eark" % server_ip

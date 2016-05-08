@@ -1,5 +1,6 @@
 import logging
 from earkcore.search.solrquery import SolrQuery
+from earkcore.search.solrserver import SolrServer
 
 from config.configuration import access_solr_server_ip
 from config.configuration import access_solr_port
@@ -45,7 +46,7 @@ class InformationPackage(models.Model):
         else:
             try:
                 query_part = "path%3A%22"+self.identifier+"%22"
-                sq = SolrQuery(access_solr_server_ip, access_solr_port)
+                sq = SolrQuery(SolrServer(access_solr_server_ip, access_solr_port))
                 server_solr_query_url = sq.get_select_pattern(access_solr_core)
                 query_string = server_solr_query_url.format(query_part)
                 logging.debug("Solr query: %s" % query_string)
@@ -60,7 +61,7 @@ class InformationPackage(models.Model):
         else:
             try:
                 query_part = "package%3A%22"+self.identifier+"%22"
-                sq = SolrQuery(local_solr_server_ip, local_solr_port)
+                sq = SolrQuery(SolrServer(local_solr_server_ip, local_solr_port))
                 server_solr_query_url = sq.get_select_pattern(local_solr_core)
                 query_string = server_solr_query_url.format(query_part)
                 logging.debug("Solr query: %s" % query_string)

@@ -29,6 +29,8 @@ from earkcore.packaging.task_utils import get_deliveries
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
 from earkcore.search.solrclient import SolrClient
+from earkcore.search.solrquery import SolrQuery
+from earkcore.search.solrserver import SolrServer
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
@@ -1320,14 +1322,19 @@ class AIPIndexing(DefaultTask):
             return task_context.report_parameter_errors(parameters)
 
         # check solr server availability
-        from config.configuration import local_solr
-        r = requests.get(local_solr)
+        from config.configuration import local_solr_server_ip
+        from config.configuration import local_solr_port
+        solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+        tl.addinfo("Solr server base url: %s" % solr_server.get_base_url())
+        sq = SolrQuery(solr_server)
+        r = requests.get(sq.get_base_url())
         if not r.status_code == 200:
-            tl.adderr("Solr server is not available at: %s" % local_solr)
+            tl.adderr("Solr server is not available at: %s" % sq.get_base_url())
             task_context.task_status = 0
             return task_context.additional_data
 
         storage_dest = task_context.additional_data["storage_dest"]
+        tl.addinfo("Storage path: %s" % storage_dest)
         identifier = task_context.additional_data["identifier"]
         pts = PairtreeStorage(storage_dest)
 
@@ -1339,10 +1346,20 @@ class AIPIndexing(DefaultTask):
 
         try:
             # initialize solr client
-            solr_client = SolrClient(local_solr, "earkstorage")
+            solr_client = SolrClient(solr_server, "earkstorage")
             # post documents of repository container to solr server
             partial_custom_progress_reporter = partial(custom_progress_reporter, self)
-            solr_client.post_tar_file(pts.get_object_path(identifier), identifier, partial_custom_progress_reporter)
+            tl.addinfo("Object path: %s" % pts.get_object_path(identifier))
+            results = solr_client.post_tar_file(pts.get_object_path(identifier), identifier, partial_custom_progress_reporter)
+            tl.addinfo("Total number of files posted: %d" % len(results))
+            num_ok = sum(1 for result in results if result['status'] == 200)
+            tl.addinfo("Number of files posted successfully: %d" % num_ok)
+            num_failed = sum(1 for result in results if result['status'] != 200)
+            tl.addinfo("Number of files failed: %d" % num_failed)
+            for result in results:
+                if result['status'] != 200:
+                    tl.addinfo("- url '%s': %d" % (result['url'], result['status']))
+
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("AIP indexing task failed: %s" % e.message)

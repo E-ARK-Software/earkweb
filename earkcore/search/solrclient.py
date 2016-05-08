@@ -1,4 +1,5 @@
 """Solr client"""
+import logging
 import os
 import json
 import shutil
@@ -19,16 +20,17 @@ def default_reporter(percent):
 
 class SolrClient(object):
 
-    def __init__(self, base_url, collection):
+    def __init__(self, solr_server, collection):
         """
         Constructor to initialise solr client API URL
 
-        @type       base_url: string
-        @param      base_url: Solr base url, e.g. "http://localhost:8983/solr/"
+        @type       solr_server: SolrServer
+        @param      solr_server: Solr server
 
         @type       collection: string
         @param      collection: Collection identifier, e.g. "samplecollection"
         """
+        base_url = solr_server.get_base_url()
         if base_url[-1] != '/':
             base_url += '/'
         self.url = base_url + collection
@@ -114,7 +116,7 @@ class SolrClient(object):
         results = []
 
         numfiles = sum(1 for tarinfo in tfile if tarinfo.isreg())
-        print "NUMFILES: %s " % numfiles
+        logging.debug("Number of files in tarfile: %s " % numfiles)
 
         num = 0
         for t in tfile:
@@ -122,9 +124,13 @@ class SolrClient(object):
             afile = os.path.join(extract_dir, t.name)
             if os.path.exists(afile):
                 files = {'file': ('userfile', open(afile, 'rb'))}
-                post_url = '%s/update/extract?literal.package=%s&literal.entry=%s' % (self.url, identifier, t.name)
+
+                params = {'literal.package': identifier, 'literal.entry': t.name}
+                post_url = '%s/update/extract?%s' % (self.url, urllib.urlencode(params))
                 response = requests.post(post_url, files=files)
                 result = {"url": post_url, "status": response.status_code}
+                if response.status_code != 200:
+                    logging.info("warning: indexing post failed for url '%s' with status code: %d" % (post_url, response.status_code))
                 results.append(result)
                 num += 1
                 percent = num * 100 / numfiles
