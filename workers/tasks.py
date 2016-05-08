@@ -1355,11 +1355,7 @@ class AIPIndexing(DefaultTask):
             num_ok = sum(1 for result in results if result['status'] == 200)
             tl.addinfo("Number of files posted successfully: %d" % num_ok)
             num_failed = sum(1 for result in results if result['status'] != 200)
-            tl.addinfo("Number of files failed: %d" % num_failed)
-            for result in results:
-                if result['status'] != 200:
-                    tl.addinfo("- url '%s': %d" % (result['url'], result['status']))
-
+            tl.addinfo("Number of plain documents: %d" % num_failed)
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("AIP indexing task failed: %s" % e.message)

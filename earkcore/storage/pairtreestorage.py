@@ -39,30 +39,30 @@ class PairtreeStorage(object):
     storage_factory = None
     repository_storage_dir = None
 
-    """
-    Constructor initialises pairtree repository
-
-    @type       repository_storage_dir: string
-    @param      repository_storage_dir: repository storage directory
-    """
     def __init__(self, repository_storage_dir):
+        """
+        Constructor initialises pairtree repository
+
+        @type       repository_storage_dir: string
+        @param      repository_storage_dir: repository storage directory
+        """
         self.storage_factory = PairtreeStorageFactory()
         self.repository_storage_dir = repository_storage_dir
         self.repo_storage_client = self.storage_factory.get_store(store_dir=self.repository_storage_dir, uri_base="http://")
 
-    """
-    Storing an object in the pairtree path according to the given identifier. If a version of the object exists,
-    a new version is created.
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @type:      source_file: string
-    @param:     source_file: Source file path to be stored in the repository
-    @type:      progress_reporter: function
-    @param:     progress_reporter: progress reporter function
-    @raise:     IOError: If the checksum of the copied file is incorrect
-    """
     def store(self, identifier, source_file, progress_reporter=default_reporter):
+        """
+        Storing an object in the pairtree path according to the given identifier. If a version of the object exists,
+        a new version is created.
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @type:      source_file: string
+        @param:     source_file: Source file path to be stored in the repository
+        @type:      progress_reporter: function
+        @param:     progress_reporter: progress reporter function
+        @raise:     IOError: If the checksum of the copied file is incorrect
+        """
         repo_object = self.repo_storage_client.get_object(identifier, True)
         basename = ntpath.basename(source_file)
         next_version = self._next_version(identifier)
@@ -75,52 +75,52 @@ class PairtreeStorage(object):
             raise IOError("Storage of repository object for identifier '%s' failed!" % identifier)
         progress_reporter(100)
 
-    """
-    Verify if an object of the given identifier exists in the repository
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @rtype:     boolean
-    @return:    True if the object exists, false otherwise
-    """
     def identifier_object_exists(self, identifier):
+        """
+        Verify if an object of the given identifier exists in the repository
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @rtype:     boolean
+        @return:    True if the object exists, false otherwise
+        """
         logger.debug("Looking for object at path: %s/data" % self.repo_storage_client._id_to_dirpath(identifier))
         return self.repo_storage_client.exists(identifier, "data")
 
-    """
-    Verify if the given version of the object exists in the repository
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    type        version_num: int
-    @param      version_num: version number
-    @rtype:     boolean
-    @return:    True if the object exists, false otherwise
-    """
     def identifier_version_object_exists(self, identifier, version_num):
+        """
+        Verify if the given version of the object exists in the repository
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        type        version_num: int
+        @param      version_num: version number
+        @rtype:     boolean
+        @return:    True if the object exists, false otherwise
+        """
         version = '%05d' % version_num
         return self.repo_storage_client.exists(identifier, "data/%s" % version)
 
-    """
-    Get version directories
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @rtype:     list
-    @return:    List of directories of the versions
-    """
     def _get_version_parts(self, identifier):
+        """
+        Get version directories
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @rtype:     list
+        @return:    List of directories of the versions
+        """
         return self.repo_storage_client.list_parts(identifier, "data")
 
-    """
-    Get next formatted version directory name
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @rtype:     string
-    @return:    Formatted version string (constant VersionDirFormat)
-    """
     def _next_version(self, identifier):
+        """
+        Get next formatted version directory name
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @rtype:     string
+        @return:    Formatted version string (constant VersionDirFormat)
+        """
         if not self.identifier_object_exists(identifier):
             return VersionDirFormat % 1
         version_num = 1
@@ -128,26 +128,26 @@ class PairtreeStorage(object):
             version_num += 1
         return VersionDirFormat % version_num
 
-    """
-    Get current formatted version directory name
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @rtype:     string
-    @return:    Formatted version string (constant VersionDirFormat)
-    """
     def curr_version(self, identifier):
+        """
+        Get current formatted version directory name
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @rtype:     string
+        @return:    Formatted version string (constant VersionDirFormat)
+        """
         return VersionDirFormat % self.curr_version_num(identifier)
 
-    """
-    Get current version number
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @rtype:     int
-    @return:    Current version number
-    """
     def curr_version_num(self, identifier):
+        """
+        Get current version number
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @rtype:     int
+        @return:    Current version number
+        """
         if not self.identifier_object_exists(identifier):
             raise ValueError("No repository object for id '%s'. Unable to get current version number." % identifier)
         version_num = 1
@@ -156,19 +156,19 @@ class PairtreeStorage(object):
         version_num -= 1
         return version_num
 
-    """
-    Get absolute file path of the stored object. If the version number is omitted, the path of the highest version
-    number is returned.
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @type       version_num: int
-    @param      version_num: version number
-    @rtype:     string
-    @return:    Absolute file path of the stored object
-    @raise      ObjectNotFoundException if the file is not available
-    """
     def get_object_path(self, identifier, version_num=0):
+        """
+        Get absolute file path of the stored object. If the version number is omitted, the path of the highest version
+        number is returned.
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @type       version_num: int
+        @param      version_num: version number
+        @rtype:     string
+        @return:    Absolute file path of the stored object
+        @raise      ObjectNotFoundException if the file is not available
+        """
         if not self.identifier_object_exists(identifier):
             raise ValueError("No repository object for id '%s'. Unable to get requested version object path." % identifier)
         if version_num == 0:
@@ -183,18 +183,18 @@ class PairtreeStorage(object):
         except StopIteration:
             raise ObjectNotFoundException("The file object does not exist in the repository")
 
-    """
-    Get stream of tar file entry.
-
-    @type       identifier: string
-    @param      identifier: Identifier
-    @type       entry: string
-    @param      entry: tar file entry (path within tar file)
-    @rtype:     binary
-    @return:    File content
-    @raise      KeyError if the tar entry does not exist in the stored package
-    """
     def get_object_item_stream(self, identifier, entry):
+        """
+        Get stream of tar file entry.
+
+        @type       identifier: string
+        @param      identifier: Identifier
+        @type       entry: string
+        @param      entry: tar file entry (path within tar file)
+        @rtype:     binary
+        @return:    File content
+        @raise      KeyError if the tar entry does not exist in the stored package
+        """
         object_path = self.get_object_path(identifier)
         t = tarfile.open(object_path, 'r')
         logger.debug("Trying to access entry %s" % entry)
@@ -203,7 +203,7 @@ class PairtreeStorage(object):
             f=t.extractfile(info)
             return f.read()
         except KeyError:
-            logging.error('ERROR: Did not find %s in tar archive' % entry)
+            logger.error('ERROR: Did not find %s in tar archive' % entry)
             raise ObjectNotFoundException("Entry not found in repository object")
 
 class TestPairtreeStorage(unittest.TestCase):

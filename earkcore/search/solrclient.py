@@ -1,5 +1,8 @@
 """Solr client"""
 import logging
+from earkcore.format.formatidentification import FormatIdentification
+
+logger = logging.getLogger(__name__)
 import os
 import json
 import shutil
@@ -20,6 +23,8 @@ def default_reporter(percent):
 
 class SolrClient(object):
 
+    ffid = None
+
     def __init__(self, solr_server, collection):
         """
         Constructor to initialise solr client API URL
@@ -34,6 +39,7 @@ class SolrClient(object):
         if base_url[-1] != '/':
             base_url += '/'
         self.url = base_url + collection
+        self.ffid = FormatIdentification()
 
     def select(self, params):
         """
@@ -96,6 +102,27 @@ class SolrClient(object):
         status = etree.XML(response).findtext('lst/int')
         return url, status
 
+    def post_file_document(self, file_path, identifier, entry):
+        """
+        Iterate over tar file and post documents it contains to Solr API (extract)
+
+        @type       file_path: string
+        @param      file_path: Absolute path to file
+
+        @type       identifier: string
+        @param      identifier: Identifier of the tar package
+
+        @type       entry: string
+        @param      entry: entry name
+        """
+        puid = self.ffid.identify_file(file_path)
+        content_type = self.ffid.get_mime_for_puid(puid)
+        docs = []
+        document = {"package": identifier, "entry": entry, "content_type": content_type}
+        docs.append(document)
+        _, status = self.update(docs)
+        return status
+
     def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter):
         """
         Iterate over tar file and post documents it contains to Solr API (extract)
@@ -116,7 +143,7 @@ class SolrClient(object):
         results = []
 
         numfiles = sum(1 for tarinfo in tfile if tarinfo.isreg())
-        logging.debug("Number of files in tarfile: %s " % numfiles)
+        logger.debug("Number of files in tarfile: %s " % numfiles)
 
         num = 0
         for t in tfile:
@@ -124,18 +151,22 @@ class SolrClient(object):
             afile = os.path.join(extract_dir, t.name)
             if os.path.exists(afile):
                 files = {'file': ('userfile', open(afile, 'rb'))}
-
                 params = {'literal.package': identifier, 'literal.entry': t.name}
                 post_url = '%s/update/extract?%s' % (self.url, urllib.urlencode(params))
                 response = requests.post(post_url, files=files)
                 result = {"url": post_url, "status": response.status_code}
                 if response.status_code != 200:
-                    logging.info("warning: indexing post failed for url '%s' with status code: %d" % (post_url, response.status_code))
+                    status = self.post_file_document(afile, identifier, t.name)
+                    if status == 200:
+                        logger.info("posting file failed for url '%s' with status code: %d (posted plain document instead)" % (post_url, response.status_code))
+                    else:
+                        logger.info("Unable to create document for url '%s'" % (post_url))
                 results.append(result)
                 num += 1
                 percent = num * 100 / numfiles
                 progress_reporter(percent)
         self.commit()
+        logger.debug("Files extracted to %s" % extract_dir)
         shutil.rmtree(extract_dir)
         progress_reporter(100)
         return results
