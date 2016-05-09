@@ -2,7 +2,7 @@
 
 Django’s primary deployment platform is WSGI, the Python standard for web servers and applications.
 
-## Configure as WSGI app
+## Install and Configure as WSGI app
 
 Edit Apache web server configuration, e.g. `/etc/apache2/sites-enabled/000-default`, and add the variable `WSGIScriptAlias` which marks the file path to the WSGI script, that 
 should be processed by mod_wsgi's wsgi-script handler, define a daemon process which allows running the wsgi app using a separate virtual environment, and add the earkweb 
@@ -21,21 +21,51 @@ Further information on using Django with Apache and mod_wsgi:
 
     https://docs.djangoproject.com/en/1.8/howto/deployment/wsgi/modwsgi/
     
-### Update demo server deployment
+## Celery service on server
 
-The deployed version is a copy from this Github repository, update is done by sending a pull request on the master branch:
+The celery service is configured in the following file:
+
+    celery/etc/celeryd
+
+Then create a celery config directory:
+
+    sudo mkdir -p /etc/earkweb/celery
+    sudo chown -R <user>:<group> /etc/earkweb
+
+Copy the script to the configuration directory:
+
+    cp celery/etc/celeryd /etc/earkweb/celery/
+   
+Then you can start/stop the daemon as follows:
+
+    sudo ./celery/celeryd/celeryd start
+    celery init v10.0.
+    Using config script: /etc/earkweb/celery/celeryd
+    celery multi v3.1.18 (Cipater)
+    > Starting nodes...
+	> worker1@<machine>: OK
+	
+This example shows how to run one single worker, multiple workers can be configured to allow distributed task execution.
+    
+### Update server deployment
+
+The deployed on a server, the source code is a copy cloned from the Github repository, update is therefore possible by sending a pull request:
 
     sudo -u www-data git pull origin master
     
-If static files have been changed, run Django's 'collectstatic' command:
+If static files have been changed, run Django's 'collectstatic' command which will copy static files (javascript, css, etc.) to the web servers static files directory:
 
     python manage.py collectstatic
    
-If tasks have been changed, run the update script:
+If tasks have changed, run the update script:
 
     python ./workers/scantasks.py
+    
+The deploy.sh script is an example bash script which allows updating an installation:
 
-## CAS server installation (optional)
+    ./deploy.sh
+
+## Optional: CAS Single Sign On (SSO) installation
 
 Optionally, a CAS server can be used for authentication if Django authentication module is configured accordingly. 
 
@@ -74,7 +104,7 @@ Optionally, a CAS server can be used for authentication if Django authentication
 
         cp cas-server-4.0.0/modules/cas-server-webapp-4.0.0.war $TOMCAT_HOME/webapps/
     
-### CAS Administration
+#### CAS Administration
 
 #### CAS Add/Change user
 
@@ -94,46 +124,46 @@ Users can be added by creating a new entry in the following bean definition:
         </property>
     </bean>
 
-### Celery service on server
+#### Enable CAS in Django
 
-In development mode, the service is running as long as the terminal is open.
+Install the django-cas package.
 
-Alternatively, adapt settings (e.g. user settings) in the config file:
-
-    celery/etc/celeryd
-
-Then create a celery config directory:
-
-    sudo mkdir -p /etc/earkweb/celery
-    sudo chown -R <user>:<group> /etc/earkweb
-
-Copy the script to the configuration directory:
-
-    cp celery/etc/celeryd /etc/earkweb/celery/
-   
-Then you can use the daemon script as super user:
-
-    sudo ./celery/celeryd/celeryd start
-    celery init v10.0.
-    Using config script: /etc/earkweb/celery/celeryd
-    celery multi v3.1.18 (Cipater)
-    > Starting nodes...
-	> worker1@<machine>: OK
-
-
-4. Enable CAS in Django
-
-    Install the django-cas package.
-
-    4.1. Install mercurial if it is not available already:
+1. Install mercurial if required:
 
         sudo apt-get install mercurial
 
-    4.2 Get module from https://bitbucket.org/cpcc/django-cas
+2. Get module from https://bitbucket.org/cpcc/django-cas
 
         hg clone https://bitbucket.org/cpcc/django-cas
-    
-    4.3. Install django-cas
+
+3. Install django-cas
 
         cd django-cas
         python setup.py install
+
+4. To configure CAS authentication in django, some changes to earkweb/settings.py are necessary:
+
+    4.1 Add the following settings in the earkweb/settings.py:
+
+        LOGIN_URL='/earkweb/accounts/login/'
+    
+        CAS_REDIRECT_URL = '/earkweb/search'
+        LOGIN_URL = '/earkweb/accounts/login/'
+        LOGOUT_URL = '/earkweb/accounts/logout/'
+    
+        CAS_SERVER_URL = 'https://<cas-service-server>:8443/cas/login'
+    
+    4.2. Add the following line to MIDDLEWARE_CLASSES:
+
+        AUTHENTICATION_BACKENDS = (
+            ...
+            'django_cas.backends.CASBackend',
+        )
+   
+    4.3. And the following two lines to MIDDLEWARE_CLASSES:
+     
+        MIDDLEWARE_CLASSES = (
+            ...
+            'django_cas.middleware.CASMiddleware', 
+            'django.contrib.admindocs.middleware.XViewMiddleware', 
+        )
