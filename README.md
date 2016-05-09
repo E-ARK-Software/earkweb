@@ -31,4 +31,4 @@ record digital provenance information of the information package.
 ## User guide
 
 * [Web user interface guide](./docs/user_guide_webui.md)
-* [Remote task execution and administration](./docs/user_guide_remotetask.md)
+* [Headless task execution (without gui)](./docs/user_guide_remotetask.md)
