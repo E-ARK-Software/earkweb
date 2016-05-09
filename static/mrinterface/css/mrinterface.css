@@ -1,9 +1,1 @@
-#directorytree{
-    overflow-y: scroll;
-    height: 500px;
-    border: 1px solid gray;
-    background-color: white;
-}
-
-
-
+div.inlineLabels ul {list-style:none}
