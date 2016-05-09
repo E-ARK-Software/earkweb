@@ -1,5 +1,12 @@
 # Developer notes
 
+## Table of Contents
+
+- [Developer notes](#developer-notes)
+  - [Installation](#installation)
+  - [Project layout](#project-layout)
+  - [Unit tests](#unit-tests)
+  
 ## Installation
 
 Follow the manual installation procedure to set-up the development environment:
@@ -26,7 +33,6 @@ Follow the manual installation procedure to set-up the development environment:
 Install py.test
 
     pip install -U pytest
-
 
 Run one specific test class:
 

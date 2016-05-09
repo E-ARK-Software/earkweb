@@ -1,5 +1,12 @@
 # Installation based on Docker images
 
+## Table of Contents 
+
+- [Install docker on the host system](#install-docker-on-the-host-system)
+- [MySQL image](#mysql-image)
+- [Build earkweb image](#build-earkweb-image)
+- [Run earkweb image](#run-earkweb-image)
+
 ## Install docker on the host system
 
 On a linux system, follow the instruction to install docker available at:

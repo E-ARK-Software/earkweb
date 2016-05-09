@@ -1,4 +1,12 @@
-### Remote task execution
+# Headless task execution (without gui)
+
+## Table of Contents
+
+- [Remote task execution](#remote-task-execution)
+- [Check registered tasks](#check-registered-tasks)
+- [Task registration](#task-registration)
+
+### Remote task execution using Django
 
     python manage.py shell
     Python 2.7.6 (default, Mar 22 2014, 22:59:56) 

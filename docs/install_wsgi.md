@@ -1,5 +1,17 @@
 # Deployment as WSGI app (Apache Webserver frontend)
 
+## Table of Contents
+
+  - [Install and Configure as WSGI app](#install-and-configure-as-wsgi-app)
+  - [Celery service on server](#celery-service-on-server)
+    - [Update server deployment](#update-server-deployment)
+  - [Optional: CAS Single Sign On (SSO) installation](#optional-cas-single-sign-on-sso-installation)
+    - [CAS Installation](#cas-installation)
+      - [Prepare Apache Tomcat (enable SSL)](#prepare-apache-tomcat-enable-ssl)
+      - [CAS Deployment](#cas-deployment)
+      - [CAS Add/Change user](#cas-addchange-user)
+      - [Enable CAS in Django](#enable-cas-in-django)
+
 Django’s primary deployment platform is WSGI, the Python standard for web servers and applications.
 
 ## Install and Configure as WSGI app

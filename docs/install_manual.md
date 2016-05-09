@@ -1,5 +1,17 @@
 # Manual installation
 
+## Table of Contents 
+
+  - [Installing dependencies](#installing-dependencies)
+    - [Debian packages](#debian-packages)
+    - [Python modules](#python-modules)
+      - [fido](#fido)
+      - [ghostscript](#ghostscript)
+  - [Installing earkweb](#installing-earkweb)
+    - [Checkout earkweb and set-up environment](#checkout-earkweb-and-set-up-environment)
+  - [Celery distributed task execution](#celery-distributed-task-execution)
+    - [Start celery service](#start-celery-service)
+
 ## Installing dependencies
 
 ### Debian packages

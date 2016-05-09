@@ -1,3 +1,16 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Highlight.js](#highlightjs)
+  - [Getting Started](#getting-started)
+  - [Custom Initialization](#custom-initialization)
+  - [Getting the Library](#getting-the-library)
+  - [License](#license)
+  - [Links](#links)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Highlight.js
 
 [![Build Status](https://travis-ci.org/isagalaev/highlight.js.svg?branch=master)](https://travis-ci.org/isagalaev/highlight.js)

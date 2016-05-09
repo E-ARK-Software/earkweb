@@ -1,5 +1,30 @@
 # E-ARK Web - User guide
 
+## Table of Contents
+
+  - [SIP Creator](#sip-creator)
+    - [Initialise SIP package creation](#initialise-sip-package-creation)
+    - [Adding files to the SIP](#adding-files-to-the-sip)
+    - [SIP creation process](#sip-creation-process)
+      - [Start SIP creation process](#start-sip-creation-process)
+      - [Task execution](#task-execution)
+      - [Active SIP creation processes overview](#active-sip-creation-processes-overview)
+  - [SIP to AIP conversion](#sip-to-aip-conversion)
+      - [Start SIP to AIP conversion process](#start-sip-to-aip-conversion-process)
+      - [SIP to AIP conversion tasks](#sip-to-aip-conversion-tasks)
+      - [SIP to AIP conversion task execution](#sip-to-aip-conversion-task-execution)
+      - [Active SIP to AIP conversion processes](#active-sip-to-aip-conversion-processes)
+      - [Indexing and search in AIPs](#indexing-and-search-in-aips)
+  - [AIP to DIP conversion](#aip-to-dip-conversion)
+    - [Initialise AIP to DIP conversion](#initialise-aip-to-dip-conversion)
+      - [Start AIP to DIP conversion process](#start-aip-to-dip-conversion-process)
+      - [AIP to DIP conversion tasks](#aip-to-dip-conversion-tasks)
+      - [AIP to DIP conversion task execution](#aip-to-dip-conversion-task-execution)
+- [Public search](#public-search)
+  - [Administration](#administration)
+    - [Django administration](#django-administration)
+    - [Flower](#flower)
+
 ## SIP Creator
 
 A Submission Information Package (SIP) – as defined in the OAIS model – is an information package that is delivered by a producer to the OAIS for use in the construction or update 
