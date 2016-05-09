@@ -1,0 +1,21 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+{% include "mrinterface/about_module.html" %}
+
+<h2 class="main">Monitor the MR Job progress</h2>
+
+<div>
+    <p>The status of the job is: {{ status }}.</p>
+    <!--<p>Job name: {{ job }}.</p>-->
+    <!--<p>Input: {{ input }}.</p>-->
+</div>
+
+{% endblock %}

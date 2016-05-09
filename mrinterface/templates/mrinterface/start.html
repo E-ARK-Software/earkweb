@@ -2,6 +2,8 @@
 
 {% load staticfiles %}
 
+<!--TODO: include CSS to remove bullet points-->
+
 {% block extra_head %}
 
 {% endblock %}
@@ -10,25 +12,26 @@
 
 {% include "mrinterface/about_module.html" %}
 
-<h2 class="main">Prepare and launch a new Map Reduce Job for NLP</h2>
+<h2 class="main">Prepare and launch a new MapReduce Job for NLP</h2>
 
 <p>You need to define the input and the job type.</p>
 
 <div class="standard-form-container">
 
-    <form class="form-horizontal" role="form" method="POST" onsubmit="return false">
+    <form class="form-horizontal" role="form" method="POST" action="launchmr" enctype="multipart/form-data">
         <fieldset>
-            <legend>Task/Workflow execution</legend>
-
-            <select name="Tomar-bases MR jobs">
-                <option value="gerNER">NER German</option>
-                <option value="hunNER">NER Hungarian</option>
-            </select>
-
+            <legend>Tomar-based NLP Job selection</legend>
+            <!--
+            <p>Provide the HDFS path to the input file and select which job you want to launch.</p>
+            -->
             {% csrf_token %}
-            {{ form.as_p }}
+
+            <!-- TODO: dynamically list all tools and actions that are possible? Maybe also create the ctrl file here -->
+
+            <span>{{ ctrl_file_upload }}</span>
+
             <br/>
-            <button id="apply-task">Run job!</button>
+            <input type="submit" value="Upload and start" />
         </fieldset>
     </form>
 

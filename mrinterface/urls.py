@@ -8,4 +8,6 @@ urlpatterns = patterns('',
 
     url(r'^start$', views.start, name='start'),
 
+    url(r'^launchmr$', views.launchmr, name='feedback')
+
 )
