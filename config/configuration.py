@@ -2,7 +2,7 @@ import os
 import string
 import socket
 
-devHostnames = ['pluto', 'Vulcan']
+devHostnames = ['pluto', 'Vulcan', 'earkdev']
 
 # earkweb django server
 django_service_ip = "127.0.0.1" if socket.gethostname() in devHostnames else "10.20.77.1" if socket.gethostname() == "hadoop-1" else "81.189.135.189"
