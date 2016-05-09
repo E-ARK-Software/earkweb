@@ -1,4 +1,4 @@
-# E-ARK Web - User interface user guide
+# E-ARK Web - User guide
 
 ## SIP Creator
 

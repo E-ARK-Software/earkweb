@@ -18,11 +18,11 @@ record digital provenance information of the information package.
 ### Installation
 
 * [Manual installation](./docs/install_manual.md) 
-* [Installation using Docker](./docs/install_docker.md)
+* [Installation based on Docker images](./docs/install_docker.md)
 * [Installation as WSGI app (Apache Webserver frontend)](./docs/install_wsgi.md)
+* [Developer notes](./docs/developer_notes.md)
 
 ### User guide
 
 * [Web user interface guide](./docs/user_guide_webui.md)
 * [Remote task execution and administration](./docs/user_guide_remotetask.md)
-* [Developer notes](./docs/user_guide_developer_notes.md)
