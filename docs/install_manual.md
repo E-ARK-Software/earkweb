@@ -1,6 +1,6 @@
 # Manual installation
 
-## Dependencies
+## Installing dependencies
 
 ### Debian packages
 
@@ -17,7 +17,7 @@
 
         sudo apt-get install pdftohtml
 
-### Additional python modules
+### Python modules
 
 #### fido
 
@@ -30,7 +30,7 @@
         cd fido-1.3.2-81
         sudo python setup.py install
 
-5. Update filetype signatures:
+5. Update filetype signatures (long running):
 
         cd fido
         python update_signatures.py
@@ -51,9 +51,9 @@
         make
         make install
 
-## Set up
+## Installing earkweb 
 
-### Checkout and install dependencies
+### Checkout earkweb and set-up environment 
 
 7. Checkout project
 
@@ -111,17 +111,20 @@
         sudo mkdir -p /var/log/earkweb
         sudo chown <user>:<group> /var/log/earkweb
 
-## Celery services
+## Celery distributed task execution 
 
-### Start daemon 
+### Start celery service
 
-11. Make sure the virtual environment "earkweb" is active (prefix "earkweb" in terminal) and change to the earkweb directory:
-
-        (earkweb)<user>@<machine>:~/$ cd ${EARKWEB}    
-
-12. Start the daemon from command line:
+12. Start the daemon from command line (development mode):
     
+        cd ${EARKWEB}
         python manage.py celeryd -E
+        
+    For development it is recommended to enable the CELERY_ALWAYS_EAGER property in earkweb/settings.py:
+
+        #CELERY_ALWAYS_EAGER = True
+        
+    By this way the celery tasks run in the same process which allows debugging.
     
 ### Create and initialize database
 
@@ -158,7 +161,6 @@
     
         mysql> GRANT ALL ON celerydb.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
 
-
 14. Create database schema based on the model and apply initialise the database:
 
         python manage.py makemigrations
@@ -177,13 +179,13 @@
         
 # Run in development mode
 
-### Run web application (development mode)
+This section explains how to run *earkweb* in development mode.
 
-1. Change to the *earkweb* directory:
+16. Change to the *earkweb* directory:
 
         cd <earkweb_install_path>/earkweb
         
-1. Start web application
+17. Start web application
 
     Start the web application from the command line using the command:
 

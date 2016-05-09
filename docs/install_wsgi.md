@@ -1,5 +1,7 @@
 # Deployment as WSGI app (Apache Webserver frontend)
 
+Django’s primary deployment platform is WSGI, the Python standard for web servers and applications.
+
 ## Configure as WSGI app
 
 Edit Apache web server configuration, e.g. `/etc/apache2/sites-enabled/000-default`, and add the variable `WSGIScriptAlias` which marks the file path to the WSGI script, that 
