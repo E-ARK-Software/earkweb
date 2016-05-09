@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Order xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="order.xsd">
+    <OrderUniqueID>string</OrderUniqueID>
+    <OrderTitle>order_title3</OrderTitle>
+    <!--1 or more repetitions:-->
+    <UnitOfDescription>
+        <ReferenceCode>19018981-4bfc-4302-abe3-3d57389e46ad</ReferenceCode>
+        <LevelOfDescription>Package</LevelOfDescription>
+        <Title>test</Title>
+        <AipUri>http://http://localhost:8000/earkweb/search/dip/001/aip/19018981-4bfc-4302-abe3-3d57389e46ad</AipUri>
+        <AipTitle>test</AipTitle>
+    </UnitOfDescription>
+    <UnitOfDescription>
+        <ReferenceCode>19018981-4bfc-4302-abe3-3d57389e46ad</ReferenceCode>
+        <LevelOfDescription>Package</LevelOfDescription>
+        <Title>test</Title>
+        <AipUri>http://http://localhost:8000/earkweb/search/dip/001/aip/19018981-4bfc-4302-abe3-3d57389e46ad</AipUri>
+        <AipTitle>test</AipTitle>
+    </UnitOfDescription>
+    <!--Optional:-->
+    <OrderOrigin>Email</OrderOrigin>
+    <!--Optional:-->
+    <EndUserOrderNotes>string</EndUserOrderNotes>
+    <!--Optional:-->
+    <ArchivistOrderNotes>string</ArchivistOrderNotes>
+    <OrderDate>2007-10-26T08:36:28</OrderDate>
+    <!--Optional:-->
+    <OrderUserDossier>string</OrderUserDossier>
+    <!--Optional:-->
+    <ValidationDate>2004-02-14T19:44:14</ValidationDate>
+    <!--Optional:-->
+    <PlannedDate>2018-11-01T06:36:46+01:00</PlannedDate>
+    <!--Optional:-->
+    <AccessDate>2013-05-22T03:02:49+02:00</AccessDate>
+    <!--Optional:-->
+    <AccessDateComments>string</AccessDateComments>
+    <!--Optional:-->
+    <EndUserReference>string</EndUserReference>
+    <!--Optional:-->
+    <ResponsiblePerson>string</ResponsiblePerson>
+    <OrderStatus>Created</OrderStatus>
+    <!--1 or more repetitions:-->
+    <AccessRestriction>
+        <AccessRestrictionCode>100</AccessRestrictionCode>
+        <!--Optional:-->
+        <AccessRestrictionTextExplanation>string</AccessRestrictionTextExplanation>
+    </AccessRestriction>
+    <!--Zero or more repetitions:-->
+    <InternalNote>
+        <NoteText>string</NoteText>
+        <Timestamp>2013-12-21T12:32:42+01:00</Timestamp>
+    </InternalNote>
+    <!--Zero or more repetitions:-->
+    <AccessEndDate>2016-01-01T20:07:42</AccessEndDate>
+    <!--Optional:-->
+    <DeliveryFormat>string</DeliveryFormat>
+</Order>

@@ -10,7 +10,7 @@ import hashlib
 import uuid
 from mimetypes import MimeTypes
 
-from config.config import root_dir
+from config.configuration import root_dir
 from subprocess import Popen, PIPE
 from earkcore.utils.datetimeutils import current_timestamp, DT_ISO_FMT_SEC_PREC, get_file_ctime_iso_date_str
 

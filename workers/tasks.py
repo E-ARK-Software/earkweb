@@ -5,12 +5,12 @@ import tarfile
 import time
 from functools import partial
 from os import walk
-
+import traceback
 from celery import current_task
 
-from config import params
-from config.config import mets_schema_file
-from config.config import root_dir
+from config.configuration import mets_schema_file
+from config.configuration import root_dir
+from config.configuration import config_path_work
 from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -23,10 +23,15 @@ from earkcore.metadata.mets.metsgenerator import MetsGenerator
 from earkcore.metadata.premis.PremisManipulate import Premis
 from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from earkcore.models import InformationPackage
-from earkcore.packaging.extraction import Extraction
+from earkcore.packaging.untar import Untar
+from earkcore.packaging.extract import Extract
 from earkcore.packaging.task_utils import get_deliveries
 from earkcore.rest.hdfsrestclient import HDFSRestClient
 from earkcore.rest.restendpoint import RestEndpoint
+from earkcore.search.solrclient import SolrClient
+from earkcore.search.solrquery import SolrQuery
+from earkcore.search.solrserver import SolrServer
+from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
 from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
@@ -48,6 +53,8 @@ from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from celery.exceptions import SoftTimeLimitExceeded
+from config.configuration import hdfs_upload_service_ip
+import requests
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -57,7 +64,7 @@ def init_task(pk_id, task_name, task_logfile_name):
     ip = InformationPackage.objects.get(pk=pk_id)
     if not ip.uuid:
         ip.uuid = randomutils.getUniqueID()
-    ip_work_dir = os.path.join(params.config_path_work, ip.uuid)
+    ip_work_dir = os.path.join(config_path_work, ip.uuid)
     task_log_file_dir = os.path.join(ip_work_dir, 'metadata')
     task_log_file = os.path.join(task_log_file_dir, "%s.log" % task_logfile_name)
     # create working directory
@@ -127,7 +134,7 @@ def SIPResetF(self, params):
 @app.task(bind=True)
 def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
     tl = TaskLogger(proc_logfile)
-    extr = Extraction()
+    extr = Untar()
     proc_res = extr.extract(package_file_path, target_directory)
     if proc_res.success:
         tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
@@ -154,7 +161,8 @@ class SIPReset(DefaultTask):
 
         # implementation
         task_context.task_status = 0
-        return {'identifier': ""}
+        task_context.additional_data['identifier'] = ""
+        return task_context.additional_data
 
 class SIPDescriptiveMetadataValidation(DefaultTask):
 
@@ -350,7 +358,9 @@ class SIPtoAIPReset(DefaultTask):
 
         # success status
         task_context.task_status = 0
-        return {'identifier': ""}
+        task_context.additional_data['identifier'] = ""
+        return task_context.additional_data
+
 
 class SIPDeliveryValidation(DefaultTask):
 
@@ -369,13 +379,13 @@ class SIPDeliveryValidation(DefaultTask):
         # TODO: rework for new MetsValidation.py?
 
         tl = task_context.task_logger
-
+        tl.addinfo("Marker %s" % task_context.path)
         file_elements, delivery_xml = getDeliveryFiles(task_context.path)
 
         if not file_elements:
             tl.addinfo("No valid delivery validation xml found. Aborting.")
-            task_context.task_status = 0
-            return
+            task_context.task_status = 1
+            return task_context.additional_data
 
         # continue normally we have only one tar
         delivery_file = file_elements[0]
@@ -440,7 +450,9 @@ class SIPDeliveryValidation(DefaultTask):
         #             task_context.task_status = 1
         #         else:
         #             task_context.task_status = 0
-        return
+        task_context.task_status = 0
+        task_context.additional_data['identifier'] = ""
+        return task_context.additional_data
 
 
 
@@ -495,7 +507,9 @@ class IdentifierAssignment(DefaultTask):
             tl.adderr('An error ocurred when trying to update the Premis file with the new identifier: %s' % e)
             task_context.task_status = 1
 
-        return {'identifier': identifier}
+        task_context.additional_data['identifier'] = identifier
+        tl.addinfo('Assigned identifier %s' % identifier)
+        return task_context.additional_data
 
 
 class SIPExtraction(DefaultTask):
@@ -504,34 +518,42 @@ class SIPExtraction(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Extraction run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
+        SIP Untar run task
+        @type       tc: task configuration line (used to insert read tl.addinfo("New identifier assigned: %s" % identifier)task properties in database table)
         @param      tc: order:4,type:2,stage:2
         """
 
+        tl = task_context.task_logger
+
         # Add the event type - will be put into Premis.
         #task_context.event_type = 'SIPExtraction'
+        if not 'identifier' in task_context.additional_data:
+            task_context.task_status = 1
+            tl.adderr("Parameter 'identifier' is not defined in additional data!")
+            return task_context.additional_data
+
         print 'identifier: %s' % task_context.additional_data['identifier']
 
-        tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
         if len(deliveries) == 0:
             tl.adderr("No delivery found in working directory")
-            task_context.task_status = 1
+            task_context.task_status = 0
         else:
-            extr = Extraction()
             for delivery in deliveries:
-                tar_file = deliveries[delivery]['tar_file']
+                package_file = deliveries[delivery]['package_file']
+                extr = Extract.factory(package_file)
                 custom_reporter = partial(custom_progress_reporter, self)
                 target_folder = os.path.join(task_context.path, str(delivery))
-                extr.extract_with_report(tar_file, target_folder, progress_reporter=custom_reporter)
+                package_file_abs_path = os.path.join(task_context.path, package_file)
+                tl.addinfo("Extracting package file %s to %s" % (package_file_abs_path,target_folder))
+                extr.extract_with_report(package_file_abs_path, target_folder, progress_reporter=custom_reporter)
                 #remove packaged state.xml. No need for it anymore
                 #state_path = os.path.join(target_folder, "state.xml")
                 #if os.path.exists(state_path):
                 #    os.remove(state_path)
             tl.log += extr.log
             tl.err += extr.err
-        task_context.task_status = 0
+            task_context.task_status = 0
         return task_context.additional_data
 
 
@@ -559,18 +581,20 @@ class SIPRestructuring(DefaultTask):
                 tl.addinfo("Restructuring content of package: %s" % str(delivery))
 
                 # TODO: maybe remove the state.xml already during SIP packaging
-                if os.path.exists(os.path.join(str(delivery), 'state.xml')):
-                    os.remove(os.path.join(str(delivery), 'state.xml'))
+                delivery_path = os.path.join(task_context.path, str(delivery))
+                state_xml_path = os.path.join(delivery_path, 'state.xml')
+                if os.path.exists(state_xml_path):
+                    os.remove(state_xml_path)
 
-                fs_childs =  os.listdir(str(delivery))
+                fs_childs = os.listdir(str(delivery_path))
                 for fs_child in fs_childs:
-                    source_item = os.path.join(str(delivery), fs_child)
+                    source_item = os.path.join(delivery_path, fs_child)
                     target_folder = os.path.join(task_context.path, "submission")
                     if not os.path.exists(target_folder):
                         os.mkdir(target_folder)
                     tl.addinfo("Move SIP folder '%s' to '%s" % (source_item, target_folder))
                     shutil.move(source_item, target_folder)
-                os.removedirs(str(delivery))
+                os.removedirs(delivery_path)
 
             task_context.task_status = 0
         return task_context.additional_data
@@ -614,16 +638,27 @@ class SIPValidation(DefaultTask):
                 if os.path.isdir(rep_path):
                     mets_validator = MetsValidation(rep_path)
                     valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+                    # TODO: validate possible sub-METS files:
+                    # for rep, metspath in mets_validator.subsequent_mets:
+                    #     print 'METS file for representation: %s at path: %s' % (rep, metspath)
+                    #     subsequent_mets_validator = MetsValidation(task_context.path)
+                    #     sub_result = subsequent_mets_validator.validate_mets(metspath)
+                    #     if valid == True and sub_result == False:
+                    #         valid = False
+                    #     tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
 
-        # currently: forced valid = True, until valid mets files are created by the SIP creator!
-        # valid = True
-
-        task_context.task_status = 0 if valid else 1
+        # task_context.task_status = 0 if valid else 1
+        if valid:
+            task_context.task_status = 0
+        else:
+            task_context.task_status = 1
+            for error in mets_validator.validation_errors:
+                tl.adderr(error)
         return task_context.additional_data
 
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress', 'MigrationsComplete']
+    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -659,8 +694,6 @@ class AIPMigrations(DefaultTask):
             replist.append(repdir)
 
         # begin migrations
-        migrationtask = MigrationProcess()
-
         total = 0
 
         # start migrations from every representation
@@ -713,9 +746,10 @@ class AIPMigrations(DefaultTask):
                                   'targetrep': target_rep,
                                   'taskid': id.decode('utf-8'),
                                   'commandline': self.args})
-                        task_context.additional_data = dict(task_context.additional_data.items() + input.items())
 
-                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data, None)
+                        additional_data = dict(task_context.additional_data.items() + input.items())
+                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, additional_data, None)
+
 
                         # create folder for new representation (if it doesnt exist already)
                         if not os.path.exists(migration_target):
@@ -727,12 +761,14 @@ class AIPMigrations(DefaultTask):
 
                         # queue the MigrationProcess task
                         try:
+                            migrationtask = MigrationProcess()
                             migrationtask.apply_async((context,), queue='default', task_id=id)
                             tl.addinfo('Migration queued for %s.' %  filename, display=False)
                         except:
                             tl.adderr('Migration task %s for file %s could not be queued.' % (id, filename))
 
                         # migration.xml entry - need this for Premis creation. Can put additional stuff here if desired.
+                        #TODO: check this out. Not used anywhere Jan??
                         migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
                                                                                               'output': outputfile,
                                                                                               'sourcedir': migration_source,
@@ -842,7 +878,7 @@ class MigrationProcess(DefaultTask):
 
 class AIPCheckMigrationProgress(DefaultTask):
 
-    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress', 'MigrationsComplete']
+    accept_input_from = [AIPMigrations.__name__, MigrationProcess.__name__, 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -910,51 +946,29 @@ class AIPCheckMigrationProgress(DefaultTask):
 
             # check if migrations are all completed
             if int(total) == successful:
-                complete = MigrationsComplete()
-                context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationComplete', None, task_context.additional_data, None)
-                complete.apply_async((context,), queue='default')
-                tl.addinfo('All migrations have been successful.')
+                tl.addinfo('Migrations completed successfully.')
+                task_context.additional_data['migration_complete']=True
                 task_context.task_status = 0
             elif failed > 0 and missing == 0:
                 tl.addinfo('Migrations are complete, but a number of them failed.')
+                task_context.additional_data['migration_complete']=False
                 task_context.task_status = 1
             else:
                 tl.addinfo('Migrations are still running, please check back later.')
+                task_context.additional_data['migration_complete']=False
                 task_context.task_status = 0
-            return task_context.additional_data
+
         except:
             tl.addinfo('Something went wrong when checking task status.')
             print 'Something went wrong when checking task status.'
+            task_context.additional_data['migration_complete']=False
             task_context.task_status = 1
+
         return task_context.additional_data
-
-
-class MigrationsComplete(DefaultTask):
-
-    accept_input_from = [AIPCheckMigrationProgress.__name__, 'MigrationsComplete']
-
-    def run_task(self, task_context):
-        """
-        Migrations Complete
-
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:0,stage:0
-        """
-
-        # Add the event type - will be put into Premis.
-        #task_context.event_type = 'MigrationsComplete'
-
-        tl = task_context.task_logger
-
-        tl.addinfo('All migration processes are completed, now allowing Mets creation.')
-
-        task_context.task_status = 0
-        return task_context.additional_data
-
 
 class CreatePremisAfterMigration(DefaultTask):
 
-    accept_input_from = [MigrationsComplete.__name__, 'CreatePremisAfterMigration']
+    accept_input_from = [AIPCheckMigrationProgress.__name__, 'CreatePremisAfterMigration']
 
     def run_task(self, task_context):
         """
@@ -1071,20 +1085,29 @@ class AIPPackageMetsCreation(DefaultTask):
             # schema file location for Mets generation
             schemas = os.path.join(task_context.path, 'schemas')
 
+            if not 'identifier' in task_context.additional_data:
+                tl.adderr('Missing identifier property in task_context.additional_data.')
             identifier = task_context.additional_data['identifier']
+
+            if not 'parent_id' in task_context.additional_data:
+                tl.adderr('Missing parent_id property in task_context.additional_data.')
             parent = task_context.additional_data['parent_id']
+
             mets_data = {'packageid': identifier,
                          'type': 'AIP',
                          'schemas': schemas,
                          'parent': parent}
+
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
 
             task_context.task_status = 0
             tl.addinfo('METS updated with AIP content.')
-        except Exception, err:
-            tl.addinfo('error: ', Exception)
+
+        except Exception as err:
+            tl.addinfo('error: %s' % str(err))
             task_context.task_status = 1
+
         return task_context.additional_data
 
 
@@ -1202,7 +1225,7 @@ class AIPPackaging(DefaultTask):
                             self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     i += 1
             tar.close()
-            tl.log.append("Package stored: %s" % storage_file)
+            tl.log.append("Package created: %s" % storage_file)
 
             #ip.statusprocess = tc.success_status if result.success else tc.error_status
             #ip.save()
@@ -1219,7 +1242,7 @@ class AIPStore(DefaultTask):
 
     def run_task(self, task_context):
         """
-        AIP Validation
+        Store AIP
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:14,type:2,stage:2
         """
@@ -1244,8 +1267,8 @@ class AIPStore(DefaultTask):
 
         try:
             package_id = task_context.additional_data["identifier"]
-            storePath = task_context.additional_data["storageDest"]
-            if not task_context.additional_data['storageDest']:
+            storePath = task_context.additional_data["storage_dest"]
+            if not task_context.additional_data['storage_dest']:
                 tl.adderr("Storage root must be defined to execute this task.")
             else:
                 # copy the package
@@ -1253,30 +1276,102 @@ class AIPStore(DefaultTask):
                 if not os.path.exists(tarfile_path):
                     tl.adderr("Unable to store package. The package container file does not exist: %s." % tarfile_path)
                 else:
-                    abspath_basename = "%s/%s" % (storePath, package_id)
-                    tarfile_dest = increment_file_name_suffix(abspath_basename, "tar")
-                    shutil.copy2(tarfile_path, tarfile_dest)
-                    tl.addinfo('The tar container for %s has been copied to: %s' % (tarfile_path, tarfile_dest))
-                    if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(tarfile_dest).get(ChecksumAlgorithm.SHA256):
-                        tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
-                        task_context.additional_data["storageLoc"] = tarfile_dest
+                    # abspath_basename = "%s/%s" % (storePath, package_id)
+                    # tarfile_dest = increment_file_name_suffix(abspath_basename, "tar")
+                    # shutil.copy2(tarfile_path, tarfile_dest)
+                    pts = PairtreeStorage(storePath)
+                    pts.store(package_id, tarfile_path)
+                    package_object_path = pts.get_object_path(package_id)
+                    if os.path.exists(package_object_path):
+                        tl.addinfo('Storage path: %s' % (package_object_path))
+                        if ChecksumFile(tarfile_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(package_object_path).get(ChecksumAlgorithm.SHA256):
+                            tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
+                            task_context.additional_data["storage_loc"] = package_object_path
+                        else:
+                            tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
                     else:
-                        tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+                        tl.adderr("Error storing package")
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+        return task_context.additional_data
+
+class AIPIndexing(DefaultTask):
+
+    accept_input_from = [AIPStore.__name__, "AIPIndexing"]
+
+    def run_task(self, task_context):
+        """
+        AIP Index
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:15,type:2,stage:2
+        """
+
+        # no premis event
+        task_context.event_type = None
+
+        # task logger
+        tl = task_context.task_logger
+
+        # check required parameters in task context
+        parameters = ["storage_dest", "identifier"]
+        if not task_context.has_required_parameters(parameters):
+            task_context.task_status = 0
+            return task_context.report_parameter_errors(parameters)
+
+        # check solr server availability
+        from config.configuration import local_solr_server_ip
+        from config.configuration import local_solr_port
+        solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+        tl.addinfo("Solr server base url: %s" % solr_server.get_base_url())
+        sq = SolrQuery(solr_server)
+        r = requests.get(sq.get_base_url())
+        if not r.status_code == 200:
+            tl.adderr("Solr server is not available at: %s" % sq.get_base_url())
+            task_context.task_status = 0
+            return task_context.additional_data
+
+        storage_dest = task_context.additional_data["storage_dest"]
+        tl.addinfo("Storage path: %s" % storage_dest)
+        identifier = task_context.additional_data["identifier"]
+        pts = PairtreeStorage(storage_dest)
+
+        # check if the repository container is available for the given identifier
+        if not pts.identifier_object_exists(identifier):
+            tl.adderr("Object for identifier does not exist in repository.")
+            task_context.task_status = 0
+            return task_context.additional_data
+
+        try:
+            # initialize solr client
+            solr_client = SolrClient(solr_server, "earkstorage")
+            # post documents of repository container to solr server
+            partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+            tl.addinfo("Object path: %s" % pts.get_object_path(identifier))
+            results = solr_client.post_tar_file(pts.get_object_path(identifier), identifier, partial_custom_progress_reporter)
+            tl.addinfo("Total number of files posted: %d" % len(results))
+            num_ok = sum(1 for result in results if result['status'] == 200)
+            tl.addinfo("Number of files posted successfully: %d" % num_ok)
+            num_failed = sum(1 for result in results if result['status'] != 200)
+            tl.addinfo("Number of plain documents: %d" % num_failed)
+            task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        except Exception as e:
+            tl.adderr("AIP indexing task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
             task_context.task_status = 1
         return task_context.additional_data
 
 class LilyHDFSUpload(DefaultTask):
 
-    accept_input_from = [AIPStore.__name__, "LilyHDFSUpload"]
+    accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, "LilyHDFSUpload"]
 
     def run_task(self, task_context):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:2,stage:2
+        @param      tc: order:16,type:2,stage:2
         """
         # no premis event
         #task_context.event_type = 'LilyHDFSUpload'
@@ -1292,7 +1387,7 @@ class LilyHDFSUpload(DefaultTask):
                 tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                rest_endpoint = RestEndpoint("http://81.189.135.189", "dm-hdfs-storage")
+                rest_endpoint = RestEndpoint("http://%s" % hdfs_upload_service_ip, "dm-hdfs-storage")
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.
@@ -1483,8 +1578,8 @@ class DIPExtractAIPs(DefaultTask):
                     current_package_total_members += 1
                 # ip.statusprocess = tc.success_status
                 # ip.save()
-                tl.addinfo("Extraction of %d items from package %s finished" % (current_package_total_members, aip_identifier))
-            tl.addinfo(("Extraction of %d items in total finished" % total_processed_members))
+                tl.addinfo("Untar of %d items from package %s finished" % (current_package_total_members, aip_identifier))
+            tl.addinfo(("Untar of %d items in total finished" % total_processed_members))
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception as e:

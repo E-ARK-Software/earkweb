@@ -17,7 +17,7 @@ from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.mets.MetsValidation import MetsValidation
 from earkcore.metadata.mets.ParsedMets import ParsedMets
-from config.config import root_dir
+from config.configuration import root_dir
 from earkcore.xml.validationresult import ValidationResult
 
 class DeliveryValidation(object):

@@ -1,0 +1,83 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+    <script language="JavaScript">
+        var local_solr_server_ip = '{{ local_solr_server_ip }}';
+        var django_service_ip = '{{ django_service_ip }}';
+        var django_service_port = '{{ django_service_port }}';
+        var local_solr_port = '{{ local_solr_port }}';
+
+    </script>
+    <script type="text/javascript"
+        src="{% static 'sip2aip/js/aipsearch_package.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "sip2aip/css/aipsearch.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "sip2aip/css/aipsearch_package.css" %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+<div class="content" style="display: block">
+
+    <div class="left-box">
+    <form name="find" class="form-horizontal" role="form">
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="queryString">contained word:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="queryString" name="queryString" placeholder="search term">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="package">package:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="package" name="package" placeholder="package name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="contentTypes">content type:</label>
+        <div class="col-sm-10">
+          <select class="form-control" id="contentTypes" name="contentTypes" size="8" multiple>
+                <option value="application/msword">doc</option>
+                <option value="text/html">html</option>
+                <option value="application/pdf">pdf</option>
+                <option value="text/plain">txt</option>
+                <option value="text/csv">csv</option>
+                <option value="application/xhtml+xml">xhtml</option>
+                <option value="application/vnd.ms-excel">xls</option>
+                <option value="application/xml">xml</option>
+                <option value="image/png">png</option>
+                <option value="image/jpeg">jpeg</option>
+              </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="sort">sort:</label>
+        <div class="col-sm-10">
+          <select id="sort" name="sort">
+                <option value="">relevance</option>
+                <option value="size asc">size (ascending)</option>
+                <option value="size desc">size (descending)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-default" onclick="askSolr(0); return false;">Submit</button>
+        </div>
+      </div>
+    </form>
+    </div>
+
+    <div class="right-box">
+      <div id="output" class="output"></div>
+    </div>
+
+</div>
+
+{% endblock %}

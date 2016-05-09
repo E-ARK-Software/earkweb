@@ -82,6 +82,15 @@ class DefaultTask(Task):
             task_context.task_logger.task_logfile.close()
 
         # persist IP state (error, success)
+        #ip_state_doc_path = os.path.join(task_context.path, "state.xml")
+        #if os.path.exists(ip_state_doc_path):
+        #    new_state = IpState.from_path(ip_state_doc_path)
+
+        #if (self.task_name == 'AIPCheckMigrationProgress') and (new_state.get_last_task() == 'MigrationsComplete'):
+        #    task_context.task_logger.addinfo("Migration Complete")
+        #    task_context.ip_state_xml.set_last_task(new_state.get_last_task())
+        #else:
+
         task_context.ip_state_xml.set_last_task(self.task_name)
         task_context.ip_state_xml.set_state(task_context.task_status)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
@@ -90,7 +99,7 @@ class DefaultTask(Task):
         package = task_context.uuid
         if os.path.exists(task_context.package_premis):
             outcome = 'success' if task_context.task_status == 0 else 'failure'
-            if task_context.additional_data is not None and task_context.additional_data['identifier'] is not None:
+            if task_context.additional_data is not None and 'identifier' in task_context.additional_data and task_context.additional_data['identifier'] is not None:
                 package = task_context.additional_data['identifier']
                 # This construction hopefully means that the IdentifierAssignment can be used at any time in the AIP creation process.
 

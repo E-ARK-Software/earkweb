@@ -1,6 +1,12 @@
 import logging
 from django.conf import settings
+from earkcore.search.solrquery import SolrQuery
+from earkcore.search.solrserver import SolrServer
+
 logger = logging.getLogger(__name__)
+from config.configuration import access_solr_server_ip
+from config.configuration import access_solr_port
+from config.configuration import access_solr_core
 
 def get_query_string(keyword, content_type, start, rows):
     
@@ -33,7 +39,10 @@ def get_query_string(keyword, content_type, start, rows):
     limit = "start=%d&rows=%d" % (start,rows)
     
     query_part = conjunctions + "&" + limit
+
+    sq = SolrQuery(SolrServer(access_solr_server_ip, access_solr_port))
+    query_pattern = sq.get_select_pattern(access_solr_core)
         
-    query_string = settings.SERVER_SOLR_QUERY_URL.format(query_part)
+    query_string = query_pattern.format(query_part)
     logger.info("Solr query string: %s" % query_string)
     return query_string

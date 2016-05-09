@@ -12,51 +12,11 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-TIME_ZONE = 'Europe/Stockholm'
+TIME_ZONE = 'Europe/Vienna'
+
+LOGIN_URL='/earkweb/accounts/login/'
 
 import celeryapp
-
-
-# server settings
-
-SERVER_PROTOCOL_PREFIX = "http://"
-
-SERVER_IP = "81.189.135.189"
-
-# repository
-
-SERVER_REPO_PORT = "12060"
-
-SERVER_REPO = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_REPO_PORT
-
-SERVER_REPO_PATH= "/repository"
-
-SERVER_TABLE_PATH = "/table"
-
-SERVER_RECORD_PATH = "/record"
-
-SERVER_COLLECTION1 = "/eark1"
-
-
-SERVER_REPO_RECORD_PATH = SERVER_REPO_PATH + SERVER_TABLE_PATH + SERVER_COLLECTION1 + SERVER_RECORD_PATH
-
-SERVER_REPO_RECORD_CONTENT_QUERY = SERVER_REPO + SERVER_REPO_RECORD_PATH + "/{0}/field/n$content/data?ns.n=org.eu.eark"
-
-# solr
-
-SERVER_SOLR_PORT = "8983"
-
-SERVER_SOLR_PATH = "/solr"
-
-SERVER_SOLR = SERVER_PROTOCOL_PREFIX + SERVER_IP + ":" + SERVER_SOLR_PORT
-
-SERVER_SOLR_QUERY_URL = SERVER_SOLR + SERVER_SOLR_PATH + "/eark1/select?q={0}&wt=json" 
-
-# hdfs storage service
-
-SERVER_HDFS = SERVER_PROTOCOL_PREFIX + "localhost" + ":8081/hsink/fileresource"
-
-SERVER_HDFS_AIP_QUERY = SERVER_HDFS + "/retrieve_newest?file={0}"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
@@ -76,11 +36,6 @@ ALLOWED_HOSTS = []
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
-
-
-CAS_REDIRECT_URL = '/earkweb/search'
-LOGIN_URL = '/earkweb/accounts/login/'
-LOGOUT_URL = '/earkweb/accounts/logout/'
 
 import djcelery
 djcelery.setup_loader()
@@ -146,17 +101,12 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
-    'django_cas.middleware.CASMiddleware', 'django.contrib.admindocs.middleware.XViewMiddleware',
 )
 
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend', 'django_cas.backends.CASBackend',
-
+    'django.contrib.auth.backends.ModelBackend',
 )
-
-CAS_SERVER_URL = 'https://earkdev.ait.ac.at:8443/cas/login'
 
 ROOT_URLCONF = 'earkweb.urls'
 
@@ -165,6 +115,7 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
+from config.configuration import mysql_server_ip
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -172,7 +123,7 @@ DATABASES = {
         'NAME': 'eark',                    # Or path to database file if using sqlite3.
         'USER': 'arkiv',                      # Not used with sqlite3.
         'PASSWORD': 'arkiv',               # Not used with sqlite3.
-        'HOST': '',                           # Set to empty string for localhost. Not used with sqlite3.
+        'HOST': mysql_server_ip,                           # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '',                           # Set to empty string for default. Not used with sqlite3.
         # This options for storage_engine have to be set for "south migrate" to work.
         'OPTIONS': {
@@ -180,14 +131,6 @@ DATABASES = {
         }
     }
 }
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.sqlite3',
-#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#    }
-#}
-
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -211,72 +154,52 @@ STATIC_ROOT = '/var/www/static/earkweb/'
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
     'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+        'default': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
             'filename': '/var/log/earkweb/earkweb.log',
+            'maxBytes': 1024*1024*5, # 5 MB
+            'backupCount': 5,
+            'formatter':'standard',
+        },
+        'request_handler': {
+            'level':'DEBUG',
+            'class':'logging.handlers.RotatingFileHandler',
+            'filename': '/var/log/earkweb/request.log',
+            'maxBytes': 1024*1024*5, # 5 MB
+            'backupCount': 5,
+            'formatter':'standard',
         },
         'console': {
-            'class': 'logging.StreamHandler',
+            'level':'DEBUG',
+            'class':'logging.StreamHandler',
+            'formatter':'standard',
         },
+    },
+    'root': {
+        'handlers': ['default', 'console'],
+        'level': 'DEBUG'
     },
     'loggers': {
         'django.request': {
-            'handlers': ['file', 'console'],
+            'handlers': ['request_handler', 'console'],
             'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False
         },
-    },
-    'loggers': {
-        'sipcreator.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+        'earkcore.storage.pairtreestorage': {
+                'handlers': ['default', 'console'],
+                'level': 'DEBUG',
         },
-        'sipcreator.query': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'search.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'search.query': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'workflow.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'sip2aip.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'sip2aip.watchdir': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-    'loggers': {
-        'mrinterface.views': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
+        'earkcore.search.solrclient': {
+                'handlers': ['default', 'console'],
+                'level': 'DEBUG',
+        }
+    }
 }

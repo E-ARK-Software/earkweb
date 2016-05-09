@@ -10,8 +10,8 @@ import os
 import lxml
 import fnmatch
 
-from config.config import mets_schema_file
-from config.config import premis_schema_file
+from config.configuration import mets_schema_file
+from config.configuration import premis_schema_file
 from lxml import etree
 from earkcore.fixity.ChecksumValidation import ChecksumValidation
 from earkcore.metadata.XmlHelper import q
@@ -43,7 +43,6 @@ class MetsValidation(object):
         @param mets:    Path leading to a Mets file that will be evaluated.
         @return:        Boolean validation result.
         '''
-        # TODO: remove processed elements from tree
         if mets.startswith('file://./'):
             mets = os.path.join(self.rootpath, mets[9:])
             # change self.rootpath so it fits any relative path found in the current (subsequent) mets
@@ -106,6 +105,8 @@ class MetsValidation(object):
                                         pass
         except etree.XMLSyntaxError, e:
             self.validation_errors.append(e.error_log)
+        except BaseException, e:
+            self.validation_errors.append(e.message)
 
         if self.total_files != 0:
             self.validation_errors.append('File count yielded %d instead of 0.' % self.total_files)
@@ -130,7 +131,12 @@ class MetsValidation(object):
         log = []
 
         # get information about the file
-        attr_path = file.getchildren()[0].attrib[q(XLINK_NS, 'href')]
+        for child in file.getchildren():
+            if child.tag == etree.Comment or child.tag == etree.PI:
+                # skip if it's an XML comment
+                pass
+            elif child.tag == q(METS_NS, 'FLocat'):
+                attr_path = child.attrib[q(XLINK_NS, 'href')]
         attr_size = file.attrib['SIZE']
         attr_checksum = file.attrib['CHECKSUM'].lower() # just in case someone creates a checksum with uppercase letters
         attr_checksumtype = file.attrib['CHECKSUMTYPE']
@@ -139,6 +145,7 @@ class MetsValidation(object):
         # check if file exists, if yes validate it
         fitem = remove_protocol(attr_path)
         file_path = os.path.join(self.rootpath, fitem).replace('\\', '/')
+
         if not os.path.exists(file_path):
             err.append("Unable to find file referenced in METS: %s" % file_path)
         else:
@@ -172,7 +179,7 @@ class MetsValidation(object):
 
 class TestMetsValidation(unittest.TestCase):
     # TODO: add one test each for a valid and a faulty Mets
-    rootpath = '/var/data/earkweb/work/SIP_example_DNA/Godfather_style/IP.AVID.RA.18005.rep0.seg0/'
+    rootpath = '/var/data/earkweb/work/TESTSIP/'
     # rootpath = '/var/data/earkweb/work/b0787deb-a70b-41af-98e4-784a18e2137f/'
 
     def test_IP_mets(self):

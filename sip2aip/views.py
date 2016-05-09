@@ -14,21 +14,25 @@ from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from earkcore.utils.randomutils import getUniqueID
 from sip2aip.forms import UploadSIPDeliveryForm
-from sipcreator.forms import TinyUploadFileForm
 from workers import tasks
 from django.http import JsonResponse
 from sip2aip import forms
 from workers.ip_state import IpState
 from workers.taskconfig import TaskConfig
-from workers.tasks import SIPtoAIPReset
+from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore
 from workflow.models import WorkflowModules
-from config.params import config_path_work, config_path_reception
+from config.configuration import config_path_work
 import logging
 logger = logging.getLogger(__name__)
-from operator import itemgetter, attrgetter, methodcaller
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
+from config.configuration import local_solr_server_ip
+from config.configuration import django_service_port
+from config.configuration import django_service_ip
+from config.configuration import local_solr_port
+
+
 @login_required
 @csrf_exempt
 def ip_detail_table(request):
@@ -50,6 +54,32 @@ def index(request):
 
     })
     return HttpResponse(template.render(context))
+
+
+class IndexingStatusList(ListView):
+    """
+    Processing status
+    """
+    model = InformationPackage
+    template_name = 'sip2aip/indexing_status.html'
+    context_object_name = 'ips'
+
+    list_tasks = [
+        "last_task_id='%s'" % AIPIndexing.__name__,
+        "last_task_id='%s'" % LilyHDFSUpload.__name__,
+        "last_task_id='%s'" % AIPStore.__name__,
+    ]
+    task_cond = " or ".join(list_tasks)
+
+    queryset=InformationPackage.objects.extra(where=["identifier!='' and (%s)" % task_cond]).order_by('last_change')
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(IndexingStatusList, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(IndexingStatusList, self).get_context_data(**kwargs)
+        return context
 
 
 @login_required
@@ -152,24 +182,16 @@ class InformationPackageList(ListView):
         context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
         return context
 
-
-class IndexingStatusList(ListView):
-    """
-    Processing status
-    """
-    model = InformationPackage
-    template_name = 'sip2aip/indexing_status.html'
-    context_object_name = 'ips'
-
-    queryset=InformationPackage.objects.extra(where=["identifier!='' and last_task_id='%s'" % LilyHDFSUpload.__name__]).order_by('last_change')
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(IndexingStatusList, self).dispatch(*args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(IndexingStatusList, self).get_context_data(**kwargs)
-        return context
+@login_required
+def aipsearch_package(request):
+    template = loader.get_template('sip2aip/aipsearch_package.html')
+    context = RequestContext(request, {
+        'local_solr_server_ip': local_solr_server_ip,
+        'django_service_ip': django_service_ip,
+        'django_service_port': django_service_port,
+        'local_solr_port': local_solr_port,
+    })
+    return HttpResponse(template.render(context))
 
 
 class HelpProcessingStatus(ListView):

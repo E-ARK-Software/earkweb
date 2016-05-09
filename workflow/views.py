@@ -38,15 +38,15 @@ from sip2aip import forms
 import urllib2
 #import workers.tasks
 from workers.default_task_context import DefaultTaskContext
-from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation
+from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation, AIPIndexing
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
 import json
 
-from config.params import config_path_work
+from config.configuration import config_path_work
 from earkcore.filesystem.fsinfo import path_to_dict
-from config.params import config_path_storage
+from config.configuration import config_path_storage
 
 from django.utils import dateparse
 
@@ -185,9 +185,9 @@ def apply_task(request):
                 additional_data = {'packagename': ip.packagename,
                                    'identifier': ip.identifier}
 
-                if wfm.identifier == AIPStore.__name__:
-                    additional_data['storageDest'] = config_path_storage
-                    print "Storage destination %s" % additional_data['storageDest']
+                if wfm.identifier == AIPStore.__name__ or wfm.identifier == AIPIndexing.__name__:
+                    additional_data['storage_dest'] = config_path_storage
+                    print "Storage destination %s" % additional_data['storage_dest']
 
                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
                     dip = DIP.objects.get(name=ip.packagename)
@@ -259,8 +259,8 @@ def poll_state(request):
                             if 'identifier' in task.result.additional_data:
                                 ip.identifier = task.result.additional_data['identifier']
 
-                            if 'storageLoc' in task.result.additional_data:
-                                ip.storage_loc = task.result.additional_data['storageLoc']
+                            if 'storage_loc' in task.result.additional_data:
+                                ip.storage_loc = task.result.additional_data['storage_loc']
                                 print "Storage location %s" % ip.storage_loc
 
                         if task.result.task_name:
@@ -362,8 +362,8 @@ def execute_chain(request):
             #         additional_data['identifier'] = ip.identifier
             #     if wfm.identifier == AIPStore.__name__:
             #         additional_data['identifier'] = ip.identifier
-            #         additional_data['storageDest'] = config_path_storage
-            #         print "Storage destination %s" % addisuccesstional_data['storageDest']
+            #         additional_data['storage_dest'] = config_path_storage
+            #         print "Storage destination %s" % addisuccesstional_data['storage_dest']
             #     if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
             #         dip = DIP.objects.get(name=ip.packagename)
             #         selected_aips = {}
@@ -404,8 +404,8 @@ def execute_chain(request):
 #                     additional_data['identifier'] = ip.identifier
 #                 if wfm.identifier == AIPStore.__name__:
 #                     additional_data['identifier'] = ip.identifier
-#                     additional_data['storageDest'] = config_path_storage
-#                     print "Storage destination %s" % additional_data['storageDest']
+#                     additional_data['storage_dest'] = config_path_storage
+#                     print "Storage destination %s" % additional_data['storage_dest']
 #                 if wfm.identifier == DIPAcquireAIPs.__name__ or wfm.identifier == DIPExtractAIPs.__name__:
 #                     dip = DIP.objects.get(name=ip.packagename)
 #                     selected_aips = {}

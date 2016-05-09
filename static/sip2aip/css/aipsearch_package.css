@@ -1,0 +1,17 @@
+.half, .left-box, .right-box {
+  width: 50%;
+  float: left;
+}
+
+form, .output {
+
+  border: 1px solid #dddddd;
+
+    background-color: #F9F9F9;
+    padding-top:1em;
+    padding-bottom: 1em;
+}
+
+input, select {
+  font-size: 20px;
+}

@@ -6,10 +6,11 @@ from django.template import RequestContext, loader
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from config.config import root_dir
-from earkcore.packaging.extraction import Extraction
+from config.configuration import root_dir
+from earkcore.packaging.untar import Untar
 from forms import TinyUploadFileForm
-from config.params import config_path_work
+from forms import UploadFileForm
+from config.configuration import config_path_work
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p, copy_tree_content
 from django.views.decorators.csrf import csrf_exempt
@@ -203,7 +204,6 @@ def sip_detail(request, pk):
     })
     return HttpResponse(template.render(context))
 
-
 class SIPCreationDetail(DetailView):
     """
     Submit and View result from checkout to work area
@@ -224,8 +224,8 @@ class SIPCreationDetail(DetailView):
         context['form'] = form
         return context
 
-
 @login_required
+@csrf_exempt
 def add_file(request, uuid, subfolder):
     ip = InformationPackage.objects.get(uuid=uuid)
     # template = loader.get_template('sipcreator/detail.html')
@@ -251,6 +251,7 @@ def add_file(request, uuid, subfolder):
     ip_work_dir = os.path.join(config_path_work, uuid)
     upload_path = os.path.join(ip_work_dir, subfolder, repname, repsubdir)
     print upload_path
+
     if not os.path.exists(upload_path):
         mkdir_p(upload_path)
     if request.method == 'POST':
@@ -386,3 +387,56 @@ def add_representation(request, pk):
     except:
         tb = traceback.format_exc()
     return JsonResponse(data)
+
+# Methods for external (non DJANGO UI based) invocation of SIPCreator
+
+@login_required
+@csrf_exempt
+def sip_uuid(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    return HttpResponse(ip.uuid)
+
+@login_required
+@csrf_exempt
+def ins_file(request, uuid, subfolder):
+    ip = InformationPackage.objects.get(uuid=uuid)
+
+    repname = ""
+    if request.POST.has_key('rep'):
+        repname = request.POST['rep']
+        print "repname=%s" % repname
+
+    repsubdir = ""
+    if request.POST.has_key('subdir'):
+        repsubdir = request.POST['subdir']
+        print "repsubdir=%s" % repsubdir
+
+    if subfolder.startswith("_root_"):
+        subfolder = subfolder.replace("_root_", ".")
+        print "subfolder=%s" % subfolder
+
+    ip_work_dir = os.path.join(config_path_work, uuid)
+    upload_path = os.path.join(ip_work_dir, subfolder, repname, repsubdir)
+    print "upload_path=%s" % upload_path
+
+    if not os.path.exists(upload_path):
+        mkdir_p(upload_path)
+
+    if request.method == 'POST':
+        form = TinyUploadFileForm(request.POST, request.FILES)
+        print request.FILES
+        if form.is_valid():
+            print "valid form"
+            upload_aip(ip_work_dir, upload_path, request.FILES['content_file'])
+        else:
+            if form.errors:
+                for error in form.errors:
+                    print(str(error) + str(form.errors[error]))
+
+    return HttpResponse("success")
+
+@login_required
+@csrf_exempt
+def finalize(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    return HttpResponse("success")

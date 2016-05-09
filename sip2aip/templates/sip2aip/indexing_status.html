@@ -14,9 +14,9 @@
 
     {% include "sip2aip/about_module.html" %}
 
-    <h2 class="main">Indexing status of packages uploaded to HDFS</h2>
+    <h2 class="main">Indexing status of packages in AIP storage</h2>
 
-    <p>The following table gives an overview about the indexing status of packages that have been uploaded to Lily.</p>
+    <p>The following table gives an overview about the indexing status of packages available in AIP storage.</p>
 
     <table class="table table-striped table-bordered table-condensed">
     <thead>
@@ -38,7 +38,7 @@
                 <td>
                     <a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ ip.uuid }}</a>
                 </td>
-                <th>{{ ip.num_indexed_docs }}</th>
+                <th>{{ ip.num_indexed_docs_storage }}</th>
 
 
             </tr>
