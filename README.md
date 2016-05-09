@@ -7,7 +7,7 @@
 E-ARK Web allows executing package transformations between the package formats SIP, AIP, and DIP, using [Celery](http://www.celeryproject.org), a distributed task queue, as its 
 main backend. It provides a web interface to manage information package transformations. 
 
-![alt tag](./docs/img/earkweb_home.png)
+![earkweb home](./docs/img/earkweb_home.png)
 
 The backend can also be controlled via [remote command execution](./docs/user_guide_remotetask.md) without using the web frontend. The outcomes of operations performed by a task 
 are stored immediately so that the status information in the frontend's database can be updated afterwards. 
@@ -19,7 +19,7 @@ record digital provenance information of the information package.
 
 * [Manual installation](./docs/install_manual.md) 
 * [Installation using Docker](./docs/install_docker.md)
-* [Installation as WSGI app (Apache Webserver frontend)](./docs/install_apache.md)
+* [Installation as WSGI app (Apache Webserver frontend)](./docs/install_wsgi.md)
 
 ### User guide
 
