@@ -1,3 +1,57 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Version 8.4](#version-84)
+- [Version 8.3](#version-83)
+- [Version 8.2](#version-82)
+- [Version 8.1](#version-81)
+- [Version 8.0](#version-80)
+- [Version 7.5](#version-75)
+- [New core developers](#new-core-developers)
+- [Version 7.4](#version-74)
+- [Version 7.3](#version-73)
+- [Version 7.2](#version-72)
+- [Version 7.1](#version-71)
+- [Version 7.0](#version-70)
+- [Version 6.2](#version-62)
+- [Version 6.1 — Solarized](#version-61-%E2%80%94-solarized)
+- [Version 6.0](#version-60)
+- [Version 5.14](#version-514)
+- [Version 5.13](#version-513)
+  - [For users](#for-users)
+  - [For developers](#for-developers)
+- [CDN](#cdn)
+- [Version 5.10 — "Paris".](#version-510-%E2%80%94-paris)
+- [Version 5.9](#version-59)
+- [Version 5.8](#version-58)
+- [Version 5.7.](#version-57)
+- [Version 5.5](#version-55)
+- [Version 5.4](#version-54)
+- [Version 5.3](#version-53)
+- [Version 5.2](#version-52)
+- [Version 5.1](#version-51)
+- [Version 5.0](#version-50)
+- [Version 4.3](#version-43)
+- [Version 4.2](#version-42)
+- [Version 4.1](#version-41)
+- [Version 4.0](#version-40)
+- [Version 3.5](#version-35)
+- [Version 3.3](#version-33)
+- [Version 3.2 consists completely of contributions:](#version-32-consists-completely-of-contributions)
+- [Version 3.1](#version-31)
+- [Version 3.0](#version-30)
+- [Version 2.9](#version-29)
+- [Version 2.8](#version-28)
+- [Version 2.7](#version-27)
+- [Version 2.4](#version-24)
+- [Version 2.3](#version-23)
+- [Version 2.2](#version-22)
+- [Version 2.0](#version-20)
+- [Version 1.0](#version-10)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Version 8.4
 
 We've got the new [demo page][]! The obvious new feature is the new look, but
