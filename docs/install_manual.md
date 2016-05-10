@@ -122,6 +122,8 @@
         sudo chown -R <user>:<group> /var/data/earkweb/
         sudo mkdir -p /var/log/earkweb
         sudo chown <user>:<group> /var/log/earkweb
+        
+11. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
 
 ## Celery distributed task execution 
 
