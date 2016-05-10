@@ -1,3 +1,4 @@
+#from shsdev/earkbase
 from ubuntu:14.04
 
 maintainer E-ARK project, http://www.eark-project.com
@@ -31,22 +32,25 @@ RUN wget http://downloads.ghostscript.com/public/old-gs-releases/ghostscript-9.1
 RUN tar -xzf ghostscript-9.18.tar.gz
 RUN cd ghostscript-9.18 && ./configure && make && make install
 
+RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
+
 RUN git clone https://github.com/eark-project/earkweb.git
 RUN cd earkweb && git checkout master
 
-RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
 RUN pip install -r earkweb/requirements.txt
 
-RUN mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
-RUN mkdir -p /var/log/earkweb
+# -- earkbase
 
-RUN cd earkweb && python manage.py makemigrations
-RUN cd earkweb && python manage.py migrate
+#ADD config/settingsdocker.cfg /earkweb/config/settings.cfg
 
-RUN cd earkweb && python ./workers/scantasks.py
 
-RUN cd earkweb && git pull
-RUN cd earkweb && git checkout master 
-RUN cd earkweb && python util/createuser.py earkuser dude@ait.ac.at earkuser
+#RUN mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
+#RUN mkdir -p /var/log/earkweb
 
+#RUN cd earkweb && python manage.py makemigrations
+#RUN cd earkweb && python manage.py migrate
+
+#RUN cd earkweb && python ./workers/scantasks.py
+
+#RUN cd earkweb && python util/createuser.py earkuser dude@ait.ac.at earkuser
 
