@@ -21,7 +21,7 @@ local_solr_port = 8983
 local_solr_core = "earkstorage"
 
 # lily content access
-lily_content_access_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.1"
+lily_content_access_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.2"
 lily_content_access_port = 12060
 lily_content_access_core = "eark1"
 
