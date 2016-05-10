@@ -11,7 +11,7 @@ django_service_port = 8000
 mysql_server_ip = "172.17.0.2" if (socket.gethostname() != "hadoop-1.natarch.hu" and socket.gethostname() != "earkdev" and socket.gethostname() not in devHostnames) else "127.0.0.1"
 
 # access solr server
-access_solr_server_ip = "81.189.135.189"
+access_solr_server_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.1"
 access_solr_port = 8983
 access_solr_core = "eark1"
 
@@ -21,12 +21,12 @@ local_solr_port = 8983
 local_solr_core = "earkstorage"
 
 # lily content access
-lily_content_access_ip = "81.189.135.189"
+lily_content_access_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.1"
 lily_content_access_port = 12060
 lily_content_access_core = "eark1"
 
 # hdfs upload service
-hdfs_upload_service_ip = "81.189.135.189"
+hdfs_upload_service_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "127.0.0.1"
 hdfs_upload_service_port = 8081
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
