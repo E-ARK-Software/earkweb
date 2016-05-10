@@ -2,8 +2,10 @@ import os
 import string
 import ConfigParser
 
+root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+
 config = ConfigParser.RawConfigParser()
-config.read('config/settings.cfg')
+config.read(os.path.join(root_dir, 'config/settings.cfg'))
 
 # earkweb django server
 django_service_ip = config.get('server', 'django_service_ip')
@@ -31,7 +33,6 @@ lily_content_access_core = config.get('server', 'lily_content_access_core')
 hdfs_upload_service_ip = config.get('server', 'hdfs_upload_service_ip')
 hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
 
-root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
 premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
 
