@@ -8,8 +8,9 @@
 
 ### Remote task execution using Django
 
-To execute tasks remotely, the Django shell can be invoked:
+It is possible to execute tasks remotely using the Django shell:
 
+    cd /path/to/earkweb/
     python manage.py shell
     Python 2.7.6 (default, Mar 22 2014, 22:59:56) 
     [GCC 4.8.2] on linux2
@@ -17,7 +18,7 @@ To execute tasks remotely, the Django shell can be invoked:
     (InteractiveConsole)
     >>> 
 
-In the Django shell, the `DefaultTaskContext` must first be imported to subsequently allow defining parameters for the desired task execution:
+In the Django shell, it is necessary to import the `DefaultTaskContext` class to be able to define parameters for the desired task execution:
     
     >>> from workers.default_task_context import DefaultTaskContext
     >>> dtc = DefaultTaskContext("fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2", "/var/data/earkweb/work/fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2", "SomeTaskImplementation", None, {}, None)
@@ -26,7 +27,7 @@ In this case, the DefaultTaskContext object was configured to apply a task on th
 working directory "/var/data/earkweb/work/fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2". The name of the task is "SomeTaskImplementation", and no log file (default location will be used), 
 no additional parameters, and no specific PREMIS file is used.
 
-Then the task module, here `SomeTaskImplementation` is imported and executed asynchronously:
+Then the task module, here `SomeTaskImplementation`, is imported and executed asynchronously:
     
     >>> from workers.tasks import SomeTaskImplementation
     >>> result = SomeTaskImplementation().apply_async((dtc,), queue='default')
@@ -43,7 +44,7 @@ occurred) respectively:
     >>> result.result.task_status
     0
     >>> result.result.task_logger.log
-    ['SIPExtraction task e184fb78-6423-4a7a-997e-8a0d1ed55c67', 'Processing package fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2', ...]
+    ['SomeTaskImplementation task e184fb78-6423-4a7a-997e-8a0d1ed55c67', 'Processing package fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2', ...]
     >>> result.result.task_logger.err
     []
     

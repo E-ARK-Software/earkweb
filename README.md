@@ -8,18 +8,25 @@
 
 ## Instroduction
 
-[E-ARK Web](https://github.com/eark-project/earkweb) is a web application with a task execution backend for synchronous and asynchronous processing of information packages.
+[E-ARK Web](https://github.com/eark-project/earkweb) is an open source archiving and digital preservation system. It is 
+[OAIS](http://public.ccsds.org/publications/archive/650x0m2.pdf)-oriented which means that data ingest, archiving and dissemination functions operate on information packages 
+bundling content and metadata in contiguous containers. The information package format uses [METS](http://www.loc.gov/standards/mets/) to represent the structure and 
+[PREMIS](http://www.loc.gov/standards/premis/) to record digital provenance information. 
 
-E-ARK Web allows executing package transformations between the package formats SIP, AIP, and DIP, using [Celery](http://www.celeryproject.org), a distributed task queue, as its 
-main backend. It provides a web interface to manage information package transformations. 
+E-ARK Web offers functionality for the three types of information packages defined in the OAIS reference model: the Submission Information Package (SIP) which is the information 
+sent from the producer to the archive, the Archival Information Package (AIP) which is the information stored by the archive, and the Dissemination Information Package (DIP) which 
+is the information sent to a user when requested. The system allows executing different types of actions, such as information extraction, validation, or transformation operations, 
+on information packages to support ingesting a SIP, archiving an AIP, and creating a DIP from a set of AIPs.
+
+E-ARK Web offers a leightweight frontend web application with [Celery](http://www.celeryproject.org) as a distributed task execution backend. Task executions do not depend on the
+
 
 ![earkweb home](./docs/img/earkweb_home.png)
 
 The backend can also be controlled via [remote command execution](./docs/user_guide_remotetask.md) without using the web frontend. The outcomes of operations performed by a task 
 are stored immediately so that the status information in the frontend's database can be updated afterwards. 
  
-The packaging format is using the [METS](http://www.loc.gov/standards/mets/) to represent the structure and the [PREMIS](http://www.loc.gov/standards/premis/) metadata format to 
-record digital provenance information of the information package.
+
 
 ## Installation
 

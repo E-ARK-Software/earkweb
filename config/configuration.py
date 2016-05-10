@@ -1,13 +1,14 @@
 import os
 import string
 import socket
+devHostnames = ['pluto', 'Vulcan', 'earkdev']
 
 # earkweb django server
-django_service_ip = "127.0.0.1" if socket.gethostname() == "pluto" else "10.20.77.1" if socket.gethostname() == "hadoop-1" else "81.189.135.189"
+django_service_ip = "127.0.0.1" if socket.gethostname() in devHostnames else "10.20.77.1" if socket.gethostname() == "hadoop-1.natarch.hu" else "81.189.135.189"
 django_service_port = 8000
 
 # mysql server
-mysql_server_ip = "172.17.0.2" if (socket.gethostname() != "hadoop-1" and socket.gethostname() != "earkdev" and socket.gethostname() != "pluto") else "127.0.0.1"
+mysql_server_ip = "172.17.0.2" if (socket.gethostname() != "hadoop-1.natarch.hu" and socket.gethostname() != "earkdev" and socket.gethostname() not in devHostnames) else "127.0.0.1"
 
 # access solr server
 access_solr_server_ip = "81.189.135.189"
