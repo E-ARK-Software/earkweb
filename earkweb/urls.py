@@ -30,7 +30,7 @@ urlpatterns = patterns('',
 
 # Development server starts at http://127.0.0.1:8888/ so this rule is adds
 # the URL prefix path
-if socket.gethostname() != "earkdev":
+if socket.gethostname() != "earkdev" and socket.gethostname() != "hadoop-1.natarch.hu":
     urlpatterns = patterns('',
         url(r'^$', RedirectView.as_view(url='earkweb/')),
         url(r'^earkweb/', include(urlpatterns)),
