@@ -1,49 +1,51 @@
 import os
 import string
-import socket
-devHostnames = ['pluto', 'Vulcan', 'earkdev']
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+config.read('config/settings.cfg')
 
 # earkweb django server
-django_service_ip = "127.0.0.1" if socket.gethostname() in devHostnames else "10.20.77.1" if socket.gethostname() == "hadoop-1.natarch.hu" else "81.189.135.189"
-django_service_port = 8000
+django_service_ip = config.get('server', 'django_service_ip')
+django_service_port = config.getint('server', 'django_service_port')
 
 # mysql server
-mysql_server_ip = "172.17.0.2" if (socket.gethostname() != "hadoop-1.natarch.hu" and socket.gethostname() != "earkdev" and socket.gethostname() not in devHostnames) else "127.0.0.1"
+mysql_server_ip = config.get('server', 'mysql_server_ip')
 
 # access solr server
-access_solr_server_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.1"
-access_solr_port = 8983
-access_solr_core = "eark1"
+access_solr_server_ip = config.get('server', 'access_solr_server_ip')
+access_solr_port = config.getint('server', 'access_solr_port')
+access_solr_core = config.get('server', 'access_solr_core')
 
 # storage solr server
-local_solr_server_ip = "172.17.0.2"
-local_solr_port = 8983
-local_solr_core = "earkstorage"
+local_solr_server_ip = config.get('server', 'storage_solr_server_ip')
+local_solr_port = config.getint('server', 'storage_solr_port')
+local_solr_core = config.get('server', 'storage_solr_core')
 
 # lily content access
-lily_content_access_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "10.20.77.2"
-lily_content_access_port = 12060
-lily_content_access_core = "eark1"
+lily_content_access_ip = config.get('server', 'lily_content_access_ip')
+lily_content_access_port = config.getint('server', 'lily_content_access_port')
+lily_content_access_core = config.get('server', 'lily_content_access_core')
 
 # hdfs upload service
-hdfs_upload_service_ip = "81.189.135.189" if (socket.gethostname() != "hadoop-1.natarch.hu") else "127.0.0.1"
-hdfs_upload_service_port = 8081
+hdfs_upload_service_ip = config.get('server', 'hdfs_upload_service_ip')
+hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
-mets_schema_file = os.path.join(root_dir, 'earkresources/schemas/mets_1_11.xsd')
-premis_schema_file = os.path.join(root_dir, 'earkresources/schemas/premis-v2-2.xsd')
+mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
+premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
 
 # size limit for direct file display
-config_max_filesize_viewer = 4194304
+config_max_filesize_viewer = config.getint('limits', 'config_max_filesize_viewer')
+
+config_path_reception = config.get('paths', 'config_path_reception')
+config_path_ingest = config.get('paths', 'config_path_ingest')
+config_path_work = config.get('paths', 'config_path_work')
+config_path_storage = config.get('paths', 'config_path_storage')
+config_path_access = config.get('paths', 'config_path_access')
 
 # location of METS Template
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
-
-config_path_reception = "/var/data/earkweb/reception"
-config_path_ingest = "/var/data/earkweb/ingest"
-config_path_work = "/var/data/earkweb/work"
-config_path_storage = "/var/data/earkweb/storage"
-config_path_access = "/var/data/earkweb/access"
 
 server_repo_record_content_query = "http://%s:%d/repository/table/%s/record/{0}/field/n$content/data?ns.n=org.eu.eark" % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
 

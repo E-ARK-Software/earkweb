@@ -59,3 +59,6 @@ db.sqlite3
 
 /working_area/
 migrations/
+
+config/settings_*
+config/settings.cfg
