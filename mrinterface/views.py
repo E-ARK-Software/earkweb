@@ -33,8 +33,8 @@ def launchmr(request):
             tomarctrl = ctrlToHDFS(ctrlfile)
 
             if tomarctrl is not False:
-                args = ['hadoop', 'jar', 'tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
-                        '-r', 'tomarspecs', '-i', '%s', '-o', 'output-ner', '-n', '1'] % tomarctrl
+                args = ['hadoop', 'jar', '/opt/ToMaR/target/tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
+                        '-r', '/user/janrn/tomarspecs', '-i', '%s', '-o', '/user/janrn/output-ner', '-n', '1'] % tomarctrl
                 subprocess32.Popen(args)
 
                 context = RequestContext(request, {
