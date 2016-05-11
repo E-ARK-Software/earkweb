@@ -1,0 +1,22 @@
+version: '2'
+services:
+  db:
+    image: earkdbimg
+    container_name: earkdb_1
+    build: ./earkdb
+    volumes:
+      - ./earkdb/data:/var/lib/mysql
+    ports:
+      - '3306:3306'
+  web:
+    image: earkwebimg
+    build: ./earkweb
+    container_name: earkweb_1
+    command: /docker-entrypoint.sh
+#    volumes:
+#      - /opt/python_wsgi_apps/earkweb:/earkweb
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
