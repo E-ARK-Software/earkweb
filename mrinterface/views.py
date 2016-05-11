@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 logger = logging.getLogger(__name__)
 from .forms import UploadCtrlFile
-import subprocess32
+from subprocess32 import Popen, PIPE
 import requests
 @login_required
 @csrf_exempt
@@ -39,12 +39,20 @@ def launchmr(request):
                 })
             else:
                 hdfs_ctrl = os.path.join('/user/eark/data', upload)
+
+                # workaround: move ctrl file to hdfs:///tmp, to be able to create the 'rearranged' file independent of active user
+                mvargs = ['hadoop', 'fs', '-mv', hdfs_ctrl, '/tmp']
+                mvcmd = Popen(mvargs)
+                mvcmd.wait()
+
+                tmp_ctrl = os.path.join('/tmp', ctrlfile.name)
                 args = ['hadoop', 'jar', '/opt/ToMaR/target/tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
-                        '-r', '/user/janrn/tomarspecs', '-i', hdfs_ctrl, '-o', '/user/janrn/output-ner', '-n', '1']
-                subprocess32.Popen(args)
+                        '-r', '/user/janrn/tomarspecs', '-i', tmp_ctrl, '-o', '/user/janrn/output-ner', '-n', '1']
+                mrcmd = Popen(args, stdout=PIPE, stderr=PIPE)
+                output, error_output = mrcmd.communicate()
 
                 context = RequestContext(request, {
-                    'status': 'LAUNCHED.'
+                    'status': 'LAUNCHED, output: %s \nerrors: %s' % (output, error_output)
                 })
         except Exception, e:
             # return error message
