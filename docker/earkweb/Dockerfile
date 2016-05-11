@@ -41,6 +41,8 @@ maintainer E-ARK project, http://www.eark-project.com
 
 # -- earkbase
 
+RUN cd earkweb && git pull origin master
+
 RUN mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
 RUN mkdir -p /var/log/earkweb
 

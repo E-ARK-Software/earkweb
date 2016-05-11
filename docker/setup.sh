@@ -6,7 +6,7 @@ mkdir /tmp/earkweb-mysql-data
 
 docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg &
 
-sleep 10
+sleep 15
 
 docker exec tmpdb /init.sh
 
@@ -14,6 +14,6 @@ docker stop tmpdb
 
 docker-compose up &
 
-sleep 15
+sleep 20
 
-docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
+docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark
