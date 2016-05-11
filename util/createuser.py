@@ -10,11 +10,14 @@ from django.contrib.auth.models import User
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print "Number of arguments incorrect"
-        print "python util/createuser.py <username> <email> <password>"
+        print "python util/createuser.py <username> <email> <password> <is_superuser>"
     else:
-        user = User.objects.create_user(username=sys.argv[1], email=sys.argv[2], password=sys.argv[3], is_staff="True")
+        if sys.argv[4] == "true":
+            user = User.objects.create_superuser(username=sys.argv[1], email=sys.argv[2], password=sys.argv[3])
+        else:
+            user = User.objects.create_user(username=sys.argv[1], email=sys.argv[2], password=sys.argv[3])
 
 if __name__ == "__main__":
     main()

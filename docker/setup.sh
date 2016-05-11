@@ -16,4 +16,4 @@ docker-compose up &
 
 sleep 20
 
-docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark
+docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
