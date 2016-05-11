@@ -31,19 +31,20 @@ def launchmr(request):
         # TODO: create the ctrl file from HTML form
         try:
             ctrlfile = request.FILES['ctrl_file']
-            tomarctrl = ctrlToHDFS(ctrlfile)
+            upload = ctrlToHDFS(ctrlfile)
 
-            if tomarctrl is False:
+            if upload is False:
                 context = RequestContext(request, {
                     'status': 'Upload of control file failed.'
                 })
             else:
+                hdfs_ctrl = os.path.join('/user/eark/data', upload)
                 args = ['hadoop', 'jar', '/opt/ToMaR/target/tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
-                        '-r', '/user/janrn/tomarspecs', '-i', tomarctrl, '-o', '/user/janrn/output-ner', '-n', '1']
+                        '-r', '/user/janrn/tomarspecs', '-i', hdfs_ctrl, '-o', '/user/janrn/output-ner', '-n', '1']
                 subprocess32.Popen(args)
 
                 context = RequestContext(request, {
-                    'status': 'LAUNCHED'
+                    'status': 'LAUNCHED.'
                 })
         except Exception, e:
             # return error message
@@ -66,27 +67,21 @@ FILE_RESOURCE = SERVER_HDFS + '/files/{0}'
 
 def ctrlToHDFS(ctrl_file):
     try:
-        destination_file = os.path.join('/tmp', ctrl_file.name)
-        with open(destination_file, 'wb+') as destination:
+        upload_destination = os.path.join('/tmp', ctrl_file.name)
+        with open(upload_destination, 'wb+') as destination:
             for chunk in ctrl_file.chunks():
                 destination.write(chunk)
         destination.close()
 
         # copy to HDFS
-        # args = ['hadoop', 'fs', '-put', destination_file]
-        # filetohdfs = subprocess32.Popen(args)
-        # filetohdfs.wait()
-
-        with open(destination_file, 'r') as f:
-            filename = destination_file.rpartition('/')[2]
+        with open(upload_destination, 'r') as f:
+            filename = upload_destination.rpartition('/')[2]
             r = requests.put(FILE_RESOURCE.format(filename), data=f)
-            os.remove(destination_file)  # remove ctrl file from server
+            os.remove(upload_destination)  # remove ctrl file from server
             if r.status_code == 201:
                 return r.headers['location'].rpartition('/files/')[2]
             else:
                 return False
-
-        # os.remove(destination_file)  # remove ctrl file from server
     except Exception, e:
         print e
         return False
