@@ -9,6 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 from .forms import UploadCtrlFile
 import subprocess32
+import requests
 @login_required
 @csrf_exempt
 
@@ -32,17 +33,17 @@ def launchmr(request):
             ctrlfile = request.FILES['ctrl_file']
             tomarctrl = ctrlToHDFS(ctrlfile)
 
-            if tomarctrl is not False:
+            if tomarctrl is False:
+                context = RequestContext(request, {
+                    'status': 'Upload of control file failed.'
+                })
+            else:
                 args = ['hadoop', 'jar', '/opt/ToMaR/target/tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
-                        '-r', '/user/janrn/tomarspecs', '-i', '%s', '-o', '/user/janrn/output-ner', '-n', '1'] % tomarctrl
+                        '-r', '/user/janrn/tomarspecs', '-i', tomarctrl, '-o', '/user/janrn/output-ner', '-n', '1']
                 subprocess32.Popen(args)
 
                 context = RequestContext(request, {
                     'status': 'LAUNCHED'
-                })
-            else:
-                context = RequestContext(request, {
-                    'status': 'Upload of control file failed.'
                 })
         except Exception, e:
             # return error message
@@ -58,6 +59,11 @@ def launchmr(request):
     return HttpResponse(template.render(context))
 
 
+SERVER_PROTOCOL_PREFIX = 'http://'
+SERVER_NAME = '81.189.135.189/dm-hdfs-storage'
+SERVER_HDFS = SERVER_PROTOCOL_PREFIX + SERVER_NAME + '/hsink/fileresource'
+FILE_RESOURCE = SERVER_HDFS + '/files/{0}'
+
 def ctrlToHDFS(ctrl_file):
     try:
         destination_file = os.path.join('/tmp', ctrl_file.name)
@@ -65,12 +71,22 @@ def ctrlToHDFS(ctrl_file):
             for chunk in ctrl_file.chunks():
                 destination.write(chunk)
         destination.close()
+
         # copy to HDFS
-        args = ['hadoop', 'fs', '-put', '%s' % destination_file]
-        filetohdfs = subprocess32.Popen(args)
-        filetohdfs.wait()
-        os.remove(destination_file)     # remove ctrl file from server
-        return destination_file
+        # args = ['hadoop', 'fs', '-put', destination_file]
+        # filetohdfs = subprocess32.Popen(args)
+        # filetohdfs.wait()
+
+        with open(destination_file, 'r') as f:
+            filename = destination_file.rpartition('/')[2]
+            r = requests.put(FILE_RESOURCE.format(filename), data=f)
+            os.remove(destination_file)  # remove ctrl file from server
+            if r.status_code == 201:
+                return r.headers['location'].rpartition('/files/')[2]
+            else:
+                return False
+
+        # os.remove(destination_file)  # remove ctrl file from server
     except Exception, e:
         print e
         return False
