@@ -49,7 +49,12 @@ RUN mkdir -p /var/log/earkweb
 ADD settings.cfg /earkweb/config/settings.cfg
 
 ADD docker-entrypoint.sh docker-entrypoint.sh
-
 RUN chmod +x docker-entrypoint.sh
 
+ADD run_celery.sh /run_celery.sh
+RUN chmod +x /run_celery.sh
+
+
 RUN sed -i "s/'HOST': mysql_server_ip,/'HOST': 'db',/g" /earkweb/earkweb/settings.py
+
+

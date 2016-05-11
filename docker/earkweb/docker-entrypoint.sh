@@ -11,4 +11,4 @@ echo "Starting server"
 python /earkweb/manage.py runserver 0.0.0.0:8000
 # Scan tasks
 #echo "Scan tasks"
-#python /earkweb/workers/scantasks.py
+python /earkweb/workers/scantasks.py
