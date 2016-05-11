@@ -118,15 +118,18 @@ class WireItLanguageModules(object):
             input_params = ""
             exp = 0; sxs = 0; err = 0
             module_list.append(module_name)
+            print module_name
             for module_param in module_params:
                 if isinstance(module_param, InputParam):
                     descr = "Task configuration" if module_param.descr.startswith("order") else module_param.descr
                     input_params += self.language_module_inputs_template % { 'name': module_param.name, 'descr': descr, 'type': module_param.type}
-                    if module_param.name == 'tc':
+                    print module_param.name
+                    if module_param.name.startswith('tc'):
                         match = re.search('order:(?P<ord>.*),type:(?P<typ>.*),stage:(?P<stg>.*)',module_param.descr)
                         ord = int(match.group('ord').strip())
                         typ = int(match.group('typ').strip())
                         stg = int(match.group('stg').strip())
+                        print "%s %s %s" % (ord, typ, stg)
 
             model_def = self.language_module_template % { 'module_name': module_name, 'input_params': input_params }
 

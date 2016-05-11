@@ -518,7 +518,7 @@ class SIPExtraction(DefaultTask):
 
     def run_task(self, task_context):
         """
-        SIP Untar run task
+        SIP extraction
         @type       tc: task configuration line (used to insert read tl.addinfo("New identifier assigned: %s" % identifier)task properties in database table)
         @param      tc: order:4,type:2,stage:2
         """
