@@ -51,9 +51,9 @@ Use the setup script `setup.sh` or follow the steps below.
 
         docker-compose up
     
-8. Run the following command in container `earkweb_1` template to create a user (<username> <email> <password>):
+8. Run the following command in container `earkweb_1` template to create a user (<username> <email> <password> <isstaff>):
 
-        docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark
+        docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
     
 9. Open the following URL in a browser and login with the user created in the previous step:
 
@@ -61,6 +61,7 @@ Use the setup script `setup.sh` or follow the steps below.
     
 To delete data, images and containers created by these steps run the following commands:
  
+         docker-compose down
          sudo rm -rf /tmp/earkweb-mysql-data; docker rm tmpdb earkweb_1 earkdb_1; docker rmi earkwebimg earkdbimg;
 
 # Build and run images individually
@@ -107,9 +108,9 @@ To delete data, images and containers created by these steps run the following c
 
         docker run --name earkweb -i -t -p 8000:8000 earkwebimg /docker-entrypoint.sh
         
-5. Run the following command template to create a user (<username> <email> <password>):
+5. Run the following command template to create a user (<username> <email> <password>  <isstaff>):
 
-        docker exec -it earkweb python /earkweb/util/createuser.py eark user@email eark
+        docker exec -it earkweb python /earkweb/util/createuser.py eark user@email eark true
         
 6. Open the following URL in your browser and login with the user data provided in the previous step:
 

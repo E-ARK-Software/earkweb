@@ -5,9 +5,14 @@ services:
     container_name: earkdb_1
     build: ./earkdb
     volumes:
-      - ./earkdb/data:/var/lib/mysql
+      - /tmp/earkweb-mysql-data:/var/lib/mysql
     ports:
       - '3306:3306'
+  solr:
+    image: solr
+    container_name: solr_1
+    ports:
+      - '8983:8983'
   web:
     image: earkwebimg
     build: ./earkweb
@@ -19,4 +24,5 @@ services:
       - "8000:8000"
     depends_on:
       - db
+      - solr
 
