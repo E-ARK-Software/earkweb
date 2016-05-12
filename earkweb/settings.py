@@ -115,6 +115,7 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
 from config.configuration import mysql_server_ip
+MySQLIP = mysql_server_ip
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
@@ -122,7 +123,7 @@ DATABASES = {
         'NAME': 'eark',                    # Or path to database file if using sqlite3.
         'USER': 'arkiv',                      # Not used with sqlite3.
         'PASSWORD': 'arkiv',               # Not used with sqlite3.
-        'HOST': mysql_server_ip,                           # Set to empty string for localhost. Not used with sqlite3.
+        'HOST': MySQLIP,                           # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '3306',                           # Set to empty string for default. Not used with sqlite3.
         # This options for storage_engine have to be set for "south migrate" to work.
         'OPTIONS': {

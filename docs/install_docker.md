@@ -21,21 +21,21 @@ In the following it is assumed that docker commands can be executed without "sud
 
 # Build and run using docker compose
 
-Use the setup script `setup.sh` or follow the steps below.
+Use the startup script `docker-compose-run.sh` or follow the steps below.
 
-1. Change to the docker directory in your earkweb copy:
+1. Change to the earkweb directory:
 
-        cd /path/to/earkweb/docker/
+        cd /path/to/earkweb
     
 2. Build the images:
 
         docker-compose build
         
-3. Create a directory which holds the mysql data:
+3. Create a directory where the mysql data is stored on the host system:
 
         mkdir /tmp/earkweb-mysql-data
     
-4. Run a temporary database container named `tmpdb` based on the image `earkdbimg`:
+4. Run a database container named `tmpdb` based on the image `earkdbimg`:
 
         docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg
     
@@ -51,7 +51,7 @@ Use the setup script `setup.sh` or follow the steps below.
 
         docker-compose up
     
-8. Run the following command in container `earkweb_1` template to create a user (<username> <email> <password> <is_superuser>):
+8. Run the following command in container `earkweb_1` to create a user (parameters: <username> <email> <password> <is_superuser>):
 
         docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
     
@@ -62,29 +62,47 @@ Use the setup script `setup.sh` or follow the steps below.
 To delete data, images and containers created by these steps run the following commands:
  
          docker-compose down
-         sudo rm -rf /tmp/earkweb-mysql-data; docker rm tmpdb earkweb_1 earkdb_1; docker rmi earkwebimg earkdbimg;
+         sudo rm -rf /tmp/earkweb-mysql-data; docker rm tmpdb; docker rmi earkwebimg earkdbimg earkweb_worker;
 
 # Build and run images individually
 
+The earkweb image is build using the main Dockerfile located in the root of the earkweb folder. However, the application depends on multiple other containers. The dependency
+between the containers is specified in the `docker-compose.yml` file. The required images are:
+
+* [tutum/mysql](https://hub.docker.com/r/tutum/rabbitmq/)
+* [solr](https://hub.docker.com/_/solr/)
+* [tutum/rabbitmq](https://hub.docker.com/r/tutum/rabbitmq/)
+
+The mysql image is build using another Dockerfile located in `earkweb/docker/earkdb/Dockerfile` which allows initializing the database. However, the database can also initialized
+manuall following the instructions in the [manual installation](./docs/install_manual.md) documentation. 
+
 ## MySQL image
 
-1. Change to docker directory:
+1. Change to the earkweb directory:
 
-        cd /path/to/earkweb/docker/
+        cd /path/to/earkweb
 
 2. Build image (the Dockerfile is located in 'earkdb'):
 
-        docker build --tag earkdbimg ./earkdb
+        docker build --tag earkdbimg ./docker/earkdb
+        
+3. Create a directory where the mysql data is stored on the host system:
+
+        mkdir /tmp/earkweb-mysql-data
     
-3. Run mysql container:
+4. Run mysql container:
     
-        docker run --name earkdb -d -p 3306:3306 -v `pwd`/earkdb/data:/var/lib/mysql earkdbimg
+        docker run --name earkdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg
+        
+5. Run the init script in the database container (named `earkdb`) to create required users and databases:
+
+        docker exec earkdb /init.sh
     
-4. Get a bash into the container
+5. Get a bash into the container
     
         docker exec -it earkdb bash
     
-5. Type `mysql` to get a mysql client:
+6. Type `mysql` to get a mysql client:
 
         root@<container-id>:/# mysql -u root
         Welcome to the MySQL monitor.  Commands end with ; or \g.
@@ -94,19 +112,21 @@ To delete data, images and containers created by these steps run the following c
         
 ## earkweb image
 
-1. Change to the *earkweb* directory:
+Note that mysql must be running and initialized with the required databases (see previous section [MySQL image](#mysql-image)).
 
-        cd /path/to/earkweb/docker/
+1. Change to the earkweb directory:
 
-2. Build *earkweb* image  (the Dockerfile is located in 'earkweb'):
+        cd /path/to/earkweb
 
-        docker build --tag earkwebimg ./earkweb
+2. Build *earkweb* image using the main `Dockerfile`:
+
+        docker build --tag earkwebimg .
         
 3. Use the command `docker inspect earkdb` to get the IP of the database container and adapt the settings in `config/settings.cfg` and `earkweb/settings.py` accordingly.
 
-4. Run earkweb:
+4. Run earkweb using the *earkweb* directory of the host system as application directory in the container (specified with the parameter -v):
 
-        docker run --name earkweb -i -t -p 8000:8000 earkwebimg /docker-entrypoint.sh
+        docker run --name earkweb -v `pwd`:/earkweb -i -t -p 8000:8000 earkwebimg /earkweb/run_web.sh
         
 5. Run the following command template to create a user (<username> <email> <password> <is_superuser>):
 

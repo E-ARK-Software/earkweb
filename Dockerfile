@@ -34,27 +34,10 @@ maintainer E-ARK project, http://www.eark-project.com
 
 #RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
 
-#RUN git clone https://github.com/eark-project/earkweb.git
-#RUN cd earkweb && git checkout master
-
 #RUN pip install -r earkweb/requirements.txt
 
 # -- earkbase
 
-RUN cd earkweb && git pull origin master
-
 RUN mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
 RUN mkdir -p /var/log/earkweb
-
-ADD settings.cfg /earkweb/config/settings.cfg
-
-ADD docker-entrypoint.sh docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
-
-ADD run_celery.sh /run_celery.sh
-RUN chmod +x /run_celery.sh
-
-
-RUN sed -i "s/'HOST': mysql_server_ip,/'HOST': 'db',/g" /earkweb/earkweb/settings.py
-
 

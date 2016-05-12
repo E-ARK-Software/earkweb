@@ -8,9 +8,8 @@
       - [fido](#fido)
       - [ghostscript](#ghostscript)
   - [Installing earkweb](#installing-earkweb)
-    - [Checkout earkweb and set-up environment](#checkout-earkweb-and-set-up-environment)
+  - [Create and initialize database](#create-and-initialize-database)  
   - [Celery distributed task execution](#celery-distributed-task-execution)
-    - [Start celery service](#start-celery-service)
 
 ## Installing dependencies
 
@@ -20,7 +19,7 @@
 
         sudo apt-get install summain jhove  
     
-2. Install pgmagick (python image conversion:    
+2. Install pgmagick (python image conversion):    
     
         sudo apt-get install graphicsmagick
         sudo apt-get install libgraphicsmagick++1-dev libboost-python-dev
@@ -33,29 +32,29 @@
 
 #### fido
 
-[fido](https://github.com/openpreserve/fido)
+[Fido](https://github.com/openpreserve/fido) is used for file format identification (mime-type and PRONOM Unique Identifier).
 
-4. Install fido:
+1. Install fido:
 
         wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
         tar -xzvf 1.3.2-81.tar.gz
         cd fido-1.3.2-81
         sudo python setup.py install
 
-5. Update filetype signatures (long running):
+2. Update filetype signatures (long running):
 
         cd fido
         python update_signatures.py
 
 #### ghostscript
 
-6. Install ghostscript (PDF to PDF/A conversion):
+1. Install ghostscript (PDF to PDF/A conversion):
 
-    6.1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
+    1.1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
     
         wget http://downloads.ghostscript.com/public/old-gs-releases/ghostscript-9.18.tar.gz
 
-    6.2. Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm):
+    1.2. Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm):
 
         tar -xzf ghostscript-9.18.tar.gz
         cd ghostscript-9.18
@@ -65,9 +64,7 @@
 
 ## Installing earkweb 
 
-### Checkout earkweb and set-up environment 
-
-7. Checkout project
+1. Checkout project
 
         git clone https://github.com/eark-project/earkweb
         
@@ -78,7 +75,7 @@
     
     If this variable is set, it can be used to execute commands explained further down in this README file.
 
-8. Create virtual environment (python)
+2. Create virtual environment (python)
 
     Install virtual environment python packages (requires pip: https://pypi.python.org/pypi/pip):
 
@@ -107,7 +104,7 @@
     
         deactivate
 
-9. Install additional libraries
+3. Install additional libraries
 
         pip install -r ${EARKWEB}/requirements.txt
         
@@ -116,33 +113,18 @@
         sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
         sudo easy_install --upgrade pytz
         
-10. Create directories making sure the user running earkweb has rights to reading and write:
+4. Create directories making sure the user running earkweb has rights to reading and write:
 
         sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
         sudo chown -R <user>:<group> /var/data/earkweb/
         sudo mkdir -p /var/log/earkweb
         sudo chown <user>:<group> /var/log/earkweb
         
-11. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
+5. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
 
-## Celery distributed task execution 
+## Create and initialize database
 
-### Start celery service
-
-12. Start the daemon from command line (development mode):
-    
-        cd ${EARKWEB}
-        python manage.py celeryd -E
-        
-    For development it is recommended to enable the CELERY_ALWAYS_EAGER property in earkweb/settings.py:
-
-        #CELERY_ALWAYS_EAGER = True
-        
-    By this way the celery tasks run in the same process which allows debugging.
-    
-### Create and initialize database
-
-13. Prepare databases (one main database for the frontend (eark) and one for the celery backend (celerydb):
+1. Prepare databases (one main database for the frontend (eark) and one for the celery backend (celerydb):
 
     Install mysql database if not available on your system:
     
@@ -175,7 +157,7 @@
     
         mysql> GRANT ALL ON celerydb.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
 
-14. Create database schema based on the model and apply initialise the database:
+2. Create database schema based on the model and apply initialise the database:
 
         python manage.py makemigrations
         python manage.py migrate
@@ -187,9 +169,22 @@
         pip install django-celery
         pip install MySQL-python
         
-15. Once the database is running, tasks need to be registered in the database. To do so run the following script in the `${EARKWEB}` directory:
+3. Once the database is running, tasks need to be registered in the database. To do so run the following script in the `${EARKWEB}` directory:
 
         python ./workers/scantasks.py
+
+## Celery distributed task execution 
+
+12. Start the daemon from command line (development mode):
+    
+        cd ${EARKWEB}
+        python manage.py celeryd -E
+        
+    For development it is recommended to enable the CELERY_ALWAYS_EAGER property in earkweb/settings.py:
+
+        #CELERY_ALWAYS_EAGER = True
+        
+    By this way the celery tasks run in the same process which allows debugging.
         
 # Run in development mode
 
