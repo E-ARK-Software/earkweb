@@ -1,13 +1,19 @@
-# Installation based on Docker images
+# Installing using Docker
 
 ## Table of Contents 
 
-- [Install Docker and Docker Compose on the host system](#install-docker-on-the-host-system)
-- [MySQL image](#mysql-image)
-- [Build earkweb image](#build-earkweb-image)
-- [Run earkweb image](#run-earkweb-image)
+  - [Install and run using Docker Compose](#install-and-run-using-docker-compose)
+    - [Install Docker and Docker Compose on the host system](#install-docker-and-docker-compose-on-the-host-system)
+    - [Build and run using docker compose](#build-and-run-using-docker-compose)
+  - [Build images and run as individual containers](#build-images-and-run-as-individual-containers)
+    - [Install Docker](#install-docker)
+    - [Build and run images individually](#build-and-run-images-individually)
+      - [MySQL image](#mysql-image)
+      - [earkweb image](#earkweb-image)
 
-## Install Docker and Docker Compose on the host system
+## Install and run using Docker Compose
+
+### Install Docker and Docker Compose on the host system
 
 On a linux system, follow the instruction to install docker available at:
 
@@ -19,7 +25,7 @@ Install docker compose which allows running multi-container Docker applications 
     
 In the following it is assumed that docker commands can be executed without "sudo" (see section "Create a docker group" at https://docs.docker.com/v1.5/installation/ubuntulinux/). 
 
-# Build and run using docker compose
+### Build and run using docker compose
 
 Use the startup script `docker-compose-run.sh` or follow the steps below.
 
@@ -64,7 +70,17 @@ To delete data, images and containers created by these steps run the following c
          docker-compose down
          sudo rm -rf /tmp/earkweb-mysql-data; docker rm tmpdb; docker rmi earkwebimg earkdbimg earkweb_worker;
 
-# Build and run images individually
+## Build images and run as individual containers
+
+### Install Docker 
+
+On a linux system, follow the instruction to install docker available at:
+
+  https://docs.docker.com/linux/
+    
+In the following it is assumed that docker commands can be executed without "sudo" (see section "Create a docker group" at https://docs.docker.com/v1.5/installation/ubuntulinux/). 
+
+### Build and run images individually
 
 The earkweb image is build using the main Dockerfile located in the root of the earkweb folder. However, the application depends on multiple other containers. The dependency
 between the containers is specified in the `docker-compose.yml` file. The required images are:
@@ -76,7 +92,7 @@ between the containers is specified in the `docker-compose.yml` file. The requir
 The mysql image is build using another Dockerfile located in `earkweb/docker/earkdb/Dockerfile` which allows initializing the database. However, the database can also initialized
 manuall following the instructions in the [manual installation](./docs/install_manual.md) documentation. 
 
-## MySQL image
+#### MySQL image
 
 1. Change to the earkweb directory:
 
@@ -110,7 +126,7 @@ manuall following the instructions in the [manual installation](./docs/install_m
         Server version: 5.5.47-0ubuntu0.14.04.1 (Ubuntu)
         mysql> show databases;
         
-## earkweb image
+#### earkweb image
 
 Note that mysql must be running and initialized with the required databases (see previous section [MySQL image](#mysql-image)).
 

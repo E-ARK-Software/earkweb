@@ -31,7 +31,7 @@ are stored immediately so that the status information in the frontend's database
 ## Installation
 
 * [Manual installation](./docs/install_manual.md) 
-* [Installation based on Docker images](./docs/install_docker.md)
+* [Installing using Docker](./docs/install_docker.md)
 * [Installation as WSGI app (Apache Webserver frontend)](./docs/install_wsgi.md)
 * [Developer notes](./docs/developer_notes.md)
 
