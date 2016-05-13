@@ -1,5 +1,9 @@
 # Installing using Docker
 
+The following installation procedure describes two different ways to install earkweb using docker. The recommended approach is to use docker-compose which automates the creation 
+of images and handles the dependencies between multiple running containers for the earkweb frontend, database, solr search, message queue, and task execution backend.  
+Alternatively, the images can be created using docker individually and configured accordingly.
+
 ## Table of Contents 
 
   - [Install and run using Docker Compose](#install-and-run-using-docker-compose)
@@ -10,7 +14,7 @@
     - [Build and run images individually](#build-and-run-images-individually)
       - [MySQL image](#mysql-image)
       - [earkweb image](#earkweb-image)
-
+      
 ## Install and run using Docker Compose
 
 ### Install Docker and Docker Compose on the host system
@@ -67,8 +71,8 @@ Use the startup script `docker-compose-run.sh` or follow the steps below.
     
 To delete data, images and containers created by these steps run the following commands:
  
-         docker-compose down
-         sudo rm -rf /tmp/earkweb-mysql-data; docker rm tmpdb; docker rmi earkwebimg earkdbimg earkweb_worker;
+     docker-compose down
+     sudo rm -rf /tmp/earkweb-mysql-data /tmp/earkweb-data; docker rm tmpdb; docker rmi earkwebimg earkdbimg earkweb_celery;
 
 ## Build images and run as individual containers
 
@@ -125,6 +129,17 @@ manuall following the instructions in the [manual installation](./docs/install_m
         Your MySQL connection id is 9
         Server version: 5.5.47-0ubuntu0.14.04.1 (Ubuntu)
         mysql> show databases;
+        +--------------------+
+        | Database           |
+        +--------------------+
+        | information_schema |
+        | celerydb           |
+        | eark               |
+        | mysql              |
+        | performance_schema |
+        +--------------------+
+        5 rows in set (0.00 sec)
+
         
 #### earkweb image
 

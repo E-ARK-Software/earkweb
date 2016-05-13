@@ -1,5 +1,4 @@
 #!/bin/sh
-
-cd earkweb
-# run Celery worker
-celery --app=earkweb.celeryapp:app worker -Q default -n default
+echo "Delay to give rabbitmq time to start up"
+sleep 10
+cd earkweb && celery --app=earkweb.celeryapp:app worker

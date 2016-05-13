@@ -8,6 +8,8 @@ from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from tasklogger import TaskLogger
 from workers.ip_state import IpState
 
+import logging
+logger = logging.getLogger(__name__)
 
 class DefaultTask(Task):
 
@@ -150,7 +152,7 @@ class DefaultTask(Task):
         """
 
         # initialize task
-        print "Executing %s task." % self.task_name
+        logger.debug("Executing %s task." % self.task_name)
         task_context = self.initialize(task_context)
         try:
             # check IP state and execute actual task implementation; can return additional result parameters

@@ -38,6 +38,13 @@ maintainer E-ARK project, http://www.eark-project.com
 
 # -- earkbase
 
-RUN mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
+RUN mkdir -p /var/data/earkweb
+
+#RUN mkdir -p /var/data/earkweb/reception
+#RUN mkdir -p /var/data/earkweb/storage
+#RUN mkdir -p /var/data/earkweb/work
+#RUN mkdir -p /var/data/earkweb/ingest
+#RUN mkdir -p /var/data/earkweb/access
+
 RUN mkdir -p /var/log/earkweb
 

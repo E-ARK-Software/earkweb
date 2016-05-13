@@ -8,37 +8,45 @@ services:
       - /tmp/earkweb-mysql-data:/var/lib/mysql
     ports:
       - '3306:3306'
-#  solr:
-#    image: solr
-#    container_name: solr_1
-#    ports:
-#      - '8983:8983'
-#  rabbitmq:
-#    image: tutum/rabbitmq
-#    environment:
-#      - RABBITMQ_PASS=mypass
-#    container_name: rabbitmq_1
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-  web:
+  solr:
+    image: solr
+    container_name: solr_1
+    ports:
+      - '8983:8983'
+  rabbitmq:
+    image: tutum/rabbitmq
+    environment:
+      - RABBITMQ_PASS=mypass
+    container_name: rabbitmq_1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    links:
+      - db
+  earkweb:
     image: earkwebimg
     build: .
     container_name: earkweb_1
     command: /earkweb/run_web.sh
     volumes:
       - .:/earkweb
+      - /tmp/earkwebdata:/var/data/earkweb
     ports:
       - "8000:8000"
-    depends_on:
+    links:
       - db
-#      - solr
-#      - rabbitmq
-#  worker:
-#    build: .
-#    command: /run_celery.sh
-#    volumes:
-#      - .:/earkweb
-#    depends_on:
-#      - db
-#      - rabbitmq
+      - solr
+      - celery
+      - rabbitmq
+  celery:
+    build: .
+    container_name: celery_1
+    command: /earkweb/run_celery.sh
+    environment:
+      - C_FORCE_ROOT=1
+    volumes:
+      - .:/earkweb
+      - /tmp/earkwebdata:/var/data/earkweb
+    links:
+      - rabbitmq
+      - db

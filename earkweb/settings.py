@@ -37,13 +37,29 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
+from config.configuration import mysql_server_ip
 import djcelery
 djcelery.setup_loader()
 
 CELERY_IMPORTS = ['workers']
 
-BROKER_URL = 'amqp://guest:guest@localhost:5672/'
-CELERY_RESULT_BACKEND='db+mysql://arkiv:arkiv@localhost/celerydb'
+BROKER_POOL_LIMIT = 1
+BROKER_CONNECTION_TIMEOUT = 10
+
+from config.configuration import rabbitmq_ip
+from config.configuration import rabbitmq_port
+from config.configuration import rabbitmq_user
+from config.configuration import rabbitmq_password
+
+from config.configuration import mysql_server_ip
+from config.configuration import mysql_port
+from config.configuration import mysql_user
+from config.configuration import mysql_password
+from config.configuration import mysql_earkweb_db
+from config.configuration import mysql_celerybackend_db
+
+BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_ip, rabbitmq_port)
+CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_server_ip, mysql_celerybackend_db)
 CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
 CELERY_DEFAULT_QUEUE = 'default'
 CELERY_IGNORE_RESULT = False
@@ -114,17 +130,16 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
-from config.configuration import mysql_server_ip
-MySQLIP = mysql_server_ip
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
         #'STORAGE_ENGINE': 'MyISAM',           # STORAGE_ENGINE for MySQL database tables, 'MyISAM' or 'INNODB'
-        'NAME': 'eark',                    # Or path to database file if using sqlite3.
-        'USER': 'arkiv',                      # Not used with sqlite3.
-        'PASSWORD': 'arkiv',               # Not used with sqlite3.
-        'HOST': MySQLIP,                           # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '3306',                           # Set to empty string for default. Not used with sqlite3.
+        'NAME': mysql_earkweb_db,                    # Or path to database file if using sqlite3.
+        'USER': mysql_user,                      # Not used with sqlite3.
+        'PASSWORD': mysql_password,               # Not used with sqlite3.
+        'HOST': mysql_server_ip,                           # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': str(mysql_port),                           # Set to empty string for default. Not used with sqlite3.
         # This options for storage_engine have to be set for "south migrate" to work.
         'OPTIONS': {
            "init_command": "SET storage_engine=MyISAM",
@@ -188,6 +203,21 @@ LOGGING = {
         'level': 'DEBUG'
     },
     'loggers': {
+        'django': {
+            'handlers': ['default', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'config.configuration': {
+                'handlers': ['default', 'console'],
+                'level': 'DEBUG',
+                'propagate': True,
+        },
+        'workers': {
+                'handlers': ['default', 'console'],
+                'level': 'DEBUG',
+                'propagate': False,
+        },
         'django.request': {
             'handlers': ['request_handler', 'console'],
             'level': 'DEBUG',

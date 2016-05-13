@@ -8,6 +8,9 @@ from os import walk
 import traceback
 from celery import current_task
 
+import logging
+logger = logging.getLogger(__name__)
+
 from config.configuration import mets_schema_file
 from config.configuration import root_dir
 from config.configuration import config_path_work

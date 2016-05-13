@@ -2,6 +2,9 @@ import os
 import string
 import ConfigParser
 
+import logging
+logger = logging.getLogger(__name__)
+
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
 
 config = ConfigParser.RawConfigParser()
@@ -11,8 +14,21 @@ config.read(os.path.join(root_dir, 'config/settings.cfg'))
 django_service_ip = config.get('server', 'django_service_ip')
 django_service_port = config.getint('server', 'django_service_port')
 
+# rabbitmq server
+rabbitmq_ip = config.get('server', 'rabbitmq_ip')
+rabbitmq_port = config.getint('server', 'rabbitmq_port')
+rabbitmq_user = config.get('server', 'rabbitmq_user')
+rabbitmq_password = config.get('server', 'rabbitmq_password')
+
 # mysql server
 mysql_server_ip = config.get('server', 'mysql_server_ip')
+mysql_port = config.getint('server', 'mysql_port')
+mysql_user = config.get('server', 'mysql_user')
+mysql_password = config.get('server', 'mysql_password')
+mysql_earkweb_db = config.get('server', 'mysql_earkweb_db')
+mysql_celerybackend_db = config.get('server', 'mysql_celerybackend_db')
+
+logger.info("mysql_server_ip: %s" % mysql_server_ip)
 
 # access solr server
 access_solr_server_ip = config.get('server', 'access_solr_server_ip')

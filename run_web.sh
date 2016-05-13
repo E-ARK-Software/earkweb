@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "Delay to give database time to start up"
 sleep 5
 
 # Apply database migrations
