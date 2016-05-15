@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
+file="./config/settings.cfg"
+if [ ! -f "$file" ]
+  then
+  echo "Docker configuration file does not exist. Rename sample config file config/settings.cfg.docker to config/settings.cfg."
+  exit 1
 
+fi
 line=$(head -n 1 config/settings.cfg)
 if [ $line != "#docker-config" ]
   then
@@ -15,7 +21,7 @@ mkdir -p $REPO_DATA_DIRECTORY
 echo "Building the images ..."
 docker-compose build
 
-echo "Runing mysql database ..."
+echo "Running mysql database ..."
 mkdir $MYSQL_DATA_DIRECTORY
 docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg &
 
@@ -26,8 +32,9 @@ sleep $DB_PAUSE
 echo "Starting intermediate database container to initialize data directory ..."
 docker exec tmpdb /init.sh
 
-echo "Stopping intermediate database container ..."
+echo "Stopping and removing intermediate database container ..."
 docker stop tmpdb
+docker rm tmpdb
 
 echo "Starting services (docker-compose up) ..."
 docker-compose up &
@@ -39,13 +46,13 @@ sleep $SERVICES_PAUSE
 echo "Creating user ..."
 docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
 
-echo "Scan tasks ..."
+echo "Scanning tasks ..."
 docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
 
-#echo "Creating solr core for storage area ..."
-#docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
+echo "Creating solr core for storage area ..."
+docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
 
-echo "Creating repository directories"
+echo "Creating repository directories ..."
 mkdir $REPO_DATA_DIRECTORY/reception
 mkdir $REPO_DATA_DIRECTORY/storage
 mkdir $REPO_DATA_DIRECTORY/work

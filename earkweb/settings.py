@@ -58,8 +58,14 @@ from config.configuration import mysql_password
 from config.configuration import mysql_earkweb_db
 from config.configuration import mysql_celerybackend_db
 
+
+from config.configuration import redis_ip
+from config.configuration import redis_port
+
 BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_ip, rabbitmq_port)
-CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_server_ip, mysql_celerybackend_db)
+#CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_server_ip, mysql_celerybackend_db)
+CELERY_RESULT_BACKEND = "redis://%s:%d/0" % (redis_ip, redis_port)
+CELERY_REDIS_MAX_CONNECTIONS = 1
 CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
 CELERY_DEFAULT_QUEUE = 'default'
 CELERY_IGNORE_RESULT = False

@@ -38,6 +38,8 @@ maintainer E-ARK project, http://www.eark-project.com
 
 # -- earkbase
 
+RUN pip install redis
+
 RUN mkdir -p /var/data/earkweb
 
 #RUN mkdir -p /var/data/earkweb/reception

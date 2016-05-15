@@ -14,6 +14,9 @@ config.read(os.path.join(root_dir, 'config/settings.cfg'))
 django_service_ip = config.get('server', 'django_service_ip')
 django_service_port = config.getint('server', 'django_service_port')
 
+redis_ip = config.get('server', 'redis_ip')
+redis_port = config.getint('server', 'redis_port')
+
 # rabbitmq server
 rabbitmq_ip = config.get('server', 'rabbitmq_ip')
 rabbitmq_port = config.getint('server', 'rabbitmq_port')

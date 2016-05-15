@@ -18,8 +18,7 @@ sent from the producer to the archive, the Archival Information Package (AIP) wh
 is the information sent to a user when requested. The system allows executing different types of actions, such as information extraction, validation, or transformation operations, 
 on information packages to support ingesting a SIP, archiving an AIP, and creating a DIP from a set of AIPs.
 
-E-ARK Web offers a leightweight frontend web application with [Celery](http://www.celeryproject.org) as a distributed task execution backend. Task executions do not depend on the
-
+E-ARK Web offers a leightweight frontend web application with [Celery](http://www.celeryproject.org) as a distributed task execution backend.
 
 ![earkweb home](./docs/img/earkweb_home.png)
 

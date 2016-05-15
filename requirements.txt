@@ -17,3 +17,4 @@ Shapely==1.5.12
 SPARQLWrapper==1.6.4
 subprocess32==3.2.6
 Pairtree==0.5.8
+redis==2.10.5

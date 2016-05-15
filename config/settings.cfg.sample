@@ -10,6 +10,9 @@ rabbitmq_port = 5672
 rabbitmq_user = guest
 rabbitmq_password = guest
 
+redis_ip = 127.0.0.1
+redis_port = 6379
+
 mysql_server_ip = 127.0.0.1
 mysql_port = 3306
 mysql_user = arkiv

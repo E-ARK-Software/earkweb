@@ -1,7 +1,8 @@
 # Installing using Docker
 
-The following installation procedure describes two different ways to install earkweb using docker. The recommended approach is to use docker-compose which automates the creation 
-of images and handles the dependencies between multiple running containers for the earkweb frontend, database, solr search, message queue, and task execution backend.  
+The following installation procedure describes two different ways to install earkweb using docker. The recommended
+approach is to use docker-compose which automates the creation of images and handles the dependencies between multiple
+running containers for the earkweb frontend, database, solr search, message queue, and task execution backend.
 Alternatively, the images can be created using docker individually and configured accordingly.
 
 ## Table of Contents 
@@ -10,7 +11,7 @@ Alternatively, the images can be created using docker individually and configure
     - [Install Docker and Docker Compose on the host system](#install-docker-and-docker-compose-on-the-host-system)
     - [Build and run using docker compose](#build-and-run-using-docker-compose)
   - [Build images and run as individual containers](#build-images-and-run-as-individual-containers)
-    - [Install Docker](#install-docker)
+    - [Install Docker on the host system](#install-docker-on-the-host-system)
     - [Build and run images individually](#build-and-run-images-individually)
       - [MySQL image](#mysql-image)
       - [earkweb image](#earkweb-image)
@@ -27,11 +28,12 @@ Install docker compose which allows running multi-container Docker applications 
 
   https://docs.docker.com/compose/
     
-In the following it is assumed that docker commands can be executed without "sudo" (see section "Create a docker group" at https://docs.docker.com/v1.5/installation/ubuntulinux/). 
+In the following it is assumed that docker commands can be executed without "sudo" (see section "Create a docker group"
+at https://docs.docker.com/v1.5/installation/ubuntulinux/).
 
 ### Build and run using docker compose
 
-Use the startup script `docker-compose-run.sh` or follow the steps below.
+Use the script `docker-compose-run.sh` or execute the commands described below.
 
 1. Change to the earkweb directory:
 
@@ -41,11 +43,17 @@ Use the startup script `docker-compose-run.sh` or follow the steps below.
 
         docker-compose build
         
-3. Create a directory where the mysql data is stored on the host system:
+3. Create directories where data will be stored on the host system:
+
+    3.1 MySQL datadirectory
 
         mkdir /tmp/earkweb-mysql-data
+
+    3.2 Repository data directory
+
+        mkdir /tmp/earkwebdata
     
-4. Run a database container named `tmpdb` based on the image `earkdbimg`:
+4. Run an intermediate database container named `tmpdb` based on the image `earkdbimg`:
 
         docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg
     
@@ -53,30 +61,48 @@ Use the startup script `docker-compose-run.sh` or follow the steps below.
 
         docker exec tmpdb /init.sh
     
-6. Stop the temporary database container again:
+6. Stop the intermediate database container and remove it:
 
         docker stop tmpdb
+        docker rm tmpdb
     
-7. Run the docker-compose which will start multiple containers:
+7. Run the docker-compose which will start multiple containers (this can take a while):
 
         docker-compose up
     
 8. Run the following command in container `earkweb_1` to create a user (parameters: <username> <email> <password> <is_superuser>):
 
         docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
+
+9. Execute the script for registering tasks:
+
+        docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
+
+10. Create a SolR core for the storage area:
+
+        docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
+
+11. Create subdirectories in the repository storage area:
+
+        mkdir /tmp/earkwebdata/{reception, storage, work, ingest, access}
     
-9. Open the following URL in a browser and login with the user created in the previous step:
+11. Open the following URL in a browser and login with the user data provided previously:
 
     http://127.0.0.1:8000
     
-To delete data, images and containers created by these steps run the following commands:
- 
-     docker-compose down
-     sudo rm -rf /tmp/earkweb-mysql-data /tmp/earkweb-data; docker rm tmpdb; docker rmi earkwebimg earkdbimg earkweb_celery;
+To stop the application run:
+
+    docker-compose down
+
+To delete data, images and containers again, run the following commands:
+
+    docker rmi earkweb_celery earkwebimg earkdbimg
+    sudo rm -rf /tmp/earkwebdata
+    sudo rm -rf /tmp/earkweb-mysql-data/
 
 ## Build images and run as individual containers
 
-### Install Docker 
+### Install Docker on the host system
 
 On a linux system, follow the instruction to install docker available at:
 
@@ -87,13 +113,18 @@ In the following it is assumed that docker commands can be executed without "sud
 ### Build and run images individually
 
 The earkweb image is build using the main Dockerfile located in the root of the earkweb folder. However, the application depends on multiple other containers. The dependency
-between the containers is specified in the `docker-compose.yml` file. The required images are:
+between the containers is specified in the `docker-compose.yml` file.
+
+The earkweb deployment is based on the following images:
 
 * [tutum/mysql](https://hub.docker.com/r/tutum/rabbitmq/)
-* [solr](https://hub.docker.com/_/solr/)
 * [tutum/rabbitmq](https://hub.docker.com/r/tutum/rabbitmq/)
+* [tutum/redis](https://hub.docker.com/r/tutum/redis/)
+* [solr](https://hub.docker.com/_/solr/)
 
-The mysql image is build using another Dockerfile located in `earkweb/docker/earkdb/Dockerfile` which allows initializing the database. However, the database can also initialized
+Most of these images are provided by "tutum" which is now part of Docker Cloud.
+
+The mysql image is built using another Dockerfile located in `earkweb/docker/earkdb/Dockerfile` which allows initializing the database. However, the database can also initialized
 manuall following the instructions in the [manual installation](./docs/install_manual.md) documentation. 
 
 #### MySQL image

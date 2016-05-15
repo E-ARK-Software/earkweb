@@ -60,7 +60,17 @@
         cd ghostscript-9.18
         ./configure
         make
-        make install
+        sudo make install
+
+## Install message queue and result backend
+
+Install message queue:
+
+    sudo apt-get install rabbitmq-server
+
+Install result backend database:
+
+    sudo apt-get install redis
 
 ## Installing earkweb 
 
@@ -82,45 +92,41 @@
         sudo pip install virtualenv
         sudo pip install virtualenvwrapper
 
+    Create a directory for your virtual environments and set the environment variable (e.g. in your ~/.bashrc):
+
+        mkdir ~/Envs
+        export WORKON_HOME=~/Envs
+        source /usr/local/bin/virtualenvwrapper.sh
+
     Create a virtual environment (e.g. named earkweb) to install additional python packages separately from the default python installation.
     
         mkvirtualenv earkweb
-        workon earkweb
-
-    Create a directory for your virtual environments and set the environment variable (e.g. in your ~/.bashrc):
-    
-        export WORKON_HOME=~/Envs
-        source /usr/local/bin/virtualenvwrapper.sh
         
-    If the virtual environment is active, this is shown by a prefix in the console:
+    If the virtual environment is active, this is shown by a prefix in the console (type `workon earkweb` otherwise):
     
         (earkweb)user@machine:~$
-        
-    If it is not active, it can be activated as follows:
-    
-        user@machine:~$ workon earkweb
 
-    And it can be deactivated again by typing:
+    The virtual environment can be deactivated again by typing:
     
         deactivate
 
-3. Install additional libraries
+3. Install additional debian packages:
+
+        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
+        sudo pip install --upgrade pytz
+
+4. Install additional python packages:
 
         pip install -r ${EARKWEB}/requirements.txt
         
-   Common errors occurring during python package installation are due to missing linux package dependencies, therefore it might be necessary to install additional packages:
-        
-        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
-        sudo easy_install --upgrade pytz
-        
-4. Create directories making sure the user running earkweb has rights to reading and write:
+5. Create directories making sure the user running earkweb has rights to reading and write:
 
         sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
         sudo chown -R <user>:<group> /var/data/earkweb/
         sudo mkdir -p /var/log/earkweb
         sudo chown <user>:<group> /var/log/earkweb
         
-5. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
+6. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
 
 ## Create and initialize database
 
@@ -139,7 +145,7 @@
         
     Create user 'arkiv':
     
-        CREATE USER 'arkiv'@'localhost' IDENTIFIED BY 'arkiv';
+        CREATE USER 'arkiv'@'%' IDENTIFIED BY 'arkiv';
         
     Create database 'eark':
         
@@ -147,7 +153,7 @@
         
     Grant access to user 'arkiv':
 
-        GRANT ALL ON eark.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+        GRANT ALL ON eark.* TO arkiv@'%' IDENTIFIED BY 'arkiv';
         
     Create another database for Celery:
     
@@ -155,7 +161,7 @@
 
     And grant rights to use datase celery for user 'arkiv':
     
-        mysql> GRANT ALL ON celerydb.* TO arkiv@localhost IDENTIFIED BY 'arkiv';
+        mysql> GRANT ALL ON celerydb.* TO arkiv@'%' IDENTIFIED BY 'arkiv';
 
 2. Create database schema based on the model and apply initialise the database:
 
@@ -173,9 +179,14 @@
 
         python ./workers/scantasks.py
 
+4. Create a user
+
+        python ./util/createuser.py eark user@email eark true
+
+
 ## Celery distributed task execution 
 
-12. Start the daemon from command line (development mode):
+1. Start the daemon from command line (development mode):
     
         cd ${EARKWEB}
         python manage.py celeryd -E
@@ -190,11 +201,11 @@
 
 This section explains how to run *earkweb* in development mode.
 
-16. Change to the *earkweb* directory:
+1. Change to the *earkweb* directory:
 
         cd <earkweb_install_path>/earkweb
         
-17. Start web application
+2. Start web application
 
     Start the web application from the command line using the command:
 

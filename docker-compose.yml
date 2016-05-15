@@ -23,6 +23,15 @@ services:
       - "15672:15672"
     links:
       - db
+  redis:
+    image: tutum/redis
+    environment:
+      - REDIS_PASS=**None**
+    container_name: redis_1
+    ports:
+      - "6379:6379"
+    links:
+      - db
   earkweb:
     image: earkwebimg
     build: .
@@ -36,8 +45,8 @@ services:
     links:
       - db
       - solr
-      - celery
       - rabbitmq
+      - redis
   celery:
     build: .
     container_name: celery_1
@@ -50,3 +59,4 @@ services:
     links:
       - rabbitmq
       - db
+      - redis
