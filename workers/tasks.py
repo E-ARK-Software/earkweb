@@ -55,10 +55,10 @@ from workers.default_task_context import DefaultTaskContext
 from earkcore.format.formatidentification import FormatIdentification
 from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
+from earkcore.filesystem.fsinfo import path_to_dict
 from celery.exceptions import SoftTimeLimitExceeded
 from config.configuration import hdfs_upload_service_ip
 import requests
-
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
 
@@ -146,6 +146,22 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
     # delete file after extraction
     os.remove(package_file_path)
     return proc_res.success
+
+
+@app.task(bind=True)
+def reception_dir_status(self, reception_d):
+
+    reception_dir_status = "%s" % path_to_dict(reception_d)
+    reception_dir_status = reception_dir_status.replace("'", "\"")
+    return reception_dir_status
+
+
+@app.task(bind=True)
+def run_batch_ingest(self, reception_d):
+
+    reception_dir_status = "%s" % path_to_dict(reception_d)
+    reception_dir_status = reception_dir_status.replace("'", "\"")
+    return reception_dir_status
 
 
 class SIPReset(DefaultTask):

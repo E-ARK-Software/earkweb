@@ -16,6 +16,8 @@ urlpatterns= patterns('',
 
     url(r'^progress$', views.progress, name='progress'),
 
+    url(r'^batch$', views.batch, name='batch'),
+
     url(r'^upload_sip$', views.upload_sip, name='upload_sip'),
 
     url(r'^upload_sip_delivery$', views.upload_sip_delivery, name='upload_sip_delivery'),
@@ -37,5 +39,7 @@ urlpatterns= patterns('',
     url(r'^indexing_status$', views.IndexingStatusList.as_view(), name='indexing_status'),
 
     url(r'^aipsearch/package$', views.aipsearch_package, name='aipsearch_package$'),
+
+    url(r'^run_batch_ingest$', views.run_batch_ingest, name='run_batch_ingest$'),
 
 )

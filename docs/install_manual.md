@@ -72,6 +72,15 @@ Install result backend database:
 
     sudo apt-get install redis
 
+## Install solr
+
+    cd /opt
+    wget http://archive.apache.org/dist/lucene/solr/4.7.2/solr-4.7.2.tgz
+    tar -xvf solr-4.7.2.tgz
+    cp -R solr-4.7.2/example /opt/solr
+    cd /opt/solr
+    java -jar start.jar
+
 ## Installing earkweb 
 
 1. Checkout project

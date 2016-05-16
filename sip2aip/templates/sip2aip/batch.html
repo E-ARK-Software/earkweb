@@ -1,0 +1,54 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <script type="text/javascript" src="/static/earkweb/earkweb/jquery-1.11.2/jquery-1.11.2.js"></script>
+    <script type="text/javascript" src="/static/earkweb/earkweb/jquery-1.11.2/jquery.form.min.js"></script>
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkcore/js/polling.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "sip2aip/about_module.html" %}
+
+    <h2 class="main">Batch SIP ingest</h2>
+
+    <p>Batch SIP to AIP conversion applying an ingest workflow</p>
+    <p><button id="batch-apply-task">Run batch ingest!</button></p>
+
+    <table  class="table table-striped table-bordered table-condensed">
+    <thead>
+      <tr>
+		<th>Package file</th>
+		<th>Mime-type</th>
+      </tr>
+    </thead>
+    <tbody id="iplist">
+
+    </tbody>
+  </table>
+
+    <script language="JavaScript">
+        var poll_request_url = "/earkweb/earkcore/poll_state/";
+        var poll_success_func = function(json_result) {
+            for(var i in json_result.children) {
+                $('#iplist').append('<tr><td>'+json_result.children[i].text+'</td><td>'+json_result.children[i].data.mimetype+'</td></tr>');
+            }
+        };
+        var get_data_url = "/earkweb/earkcore/get_directory_json_remote/";
+        var get_data_params = {"param": "test"};
+        $(window).load(get_data_func);
+
+        // $('#batch-apply-task').click();
+
+    </script>
+{% endblock %}
+
+

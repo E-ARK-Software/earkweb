@@ -23,10 +23,13 @@ from earkcore.utils import randomutils
 from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 import logging
+from workers.tasks import reception_dir_status
+from workers.tasks import run_batch_ingest
 
+import traceback
 #from xml.xmlvalidation import XmlValidation
 #import lxml
-
+from celery.result import AsyncResult
 #from earkcore.models import DIP
 #from earkcore.utils.randomutils import getUniqueID
 #from workflow.models import WorkflowModules
@@ -167,5 +170,57 @@ def get_directory_json(request):
         package_name = dirlist
     return JsonResponse({ "data": path_to_dict(uuid_work_dir, strip_path_part=config_path_work+'/'), "check_callback" : "true" })
 
+
+@login_required
+@csrf_exempt
+def get_directory_json_remote(request):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        if request.is_ajax():
+            try:
+                from config.configuration import config_path_reception
+                job = reception_dir_status.delay(config_path_reception)
+                data = {"success": True, "id": job.id}
+            except Exception, err:
+
+                data = {"success": False, "errmsg": "Error", "errdetail": "Error detail"}
+        else:
+            data = {"success": False, "errmsg": "not ajax"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
+        return JsonResponse(data)
+    return JsonResponse(data)
+
+
+@login_required
+@csrf_exempt
+def poll_state(request):
+    """
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task state metadata)
+    """
+    data = {"success": False, "errmsg": "undefined"}
+    try:
+        if request.is_ajax():
+            if 'task_id' in request.POST.keys() and request.POST['task_id']:
+                task_id = request.POST['task_id']
+                task = AsyncResult(task_id)
+                if task.state == "SUCCESS":
+                    data = {"success": True, "state": task.state, "result": task.result}
+                else:
+                    data = {"success": True, "state": task.state, "info": task.info}
+            else:
+                data = {"success": False, "errmsg": "No task_id in the request"}
+        else:
+            data = {"success": False, "errmsg": "Not ajax"}
+    except Exception, err:
+        data = {"success": False, "errmsg": err.message}
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+    return JsonResponse(data)
 
 

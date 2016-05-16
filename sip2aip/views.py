@@ -22,6 +22,7 @@ from workers.taskconfig import TaskConfig
 from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore
 from workflow.models import WorkflowModules
 from config.configuration import config_path_work
+from config.configuration import config_path_reception
 import logging
 logger = logging.getLogger(__name__)
 from earkcore.utils.fileutils import mkdir_p
@@ -31,6 +32,7 @@ from config.configuration import local_solr_server_ip
 from config.configuration import django_service_port
 from config.configuration import django_service_ip
 from config.configuration import local_solr_port
+from workers.tasks import reception_dir_status
 
 
 @login_required
@@ -193,6 +195,15 @@ def aipsearch_package(request):
     })
     return HttpResponse(template.render(context))
 
+@login_required
+def batch(request):
+    template = loader.get_template('sip2aip/batch.html')
+    from config.configuration import config_path_reception
+    context = RequestContext(request, {
+        'config_path_reception': config_path_reception
+    })
+    return HttpResponse(template.render(context))
+
 
 class HelpProcessingStatus(ListView):
     """
@@ -345,4 +356,26 @@ def poll_state(request):
         data = {"success": False, "errmsg": err.message}
         tb = traceback.format_exc()
         logger.error(str(tb))
+    return JsonResponse(data)
+
+
+@login_required
+@csrf_exempt
+def run_batch_ingest(request):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        if request.is_ajax():
+            try:
+                job = run_batch_ingest.delay(config_path_reception)
+                data = {"success": True, "id": job.id}
+            except Exception, err:
+
+                data = {"success": False, "errmsg": "Error", "errdetail": "Error detail"}
+        else:
+            data = {"success": False, "errmsg": "not ajax"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
+        return JsonResponse(data)
     return JsonResponse(data)
