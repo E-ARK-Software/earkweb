@@ -42,7 +42,7 @@
                 $('#iplist').append('<tr><td>'+json_result.children[i].text+'</td><td>'+json_result.children[i].data.mimetype+'</td></tr>');
             }
         };
-        var get_data_url = "/earkweb/earkcore/get_directory_json_remote/";
+        var get_data_url = "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/";
         var get_data_params = {"param": "test"};
         $(window).load(get_data_func);
 

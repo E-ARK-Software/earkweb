@@ -13,7 +13,7 @@ urlpatterns= patterns('',
     url(r'^access_aip_item/(?P<identifier>[0-9a-zA-Z_\-\. ]{3,500})/(?P<mime>([0-9a-zA-Z_\-\. ]{2,20}/[0-9a-zA-Z_\-\. ]{2,20}))/(?P<entry>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.access_aip_item, name='access_aip_item'),
     url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
 
-    url(r'^get_directory_json_remote/$', views.get_directory_json_remote, name='get_directory_json_remote'),
+    url(r'^get_directory_json_remote/(?P<dir>[0-9a-zA-Z_\-\./ ]{3,500})/$', views.get_directory_json_remote, name='get_directory_json_remote'),
     url(r'^poll_state/$', views.poll_state, name='poll_state'),
 
 

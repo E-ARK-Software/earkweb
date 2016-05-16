@@ -36,6 +36,10 @@ from celery.result import AsyncResult
 #from workers.tasks import AIPtoDIPReset
 #from django.core.urlresolvers import reverse
 
+
+import logging
+logger = logging.getLogger(__name__)
+
 class InformationPackageDetailView(DetailView):
     model = InformationPackage
     template_name = 'earkcore/ip_detail.html'
@@ -173,13 +177,13 @@ def get_directory_json(request):
 
 @login_required
 @csrf_exempt
-def get_directory_json_remote(request):
+def get_directory_json_remote(request, dir):
+    logger.debug("Get directory data: %s" % dir)
     data = {"success": False, "errmsg": "Unknown error"}
     try:
         if request.is_ajax():
             try:
-                from config.configuration import config_path_reception
-                job = reception_dir_status.delay(config_path_reception)
+                job = reception_dir_status.delay(dir)
                 data = {"success": True, "id": job.id}
             except Exception, err:
 

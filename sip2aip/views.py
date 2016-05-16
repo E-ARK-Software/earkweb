@@ -23,8 +23,6 @@ from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore
 from workflow.models import WorkflowModules
 from config.configuration import config_path_work
 from config.configuration import config_path_reception
-import logging
-logger = logging.getLogger(__name__)
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
@@ -34,6 +32,9 @@ from config.configuration import django_service_ip
 from config.configuration import local_solr_port
 from workers.tasks import reception_dir_status
 
+
+import logging
+logger = logging.getLogger(__name__)
 
 @login_required
 @csrf_exempt
@@ -195,15 +196,6 @@ def aipsearch_package(request):
     })
     return HttpResponse(template.render(context))
 
-@login_required
-def batch(request):
-    template = loader.get_template('sip2aip/batch.html')
-    from config.configuration import config_path_reception
-    context = RequestContext(request, {
-        'config_path_reception': config_path_reception
-    })
-    return HttpResponse(template.render(context))
-
 
 class HelpProcessingStatus(ListView):
     """
@@ -331,6 +323,16 @@ def apply_task(request):
         data = {"success": False, "errmsg": "an error occurred!"}
         return JsonResponse(data)
     return JsonResponse(data)
+
+
+@login_required
+def batch(request):
+    template = loader.get_template('sip2aip/batch.html')
+    from config.configuration import config_path_reception
+    context = RequestContext(request, {
+        'config_path_reception': config_path_reception
+    })
+    return HttpResponse(template.render(context))
 
 
 @login_required
