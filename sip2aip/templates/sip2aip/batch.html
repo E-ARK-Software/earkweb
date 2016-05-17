@@ -41,8 +41,8 @@
   </table>
 
     <script language="JavaScript">
-        // module defining the context of the request, polling, and success function
-        var get_data_module = {
+        // module defining the context of the get directory information request
+        var get_dir_info_module = {
             request_url: "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
@@ -55,14 +55,29 @@
             request_params: {}
         }
         // bind module to function
-        var get_data_function = $.proxy( get_data_func, get_data_module );
+        var get_dir_info_func = $.proxy( request_func, get_dir_info_module );
 
         // execute on load
-        $(window).load(get_data_function);
+        $(window).load(get_dir_info_func);
 
-        <!--var get_run_batch_module = { request_url: "/earkweb/sip2aip/run_batch_ingest/" +  conf_path_rec + "/" }-->
-        <!--var run_batch_func = get_data_func.bind(get_run_batch_module);-->
-        <!--$('#batch-apply-task').click(run_batch_func);-->
+
+        // module defining the context of the get directory information request
+        var submit_batch_ingest_module = {
+            request_url: "/earkweb/sip2aip/submit_batch_ingest/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
+            poll_request_url: "/earkweb/earkcore/poll_state/",
+            success_func: function(json_result) {
+                for(var i in json_result.children) {
+                    var filename = json_result.children[i].text;
+                    window.console.log(filename);
+                }
+            },
+            request_params: {}
+        }
+        // bind module to function
+        var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
+
+        // execute on load
+        $('#batch-apply-task').click(submit_batch_ingest_func);
 
     </script>
 {% endblock %}

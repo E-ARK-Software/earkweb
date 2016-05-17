@@ -19,7 +19,7 @@ from django.http import JsonResponse
 from sip2aip import forms
 from workers.ip_state import IpState
 from workers.taskconfig import TaskConfig
-from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore
+from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore, run_batch_ingest
 from workflow.models import WorkflowModules
 from config.configuration import config_path_work
 from config.configuration import config_path_reception
@@ -363,7 +363,7 @@ def poll_state(request):
 
 @login_required
 @csrf_exempt
-def run_batch_ingest(request, dir):
+def submit_batch_ingest(request, dir):
     data = {"success": False, "errmsg": "Unknown error"}
     try:
         if request.is_ajax():

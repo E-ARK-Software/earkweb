@@ -8,7 +8,7 @@
 /**
  * Function to get data requires "request_url" to be defined
  */
-var get_data_func = function() {
+var request_func = function() {
    window.console.log("Get data request url: " + this.request_url);
 
    var success_func = function(resp_data) {
@@ -60,7 +60,7 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                               success_func(json_result);
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
-                                // check again if task still pending
+                                // check again if task is still pending
                                 setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 3000);
                           } else {
                             window.console.log("In progress ...");
