@@ -9,13 +9,15 @@
  * Function to get data requires "get_data_url" to be defined
  */
 var get_data_func = function() {
-   window.console.log("Get data request url: " + get_data_url);
+   window.console.log("Get data request url: " + this.get_data_url);
+
+
    $.ajax({
-    url: get_data_url,
+    url: this.get_data_url,
     method: "POST",
     async: true,
     data: get_data_params,
-    success: function(resp_data){
+    success: function(resp_data) {
      if(resp_data.success) {
          window.console.log("Task accepted, task id: " + resp_data.id);
          pollstate(resp_data.id);

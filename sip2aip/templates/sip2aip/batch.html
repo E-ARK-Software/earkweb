@@ -49,13 +49,21 @@
                 $('#iplist').append('<tr><td class="filename"><span class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td></tr>');
             }
         };
-        var get_data_url = "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/";
         var get_data_params = {"param": "test"};
-        $(window).load(get_data_func);
+        var conf_path_rec = encodeURIComponent("{{ config_path_reception }}");
+
+        var get_data_module = {
+            get_data_url: "/earkweb/earkcore/get_directory_json_remote/" +  conf_path_rec + "/"
+        }
+
+        var get_data_function = $.proxy( get_data_func, get_data_module );
 
 
+        $(window).load(get_data_function);
 
-        //$('#batch-apply-task').click(run_batch_ingest_func);
+        <!--var get_run_batch_module = { get_data_url: "/earkweb/sip2aip/run_batch_ingest/" +  conf_path_rec + "/" }-->
+        <!--var run_batch_func = get_data_func.bind(get_run_batch_module);-->
+        <!--$('#batch-apply-task').click(run_batch_func);-->
 
     </script>
 {% endblock %}
