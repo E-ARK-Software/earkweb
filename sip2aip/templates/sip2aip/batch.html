@@ -41,27 +41,26 @@
   </table>
 
     <script language="JavaScript">
-        var poll_request_url = "/earkweb/earkcore/poll_state/";
-        var poll_success_func = function(json_result) {
-            for(var i in json_result.children) {
-                var mime = json_result.children[i].data.mimetype;
-                var filename = json_result.children[i].text;
-                $('#iplist').append('<tr><td class="filename"><span class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td></tr>');
-            }
-        };
-        var get_data_params = {"param": "test"};
-        var conf_path_rec = encodeURIComponent("{{ config_path_reception }}");
-
+        // module defining the context of the request, polling, and success function
         var get_data_module = {
-            get_data_url: "/earkweb/earkcore/get_directory_json_remote/" +  conf_path_rec + "/"
+            request_url: "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
+            poll_request_url: "/earkweb/earkcore/poll_state/",
+            success_func: function(json_result) {
+                for(var i in json_result.children) {
+                    var mime = json_result.children[i].data.mimetype;
+                    var filename = json_result.children[i].text;
+                    $('#iplist').append('<tr><td class="filename"><span class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td></tr>');
+                }
+            },
+            request_params: {}
         }
-
+        // bind module to function
         var get_data_function = $.proxy( get_data_func, get_data_module );
 
-
+        // execute on load
         $(window).load(get_data_function);
 
-        <!--var get_run_batch_module = { get_data_url: "/earkweb/sip2aip/run_batch_ingest/" +  conf_path_rec + "/" }-->
+        <!--var get_run_batch_module = { request_url: "/earkweb/sip2aip/run_batch_ingest/" +  conf_path_rec + "/" }-->
         <!--var run_batch_func = get_data_func.bind(get_run_batch_module);-->
         <!--$('#batch-apply-task').click(run_batch_func);-->
 
