@@ -10,7 +10,12 @@
 
     <!-- SIP to AIP javascript -->
     <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+
+    <!-- Polling -->
     <script type="text/javascript" src="{% static 'earkcore/js/polling.js' %}"></script>
+
+    <!-- batch.html stylesheet -->
+    <link rel="stylesheet" href="{% static "sip2aip/css/batch.css" %}" type="text/css" />
 
 {% endblock %}
 
@@ -23,7 +28,7 @@
     <p>Batch SIP to AIP conversion applying an ingest workflow</p>
     <p><button id="batch-apply-task">Run batch ingest!</button></p>
 
-    <table  class="table table-striped table-bordered table-condensed">
+    <table class="table table-striped table-bordered table-condensed">
     <thead>
       <tr>
 		<th>Package file</th>
@@ -39,14 +44,18 @@
         var poll_request_url = "/earkweb/earkcore/poll_state/";
         var poll_success_func = function(json_result) {
             for(var i in json_result.children) {
-                $('#iplist').append('<tr><td>'+json_result.children[i].text+'</td><td>'+json_result.children[i].data.mimetype+'</td></tr>');
+                var mime = json_result.children[i].data.mimetype;
+                var filename = json_result.children[i].text;
+                $('#iplist').append('<tr><td class="filename"><span class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td></tr>');
             }
         };
         var get_data_url = "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/";
         var get_data_params = {"param": "test"};
         $(window).load(get_data_func);
 
-        // $('#batch-apply-task').click();
+
+
+        //$('#batch-apply-task').click(run_batch_ingest_func);
 
     </script>
 {% endblock %}

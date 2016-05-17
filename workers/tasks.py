@@ -158,7 +158,7 @@ def reception_dir_status(self, reception_d):
 
 @app.task(bind=True)
 def run_batch_ingest(self, reception_d):
-
+    print "RUN BATCH INGEST!!!"
     reception_dir_status = "%s" % path_to_dict(reception_d)
     reception_dir_status = reception_dir_status.replace("'", "\"")
     return reception_dir_status

@@ -42,3 +42,10 @@ if (typeof String.prototype.startsWith != 'function') {
 
 }(jQuery));
 
+/**
+ * Create id based on name by removing special and white space characters.
+ * @param str String
+ * @return Variable name string
+ */
+function name_to_id(str) { return  str.replace(/[|&;$%@"<>()+,./\- ]/g, "").toLowerCase(); }
+

@@ -186,8 +186,8 @@ def get_directory_json_remote(request, dir):
                 job = reception_dir_status.delay(dir)
                 data = {"success": True, "id": job.id}
             except Exception, err:
-
-                data = {"success": False, "errmsg": "Error", "errdetail": "Error detail"}
+                tb = traceback.format_exc()
+                data = {"success": False, "errmsg": "Error", "errdetail": str(tb)}
         else:
             data = {"success": False, "errmsg": "not ajax"}
     except Exception, err:

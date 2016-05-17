@@ -40,6 +40,6 @@ urlpatterns= patterns('',
 
     url(r'^aipsearch/package$', views.aipsearch_package, name='aipsearch_package$'),
 
-    url(r'^run_batch_ingest$', views.run_batch_ingest, name='run_batch_ingest$'),
+    url(r'^run_batch_ingest/(?P<dir>[0-9a-zA-Z_\-\./ ]{3,500})/$', views.run_batch_ingest, name='run_batch_ingest'),
 
 )

@@ -363,16 +363,17 @@ def poll_state(request):
 
 @login_required
 @csrf_exempt
-def run_batch_ingest(request):
+def run_batch_ingest(request, dir):
     data = {"success": False, "errmsg": "Unknown error"}
     try:
         if request.is_ajax():
             try:
-                job = run_batch_ingest.delay(config_path_reception)
+                job = run_batch_ingest.delay(dir)
                 data = {"success": True, "id": job.id}
             except Exception, err:
-
-                data = {"success": False, "errmsg": "Error", "errdetail": "Error detail"}
+                tb = traceback.format_exc()
+                logging.error(str(tb))
+                data = {"success": False, "errmsg": "Error", "errdetail": str(tb)}
         else:
             data = {"success": False, "errmsg": "not ajax"}
     except Exception, err:
