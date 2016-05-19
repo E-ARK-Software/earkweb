@@ -2,16 +2,29 @@ td.filename {
     color: gray;
 }
 
-span.applicationxml {
+.applicationxml {
     color: gray;
 }
 
 
-span.applicationzip {
+.applicationzip {
     color: gray;
 }
 
 span.applicationxtar {
-    color: black;
+    color: gray;
 }
 
+.received {
+    background-color: DarkGray;
+}
+
+
+.running {
+    background-color: DarkOrange;
+}
+
+
+.processed {
+    background-color: DarkGreen;
+}

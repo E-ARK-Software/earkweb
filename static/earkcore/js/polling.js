@@ -4,12 +4,15 @@
  * Basic functions for starting a task, polling the task status, and acting upon successful task execution.
  */
 
-
 /**
  * Function to get data requires "request_url" to be defined
  */
 var request_func = function() {
-   window.console.log("Get data request url: " + this.request_url);
+    window.console.log("Get data request url: " + this.request_url);
+
+//    window.console.log("test:");
+//    window.console.log(this.request_params.filename);
+//    window.console.log(":test");
 
    var success_func = function(resp_data) {
      if(resp_data.success) {
@@ -30,9 +33,11 @@ var request_func = function() {
     success: success_func,
    });
    // only execute ajax request, do not submit form
+
    return false;
 };
 
+var timer;
 
 /**
  * Function to poll task processing state
@@ -44,7 +49,7 @@ function pollstate(in_task_id, success_func, poll_request_url) {
     $(document).ready(function() {
           var PollState = function(task_id) {
               // poll every second
-              setTimeout(function(){
+              timer = setTimeout(function(){
                   window.console.log("Polling state of current task: "+task_id);
                   $.ajax({
                       url: poll_request_url,
@@ -55,13 +60,15 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                       if(resp_data.success) {
                           if(resp_data.state == 'SUCCESS') {
                               window.console.log("Task status: success");
-                              window.console.log("Result: " + resp_data.result);
-                              var json_result = JSON.parse(resp_data.result);
-                              success_func(json_result);
+                              window.console.log(resp_data.result)
+                              //var json_result = JSON.parse(resp_data.result);
+                              //success_func(json_result);
+                              success_func(resp_data.result);
+                              window.clearTimeout(timer);
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 // check again if task is still pending
-                                setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 7000);
+                                timer = setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 15000);
                           } else {
                             window.console.log("In progress ...");
                           }
@@ -72,7 +79,7 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                       // recursive call
                       if(!ready) { PollState(task_id); }
                   });
-              }, 5000);
+              }, 10000);
           }
           if(!ready) { PollState(in_task_id); }
       });

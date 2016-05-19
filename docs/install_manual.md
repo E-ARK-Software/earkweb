@@ -163,14 +163,6 @@ Install result backend database:
     Grant access to user 'arkiv':
 
         GRANT ALL ON eark.* TO arkiv@'%' IDENTIFIED BY 'arkiv';
-        
-    Create another database for Celery:
-    
-        mysql> create database celerydb;
-
-    And grant rights to use datase celery for user 'arkiv':
-    
-        mysql> GRANT ALL ON celerydb.* TO arkiv@'%' IDENTIFIED BY 'arkiv';
 
 2. Create database schema based on the model and apply initialise the database:
 
@@ -198,7 +190,7 @@ Install result backend database:
 1. Start the daemon from command line (development mode):
     
         cd ${EARKWEB}
-        python manage.py celeryd -E
+        python manage.py celeryd -E -Ofair
         
     For development it is recommended to enable the CELERY_ALWAYS_EAGER property in earkweb/settings.py:
 

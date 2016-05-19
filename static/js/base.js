@@ -40,7 +40,12 @@ if (typeof String.prototype.startsWith != 'function') {
 
     };
 
+
 }(jQuery));
+
+// Disable function
+
+
 
 /**
  * Create id based on name by removing special and white space characters.

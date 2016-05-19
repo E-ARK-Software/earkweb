@@ -17,6 +17,8 @@
     <!-- batch.html stylesheet -->
     <link rel="stylesheet" href="{% static "sip2aip/css/batch.css" %}" type="text/css" />
 
+    <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
+
 {% endblock %}
 
 {% block content %}
@@ -25,34 +27,45 @@
 
     <h2 class="main">Batch SIP ingest</h2>
 
-    <p>Batch SIP to AIP conversion applying an ingest workflow</p>
-    <p><button id="batch-apply-task">Run batch ingest!</button></p>
+    <p>Run SIP to AIP conversion for all SIP files in the reception directory. </p>
+
+    <p></p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch ingest!</button></p>
 
     <table class="table table-striped table-bordered table-condensed">
     <thead>
       <tr>
 		<th>Package file</th>
 		<th>Mime-type</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody id="iplist">
-
+        <tr id="loading"><td colspan="3">Loading files in reception directory ...</td></tr>
     </tbody>
   </table>
 
     <script language="JavaScript">
+        var reception_packages = Array();
+        $('#batch-apply-task').attr("disabled", "disabled");
+
         // module defining the context of the get directory information request
         var get_dir_info_module = {
             request_url: "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
+                $('#loading').nodisplay();
                 for(var i in json_result.children) {
                     var mime = json_result.children[i].data.mimetype;
                     var filename = json_result.children[i].text;
-                    $('#iplist').append('<tr><td class="filename"><span class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td></tr>');
+                    if(filename.endsWith(".tar") || filename.endsWith(".zip")) {
+                        reception_packages.push(filename);
+                        $('#iplist').append('<tr><td class="filename"><span id="'+name_to_id(filename)+'" class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+mime+'</td><td><span id="st'+name_to_id(filename)+'" class="label label-default received">Received</span></td></tr>');
+                    }
                 }
+                $('#batch-apply-task').prop('disabled', false);
+
             },
-            request_params: {}
+            request_params: {filename: "test"}
         }
         // bind module to function
         var get_dir_info_func = $.proxy( request_func, get_dir_info_module );
@@ -60,22 +73,38 @@
         // execute on load
         $(window).load(get_dir_info_func);
 
-
-        // module defining the context of the get directory information request
-        var submit_batch_ingest_module = {
-            request_url: "/earkweb/sip2aip/submit_batch_ingest/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
-            poll_request_url: "/earkweb/earkcore/poll_state/",
-            success_func: function(json_result) {
-                 window.console.log(json_result);
-            },
-            request_params: {}
+        function changeLabel(labelid, oldlabel, newlabel) {
+            $(labelid).removeClass(oldlabel.toLowerCase());
+            $(labelid).addClass(newlabel.toLowerCase());
+            $(labelid).text(newlabel);
         }
-        // bind module to function
-        var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
 
+        function run_all() {
+            $('#batch-apply-task').prop('disabled', true);
+            window.console.log("Total number of ingest processes: " + reception_packages.length);
+            for(var i=0; i<reception_packages.length; i++) {
+                rec_pack = reception_packages[i];
+                rec_pack_id = '#st'+name_to_id(rec_pack);
+                changeLabel(rec_pack_id, "Received", "Running");
+                // module defining the context of the get directory information request
+                var submit_batch_ingest_module = {
+                    //request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
+                    request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent(rec_pack) + "/",
+                    poll_request_url: "/earkweb/earkcore/poll_state/",
+                    success_func: function(json_result) {
+                        var proc_pack_status_id = '#st'+name_to_id(json_result.package_file);
+                        changeLabel(proc_pack_status_id, "Running", "Processed");
+                    },
+                    reception_packages: reception_packages,
+                    request_params: { filename: "test" }
+                }
+                // bind module to function
+                var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
+                submit_batch_ingest_func();
+            }
+        }
         // execute on load
-        $('#batch-apply-task').click(submit_batch_ingest_func);
-
+        $('#batch-apply-task').click(run_all);
     </script>
 {% endblock %}
 

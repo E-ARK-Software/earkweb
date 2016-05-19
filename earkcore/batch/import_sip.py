@@ -22,7 +22,9 @@ from earkcore.models import InformationPackage
 
 def import_package(src_zip):
 
+    logger.info("=================================================================================")
     logger.info("Import package %s" % src_zip)
+    logger.info("=================================================================================")
 
     sip_uuid = uuid.uuid4().__str__()
 
@@ -81,7 +83,7 @@ def import_package(src_zip):
         if result.result.task_status != 0:
             logger.info( "Stopping chain due to %s task error" % task )
             return
-        time.sleep(5)
+        time.sleep(25)
 
     for task in chain_2_classes:
         logger.info( "\n------------------------------------------------" )

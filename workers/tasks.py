@@ -150,23 +150,31 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 
 @app.task(bind=True)
 def reception_dir_status(self, reception_d):
-    reception_dir_status = "%s" % path_to_dict(reception_d)
-    reception_dir_status = reception_dir_status.replace("'", "\"")
-    return reception_dir_status
+    logger.debug("Get information about directory: %s" % reception_d)
+    return path_to_dict(reception_d)
 
 
 @app.task(bind=True)
-def run_batch_ingest(self, reception_d):
+def run_package_ingest(self, package_file):
     from earkcore.batch.import_sip import import_package
     valid_types = ['application/zip', 'application/tar']
-    reception_dir_info = path_to_dict(reception_d)
+    reception_dir_info = path_to_dict(package_file)
+    # total = sum([1 for archive in reception_dir_info['children'] if archive['data']['mimetype'] in valid_types])
     result_list = []
-    for archive in reception_dir_info['children']:
-        if archive['data']['mimetype'] in valid_types:
-            task_context = import_package(archive['data']['path'])
-            result = { 'package_file': archive['text'], 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
-            result_list.append(result)
-    return {'result': result_list }
+
+    from config.configuration import config_path_reception
+    task_context = import_package(os.path.join(config_path_reception, package_file))
+
+    # i = 0
+    # for archive in reception_dir_info['children']:
+    #     if archive['data']['mimetype'] in valid_types:
+    #         task_context = import_package(archive['data']['path'])
+    #         result = { 'package_file': archive['text'], 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
+    #         # perc = (i * 100) / total
+    #         # self.update_state(state='PROGRESS', meta={'process_percent': perc})
+    #         # i += 1
+    #         result_list.append(result)
+    return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
 
 
 class SIPReset(DefaultTask):
@@ -860,6 +868,7 @@ class MigrationProcess(DefaultTask):
 
             # TODO: error handling (OSException)
             if self.args != '':
+                tl.addinfo("subprocess32.Popen args: %s" % self.args)
                 self.migrate = subprocess32.Popen(self.args)
                  # note: the following line has to be there, even if nothing is done with out/err messages,
                  # as the process will otherwise deadlock!
@@ -872,16 +881,19 @@ class MigrationProcess(DefaultTask):
                     print 'Migration for file %s caused errors: %s' % (file, err)
                     with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                         status.write(err)
+                        status.close()
                     return task_context.additional_data
             else:
                 tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
                 with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                     status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
+                    status.close()
                 return task_context.additional_data
 
             task_context.task_status = 0
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
+                status.close()
                 pass
             return task_context.additional_data
         except SoftTimeLimitExceeded:
@@ -891,12 +903,14 @@ class MigrationProcess(DefaultTask):
             task_context.task_status = 1
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Time limit exceeded, stopping migration.')
+                status.close()
         except Exception:
             e = sys.exc_info()[0]
             tl.adderr('Exception in MigrationProcess(): %s' % e)
             task_context.task_status = 1
             with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
                 status.write('Exception in MigrationProcess(): %s' % e)
+                status.close()
         return task_context.additional_data
 
 
@@ -967,6 +981,7 @@ class AIPCheckMigrationProgress(DefaultTask):
             xml_path = os.path.join(task_context.path,'metadata/earkweb/migrations.xml')
             with open(xml_path, 'w') as output_file:
                 output_file.write(str)
+                output_file.close()
 
             # check if migrations are all completed
             if int(total) == successful:

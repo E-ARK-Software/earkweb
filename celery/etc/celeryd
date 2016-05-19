@@ -23,7 +23,8 @@ CELERYD_CHDIR="${EPPMOD}"
 
 # Extra command-line arguments to the worker
 #CELERYD_OPTS="--time-limit=300 --concurrency=1"
-CELERYD_OPTS="--autoreload -Q:worker1 default -c:worker1 1 --time-limit=300"
+# TODO: parameter Ofair to be tested if it takes effect, see: http://stackoverflow.com/questions/24519559/celery-worker-with-concurrency-and-reserved-tasks-only-running-1-task
+CELERYD_OPTS="--autoreload -Q:worker1 default -Ofair -c:worker1 1 --time-limit=300"
 #CELERYD_OPTS="-Q:worker1 default,test -c:worker1 2 --time-limit=300 -E"
 
 # %N will be replaced with the first part of the nodename.

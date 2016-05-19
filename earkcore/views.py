@@ -24,7 +24,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 import logging
 from workers.tasks import reception_dir_status
-from workers.tasks import run_batch_ingest
+from workers.tasks import run_package_ingest
 
 import traceback
 #from xml.xmlvalidation import XmlValidation
