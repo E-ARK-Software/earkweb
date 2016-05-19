@@ -61,7 +61,7 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 // check again if task is still pending
-                                setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 3000);
+                                setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 7000);
                           } else {
                             window.console.log("In progress ...");
                           }
@@ -72,7 +72,7 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                       // recursive call
                       if(!ready) { PollState(task_id); }
                   });
-              }, 1000);
+              }, 5000);
           }
           if(!ready) { PollState(in_task_id); }
       });

@@ -1,5 +1,5 @@
 var identifier_field = 'package';
-var blobField = 'content';
+var blobField = '_text_';
 var titleField = 'entry';
 var bytesField = 'stream_size';
 var typeField = 'content_type';

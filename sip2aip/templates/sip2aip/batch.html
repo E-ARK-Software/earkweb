@@ -66,10 +66,7 @@
             request_url: "/earkweb/sip2aip/submit_batch_ingest/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
-                for(var i in json_result.children) {
-                    var filename = json_result.children[i].text;
-                    window.console.log(filename);
-                }
+                 window.console.log(json_result);
             },
             request_params: {}
         }

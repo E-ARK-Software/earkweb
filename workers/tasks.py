@@ -150,7 +150,6 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 
 @app.task(bind=True)
 def reception_dir_status(self, reception_d):
-
     reception_dir_status = "%s" % path_to_dict(reception_d)
     reception_dir_status = reception_dir_status.replace("'", "\"")
     return reception_dir_status
@@ -158,10 +157,16 @@ def reception_dir_status(self, reception_d):
 
 @app.task(bind=True)
 def run_batch_ingest(self, reception_d):
-    print "RUN BATCH INGEST!!!"
-    reception_dir_status = "%s" % path_to_dict(reception_d)
-    reception_dir_status = reception_dir_status.replace("'", "\"")
-    return reception_dir_status
+    from earkcore.batch.import_sip import import_package
+    valid_types = ['application/zip', 'application/tar']
+    reception_dir_info = path_to_dict(reception_d)
+    result_list = []
+    for archive in reception_dir_info['children']:
+        if archive['data']['mimetype'] in valid_types:
+            task_context = import_package(archive['data']['path'])
+            result = { 'package_file': archive['text'], 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
+            result_list.append(result)
+    return {'result': result_list }
 
 
 class SIPReset(DefaultTask):
@@ -1215,11 +1220,13 @@ class AIPPackaging(DefaultTask):
 
             package_name = task_context.additional_data['packagename']
             delivery_xml = os.path.join(task_context.path, "%s.xml" % package_name)
-            delivery_file = os.path.join(task_context.path, "%s.tar" % package_name)
+            delivery_file_tar = os.path.join(task_context.path, "%s.tar" % package_name)
+            delivery_file_zip = os.path.join(task_context.path, "%s.zip" % package_name)
 
             status_xml = os.path.join(task_context.path, "state.xml")
             submission_status_xml = os.path.join(task_context.path, "submission/state.xml")
-            tl.addinfo("Ignoring package file: %s" % delivery_file)
+            tl.addinfo("Ignoring package file (tar): %s" % delivery_file_tar)
+            tl.addinfo("Ignoring package file (zip): %s" % delivery_file_zip)
             tl.addinfo("Ignoring delivery XML file: %s" % delivery_xml)
             tl.addinfo("Ignoring status XML file: %s" % status_xml)
             tl.addinfo("Ignoring submission status XML file: %s" % submission_status_xml)
@@ -1227,7 +1234,7 @@ class AIPPackaging(DefaultTask):
             # ignore files that were only needed to check on migration status
             ignore_dir = os.path.join(task_context.path, 'metadata/earkweb')
 
-            ignore_list = [delivery_file, delivery_xml, status_xml, submission_status_xml]
+            ignore_list = [delivery_file_tar, delivery_file_zip, delivery_xml, status_xml, submission_status_xml]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
                 if subdir == ignore_dir:
