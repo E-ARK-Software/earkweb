@@ -128,9 +128,11 @@ Install result backend database:
 
         pip install -r ${EARKWEB}/requirements.txt
         
-5. Create directories making sure the user running earkweb has rights to reading and write:
+5. Create directories and files making sure the user running earkweb has rights to read and write:
 
         sudo mkdir -p /var/data/earkweb/{reception,storage,work,ingest,access}
+        sudo mkdir /var/data/earkweb/storage/pairtree_root
+        sudo touch /var/data/earkweb/storage/pairtree_version0_1
         sudo chown -R <user>:<group> /var/data/earkweb/
         sudo mkdir -p /var/log/earkweb
         sudo chown <user>:<group> /var/log/earkweb

@@ -18,7 +18,7 @@ var request_func = function() {
      if(resp_data.success) {
          window.console.log("Task accepted, task id: " + resp_data.id);
 
-         pollstate(resp_data.id, this.success_func, this.poll_request_url);
+         pollstate(resp_data.id, this.success_func, this.update_func, this.poll_request_url);
      } else {
         window.console.log(resp_data.errmsg);
         window.console.log(resp_data.errdetail);
@@ -44,7 +44,7 @@ var timer;
  * Requires "poll_request_url" to be defined and a success function poll_success_func(resp_data.result) to process the
  * result in case of success.
  */
-function pollstate(in_task_id, success_func, poll_request_url) {
+function pollstate(in_task_id, success_func, update_func, poll_request_url) {
     var ready = false;
     $(document).ready(function() {
           var PollState = function(task_id) {
@@ -68,7 +68,10 @@ function pollstate(in_task_id, success_func, poll_request_url) {
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 // check again if task is still pending
-                                timer = setTimeout(function(){ pollstate(task_id, success_func, poll_request_url) }, 15000);
+                                timer = setTimeout(function(){ pollstate(task_id, success_func, update_func, poll_request_url) }, 15000);
+                                window.console.log("Checking task status of task: " + task_id);
+                                window.console.log(resp_data.info.last_task);
+                                update_func(resp_data.info);
                           } else {
                             window.console.log("In progress ...");
                           }

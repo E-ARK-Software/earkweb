@@ -156,6 +156,7 @@ def reception_dir_status(self, reception_d):
 
 @app.task(bind=True)
 def run_package_ingest(self, package_file):
+    current_task.update_state(state='PENDING', meta={'package_file': package_file, 'last_task': "AIPReset"})
     from earkcore.batch.import_sip import import_package
     valid_types = ['application/zip', 'application/tar']
     reception_dir_info = path_to_dict(package_file)
@@ -163,7 +164,7 @@ def run_package_ingest(self, package_file):
     result_list = []
 
     from config.configuration import config_path_reception
-    task_context = import_package(os.path.join(config_path_reception, package_file))
+    task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
 
     # i = 0
     # for archive in reception_dir_info['children']:
@@ -174,6 +175,7 @@ def run_package_ingest(self, package_file):
     #         # self.update_state(state='PROGRESS', meta={'process_percent': perc})
     #         # i += 1
     #         result_list.append(result)
+    current_task.update_state(state='PENDING', meta={'package_file': package_file, 'last_task': "AIPStore"})
     return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
 
 

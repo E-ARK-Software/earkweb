@@ -52,9 +52,11 @@ docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
 echo "Creating solr core for storage area ..."
 docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
 
-echo "Creating repository directories ..."
+echo "Creating repository directories and files ..."
 mkdir $REPO_DATA_DIRECTORY/reception
 mkdir $REPO_DATA_DIRECTORY/storage
+mkdir $REPO_DATA_DIRECTORY/storage/pairtree_root
+touch $REPO_DATA_DIRECTORY/storage/pairtree_version0_1
 mkdir $REPO_DATA_DIRECTORY/work
 mkdir $REPO_DATA_DIRECTORY/ingest
 mkdir $REPO_DATA_DIRECTORY/access

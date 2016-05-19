@@ -65,6 +65,7 @@
                 $('#batch-apply-task').prop('disabled', false);
 
             },
+            update_func: function(info) {},
             request_params: {filename: "test"}
         }
         // bind module to function
@@ -73,10 +74,10 @@
         // execute on load
         $(window).load(get_dir_info_func);
 
-        function changeLabel(labelid, oldlabel, newlabel) {
+        function changeLabel(labelid, oldlabel, newlabel, newlabeltext) {
             $(labelid).removeClass(oldlabel.toLowerCase());
             $(labelid).addClass(newlabel.toLowerCase());
-            $(labelid).text(newlabel);
+            $(labelid).text(newlabeltext);
         }
 
         function run_all() {
@@ -85,15 +86,20 @@
             for(var i=0; i<reception_packages.length; i++) {
                 rec_pack = reception_packages[i];
                 rec_pack_id = '#st'+name_to_id(rec_pack);
-                changeLabel(rec_pack_id, "Received", "Running");
+                changeLabel(rec_pack_id, "Received", "Running", "Running");
                 // module defining the context of the get directory information request
                 var submit_batch_ingest_module = {
-                    //request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
                     request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent(rec_pack) + "/",
                     poll_request_url: "/earkweb/earkcore/poll_state/",
                     success_func: function(json_result) {
                         var proc_pack_status_id = '#st'+name_to_id(json_result.package_file);
-                        changeLabel(proc_pack_status_id, "Running", "Processed");
+                        changeLabel(proc_pack_status_id, "Running", "Processed", "Processed");
+                    },
+                    update_func: function(info) {
+                        var proc_pack_status_id = '#st'+name_to_id(info.package_file);
+                        window.console.log("package file: " + info.package_file);
+                        window.console.log("last task: " + info.last_task);
+                        changeLabel(proc_pack_status_id, "Running", "Running", "Running: " + info.last_task);
                     },
                     reception_packages: reception_packages,
                     request_params: { filename: "test" }

@@ -20,7 +20,7 @@ from workflow.models import WorkflowModules
 from earkcore.models import InformationPackage
 
 
-def import_package(src_zip):
+def import_package(current_task, src_zip):
 
     logger.info("=================================================================================")
     logger.info("Import package %s" % src_zip)
@@ -65,6 +65,7 @@ def import_package(src_zip):
         logger.info( result.status )
         logger.info( result.result.additional_data )
         logger.info( result.result.task_name )
+        current_task.update_state(state='PENDING', meta={'package_file': zip_basename, 'last_task': result.result.task_name})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))
@@ -93,6 +94,7 @@ def import_package(src_zip):
         logger.info(result.status)
         logger.info(result.result.additional_data)
         logger.info(result.result.task_name)
+        current_task.update_state(state='PENDING', meta={'package_file': zip_basename, 'last_task': result.result.task_name})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))
