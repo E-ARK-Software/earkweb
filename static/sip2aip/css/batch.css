@@ -28,3 +28,20 @@ span.applicationxtar {
 .processed {
     background-color: DarkGreen;
 }
+
+#receptiontable {
+    display: table;
+    width: 100%;
+}
+#receptiontable th.filecol {
+    width: 30%;
+}
+#receptiontable th.daticol {
+    width: 30%;
+}
+#receptiontable th.mimecol {
+    width: 20%;
+}
+#receptiontable th.statcol {
+    width: 20%;
+}

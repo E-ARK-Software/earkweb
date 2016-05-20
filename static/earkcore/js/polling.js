@@ -1,7 +1,7 @@
 /**
  * polling.js
  *
- * Basic functions for starting a task, polling the task status, and acting upon successful task execution.
+ * Basic functions for starting a task, polling the task status, and acting upon successful task execution or reporting about task status information.
  */
 
 /**
@@ -10,15 +10,13 @@
 var request_func = function() {
     window.console.log("Get data request url: " + this.request_url);
 
-//    window.console.log("test:");
-//    window.console.log(this.request_params.filename);
-//    window.console.log(":test");
+   var req_func_timer = null;
 
    var success_func = function(resp_data) {
      if(resp_data.success) {
          window.console.log("Task accepted, task id: " + resp_data.id);
 
-         pollstate(resp_data.id, this.success_func, this.update_func, this.poll_request_url);
+         pollstate(resp_data.id, this.success_func, this.update_func, this.poll_request_url, this.req, req_func_timer);
      } else {
         window.console.log(resp_data.errmsg);
         window.console.log(resp_data.errdetail);
@@ -37,19 +35,14 @@ var request_func = function() {
    return false;
 };
 
-var timer;
-
 /**
  * Function to poll task processing state
- * Requires "poll_request_url" to be defined and a success function poll_success_func(resp_data.result) to process the
- * result in case of success.
  */
-function pollstate(in_task_id, success_func, update_func, poll_request_url) {
+function pollstate(in_task_id, success_func, update_func, poll_request_url, req_func_timer) {
     var ready = false;
     $(document).ready(function() {
           var PollState = function(task_id) {
-              // poll every second
-              timer = setTimeout(function(){
+              req_func_timer = setTimeout(function(){
                   window.console.log("Polling state of current task: "+task_id);
                   $.ajax({
                       url: poll_request_url,
@@ -61,19 +54,15 @@ function pollstate(in_task_id, success_func, update_func, poll_request_url) {
                           if(resp_data.state == 'SUCCESS') {
                               window.console.log("Task status: success");
                               window.console.log(resp_data.result)
-                              //var json_result = JSON.parse(resp_data.result);
-                              //success_func(json_result);
                               success_func(resp_data.result);
-                              window.clearTimeout(timer);
+                              window.clearTimeout(req_func_timer);
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
-                                // check again if task is still pending
-                                timer = setTimeout(function(){ pollstate(task_id, success_func, update_func, poll_request_url) }, 15000);
                                 window.console.log("Checking task status of task: " + task_id);
                                 window.console.log(resp_data.info.last_task);
                                 update_func(resp_data.info);
                           } else {
-                            window.console.log("In progress ...");
+                            window.console.log("task state: " + resp_data.state);
                           }
                       } else {
                         reportError(resp_data.errmsg)

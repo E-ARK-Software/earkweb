@@ -9,6 +9,8 @@ DT_ISO_FMT_SEC_PREC='%Y-%m-%dT%H:%M:%S'
 
 TS_FORMAT='%Y-%m-%d %H:%M:%S'
 
+EU_UI_FORMAT='%d.%m.%Y %H:%M:%S'
+
 TASK_EXEC_TIMES = {}
 
 def get_file_ctime_iso_date_str(file_path, fmt=DT_ISO_FORMAT, wd=None):

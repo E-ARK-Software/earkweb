@@ -2,6 +2,9 @@ import os,sys
 import json
 from earkcore.utils.fileutils import remove_protocol
 import mimetypes
+from earkcore.utils.datetimeutils import get_file_ctime_iso_date_str, EU_UI_FORMAT
+
+from config.configuration import config_path_reception
 
 mimetypes.add_type('text/plain','.log')
 
@@ -18,7 +21,8 @@ def path_to_dict(path, strip_path_part=None):
     else:
         d['icon'] = "glyphicon glyphicon-file"
         path_metadata = path if strip_path_part is None else path.replace(strip_path_part, "")
-        d['data'] = {"path": unicode(path_metadata).encode('utf-8'), "mimetype": get_mime_type(path)}
+        wd_path, _ = os.path.split(path)
+        d['data'] = {"path": unicode(path_metadata).encode('utf-8'), "mimetype": get_mime_type(path), "datetime": get_file_ctime_iso_date_str(path, EU_UI_FORMAT, config_path_reception)}
 
     return d
 

@@ -84,7 +84,7 @@ def import_package(current_task, src_zip):
         if result.result.task_status != 0:
             logger.info( "Stopping chain due to %s task error" % task )
             return
-        time.sleep(25)
+        time.sleep(5)
 
     for task in chain_2_classes:
         logger.info( "\n------------------------------------------------" )
