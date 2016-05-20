@@ -13,6 +13,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerEr
 from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from earkcore.utils.randomutils import getUniqueID
+from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from sip2aip.forms import UploadSIPDeliveryForm
 from workers import tasks
 from django.http import JsonResponse
@@ -105,19 +106,30 @@ def upload_sip_delivery(request):
         if form.is_valid():
             sip_tar_package_file = request.FILES['sip_tar_package']
             packagename, _ = os.path.splitext(os.path.basename(sip_tar_package_file.name))
-            sip_delivery_xml = request.FILES['sip_delivery_xml']
-            deliveryname, _ = os.path.splitext(os.path.basename(sip_delivery_xml.name))
+            sip_delivery_xml = None
+            deliveryname = None
+            if 'sip_delivery_xml' in request.FILES:
+                sip_delivery_xml = request.FILES['sip_delivery_xml']
+                deliveryname, _ = os.path.splitext(os.path.basename(sip_delivery_xml.name))
             form = UploadSIPDeliveryForm()
-            if packagename != deliveryname:
+            if deliveryname and packagename != deliveryname:
                 context = RequestContext(request, {
-                    'error': 'File name without extension must be equal',
+                    'error': 'File name without extension must be equal, i.e. <packagename>.tar and <packagename>.xml',
                     'form': form
                 })
                 template = loader.get_template('sip2aip/upload_sip.html')
                 return HttpResponse(template.render(context))
             else:
                 upload_file(upload_directory, sip_tar_package_file)
-                upload_file(upload_directory, sip_delivery_xml)
+                if sip_delivery_xml:
+                    upload_file(upload_directory, sip_delivery_xml)
+                else:
+                    sipgen = SIPGenerator(upload_directory)
+                    delivery_mets_file = os.path.join(upload_directory, packagename + '.xml')
+                    _, file_extension = os.path.splitext(sip_tar_package_file.name)
+                    dest_package_file = os.path.join(upload_directory, packagename + file_extension)
+                    sipgen.createDeliveryMets(dest_package_file, delivery_mets_file)
+                    logger.info( "Delivery METS stored: %s" % delivery_mets_file )
                 path = upload_directory
                 initial_last_task = WorkflowModules.objects.get(identifier=SIPtoAIPReset.__name__)
                 ip = InformationPackage.objects.create(uuid=uuid, packagename=packagename, path=path, statusprocess=0, last_task=initial_last_task)

@@ -16,10 +16,12 @@
 
     <h2 class="main">Upload SIP</h2>
 
-    <p>Upload an SIP tar file together with the SIP delivery XML document from the local file system to the SIP reception area:</p>
+    <p>This form allows uploading a SIP package file into the working area.</p>
+    <p>Additionally, a SIP delivery XML document can be provided. This file will be generated if omitted, but note that the correct transfer is not guaranteed in this case because
+       the checksum specified in the delivery file is used to verify the integrity of the package file.</p>
 
     {% if error %}
-    <p>
+    <p class="error">
         An error occurred: {{ error }}
     </p>
     {% endif %}
@@ -51,6 +53,6 @@
 
     </div>
 
-    <p>Note: The package must be in TAR format and the basenames of the package file and delivery XML (METS format) file must be equal (e.g. PACKAGE.tar and PACKAGE.xml).</p>
+    <p>Note: The SIP must be in TAR or ZIP format. If a delivery file is provided, then the basename must be equal to the package file's basename (i.e. <packagename>.tar and <packagename>.xml).</p>
 
 {% endblock %}

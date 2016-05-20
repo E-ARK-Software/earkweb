@@ -38,5 +38,5 @@ class SIPCreationPackageWorkflowModuleSelectForm(PackageWorkflowModuleSelectForm
     #wiref = forms.ModelChoiceField(label="Workflow", queryset=Wirings.objects.all())
 
 class UploadSIPDeliveryForm(forms.Form):
-    sip_tar_package = forms.FileField(label='Local SIP TAR package')
-    sip_delivery_xml = forms.FileField(label='SIP Delivery XML file')
+    sip_tar_package = forms.FileField(label='SIP package file (TAR or ZIP)')
+    sip_delivery_xml = forms.FileField(label='Delivery XML file (optional)', required=False)
