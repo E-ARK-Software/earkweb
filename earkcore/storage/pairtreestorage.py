@@ -5,6 +5,9 @@ Created on April 30, 2016
 @author: Sven Schlarb (https://github.com/shsdev)
 """
 import logging
+
+from earkcore.filesystem.chunkedtarentryreader import ChunkedTarEntryReader
+
 logger = logging.getLogger(__name__)
 
 import shutil
@@ -201,7 +204,8 @@ class PairtreeStorage(object):
         try:
             info = t.getmember(entry)
             f=t.extractfile(info)
-            return f.read()
+            inst = ChunkedTarEntryReader(t)
+            return inst.chunks(entry)
         except KeyError:
             logger.error('ERROR: Did not find %s in tar archive' % entry)
             raise ObjectNotFoundException("Entry not found in repository object")

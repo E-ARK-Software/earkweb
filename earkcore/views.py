@@ -148,7 +148,7 @@ def access_aip_item(request, identifier, mime, entry):
     mime = mime.strip()
     import re
     def matches(s):
-        return re.match("^[a-z]{2,20}/[a-zA-Z0-9-+\.]{2,40}$", s) is not None
+        return re.match("^[a-z]{2,30}/[a-zA-Z0-9-+\.]{2,100}$", s) is not None
     if not matches(mime):
         mime = "application/octet-stream"
         logging.info("warning: using default mime type for access: application/octet-stream")
