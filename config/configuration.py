@@ -59,7 +59,6 @@ premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema
 config_max_filesize_viewer = config.getint('limits', 'config_max_filesize_viewer')
 
 config_path_reception = config.get('paths', 'config_path_reception')
-config_path_ingest = config.get('paths', 'config_path_ingest')
 config_path_work = config.get('paths', 'config_path_work')
 config_path_storage = config.get('paths', 'config_path_storage')
 config_path_access = config.get('paths', 'config_path_access')
