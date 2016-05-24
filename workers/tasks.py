@@ -155,29 +155,24 @@ def reception_dir_status(self, reception_d):
 
 
 @app.task(bind=True)
-def run_package_ingest(self, package_file):
+def run_package_ingest(self, *args, **kwargs):
+    package_file = kwargs['package_file']
     current_task.update_state(state='PENDING', meta={'package_file': package_file, 'last_task': "AIPReset"})
-    from earkcore.batch.import_sip import import_package
-    valid_types = ['application/zip', 'application/tar']
-    reception_dir_info = path_to_dict(package_file)
-    # total = sum([1 for archive in reception_dir_info['children'] if archive['data']['mimetype'] in valid_types])
-    result_list = []
-
     from config.configuration import config_path_reception
-    task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
-
-    # i = 0
-    # for archive in reception_dir_info['children']:
-    #     if archive['data']['mimetype'] in valid_types:
-    #         task_context = import_package(archive['data']['path'])
-    #         result = { 'package_file': archive['text'], 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
-    #         # perc = (i * 100) / total
-    #         # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-    #         # i += 1
-    #         result_list.append(result)
-    current_task.update_state(state='PENDING', meta={'package_file': package_file, 'last_task': "AIPStore"})
-    return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status}
-
+    from earkcore.batch.import_sip import import_package
+    try:
+        task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
+        print "TASK STATUS: %s" % task_context.task_status
+        if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}
+        else:
+            current_task.update_state(state='FAILURE', meta={'package_file': package_file})
+            return { 'package_file': package_file, 'storage_loc': "", 'status': "1", "success": False, "errmsg": "Import workflow failed."}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        current_task.update_state(state='FAILURE', meta={'package_file': package_file})
+        return { 'package_file': package_file, 'storage_loc': "", 'status': "1", "success": False, "errmsg": err.message}
 
 class SIPReset(DefaultTask):
 

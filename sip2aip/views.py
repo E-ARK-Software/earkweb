@@ -380,7 +380,7 @@ def submit_package_ingest(request, package_file):
     try:
         if request.is_ajax():
             try:
-                job = run_package_ingest.delay(package_file)
+                job = run_package_ingest.delay(package_file=package_file)
                 data = {"success": True, "id": job.id, "packagefile": package_file}
             except Exception, err:
                 tb = traceback.format_exc()

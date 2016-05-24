@@ -59,8 +59,10 @@ function pollstate(in_task_id, success_func, update_func, poll_request_url, req_
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 window.console.log("Checking task status of task: " + task_id);
-                                window.console.log(resp_data.info.last_task);
                                 update_func(resp_data.info);
+                          } else if(resp_data.state == 'FAILURE') {
+                                window.console.log("An error occurred in task: " + task_id);
+                                update_func({'errmsg': "Task execution failed!"});
                           } else {
                             window.console.log("task state: " + resp_data.state);
                           }

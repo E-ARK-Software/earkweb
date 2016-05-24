@@ -29,6 +29,10 @@ span.applicationxtar {
     background-color: DarkGreen;
 }
 
+.error {
+    background-color: DarkRed;
+}
+
 #receptiontable {
     display: table;
     width: 100%;

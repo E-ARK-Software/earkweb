@@ -100,10 +100,14 @@
                         changeLabel(proc_pack_status_id, "Running", "Processed", "Processed");
                     },
                     update_func: function(info) {
-                        var proc_pack_status_id = '#st'+name_to_id(info.package_file);
-                        window.console.log("package file: " + info.package_file);
-                        window.console.log("last task: " + info.last_task);
-                        changeLabel(proc_pack_status_id, "Running", "Running", "Running: " + info.last_task);
+                        if("errmsg" in info) {
+                            changeLabel(proc_pack_status_id, "Running", "Error", "Error");
+                        } else {
+                            var proc_pack_status_id = '#st'+name_to_id(info.package_file);
+                            window.console.log("package file: " + info.package_file);
+                            window.console.log("last task: " + info.last_task);
+                            changeLabel(proc_pack_status_id, "Running", "Running", "Running: " + info.last_task);
+                         }
                     },
                     reception_packages: reception_packages,
                     request_params: { filename: "test" }

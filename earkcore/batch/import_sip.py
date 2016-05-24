@@ -60,7 +60,7 @@ def import_package(current_task, src_zip):
     for task in chain_1_classes:
         logger.info("\n------------------------------------------------")
         task_context.task_logger = None
-        result = task().apply((task_context,), queue='default')
+        result = task().apply((task_context,task_context.additional_data), queue='default')
 
         logger.info( result.status )
         logger.info( result.result.additional_data )
