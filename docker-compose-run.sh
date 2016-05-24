@@ -58,5 +58,4 @@ mkdir $REPO_DATA_DIRECTORY/storage
 mkdir $REPO_DATA_DIRECTORY/storage/pairtree_root
 touch $REPO_DATA_DIRECTORY/storage/pairtree_version0_1
 mkdir $REPO_DATA_DIRECTORY/work
-mkdir $REPO_DATA_DIRECTORY/ingest
 mkdir $REPO_DATA_DIRECTORY/access

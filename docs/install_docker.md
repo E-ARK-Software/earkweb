@@ -84,7 +84,7 @@ Use the script `docker-compose-run.sh` or execute the commands described below.
 
 11. Create subdirectories in the repository storage area:
 
-        mkdir /tmp/earkwebdata/{reception, storage, work, ingest, access}
+        mkdir /tmp/earkwebdata/{reception, storage, work, access}
     
 11. Open the following URL in a browser and login with the user data provided previously:
 
