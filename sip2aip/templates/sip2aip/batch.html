@@ -50,6 +50,7 @@
         $('#batch-apply-task').attr("disabled", "disabled");
 
         // module defining the context of the get directory information request
+
         var get_dir_info_module = {
             request_url: "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
             poll_request_url: "/earkweb/earkcore/poll_state/",
@@ -70,7 +71,9 @@
 
             },
             update_func: function(info) {},
-            request_params: {filename: "test"}
+            request_params: {},
+            poll_func: pollstate,
+            poll_interval: 2000,
         }
         // bind module to function
         var get_dir_info_func = $.proxy( request_func, get_dir_info_module );
@@ -91,6 +94,8 @@
                 rec_pack = reception_packages[i];
                 rec_pack_id = '#st'+name_to_id(rec_pack);
                 changeLabel(rec_pack_id, "Received", "Running", "Running");
+
+
                 // module defining the context of the get directory information request
                 var submit_batch_ingest_module = {
                     request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent(rec_pack) + "/",
@@ -109,11 +114,17 @@
                             changeLabel(proc_pack_status_id, "Running", "Running", "Running: " + info.last_task);
                          }
                     },
+
                     reception_packages: reception_packages,
-                    request_params: { filename: "test" }
+                    request_params: { },
+                    poll_func: pollstate,
+                    poll_interval: 2000,
                 }
                 // bind module to function
                 var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
+
+                // submit requests in 2 seconds intervals
+                sleepFor(2000);
                 submit_batch_ingest_func();
             }
         }

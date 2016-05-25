@@ -4,46 +4,26 @@
  * Basic functions for starting a task, polling the task status, and acting upon successful task execution or reporting about task status information.
  */
 
-/**
- * Function to get data requires "request_url" to be defined
- */
-var request_func = function() {
-    window.console.log("Get data request url: " + this.request_url);
+function sleepFor( sleepDuration ){
+    var now = new Date().getTime();
+    while(new Date().getTime() < now + sleepDuration){  }
+}
 
-   var req_func_timer = null;
+function bindFirstArg(fn, a) {
+  return function(b) {
+    return fn(a, b);
+  };
+}
 
-   var success_func = function(resp_data) {
-     if(resp_data.success) {
-         window.console.log("Task accepted, task id: " + resp_data.id);
-
-         pollstate(resp_data.id, this.success_func, this.update_func, this.poll_request_url, this.req, req_func_timer);
-     } else {
-        window.console.log(resp_data.errmsg);
-        window.console.log(resp_data.errdetail);
-     }
-    }.bind(this);
-
-   $.ajax({
-    url: this.request_url,
-    method: "POST",
-    async: true,
-    data: this.request_params,
-    success: success_func,
-   });
-   // only execute ajax request, do not submit form
-
-   return false;
-};
 
 /**
  * Function to poll task processing state
  */
-function pollstate(in_task_id, success_func, update_func, poll_request_url, req_func_timer) {
+var pollstate = function (in_task_id, success_func, update_func, poll_request_url) {
     var ready = false;
     $(document).ready(function() {
           var PollState = function(task_id) {
-              req_func_timer = setTimeout(function(){
-                  window.console.log("Polling state of current task: "+task_id);
+              setTimeout(function(){
                   $.ajax({
                       url: poll_request_url,
                       type: "POST",
@@ -55,7 +35,6 @@ function pollstate(in_task_id, success_func, update_func, poll_request_url, req_
                               window.console.log("Task status: success");
                               window.console.log(resp_data.result)
                               success_func(resp_data.result);
-                              window.clearTimeout(req_func_timer);
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 window.console.log("Checking task status of task: " + task_id);
@@ -73,8 +52,37 @@ function pollstate(in_task_id, success_func, update_func, poll_request_url, req_
                       // recursive call
                       if(!ready) { PollState(task_id); }
                   });
-              }, 10000);
+              }, 20000);
           }
           if(!ready) { PollState(in_task_id); }
       });
-}
+}.bind(this);
+
+
+
+/**
+ * Function to get data requires "request_url" to be defined
+ */
+var request_func = function() {
+   window.console.log("Get data request url: " + this.request_url);
+   var success_func = function(resp_data) {
+     if(resp_data.success) {
+         window.console.log("Task accepted, task id: " + resp_data.id);
+         this.poll_func(resp_data.id, this.success_func, this.update_func, this.poll_request_url);
+     } else {
+        window.console.log(resp_data.errmsg);
+        window.console.log(resp_data.errdetail);
+     }
+    }.bind(this);
+
+   $.ajax({
+    url: this.request_url,
+    method: "POST",
+    async: true,
+    data: this.request_params,
+    success: success_func,
+   });
+   // only execute ajax request, do not submit form
+
+   return false;
+};

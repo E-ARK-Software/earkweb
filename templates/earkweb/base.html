@@ -56,7 +56,12 @@
                 {% if user.is_authenticated %}
 
                 {% if user.is_active and user.is_staff %}
-                <li class="menu-item "><a href="/earkweb/admin">Administration</a></li>
+                 <li id="admin" class="menu-item dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Administration <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li class="menu-item"><a href="/earkweb/admin">Django Administration</a></li>
+                        <li class="menu-item"><a href="http://{{ DJANGO_IP }}:5555/tasks">Flower Process Monitoring</a></li>
+                    </ul>
+                </li>
                 {% endif %}
 
                 <li id="sipcreator" class="menu-item dropdown"><a href="/earkweb/sipcreator" class="dropdown-toggle" data-toggle="dropdown">SIP Creator <b class="caret"></b></a>

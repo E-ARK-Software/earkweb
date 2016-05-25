@@ -162,7 +162,6 @@ def run_package_ingest(self, *args, **kwargs):
     from earkcore.batch.import_sip import import_package
     try:
         task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
-        print "TASK STATUS: %s" % task_context.task_status
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
             return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}
         else:
