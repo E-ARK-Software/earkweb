@@ -4,22 +4,11 @@
  * Basic functions for starting a task, polling the task status, and acting upon successful task execution or reporting about task status information.
  */
 
-function sleepFor( sleepDuration ){
-    var now = new Date().getTime();
-    while(new Date().getTime() < now + sleepDuration){  }
-}
-
-function bindFirstArg(fn, a) {
-  return function(b) {
-    return fn(a, b);
-  };
-}
-
 
 /**
  * Function to poll task processing state
  */
-var pollstate = function (in_task_id, success_func, update_func, poll_request_url) {
+var pollstate = function (poll_interval, in_task_id, success_func, update_func, poll_request_url) {
     var ready = false;
     $(document).ready(function() {
           var PollState = function(task_id) {
@@ -52,7 +41,7 @@ var pollstate = function (in_task_id, success_func, update_func, poll_request_ur
                       // recursive call
                       if(!ready) { PollState(task_id); }
                   });
-              }, 20000);
+              }, poll_interval);
           }
           if(!ready) { PollState(in_task_id); }
       });
@@ -65,10 +54,13 @@ var pollstate = function (in_task_id, success_func, update_func, poll_request_ur
  */
 var request_func = function() {
    window.console.log("Get data request url: " + this.request_url);
+
    var success_func = function(resp_data) {
+
+
      if(resp_data.success) {
          window.console.log("Task accepted, task id: " + resp_data.id);
-         this.poll_func(resp_data.id, this.success_func, this.update_func, this.poll_request_url);
+         this.poll_func(this.poll_interval, resp_data.id, this.success_func, this.update_func, this.poll_request_url);
      } else {
         window.console.log(resp_data.errmsg);
         window.console.log(resp_data.errdetail);

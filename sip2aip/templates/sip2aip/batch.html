@@ -73,7 +73,7 @@
             update_func: function(info) {},
             request_params: {},
             poll_func: pollstate,
-            poll_interval: 2000,
+            poll_interval: 1000,
         }
         // bind module to function
         var get_dir_info_func = $.proxy( request_func, get_dir_info_module );
@@ -118,13 +118,12 @@
                     reception_packages: reception_packages,
                     request_params: { },
                     poll_func: pollstate,
-                    poll_interval: 2000,
+                    poll_interval: 20000,
                 }
                 // bind module to function
                 var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
 
-                // submit requests in 2 seconds intervals
-                sleepFor(2000);
+                // submit request
                 submit_batch_ingest_func();
             }
         }
