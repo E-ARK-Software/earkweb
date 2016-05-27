@@ -60,7 +60,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from config.configuration import hdfs_upload_service_ip
 import requests
 from workers.concurrent_task import ConcurrentTask
-
+from earkcore.utils.datetimeutils import ts_date
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -831,9 +831,19 @@ class MigrationProcess(ConcurrentTask):
 
     accept_input_from = [AIPMigrations.__name__, SIPValidation.__name__, 'MigrationProcess', 'AIPCheckMigrationProgress']
 
+    def custom_logging(self, filename, events):
+        with open(filename, 'a') as logfile:
+            for event in events:
+                logfile.write(event + '\n')
+
     def run_task(self, task_context):
         """
         File Migration
+
+        To prevent concurrency problems, this task does not use the default logging to earkweb.log. Instead one log file
+         for every migration process is created. They can be found in metadata/earkweb/migrations/. The files follow the
+         template of <taskid>.<task_status>, where 1 equals to .fail and 0 to .success.
+
         @type       tc: task configuration line (used to insert read task properties in database table)
         @param      tc: order:8,type:0,stage:0
         """
@@ -841,20 +851,10 @@ class MigrationProcess(ConcurrentTask):
         # Add the event type - will be put into Premis.
         task_context.event_type = 'MigrationProcess'
 
-        # print 'current worker:'
-        # print multiprocessing.current_process().name
+        # custom logging
+        customlog = []
 
-        # TODO: logging does not work perfectly.
-        # This is because every subtask of AIPMigrations can only write its changes into the logfile,
-        # when the instance of MigrationProcess who opened the log file the first time, closes it (or the AIPMigrations
-        # process calls its finalize() method, for that matter).
-        # Then the next instance of MigrationProcess can write to the file, and so on. This results in a chaotic
-        # earkweb.log file, without chronological order! Look into other solutions, maybe a bytestream?
-
-        # tl = task_context.task_logger
-
-        # tl.addinfo('Migration task started for file: %s' % task_context.additional_data['file'])
-
+        customlog.append('%s\tMigration task started for file: %s' % (ts_date(), task_context.additional_data['file']))
         taskid = ''
 
         try:
@@ -862,8 +862,8 @@ class MigrationProcess(ConcurrentTask):
             file = task_context.additional_data['file']
             taskid = task_context.additional_data['taskid']
             self.targetrep = task_context.additional_data['targetrep']
+            logpath = os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.'% (self.targetrep, taskid))
             self.args = task_context.additional_data['commandline']
-
 
             # TODO: error handling (OSException)
             if self.args != '':
@@ -873,43 +873,33 @@ class MigrationProcess(ConcurrentTask):
                 # as the process will otherwise deadlock!
                 out, err = self.migrate.communicate()
                 if err == None:
-                    # tl.addinfo('Successfully migrated file %s.' % file)
                     print 'Successfully migrated file %s.' % file
                 else:
-                    # tl.adderr('Migration for file %s caused errors: %s' % (file, err))
                     print 'Migration for file %s caused errors: %s' % (file, err)
-                    with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
-                        status.write(err)
-                        status.close()
+                    customlog.append('%s\tMigration caused errors: %s' % (ts_date(), err))
+                    self.custom_logging(logpath + 'fail', customlog)
                     return task_context.additional_data
             else:
-                # tl.adderr('Migration for file %s could not be executed due to missing command line parameters.' % file)
                 task_context.task_status = 1
-                with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
-                    status.write('Migration for file %s could not be executed due to missing command line parameters.' % file)
-                    status.close()
+                customlog.append('%s\tMigration for file %s could not be executed due to missing command line parameters.' % (ts_date(), file))
+                self.custom_logging(logpath + 'fail', customlog)
                 return task_context.additional_data
 
             task_context.task_status = 0
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'success')), 'a' ) as status:
-                status.close()
-                pass
+            customlog.append('%s\tMigration successful.' % ts_date())
+            self.custom_logging(logpath + 'success', customlog)
             return task_context.additional_data
         except SoftTimeLimitExceeded:
             # exceeded time limit for this task, terminate the subprocess, set task status to 1, return False
-            # tl.adderr('Time limit exceeded, stopping migration.')
             self.migrate.terminate()
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
-                status.write('Time limit exceeded, stopping migration.')
-                status.close()
+            customlog.append('%s\tTime limit exceeded, stopping migration.' % ts_date())
+            self.custom_logging(logpath + 'fail', customlog)
         except Exception:
             e = sys.exc_info()[0]
-            # tl.adderr('Exception in MigrationProcess(): %s' % e)
             task_context.task_status = 1
-            with open(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.%s'% (self.targetrep, taskid, 'fail')), 'a' ) as status:
-                status.write('Exception in MigrationProcess(): %s' % e)
-                status.close()
+            customlog.append('%s\tException in MigrationProcess(): %s' % (ts_date(), e))
+            self.custom_logging(logpath + 'fail', customlog)
         return task_context.additional_data
 
 
