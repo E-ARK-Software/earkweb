@@ -1236,15 +1236,15 @@ class AIPPackaging(DefaultTask):
             tl.addinfo("Ignoring submission status XML file: %s" % submission_status_xml)
 
             # ignore files that were only needed to check on migration status
-            ignore_dir = os.path.join(task_context.path, 'metadata/earkweb')
+            # ignore_dir = os.path.join(task_context.path, 'metadata/earkweb')
 
             ignore_list = [delivery_file_tar, delivery_file_zip, delivery_xml, status_xml, submission_status_xml]
             i = 0
             for subdir, dirs, files in os.walk(task_context.path):
-                if subdir == ignore_dir:
-                    # remove files and subfolders from loop, so they are not packaged
-                    del dirs[:]
-                    del files[:]
+                # if subdir == ignore_dir:
+                #     # remove files and subfolders from loop, so they are not packaged
+                #     del dirs[:]
+                #     del files[:]
                 for file in files:
                     if os.path.join(subdir, file) not in ignore_list:
                         entry = os.path.join(subdir, file)
