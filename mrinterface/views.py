@@ -41,15 +41,15 @@ def launchmr(request):
                 hdfs_ctrl = os.path.join('/user/eark/data', upload)
 
                 # workaround: move ctrl file to hdfs:///tmp, to be able to create the 'rearranged' file independent of active user
-                mvargs = ['hadoop', 'fs', '-mv', hdfs_ctrl, '/tmp']
+                mvargs = ['hadoop', 'fs', '-cp', hdfs_ctrl, '/tmp']  # TODO: change to -mv (figure out user permissions)
                 mvcmd = Popen(mvargs)
                 mvcmd.wait()
 
                 tmp_ctrl = os.path.join('/tmp', ctrlfile.name)
                 args = ['hadoop', 'jar', '/opt/ToMaR/target/tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
-                        '-r', '/user/janrn/tomarspecs', '-i', tmp_ctrl, '-o', '/user/janrn/output-ner', '-n', '1']
+                        '-r', '/user/janrn/tomarspecs', '-i', tmp_ctrl, '-o', '/tmp/output-ner', '-n', '1']
                 mrcmd = Popen(args, stdout=PIPE, stderr=PIPE)
-                output, error_output = mrcmd.communicate()
+                output, error_output = mrcmd.communicate()  # IMPORTANT do not use in production, waits for the whole process to finish! (deadlock)
 
                 context = RequestContext(request, {
                     'status': 'LAUNCHED, output: %s \nerrors: %s' % (output, error_output)
