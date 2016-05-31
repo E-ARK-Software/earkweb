@@ -19,8 +19,6 @@
 
     <p><i>earkweb</i> is the E-ARK Integrated Prototype implementation of the <a href="http://eark-project.com/" target="_blank">E-ARK project</a>.</p>
 
-    <p>Version <a href="{% url 'version' %}">0.3.0</a> deployed on 10.05.2016.</p>
-
     {% include "sipcreator/about_module.html" %}
 
     <p>The SIP creator allows uploading files in the corresponding IP container sections.</p>
@@ -34,5 +32,7 @@
     {% include "search/about_module.html" %}
 
     <p><a href="{% url 'search:start' %}">Convert AIP to DIP</a></p>
+
+    <p style="margin-top: 30px"><a href="{% url 'version' %}"><span style="color: black; background-color: #fac0ba" class="label label-default running">Version 0.3.1 (31.05.2016)</span></a></p>
 
 {% endblock %}
