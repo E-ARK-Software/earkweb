@@ -52,7 +52,7 @@ class ConcurrentTask(Task):
 
         return task_context
 
-    def run_task(self, task_context):
+    def run_task(self, task_context, *args, **kwargs):
         """
         This method is overriden by the task method implementation (thi one has type 0 in order to not be shown)
         @type       tc: task configuration line (used to insert read task properties in database table)
@@ -87,7 +87,7 @@ class ConcurrentTask(Task):
             # IP state is not checked, just execute actual task implementation; can return additional result parameters
             # in the dictionary additional_params. This dictionary is stored as part of the celery result
             # and is stored in the result backend (AsyncResult(task_id).result.add_res_parms).
-            task_context.additional_data = self.run_task(task_context) # IMPORTANT: task has to return task_context.additional_data!
+            task_context.additional_data = self.run_task(task_context, *args, **kwargs) # IMPORTANT: task has to return task_context.additional_data!
         except Exception, e:
             # We don't log anything, keep this in mind when debugging.
             # Also the task_context.task_status will still be 0.
