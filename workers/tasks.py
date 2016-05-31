@@ -772,16 +772,9 @@ class AIPMigrations(DefaultTask):
 
                     if self.args != '':
                         id = uuid.uuid4().__str__()
-                        input = ({'file': filename,
-                                  'source': migration_source,
-                                  'target': migration_target,
-                                  'targetrep': target_rep,
-                                  'taskid': id.decode('utf-8'),
-                                  'commandline': self.args})
 
-                        additional_data = dict(task_context.additional_data.items() + input.items())
-                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, additional_data, None)
-
+                        # additional_data = dict(task_context.additional_data.items() + input.items())
+                        context = DefaultTaskContext(task_context.uuid, task_context.path, 'workers.tasks.MigrationProcess', None, task_context.additional_data, None)
 
                         # create folder for new representation (if it doesnt exist already)
                         if not os.path.exists(migration_target):
@@ -794,22 +787,30 @@ class AIPMigrations(DefaultTask):
                         # queue the MigrationProcess task
                         try:
                             migrationtask = MigrationProcess()
-                            migrationtask.apply_async((context,), queue='default', task_id=id)
-                            tl.addinfo('Migration queued for %s.' %  filename, display=False)
-                        except:
-                            tl.adderr('Migration task %s for file %s could not be queued.' % (id, filename))
+                            details = {'filename': filename,
+                                       'source': migration_source,
+                                       'target': migration_target,
+                                       'targetrep': target_rep,
+                                       'taskid': id.decode('utf-8'),
+                                       'commandline': self.args}
+
+                            # use kwargs, those can be seen in Celery Flower
+                            migrationtask.apply_async((context,), kwargs=details, queue='default', task_id=id)
+
+                            tl.addinfo('Migration queued for %s.' % filename, display=False)
+                        except Exception, e:
+                            tl.adderr('Migration task %s for file %s could not be queued: %s' % (id, filename, e))
 
                         # migration.xml entry - need this for Premis creation. Can put additional stuff here if desired.
-                        #TODO: check this out. Not used anywhere Jan??
-                        migration = objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
-                                                                                              'output': outputfile,
-                                                                                              'sourcedir': migration_source,
-                                                                                              'targetdir': migration_target,
-                                                                                              'targetrep': target_rep,
-                                                                                              'taskid': id,
-                                                                                              'status': 'queued',
-                                                                                              'starttime': current_timestamp(),
-                                                                                              'endtime': ''})
+                        objectify.SubElement(migration_root, 'migration', attrib={'file': filename,
+                                                                                  'output': outputfile,
+                                                                                  'sourcedir': migration_source,
+                                                                                  'targetdir': migration_target,
+                                                                                  'targetrep': target_rep,
+                                                                                  'taskid': id,
+                                                                                  'status': 'queued',
+                                                                                  'starttime': current_timestamp(),
+                                                                                  'endtime': ''})
                         total += 1
                     else:
                         pass
@@ -837,7 +838,7 @@ class MigrationProcess(ConcurrentTask):
             for event in events:
                 logfile.write(event + '\n')
 
-    def run_task(self, task_context):
+    def run_task(self, task_context, *args, **kwargs):
         """
         File Migration
 
@@ -855,16 +856,16 @@ class MigrationProcess(ConcurrentTask):
         # custom logging
         customlog = []
 
-        customlog.append('%s\tMigration task started for file: %s' % (ts_date(), task_context.additional_data['file']))
+        customlog.append('%s\tMigration task started for file: %s' % (ts_date(), kwargs['filename']))
         taskid = ''
 
         try:
             # TODO: additional sub-structure of rep-id/data/... when creating target path
-            file = task_context.additional_data['file']
-            taskid = task_context.additional_data['taskid']
-            self.targetrep = task_context.additional_data['targetrep']
-            logpath = os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.'% (self.targetrep, taskid))
-            self.args = task_context.additional_data['commandline']
+            filename = kwargs['filename']
+            taskid = kwargs['taskid']
+            self.targetrep = kwargs['targetrep']
+            logpath = os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.' % (self.targetrep, taskid))
+            self.args = kwargs['commandline']
 
             # TODO: error handling (OSException)
             if self.args != '':
@@ -874,15 +875,15 @@ class MigrationProcess(ConcurrentTask):
                 # as the process will otherwise deadlock!
                 out, err = self.migrate.communicate()
                 if err == None:
-                    print 'Successfully migrated file %s.' % file
+                    print 'Successfully migrated file %s.' % filename
                 else:
-                    print 'Migration for file %s caused errors: %s' % (file, err)
+                    print 'Migration for file %s caused errors: %s' % (filename, err)
                     customlog.append('%s\tMigration caused errors: %s' % (ts_date(), err))
                     self.custom_logging(logpath + 'fail', customlog)
                     return task_context.additional_data
             else:
                 task_context.task_status = 1
-                customlog.append('%s\tMigration for file %s could not be executed due to missing command line parameters.' % (ts_date(), file))
+                customlog.append('%s\tMigration for file %s could not be executed due to missing command line parameters.' % (ts_date(), filename))
                 self.custom_logging(logpath + 'fail', customlog)
                 return task_context.additional_data
 
