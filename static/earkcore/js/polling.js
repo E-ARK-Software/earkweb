@@ -18,10 +18,10 @@ var pollstate = function (poll_interval, in_task_id, success_func, update_func, 
                       type: "POST",
                       data: "task_id=" + task_id,
                   }).success(function(resp_data){
-                      window.console.log(resp_data.state);
+                      window.console.log("Task state: " + resp_data.state);
                       if(resp_data.success) {
                           if(resp_data.state == 'SUCCESS') {
-                              window.console.log("Task status: success");
+                              window.console.log("Task result:");
                               window.console.log(resp_data.result)
                               success_func(resp_data.result);
                               ready = true;
@@ -35,15 +35,15 @@ var pollstate = function (poll_interval, in_task_id, success_func, update_func, 
                             window.console.log("task state: " + resp_data.state);
                           }
                       } else {
-                        reportError(resp_data.errmsg)
+                        window.console.log("Poll error: "+resp_data.errmsg)
                          ready = true;
                       }
                       // recursive call
-                      if(!ready) { PollState(task_id); }
+                      if(!ready) { window.console.log("PollState-task_id("+task_id+")"); PollState(task_id); }
                   });
               }, poll_interval);
           }
-          if(!ready) { PollState(in_task_id); }
+          if(!ready) { window.console.log("PollState-in_task_id("+in_task_id+")");  PollState(in_task_id); }
       });
 }.bind(this);
 
