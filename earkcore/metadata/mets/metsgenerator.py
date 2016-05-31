@@ -281,10 +281,7 @@ class MetsGenerator(object):
                 del subdirectories[:]  # prevent loop to iterate subfolders outside of this if statement
                 dirlist = os.listdir(os.path.join(self.root_path, 'metadata'))
                 for dirname in dirlist:
-                    if dirname == 'earkweb':
-                        # ignore, those are temp files
-                        pass
-                    elif fnmatch.fnmatch(dirname, '*_mig-*'):
+                    if fnmatch.fnmatch(dirname, '*_mig-*'):
                         # TODO: maybe list it all the time?
                         # this folder contains metadata for a representation/migration, currently:
                         # only listed if no representation Mets file exists
@@ -339,7 +336,7 @@ class MetsGenerator(object):
                                         mets_structmap_metadata_div.append(M.fptr({"FILEID": id}))
                                         physical_div.append(M.fptr({"FILEID": id}))
                                     #elif dir.endswith('preservation'):
-                                    elif dirname == 'preservation':
+                                    elif dirname == 'preservation' or dirname == 'earkweb':
                                         mets_digiprovmd = M.digiprovMD({"ID": "ID" + uuid.uuid4().__str__()})
                                         mets_amdSec.append(mets_digiprovmd)
                                         id = "ID" + uuid.uuid4().__str__()

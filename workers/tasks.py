@@ -61,6 +61,7 @@ from config.configuration import hdfs_upload_service_ip
 import requests
 from workers.concurrent_task import ConcurrentTask
 from earkcore.utils.datetimeutils import ts_date
+import tarfile
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -945,9 +946,9 @@ class AIPCheckMigrationProgress(DefaultTask):
                                 # element.set('endtime', '')
                                 successful += 1
                                 # remove the file, to avoid storing huge numbers of useless files
-                                os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
+                                # os.remove(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.success' % (target_rep, taskid)))
                             else:
-                                tl.adderr('The file %s does not exists, although the migration process reported success!' % target_file)
+                                tl.adderr('The file %s does not exist, although the migration process reported success!' % target_file)
                         elif os.path.isfile(os.path.join(task_context.path, 'metadata/earkweb/migrations/%s/%s.fail' % (target_rep, taskid))):
                             element.set('status', 'failed')
                             failed += 1
@@ -977,6 +978,14 @@ class AIPCheckMigrationProgress(DefaultTask):
                 tl.addinfo('Migrations completed successfully.')
                 task_context.additional_data['migration_complete']=True
                 task_context.task_status = 0
+                # pack all migration log files into a tar container
+                path = os.path.join(task_context.path, 'metadata/earkweb/migrations')
+                logfiles = os.listdir(path)
+                with tarfile.open(os.path.join(path, 'migrations.tar'), 'w') as tar:
+                    os.chdir(path)
+                    for logdir in logfiles:
+                        tar.add(logdir)  # add to .tar
+                        shutil.rmtree(logdir)   # remove
             elif failed > 0 and missing == 0:
                 tl.addinfo('Migrations are complete, but a number of them failed.')
                 task_context.additional_data['migration_complete']=False
