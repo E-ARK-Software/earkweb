@@ -356,7 +356,7 @@ class SIPtoAIPReset(DefaultTask):
 
     accept_input_from = ['All']
 
-    def run_task(self, task_context):
+    def run_task(self, task_context, *args, **kwargs):
         """
         SIP to AIP Reset run task
         @type       tc: task configuration line (used to insert read task properties in database table)
