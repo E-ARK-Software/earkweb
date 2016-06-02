@@ -102,7 +102,8 @@
                     poll_request_url: "/earkweb/earkcore/poll_state/",
                     success_func: function(json_result) {
                         var proc_pack_status_id = '#st'+name_to_id(json_result.package_file);
-                        changeLabel(proc_pack_status_id, "Running", "Processed", "Processed");
+                        var state_msg = json_result.success ? "Processed" : "Error";
+                        changeLabel(proc_pack_status_id, "Running", state_msg, state_msg);
                     },
                     update_func: function(info) {
                         if("errmsg" in info) {
