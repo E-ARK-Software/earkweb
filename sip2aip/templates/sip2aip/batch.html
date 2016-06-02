@@ -52,7 +52,7 @@
         // module defining the context of the get directory information request
 
         var get_dir_info_module = {
-            request_url: "/earkweb/earkcore/get_directory_json_remote/" +  encodeURIComponent("{{ config_path_reception }}") + "/",
+            request_url: "/earkweb/earkcore/get_directory_json_remote/" +  "{{ config_path_reception }}" + "/",
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
                 $('#loading').nodisplay();
@@ -98,7 +98,7 @@
 
                 // module defining the context of the get directory information request
                 var submit_batch_ingest_module = {
-                    request_url: "/earkweb/sip2aip/submit_package_ingest/" +  encodeURIComponent(rec_pack) + "/",
+                    request_url: "/earkweb/sip2aip/submit_package_ingest/" +  rec_pack + "/",
                     poll_request_url: "/earkweb/earkcore/poll_state/",
                     success_func: function(json_result) {
                         var proc_pack_status_id = '#st'+name_to_id(json_result.package_file);
