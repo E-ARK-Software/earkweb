@@ -28,6 +28,7 @@ function show(id, value) {
                     });
                     switch (mimetype) {
                         case 'application/xml':
+                        case 'text/xml':
                             LoadXMLString('XmlPreview',data);
                             break;
                         case 'image/jpeg':
