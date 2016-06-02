@@ -154,6 +154,13 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 
 @app.task(bind=True)
 def reception_dir_status(self, reception_d):
+    from config.configuration import config_path_reception, config_path_work
+    if not reception_d.startswith("/"):
+        reception_d = "/%s" % reception_d
+    allowed_dirs = config_path_reception, config_path_work
+    if not reception_d.startswith(allowed_dirs):
+        logger.error("Access to directory not permitted: %s" % reception_d)
+        return {}
     logger.debug("Get information about directory: %s" % reception_d)
     return path_to_dict(reception_d)
 
