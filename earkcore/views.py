@@ -100,7 +100,7 @@ def working_area(request, section, uuid):
         "title": f(section),
         "section": section,
         "uuid": uuid,
-        "dirtree": json.dumps(path_to_dict('/var/data/earkweb/work/'+uuid, strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
+        "dirtree": json.dumps(path_to_dict("%/%" % (config_path_work, uuid), strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
     })
     return HttpResponse(template.render(context))
 

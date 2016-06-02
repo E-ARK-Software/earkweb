@@ -6,6 +6,8 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "earkweb.settings")
 
+from config.configuration import config_path_work
+
 import django
 django.setup()
 
@@ -19,13 +21,13 @@ def main():
             os.makedirs(ip.path)
             print "Missing working directory created: %s" % ip.path
     # working directory without ip
-    wdirs = os.listdir("/var/data/earkweb/work")
+    wdirs = os.listdir("%" % config_path_work)
     for wdir in wdirs:
         try:
             InformationPackage.objects.get(uuid=wdir)
         except:
             import shutil
             if wdir:
-                print "Orphan directory: /var/data/earkweb/work/%s" % wdir
+                print "Orphan directory: %/%s" % (config_path_work, wdir)
 if __name__ == "__main__":
     main()

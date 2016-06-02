@@ -89,13 +89,14 @@ echo "$GET_RESULT" > result.html
 cat ./result.html
 
 # Execute celery tasks
-PYSCRIPT=$"from workers.tasks import SIPReset
+PYSCRIPT=$"from config.configuration import config_path_work
+from workers.tasks import SIPReset
 from workers.tasks import SIPDescriptiveMetadataValidation
 from workers.tasks import SIPPackageMetadataCreation
 from workers.tasks import SIPPackaging
 from workers.tasks import SIPClose
 from workers.default_task_context import DefaultTaskContext
-task_context = DefaultTaskContext('$SIP_UUID', '/var/data/earkweb/work/$SIP_UUID', 'SIPReset', None, {}, None)
+task_context = DefaultTaskContext('$SIP_UUID', \"%s/$SIP_UUID\" % config_path_work, 'SIPReset', None, {}, None)
 SIPReset().apply((task_context,), queue='default').status
 SIPDescriptiveMetadataValidation().apply((task_context,), queue='default').status
 SIPPackageMetadataCreation().apply((task_context,), queue='default').status
