@@ -18,6 +18,7 @@ from workers.tasks import *
 from celery import chain
 from workflow.models import WorkflowModules
 from earkcore.models import InformationPackage
+from config.configuration import config_path_work, config_path_storage
 
 
 def import_package(current_task, src_zip):
@@ -33,7 +34,7 @@ def import_package(current_task, src_zip):
     zip_basename = os.path.basename(src_zip)
     packagename = os.path.splitext(zip_basename)[0]
     logger.info( "Creating package %s " % packagename )
-    work_dir = "/var/data/earkweb/work/"+sip_uuid
+    work_dir = "%s/%s" % (config_path_work, sip_uuid)
 
     if os.path.exists(work_dir):
         shutil.rmtree(work_dir)
@@ -55,7 +56,7 @@ def import_package(current_task, src_zip):
     chain_2_classes = [ CreatePremisAfterMigration, AIPRepresentationMetsCreation, AIPPackageMetsCreation, AIPValidation, AIPPackaging, AIPStore]#, LilyHDFSUpload]
 
     task_context = DefaultTaskContext(sip_uuid, work_dir, 'SIPReset', None,
-            {'packagename' : packagename, 'package_file': packagename, 'parent_id':'' ,'parent_path':'', 'storage_dest':'/var/data/earkweb/storage', 'storage_loc':'' }, None)
+            {'packagename' : packagename, 'package_file': packagename, 'parent_id':'' ,'parent_path':'', 'storage_dest': config_path_storage, 'storage_loc':'' }, None)
     result = None
     for task in chain_1_classes:
         logger.info("\n------------------------------------------------")
