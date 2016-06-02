@@ -109,6 +109,7 @@ def working_area(request, section, uuid):
 def read_ipfc(request, ip_sub_file_path):
     # only allow reading from session working directory (ip_sub_file_path must begin with uuid)
     file_path = os.path.join(config_path_work, ip_sub_file_path)
+    logger.debug("Read directory content from directory: " + file_path)
     if not os.path.exists(file_path):
         return HttpResponseNotFound("File not found %s vs %s" % (ip_sub_file_path, file_path))
     elif not os.path.isfile(file_path):
@@ -117,7 +118,7 @@ def read_ipfc(request, ip_sub_file_path):
         file_size = fsize(file_path)
         if file_size <= config_max_filesize_viewer:
             mime = get_mime_type(file_path)
-            print "MIME" + mime
+            logger.debug("MIME" + mime)
             file_content = None
             if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
                 file_content = read_file_content(file_path)
@@ -127,15 +128,17 @@ def read_ipfc(request, ip_sub_file_path):
                 img = Image(file_path)
                 uuid = randomutils.getUniqueID()
                 img.write('/tmp/%s.png' % uuid)
-                print '/tmp/%s.png' % uuid
+                logger.debug('Wrote temporary image file to /tmp/%s.png' % uuid)
                 file_content = "data:"+mime+";base64,"+base64.b64encode(read_file_content('/tmp/%s.png' % uuid))
             elif get_mime_type(file_path) == "application/pdf":
+                logger.debug('Convert PDF to HTML')
                 uuid = randomutils.getUniqueID()
                 html_file = ('/tmp/%s.html' % uuid)
                 pdftohtml_cmd = CliCommand.get("pdftohtml", {'pdf_file': file_path, 'html_file': html_file})
                 out = check_output(pdftohtml_cmd)
                 file_content = read_file_content(html_file)
             else:
+                logger.debug('Return content for other file types')
                 file_content = read_file_content(file_path)
             return HttpResponse(file_content)
         else:
