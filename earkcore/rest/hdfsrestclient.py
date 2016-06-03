@@ -43,7 +43,8 @@ class HDFSRestClient(object):
             filename = local_file_path.rpartition('/')[2]
             chunks = FileBinaryDataChunks(local_file_path, 65536, self.progress_reporter).chunks()
             file_resource_uri_formatted = file_resource_uri.format(filename)
-            logger.debug("Upload file resource uri: %s" % file_resource_uri_formatted)
+            logger.debug("Uploading file: %s" % local_file_path)
+            logger.debug("Upload resource uri: %s" % file_resource_uri_formatted)
             r = requests.put(file_resource_uri_formatted, data=chunks)
             return ResponseWrapper(success=True, response=r)
         else:
