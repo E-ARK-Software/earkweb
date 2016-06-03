@@ -38,7 +38,7 @@ def validate_ead_metadata(root_path, pattern, schema_file, tl):
                 tl.adderr("Error validating against schema '%s': %s" % (schema_file, result.err))
 
             for err in result.err:
-                tl.adderr("- "+err)
+                tl.adderr("- %s" % str(err))
             return False
         ead_tree = lxml.etree.parse(ead)
         # check dao hrefs

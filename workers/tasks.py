@@ -596,7 +596,6 @@ class SIPExtraction(DefaultTask):
             task_context.task_status = 0
         return task_context.additional_data
 
-
 class SIPRestructuring(DefaultTask):
 
     accept_input_from = [SIPExtraction.__name__]
@@ -640,15 +639,39 @@ class SIPRestructuring(DefaultTask):
         return task_context.additional_data
 
 
+class AIPDescriptiveMetadataValidation(DefaultTask):
+
+    accept_input_from = [SIPRestructuring.__name__, 'AIPDescriptiveMetadataValidation']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:2,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'AIPDescriptiveMetadataValidation'
+
+        tl = task_context.task_logger
+        tl.addinfo("EAD metadata file validation.")
+        metadata_dir = os.path.join(task_context.path, 'submission/metadata/descriptive')
+        valid = validate_ead_metadata(metadata_dir, 'ead.xml', None, tl)
+
+        # output warning, but task execution is always successful and can be repeated
+        task_context.task_status = 0 if valid else 0
+        return task_context.additional_data
+
+
 class SIPValidation(DefaultTask):
 
-    accept_input_from = [SIPRestructuring.__name__,"SIPValidation"]
+    accept_input_from = [SIPRestructuring.__name__, AIPDescriptiveMetadataValidation.__name__,"SIPValidation"]
 
     def run_task(self, task_context):
         """
         SIP Validation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:2,stage:2
+        @param      tc: order:7,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -704,7 +727,7 @@ class AIPMigrations(DefaultTask):
         """
         AIP File Migration
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
+        @param      tc: order:8,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -855,7 +878,7 @@ class MigrationProcess(ConcurrentTask):
          template of <taskid>.<task_status>, where 1 equals to .fail and 0 to .success.
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:0,stage:0
+        @param      tc: order:9,type:0,stage:0
         """
 
         # Add the event type - will be put into Premis.
@@ -922,7 +945,7 @@ class AIPCheckMigrationProgress(DefaultTask):
         AIP Check Migration Progess
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:8,type:2,stage:2
+        @param      tc: order:10,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1021,7 +1044,7 @@ class CreatePremisAfterMigration(DefaultTask):
         Create Premis After Migration
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:9,type:2,stage:2
+        @param      tc: order:11,type:2,stage:2
         """
 
         tl = task_context.task_logger
@@ -1055,7 +1078,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
         AIP Representation Mets Creation
 
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:10,type:2,stage:2
+        @param      tc: order:12,type:2,stage:2
         """
 
         if not os.path.exists(os.path.join(task_context.path, 'representations')):
@@ -1109,7 +1132,7 @@ class AIPPackageMetsCreation(DefaultTask):
         """
         AIP Package Mets Creation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:11,type:2,stage:2
+        @param      tc: order:13,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1165,7 +1188,7 @@ class AIPValidation(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:2,stage:2
+        @param      tc: order:14,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1206,7 +1229,7 @@ class AIPPackaging(DefaultTask):
         """
         AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:2,stage:2
+        @param      tc: order:15,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1292,7 +1315,7 @@ class AIPStore(DefaultTask):
         """
         Store AIP
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:2,stage:2
+        @param      tc: order:16,type:2,stage:2
         """
 
         # no premis event
@@ -1354,7 +1377,7 @@ class AIPIndexing(DefaultTask):
         """
         AIP Index
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:0,stage:0
+        @param      tc: order:17,type:0,stage:0
         """
 
         # no premis event
@@ -1419,7 +1442,7 @@ class LilyHDFSUpload(DefaultTask):
         """
         AIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:16,type:2,stage:2
+        @param      tc: order:18,type:2,stage:2
         """
         # no premis event
         #task_context.event_type = 'LilyHDFSUpload'
