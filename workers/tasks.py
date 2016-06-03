@@ -1354,7 +1354,7 @@ class AIPIndexing(DefaultTask):
         """
         AIP Index
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:2,stage:2
+        @param      tc: order:15,type:0,stage:0
         """
 
         # no premis event
