@@ -34,6 +34,8 @@ lily_content_access_core = eark1
 
 hdfs_upload_service_ip = 81.189.135.189
 hdfs_upload_service_port = 8081
+hdfs_upload_service_endpoint_path = dm-hdfs-storage
+hdfs_upload_service_resource_path = hsink/fileresource/files/{0}
 
 [schemas]
 

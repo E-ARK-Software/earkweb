@@ -57,7 +57,8 @@ from earkcore.process.cli.CliCommand import CliCommand
 import subprocess32
 from earkcore.filesystem.fsinfo import path_to_dict
 from celery.exceptions import SoftTimeLimitExceeded
-from config.configuration import hdfs_upload_service_ip
+from config.configuration import hdfs_upload_service_ip, hdfs_upload_service_port
+from config.configuration import hdfs_upload_service_endpoint_path, hdfs_upload_service_resource_path
 import requests
 from workers.concurrent_task import ConcurrentTask
 from earkcore.utils.datetimeutils import ts_date
@@ -1434,16 +1435,16 @@ class LilyHDFSUpload(DefaultTask):
                 tl.addinfo("Start uploading AIP %s from local path: %s" % (task_context.uuid, aip_path))
                 # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
                 # method where the actual reporting about the upload progress occurs.
-                rest_endpoint = RestEndpoint("http://%s" % hdfs_upload_service_ip, "dm-hdfs-storage")
+                rest_endpoint = RestEndpoint("http://%s:%s" % (hdfs_upload_service_ip, hdfs_upload_service_port), hdfs_upload_service_endpoint_path)
                 tl.addinfo("Using REST endpoint: %s" % (rest_endpoint.to_string()))
                 # Partial application of the custom_progress_reporter function so that the task object
                 # is known to the FileBinaryDataChunks.chunks() method.
                 partial_custom_progress_reporter = partial(custom_progress_reporter, self)
                 hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
-                rest_resource_path = "hsink/fileresource/files/{0}"
-                upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path)
+                rest_resource_path_pattern = "%s{0}" % hdfs_upload_service_resource_path
+                upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path_pattern)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - task_context.start_time, upload_result.status_code, upload_result.hdfs_path_id))
-                checksum_resource_uri = "hsink/fileresource/files/%s/digest/sha-256" % upload_result.hdfs_path_id
+                checksum_resource_uri = "%s/%s/digest/sha-256" % (hdfs_upload_service_resource_path, upload_result.hdfs_path_id)
                 tl.addinfo("Verifying checksum at %s" % (checksum_resource_uri))
                 hdfs_sha256_checksum = hdfs_rest_client.get_string(checksum_resource_uri)
                 if ChecksumFile(aip_path).get(ChecksumAlgorithm.SHA256) == hdfs_sha256_checksum:

@@ -51,6 +51,8 @@ lily_content_access_core = config.get('server', 'lily_content_access_core')
 # hdfs upload service
 hdfs_upload_service_ip = config.get('server', 'hdfs_upload_service_ip')
 hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
+hdfs_upload_service_endpoint_path = config.get('server', 'hdfs_upload_service_endpoint_path')
+hdfs_upload_service_resource_path = config.get('server', 'hdfs_upload_service_resource_path')
 
 mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
 premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))

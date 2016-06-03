@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import urllib2
 import requests
 from earkcore.rest.restendpoint import RestEndpoint
@@ -40,7 +42,9 @@ class HDFSRestClient(object):
             # strip path and extension from absolute file path to get filename
             filename = local_file_path.rpartition('/')[2]
             chunks = FileBinaryDataChunks(local_file_path, 65536, self.progress_reporter).chunks()
-            r = requests.put(file_resource_uri.format(filename), data=chunks)
+            file_resource_uri_formatted = file_resource_uri.format(filename)
+            logger.debug("Upload file resource uri: %s" % file_resource_uri_formatted)
+            r = requests.put(file_resource_uri_formatted, data=chunks)
             return ResponseWrapper(success=True, response=r)
         else:
             return ResponseWrapper(success=False)
