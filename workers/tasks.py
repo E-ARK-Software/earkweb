@@ -1444,7 +1444,7 @@ class LilyHDFSUpload(DefaultTask):
                 rest_resource_path_pattern = "%s{0}" % hdfs_upload_service_resource_path
                 upload_result = hdfs_rest_client.upload_to_hdfs(aip_path, rest_resource_path_pattern)
                 tl.addinfo("Upload finished in %d seconds with status code %d: %s" % (time.time() - task_context.start_time, upload_result.status_code, upload_result.hdfs_path_id))
-                checksum_resource_uri = "%s/%s/digest/sha-256" % (hdfs_upload_service_resource_path, upload_result.hdfs_path_id)
+                checksum_resource_uri = "%s%s/digest/sha-256" % (hdfs_upload_service_resource_path, upload_result.hdfs_path_id)
                 tl.addinfo("Verifying checksum at %s" % (checksum_resource_uri))
                 hdfs_sha256_checksum = hdfs_rest_client.get_string(checksum_resource_uri)
                 if ChecksumFile(aip_path).get(ChecksumAlgorithm.SHA256) == hdfs_sha256_checksum:
