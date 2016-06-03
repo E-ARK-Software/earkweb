@@ -234,13 +234,9 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False
         },
-        'earkcore.storage.pairtreestorage': {
-                'handlers': ['default', 'console'],
-                'level': 'DEBUG',
-        },
-        'earkcore.search.solrclient': {
-                'handlers': ['default', 'console'],
-                'level': 'DEBUG',
-        },
+        'earkcore': {
+                 'handlers': ['default', 'console'],
+                 'level': 'DEBUG',
+         },
     }
 }
