@@ -63,26 +63,32 @@ function previewfile(node) {
     }
  }
 
+function isEAD(name) {
+    return !!(name.toLowerCase().match(/ead[A-Za-z0-9-_]{0,20}.xml/));
+}
+
+function previewSupported(name) {
+    return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd$)/));
+}
 
 /**
  * Context menu
  */
 function customMenu(node) {
+
     var items = {
         viewItem: {
-            label: "Preview",
+            label: "View",
             action: function () { previewfile(node); }
         },
         editItem: {
-            label: "Edit", //
+            label: "Edit",
             action: function () { window.location.href = '/earkweb/earkcore/xmleditor/'+ node.data.path +'/'; }
         }
     };
     var n = $(node)[0];
-    window.console.log();
-    if (!n.text.endsWith('.xml')) {
-        delete items.editItem;
-    }
+    if (!isEAD(n.text)) { delete items.editItem; }
+    if (!previewSupported(n.text)) { delete items.viewItem; }
     return items;
 }
 
@@ -104,13 +110,16 @@ function customMenu(node) {
             $('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-close');
          }).on('move_node.jstree', function (e, data) {
             origin_path = data.node.data.path;
-            target_path = $('#directorytree').jstree().get_node(data.parent).data.path
+            target_path = $('#directorytree').jstree().get_node(data.parent).data.path;
             console.log("Original path: "+origin_path);
             console.log("Target path: "+target_path);
          }).on('dblclick.jstree', function (e) {
-            var node = $(e.target).closest("li");//that was the node you double click
-            console.log("event!");
-            console.log(node);
+            var node = $('#directorytree').jstree(true).get_node(e.target);
+            if(previewSupported(node.data.path)) {
+                previewfile(node);
+            } else {
+                alert("Preview of this file type is not supported!");
+            }
          }).on('loaded.jstree', function() {
             $('#directorytree').jstree('open_all');
          }).jstree({ 'core' : dir_as_json, "plugins" : [
