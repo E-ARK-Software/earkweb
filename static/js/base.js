@@ -1,12 +1,16 @@
 /**
- * Provides startswith string method
+ * startswith and endsWith string methods
  */
 if (typeof String.prototype.startsWith != 'function') {
   // see below for better implementation!
   String.prototype.startsWith = function (str){
     return this.indexOf(str) === 0;
   };
+  String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+  };
 }
+
 
 /**
  * JQuery extension to provide quick hide/show/remove stylesheet functions
@@ -43,8 +47,13 @@ if (typeof String.prototype.startsWith != 'function') {
 
 }(jQuery));
 
-// Disable function
 
+/**
+ * Show element
+ */
+function show(id, value) {
+    document.getElementById(id).style.display = value ? 'block' : 'none';
+}
 
 
 /**

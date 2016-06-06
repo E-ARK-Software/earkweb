@@ -37,7 +37,7 @@ from earkcore.search.solrserver import SolrServer
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
-from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix
+from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix, read_file_content
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
@@ -151,6 +151,29 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
     # delete file after extraction
     os.remove(package_file_path)
     return proc_res.success
+
+
+@app.task(bind=True)
+def ip_save_file(self, uuid, ip_file_path, content):
+    logger.debug(uuid)
+    logger.debug(ip_file_path)
+    logger.debug(content)
+    tl = TaskLogger(os.path.join(config_path_work, uuid, "metadata/earkweb.log"))
+    abs_file_path = os.path.join(config_path_work, uuid, ip_file_path)
+    logger.debug("Overwriting file in path: %s" % abs_file_path)
+    with open(abs_file_path, 'w') as ip_file:
+        ip_file.write(content)
+    ip_file.close()
+    if read_file_content(abs_file_path) == content:
+        success_msg = "File content successfully written to %s" % abs_file_path
+        logger.debug(success_msg)
+        tl.addinfo(success_msg)
+        return True
+    else:
+        error_msg = "An error occurred while trying to write file: %s" % abs_file_path
+        logger.debug(error_msg)
+        tl.adderr(error_msg)
+        return False
 
 
 @app.task(bind=True)

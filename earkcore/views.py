@@ -1,3 +1,8 @@
+import logging
+
+from earkcore.utils.xmlutils import get_xml_schemalocations
+
+logger = logging.getLogger(__name__)
 import os
 
 from django.views.generic.detail import DetailView
@@ -22,8 +27,9 @@ from django.http import JsonResponse
 from earkcore.utils import randomutils
 from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
-import logging
-from workers.tasks import reception_dir_status
+
+from earkcore.xml.xmlvalidation import XmlValidation
+from workers.tasks import reception_dir_status, ip_save_file
 from workers.tasks import run_package_ingest
 
 import traceback
@@ -103,6 +109,41 @@ def working_area(request, section, uuid):
         "dirtree": json.dumps(path_to_dict("%s/%s" % (config_path_work, uuid), strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
     })
     return HttpResponse(template.render(context))
+
+@login_required
+def xmleditor(request, uuid, ip_xml_file_path):
+    ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
+    abs_xml_file_path = os.path.join(config_path_work, ip_work_dir_sub_path)
+    logger.debug("Load file in XML editor: %s" % abs_xml_file_path)
+    schema = get_xml_schemalocations(abs_xml_file_path)
+    logger.debug(schema)
+    template = loader.get_template('earkcore/xmleditor.html')
+    def f(x):
+        return {
+            'sip2aip': "SIP to AIP conversion",
+            'sipcreator': "SIP creation",
+            'aip2dip': "AIP to DIP conversion",
+        }[x]
+    context = RequestContext(request, {
+        "uuid": uuid,
+        "ip_work_dir_sub_path": ip_work_dir_sub_path,
+        "ip_xml_file_path": ip_xml_file_path,
+    })
+    return HttpResponse(template.render(context))
+
+
+@login_required
+def savexml(request, uuid, ip_xml_file_path):
+    ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
+    logger.debug("Overwriting file in path: %s" % ip_work_dir_sub_path)
+
+    result = ip_save_file.delay(uuid, ip_xml_file_path, request.body)
+
+    template = loader.get_template('earkcore/xmleditor.html')
+    context = RequestContext(request, {
+
+    })
+    return HttpResponse()
 
 @login_required
 @csrf_exempt

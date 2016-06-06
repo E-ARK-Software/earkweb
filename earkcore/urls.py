@@ -14,6 +14,8 @@ urlpatterns= patterns('',
     url(r'^get_directory_json$', views.get_directory_json, name='get_directory_json'),
     url(r'^get_directory_json_remote/(?P<dir>[0-9a-zA-Z_\-\./ ]{3,500})/$', views.get_directory_json_remote, name='get_directory_json_remote'),
     url(r'^poll_state/$', views.poll_state, name='poll_state'),
+    url(r'^xmleditor/(?P<uuid>[0-9a-zA-Z-]{3,200})/(?P<ip_xml_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.xmleditor, name='xmleditor'),
+    url(r'^savexml/(?P<uuid>[0-9a-zA-Z-]{3,200})/(?P<ip_xml_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.savexml, name='savexml'),
 
 
 )
