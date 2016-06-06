@@ -57,6 +57,10 @@ Install `flower` using pip (`pip install flower`) and start the tool using the f
  
     celery flower -A earkweb --address=127.0.0.1 --port=5555
     
+With prefix:
+
+    celery flower -A earkweb --address==127.0.0.1 --url_prefix=flower --port=5555
+    
 Open web browser at:
 
   http://127.0.0.1:5555
