@@ -19,6 +19,10 @@ label {
    background-color: green;
 }
 
+.pgwarning {
+   background-color: #F29610;
+}
+
 #id_wfs {
 
 }

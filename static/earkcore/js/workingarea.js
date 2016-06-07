@@ -67,6 +67,10 @@ function isEAD(name) {
     return !!(name.toLowerCase().match(/ead[A-Za-z0-9-_]{0,20}.xml/));
 }
 
+function isStateXML(name) {
+    return !!(name.toLowerCase().match(/state.xml/));
+}
+
 function previewSupported(name) {
     return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd$)/));
 }
@@ -87,7 +91,7 @@ function customMenu(node) {
         }
     };
     var n = $(node)[0];
-    if (!isEAD(n.text)) { delete items.editItem; }
+    if (!isEAD(n.text) && !isStateXML(n.text)) { delete items.editItem; }
     if (!previewSupported(n.text)) { delete items.viewItem; }
     return items;
 }

@@ -29,7 +29,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from workers.tasks import reception_dir_status, ip_save_file
+from workers.tasks import reception_dir_status, ip_save_file, set_process_state
 from workers.tasks import run_package_ingest
 
 import traceback
@@ -137,13 +137,39 @@ def savexml(request, uuid, ip_xml_file_path):
     ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
     logger.debug("Overwriting file in path: %s" % ip_work_dir_sub_path)
 
-    result = ip_save_file.delay(uuid, ip_xml_file_path, request.body)
+    xml_content = request.body.replace("schemalocation", "schemaLocation")
+
+    result = ip_save_file.delay(uuid, ip_xml_file_path, xml_content)
 
     template = loader.get_template('earkcore/xmleditor.html')
     context = RequestContext(request, {
 
     })
     return HttpResponse()
+
+@login_required
+def set_proc_state_valid(request, uuid):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        if request.is_ajax():
+            try:
+                job = set_process_state.delay(uuid=uuid, valid=True)
+                ip = InformationPackage.objects.get(uuid=uuid)
+                ip.statusprocess = 0
+                ip.save()
+                data = {"success": True, "id": job.id, "uuid": uuid}
+            except Exception, err:
+                tb = traceback.format_exc()
+                logging.error(str(tb))
+                data = {"success": False, "errmsg": "Error", "errdetail": str(tb)}
+        else:
+            data = {"success": False, "errmsg": "not ajax"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
+        return JsonResponse(data)
+    return JsonResponse(data)
 
 @login_required
 @csrf_exempt

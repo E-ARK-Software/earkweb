@@ -4,7 +4,8 @@ __author__ = "Sven Schlarb"
 __copyright__ = "Copyright 2015, The E-ARK Project"
 __license__ = "GPL"
 __version__ = "0.0.1"
-
+import logging
+logger = logging.getLogger(__name__)
 import os
 import unittest
 from config.configuration import root_dir
@@ -27,7 +28,6 @@ class XmlValidation(object):
     </schema>"""
 
     def get_schema_from_instance(self, xml):
-        print xml
         xml_dir, tail = os.path.split(xml)
 
         xml_content = read_file_content(xml)
@@ -48,6 +48,8 @@ class XmlValidation(object):
                 xs_import.attrib['namespace'] = namespace
                 xs_import.attrib['schemaLocation'] = loc
                 schema_tree.append(xs_import)
+        logger.debug("Created schema for validation of instance '%s' from schemaLocation attribute:" % xml)
+        logger.debug(ET.tostring(schema_tree, encoding='UTF-8', pretty_print=True, xml_declaration=True))
         return schema_tree
 
     def validate_XML_by_path(self, xml_path, schema_path):

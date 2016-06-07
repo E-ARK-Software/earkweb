@@ -245,7 +245,7 @@ def poll_state(request):
                 if task.state == "SUCCESS":
                     aggr_log = '\n'.join(task.result.task_logger.log)
                     aggr_err = '\n'.join(task.result.task_logger.err)
-                    data = {"success": True, "result": task.result.task_status == 0, "state": task.state, "log": aggr_log, "err": aggr_err}
+                    data = {"success": True, "result": task.result.task_status == 0, "warning": task.result.task_status == 2, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.
                     # Main properties are uuid (internal information package identifier) and task_status (state of the information package).
                     # Additional properties are returned by the dictionary additional_data.

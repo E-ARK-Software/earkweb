@@ -9,6 +9,8 @@ import traceback
 from celery import current_task
 
 import logging
+from workers.ip_state import IpState
+
 logger = logging.getLogger(__name__)
 
 from config.configuration import mets_schema_file
@@ -187,6 +189,16 @@ def reception_dir_status(self, reception_d):
         return {}
     logger.debug("Get information about directory: %s" % reception_d)
     return path_to_dict(reception_d)
+
+@app.task(bind=True)
+def set_process_state(self, uuid, valid):
+    logger.debug("Set process state of process '%s' to '%s'." % (uuid, valid))
+    ip_state_doc_path = os.path.join(config_path_work, uuid, "state.xml")
+    if os.path.exists(ip_state_doc_path):
+        ip_state_xml = IpState.from_path(ip_state_doc_path)
+        ip_state_xml.set_state(0 if valid else 1)
+        ip_state_xml.write_doc(ip_state_doc_path)
+    return { 'status': '0', "success": True}
 
 
 @app.task(bind=True)
@@ -679,10 +691,16 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
         tl = task_context.task_logger
         tl.addinfo("EAD metadata file validation.")
         metadata_dir = os.path.join(task_context.path, 'submission/metadata/descriptive')
-        valid = validate_ead_metadata(metadata_dir, 'ead.xml', None, tl)
 
-        # output warning, but task execution is always successful and can be repeated
-        task_context.task_status = 0 if valid else 0
+        # "warning" state for validation errors
+        try:
+            valid = validate_ead_metadata(metadata_dir, 'ead.xml', None, tl)
+            task_context.task_status = 2 if not valid else 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
         return task_context.additional_data
 
 

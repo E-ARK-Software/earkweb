@@ -16,6 +16,7 @@ urlpatterns= patterns('',
     url(r'^poll_state/$', views.poll_state, name='poll_state'),
     url(r'^xmleditor/(?P<uuid>[0-9a-zA-Z-]{3,200})/(?P<ip_xml_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.xmleditor, name='xmleditor'),
     url(r'^savexml/(?P<uuid>[0-9a-zA-Z-]{3,200})/(?P<ip_xml_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.savexml, name='savexml'),
+    url(r'^set_proc_state_valid/(?P<uuid>[0-9a-zA-Z-]{3,200})/$', views.set_proc_state_valid, name='setprocvalid'),
 
 
 )

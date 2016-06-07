@@ -22,6 +22,7 @@ StatusProcess_CHOICES = (
 
     (0, 'Success'),
     (1, 'Error'),
+    (2, 'Warning'),
 )
 
 

@@ -4,7 +4,7 @@ function updateProgressInfo(percent) {
     window.document.getElementById("pg").style = 'width:' + percent + '%; background-color: #AD2624';
     $('#st').html("In progress: "+percent+"%");
 }
-function updateStatusInfo(status, result, log, err) {
+function updateStatusInfo(status, result, warning, log, err) {
     window.console.log(status)
     window.console.log(result)
     if(status == 'SUCCESS') {
@@ -16,8 +16,14 @@ function updateStatusInfo(status, result, log, err) {
         if(result) {
             $('#st').html("Finished successfully");
             $( '#pg' ).addClass( "pgsuccess" );
-        } else
-            $( '#st' ).html("Finished with error");
+        } else {
+            if(warning) {
+                $( '#pg' ).addClass( "pgwarning" );
+                $( '#st' ).html("Finished with warning");
+            } else {
+                $( '#st' ).html("Finished with error");
+            }
+        }
     }
     updateTable();
 }
@@ -44,7 +50,8 @@ function pollstate(in_task_id) {
                   }).success(function(resp_data){
                       if(resp_data.success) {
                           if(resp_data.state == 'SUCCESS') {
-                              updateStatusInfo(resp_data.state, resp_data.result, resp_data.log, resp_data.err);
+                              window.console.log(resp_data);
+                              updateStatusInfo(resp_data.state, resp_data.result, resp_data.warning, resp_data.log, resp_data.err);
                               ready = true;
                           } else if(resp_data.state == 'PENDING') {
                                 // check again if task still pending

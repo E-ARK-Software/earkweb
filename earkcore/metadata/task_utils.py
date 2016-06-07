@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 import os
 from earkcore.utils.fileutils import locate
 from earkcore.xml.xmlvalidation import XmlValidation
@@ -18,7 +20,7 @@ def validate_ead_metadata(root_path, pattern, schema_file, tl):
     @rtype:     bool
     @return:    Validity of EAD metadata
     """
-    ns = {'ead': 'urn:isbn:1-931666-22-9', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
     xmlval = XmlValidation()
     ead_md_files = [x for x in locate(pattern, root_path)]
     for ead in ead_md_files:

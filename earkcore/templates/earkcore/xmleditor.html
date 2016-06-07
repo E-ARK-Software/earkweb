@@ -39,6 +39,9 @@
 	-moz-border-radius: 6px 6px 6px 6px;
 	border-radius: 6px 6px 6px 6px;
 		}
+		.confirmation {
+			border-color: green;
+		}
 
 	</style>
 </head>
@@ -57,9 +60,7 @@
 	</div>
 	<script>
 
-		function myResponseHandler() {
-			window.console.log("submitted");
-		}
+
 
 		$(function() {
 				window.console.log("Loading XML file from IP: {{ ip_work_dir_sub_path }}");
@@ -76,8 +77,12 @@
 							ajaxOptions : {
 								xmlUploadPath : "/earkweb/earkcore/savexml/{{ ip_work_dir_sub_path }}/",
 								contentType:'multipart/form-data',
-								submitResponseHandler : myResponseHandler,
+
 						    },
+						    submitResponseHandler : function submissionConfirmation() {
+									$(".xml_submit_status").addClass("confirmation");
+									window.console.log("submitted");
+								},
 						});
 					});
                 }).error(function(err, message, status_text) {
