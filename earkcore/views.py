@@ -118,6 +118,9 @@ def xmleditor(request, uuid, ip_xml_file_path):
     schema = get_xml_schemalocations(abs_xml_file_path)
     logger.debug(schema)
     template = loader.get_template('earkcore/xmleditor.html')
+    note = None
+    if ip_xml_file_path.startswith("submission"):
+        note = "Overruling storage location: %s" % os.path.join('metadata', ip_xml_file_path)
     def f(x):
         return {
             'sip2aip': "SIP to AIP conversion",
@@ -128,15 +131,15 @@ def xmleditor(request, uuid, ip_xml_file_path):
         "uuid": uuid,
         "ip_work_dir_sub_path": ip_work_dir_sub_path,
         "ip_xml_file_path": ip_xml_file_path,
+        "note": note,
     })
     return HttpResponse(template.render(context))
 
 
 @login_required
 def savexml(request, uuid, ip_xml_file_path):
-    ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
-    logger.debug("Overwriting file in path: %s" % ip_work_dir_sub_path)
 
+    # XML code editor changes the attribute to lower case which leads to validation errors
     xml_content = request.body.replace("schemalocation", "schemaLocation")
 
     result = ip_save_file.delay(uuid, ip_xml_file_path, xml_content)

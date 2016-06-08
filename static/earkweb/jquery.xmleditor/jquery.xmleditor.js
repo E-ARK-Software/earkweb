@@ -1661,9 +1661,9 @@ DocumentState.prototype.unsyncedChangeEvent = function() {
 
 DocumentState.prototype.updateStateMessage = function () {
 	if (this.isChanged()) {
-		$("." + submissionStatusClass).html("Unsaved changes");
+		$("." + submissionStatusClass).html("Unsaved changes <span class=\"glyphicon glyphicon-warning-sign\" aria-hidden=\"true\" style=\"color:#F6A50B\"/>");
 	} else {
-		$("." + submissionStatusClass).html("All changes saved");
+		$("." + submissionStatusClass).html("Saved  <span class=\"glyphicon glyphicon-ok-sign\" aria-hidden=\"true\" style=\"color:green\"/>");
 	}
 };
 

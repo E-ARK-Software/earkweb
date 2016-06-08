@@ -37,6 +37,10 @@ hdfs_upload_service_port = 8081
 hdfs_upload_service_endpoint_path = dm-hdfs-storage
 hdfs_upload_service_resource_path = hsink/fileresource/files/
 
+[metadata]
+
+metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
+
 [schemas]
 
 mets_schema_file = earkresources/schemas/mets_1_11.xsd

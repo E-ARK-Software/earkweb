@@ -38,7 +38,9 @@ class DefaultTask(Task):
             task_log_file = os.path.join(metadata_dir, "%s.log" % "earkweb")
             tl = TaskLogger(task_log_file)
             task_context.task_logger = tl
-        task_context.task_logger.addinfo(("%s task %s" % (self.task_name, current_task.request.id)))
+        task_context.task_logger.addinfo("========================================================================", False)
+        task_context.task_logger.addinfo(("Task execution: %s task %s" % (self.task_name, current_task.request.id)))
+        task_context.task_logger.addinfo("========================================================================", False)
         task_context.task_logger.addinfo("Processing package %s" % task_context.uuid)
 
         self.update_state(state='PROGRESS', meta={'process_percent': 1})

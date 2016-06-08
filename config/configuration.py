@@ -65,6 +65,9 @@ config_path_work = config.get('paths', 'config_path_work')
 config_path_storage = config.get('paths', 'config_path_storage')
 config_path_access = config.get('paths', 'config_path_access')
 
+# EAD metadata file pattern
+metadata_file_pattern_ead =  config.get('metadata', 'metadata_file_pattern_ead')
+
 # location of METS Template
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
 

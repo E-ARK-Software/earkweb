@@ -40,7 +40,7 @@
 	border-radius: 6px 6px 6px 6px;
 		}
 		.confirmation {
-			border-color: green;
+
 		}
 
 	</style>
@@ -54,14 +54,16 @@
 		<h2>Process: <a href="{% url 'sipcreator:working_area' section='sipcreator' uuid=uuid %}">{{ uuid }}</a></h2>
 		<h3>Editing XML file: {{ ip_xml_file_path }}</h3>
 
+		{% if note %}
+			<h4><i>{{ note }}</i></h4>
+		{% endif %}
+
+
       <div id="content" class="content-wrapper">
 
 	<div id="xml_editor">
 	</div>
 	<script>
-
-
-
 		$(function() {
 				window.console.log("Loading XML file from IP: {{ ip_work_dir_sub_path }}");
 

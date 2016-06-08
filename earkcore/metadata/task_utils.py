@@ -1,4 +1,6 @@
 import logging
+from earkcore.utils.pathutils import strip_prefixes
+
 logger = logging.getLogger(__name__)
 import os
 from earkcore.utils.fileutils import locate
@@ -20,11 +22,12 @@ def validate_ead_metadata(root_path, pattern, schema_file, tl):
     @rtype:     bool
     @return:    Validity of EAD metadata
     """
-    ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    # ead 2002: ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    ns = {'ead': 'http://ead3.archivists.org/schema/', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
     xmlval = XmlValidation()
     ead_md_files = [x for x in locate(pattern, root_path)]
     for ead in ead_md_files:
-        tl.addinfo("EAD metadata file found: %s" % ead)
+        logger.debug("Validating EAD metadata file: %s" % strip_prefixes(ead, root_path))
         # validate against xml schema
         result = xmlval.validate_XML_by_path(ead, schema_file)
         if schema_file is None:
@@ -32,7 +35,7 @@ def validate_ead_metadata(root_path, pattern, schema_file, tl):
         else:
             tl.addinfo("Using schema: " % schema_file)
         if result.valid:
-            tl.addinfo("Metadata file '%s' successfully validated." % ead)
+            logger.debug("Metadata file '%s' successfully validated." % ead)
         else:
             if schema_file is None:
                 tl.adderr("Error validating against schemas using schema files specified by the 'schemaLocation' attribute:")
@@ -50,14 +53,13 @@ def validate_ead_metadata(root_path, pattern, schema_file, tl):
         ead_dir, tail = os.path.split(ead)
         references_valid = True
         for dao in res:
-            dao_ref_file = os.path.join(ead_dir, remove_protocol(dao.attrib['{http://www.w3.org/1999/xlink}href']))
+            # ead 2002: dao_ref_file = os.path.join(ead_dir, remove_protocol(dao.attrib['{http://www.w3.org/1999/xlink}href']))
+            dao_ref_file = os.path.join(ead_dir, remove_protocol(dao.attrib['href']))
             if not os.path.exists(dao_ref_file):
                 references_valid = False
-                tl.adderr("DAO file reference error - File does not exist: %s" % dao_ref_file) # False
+                tl.adderr("DAO file reference error - File does not exist: %s" % dao_ref_file, False) # False
         if not references_valid:
             tl.adderr( "DAO file reference errors. Please consult the log file for details.")
             return False
-        else:
-            tl.addinfo("All file references in the EAD file are valid.")
     return True
 

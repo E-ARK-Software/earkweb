@@ -14,6 +14,7 @@ function updateStatusInfo(status, result, warning, log, err) {
         $('#err').html(err)
         $("#st").visible();
         if(result) {
+            $( '#pg' ).removeClass( "pgwarning" );
             $('#st').html("Finished successfully");
             $( '#pg' ).addClass( "pgsuccess" );
         } else {

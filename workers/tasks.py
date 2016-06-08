@@ -13,7 +13,7 @@ from workers.ip_state import IpState
 
 logger = logging.getLogger(__name__)
 
-from config.configuration import mets_schema_file
+from config.configuration import mets_schema_file, metadata_file_pattern_ead
 from config.configuration import root_dir
 from config.configuration import config_path_work
 from earkcore.filesystem.chunked import FileBinaryDataChunks
@@ -65,6 +65,8 @@ import requests
 from workers.concurrent_task import ConcurrentTask
 from earkcore.utils.datetimeutils import ts_date
 import tarfile
+from earkcore.utils.pathutils import strip_prefixes
+from earkcore.utils.pathutils import backup_file_path
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -157,12 +159,26 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 
 @app.task(bind=True)
 def ip_save_file(self, uuid, ip_file_path, content):
-    logger.debug(uuid)
-    logger.debug(ip_file_path)
-    logger.debug(content)
     tl = TaskLogger(os.path.join(config_path_work, uuid, "metadata/earkweb.log"))
-    abs_file_path = os.path.join(config_path_work, uuid, ip_file_path)
-    logger.debug("Overwriting file in path: %s" % abs_file_path)
+
+    md_path, _ = os.path.split(ip_file_path)
+    mkdir_p(md_path)
+    xml_file_path = ip_file_path
+    if ip_file_path.startswith("submission"):
+        xml_file_path = os.path.join('metadata', ip_file_path)
+        logger.debug("Storing file in overruling path: %s" % xml_file_path)
+    else:
+        logger.debug("Writing file in path: %s" % xml_file_path)
+
+    abs_file_path = os.path.join(config_path_work, uuid, xml_file_path)
+
+    if os.path.exists(abs_file_path):
+        bf_path = backup_file_path(abs_file_path)
+        shutil.copy(abs_file_path, bf_path)
+        logger.debug("Backup copy of file created: %s" % bf_path)
+    else:
+        logger.debug("No backup file: %s" % xml_file_path)
+
     with open(abs_file_path, 'w') as ip_file:
         ip_file.write(content)
     ip_file.close()
@@ -251,15 +267,34 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPMetadataConsistency'
+        task_context.event_type = 'SIPDescriptiveMetadataValidation'
 
         tl = task_context.task_logger
-        tl.addinfo("EAD metadata file validation.")
-        metadata_dir = os.path.join(task_context.path, 'metadata')
-        valid = validate_ead_metadata(metadata_dir, 'EAD.xml', None, tl)
+        metadata_dir = os.path.join(task_context.path, 'metadata/')
+        tl.addinfo("Looking for EAD metadata files in metadata directory: %s" % metadata_dir)
 
-        task_context.task_status = 0 if valid else 1
+        # "warning" state for validation errors
+        try:
+            md_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(metadata_dir, metadata_file_pattern_ead):
+                path, md_file = os.path.split(filename)
+                tl.addinfo("Found EAD file '%s'" % md_file)
+                md_files_valid.append(validate_ead_metadata(path, md_file, None, tl))
+            if len(md_files_valid) == 0:
+                tl.addinfo("No EAD metadata files found.")
+            valid = False not in md_files_valid
+            if valid:
+                tl.addinfo("Descriptive metadata validation completed successfully.")
+            task_context.task_status = 0 if valid else 2
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+
         return task_context.additional_data
+
 
 class SIPPackageMetadataCreation(DefaultTask):
 
@@ -690,17 +725,45 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
 
         tl = task_context.task_logger
         tl.addinfo("EAD metadata file validation.")
-        metadata_dir = os.path.join(task_context.path, 'submission/metadata/descriptive')
+
+        submiss_dir = 'submission'
+        md_dir = 'metadata'
+        md_subdir_descr = 'descriptive'
+
+        descriptive_md_dir = os.path.join(md_dir, md_subdir_descr)
+        submiss_descr_md_dir = os.path.join(task_context.path, submiss_dir, descriptive_md_dir)
+        overruling_metadata_dir = os.path.join(task_context.path, md_dir, submiss_dir, descriptive_md_dir)
+
+        tl.addinfo("Looking for EAD metadata files in metadata directory: %s" % strip_prefixes(submiss_descr_md_dir, task_context.path))
 
         # "warning" state for validation errors
         try:
-            valid = validate_ead_metadata(metadata_dir, 'ead.xml', None, tl)
-            task_context.task_status = 2 if not valid else 0
+            md_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(submiss_descr_md_dir, metadata_file_pattern_ead):
+                md_path, md_file = os.path.split(filename)
+                tl.addinfo("Found descriptive metadata file in submission folder: '%s'" % md_file)
+                tl.addinfo("Looking for overruling version in AIP metadata folder: '%s'" % strip_prefixes(overruling_metadata_dir, task_context.path))
+                overruling_md_file = os.path.join(overruling_metadata_dir, md_file)
+                validation_md_path = md_path
+                if os.path.exists(overruling_md_file):
+                    tl.addinfo("Overruling version of descriptive metadata file found: %s" % strip_prefixes(overruling_md_file, task_context.path))
+                    validation_md_path = overruling_metadata_dir
+                else:
+                    tl.addinfo("No overruling version of descriptive metadata file in AIP metadata folder found.")
+                md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
+            if len(md_files_valid) == 0:
+                tl.addinfo("No descriptive metadata files found.")
+            valid = False not in md_files_valid
+            if valid:
+                tl.addinfo("Descriptive metadata validation completed successfully.")
+            task_context.task_status = 0 if valid else 2
         except Exception, err:
             tb = traceback.format_exc()
             tl.adderr("An error occurred: %s" % err)
             tl.adderr(str(tb))
             task_context.task_status = 2
+
         return task_context.additional_data
 
 

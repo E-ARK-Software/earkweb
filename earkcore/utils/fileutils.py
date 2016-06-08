@@ -1,7 +1,9 @@
 from shutil import copytree
 from shutil import rmtree
-import os, errno
-from earkcore.utils.stringutils import lstrip_substring
+import os
+import errno
+import fnmatch
+import unittest
 
 MAX_TRIES = 10000
 
@@ -23,10 +25,11 @@ def mkdir_p(path):
     except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(path):
             pass
-        else: raise
+        else:
+            raise
 
 
-def removeDir(path):
+def remove_dir(path):
     if os.path.isdir(path):
         rmtree(path)
 
@@ -48,6 +51,7 @@ def remove_protocol(path_with_protocol):
         if len(stripped_path) < len(path_with_protocol):
             return stripped_path
     return path_with_protocol
+
 
 def copy_tree_content(source_dir, target_dir):
     fs_childs = os.listdir(source_dir)
@@ -72,7 +76,8 @@ def increment_file_name_suffix(abspath_basename, extension):
         inc_file_name = "%s_%s.%s" % (abspath_basename, suffix, extension)
         if not os.path.exists(inc_file_name):
                 return inc_file_name
-        i+=1
+        i += 1
+
 
 def latest_aip(abspath_basename, extension):
     """
@@ -92,22 +97,34 @@ def latest_aip(abspath_basename, extension):
         if not os.path.exists(inc_file_name):
                 return file_candidate
         file_candidate = inc_file_name
-        i+=1
+        i += 1
+
 
 def read_file_content(file_path):
-    fh = open(file_path,'r')
+    fh = open(file_path, 'r')
     file_content = fh.read()
     return file_content
 
-import os, fnmatch
 
 def locate(pattern, root_path):
     for path, dirs, files in os.walk(os.path.abspath(root_path)):
         for filename in fnmatch.filter(files, pattern):
             yield os.path.join(path, filename)
 
-def main():
-    print remove_protocol("file://./test")
 
-if __name__ == "__main__":
-    main()
+def find_files(directory, pattern):
+    for root, dirs, files in os.walk(directory):
+        for basename in files:
+            if fnmatch.fnmatch(basename, pattern):
+                filename = os.path.join(root, basename)
+                yield filename
+
+
+class TestPathFunctions(unittest.TestCase):
+
+    def test_remove_protocol(self):
+        self.assertEqual('./test', remove_protocol("file://./test"))
+
+
+if __name__ == '__main__':
+    unittest.main()
