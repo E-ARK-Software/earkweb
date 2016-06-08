@@ -1,6 +1,7 @@
 import logging
 
 from earkcore.utils.xmlutils import get_xml_schemalocations
+from earkcore.xml.xmlschemanotfound import XMLSchemaNotFound
 
 logger = logging.getLogger(__name__)
 import os
@@ -29,7 +30,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from workers.tasks import reception_dir_status, ip_save_file, set_process_state
+from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state
 from workers.tasks import run_package_ingest
 
 import traceback
@@ -112,27 +113,44 @@ def working_area(request, section, uuid):
 
 @login_required
 def xmleditor(request, uuid, ip_xml_file_path):
-    ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
-    abs_xml_file_path = os.path.join(config_path_work, ip_work_dir_sub_path)
-    logger.debug("Load file in XML editor: %s" % abs_xml_file_path)
-    schema = get_xml_schemalocations(abs_xml_file_path)
-    logger.debug(schema)
-    template = loader.get_template('earkcore/xmleditor.html')
-    note = None
-    if ip_xml_file_path.startswith("submission"):
-        note = "Overruling storage location: %s" % os.path.join('metadata', ip_xml_file_path)
-    def f(x):
-        return {
-            'sip2aip': "SIP to AIP conversion",
-            'sipcreator': "SIP creation",
-            'aip2dip': "AIP to DIP conversion",
-        }[x]
-    context = RequestContext(request, {
-        "uuid": uuid,
-        "ip_work_dir_sub_path": ip_work_dir_sub_path,
-        "ip_xml_file_path": ip_xml_file_path,
-        "note": note,
-    })
+    try:
+        ip_work_dir_sub_path = os.path.join(uuid, ip_xml_file_path)
+        abs_xml_file_path = os.path.join(config_path_work, ip_work_dir_sub_path)
+        logger.debug("Load file in XML editor: %s" % abs_xml_file_path)
+        schema = get_xml_schemalocations(abs_xml_file_path)
+        logger.debug(schema)
+        template = loader.get_template('earkcore/xmleditor.html')
+        note = None
+        if ip_xml_file_path.startswith("submission"):
+            note = "Overruling storage location: %s" % os.path.join('metadata', ip_xml_file_path)
+        def f(x):
+            return {
+                'sip2aip': "SIP to AIP conversion",
+                'sipcreator': "SIP creation",
+                'aip2dip': "AIP to DIP conversion",
+            }[x]
+        context = RequestContext(request, {
+            "uuid": uuid,
+            "ip_work_dir_sub_path": ip_work_dir_sub_path,
+            "ip_xml_file_path": ip_xml_file_path,
+            "note": note,
+        })
+    except XMLSchemaNotFound as err:
+        template = loader.get_template('earkcore/error.html')
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        context = RequestContext(request, {
+            "message": str(err.parameter),
+            "details": None,
+        })
+    except Exception, err:
+        template = loader.get_template('earkcore/error.html')
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        context = RequestContext(request, {
+            "message": err.message,
+            "details": str(tb),
+        })
     return HttpResponse(template.render(context))
 
 
@@ -142,7 +160,7 @@ def savexml(request, uuid, ip_xml_file_path):
     # XML code editor changes the attribute to lower case which leads to validation errors
     xml_content = request.body.replace("schemalocation", "schemaLocation")
 
-    result = ip_save_file.delay(uuid, ip_xml_file_path, xml_content)
+    result = ip_save_metadata_file.delay(uuid, ip_xml_file_path, xml_content)
 
     template = loader.get_template('earkcore/xmleditor.html')
     context = RequestContext(request, {

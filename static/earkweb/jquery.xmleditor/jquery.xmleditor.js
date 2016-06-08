@@ -3037,7 +3037,7 @@ ModifyMenuPanel.prototype.initialize = function (parentContainer) {
 	if (this.editor.options.enableDocumentStatusPanel) {
 		var self = this;
 		var documentStatusPanel = $(self.editor.options.documentStatusPanelDomId);
-		$("<span/>").addClass(submissionStatusClass).html("Document is unchanged")
+		$("<span/>").addClass(submissionStatusClass).html("Unchanged")
 			.appendTo(documentStatusPanel);
 
 		if (self.editor.submitButtonConfigs != null){

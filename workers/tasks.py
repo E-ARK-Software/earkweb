@@ -7,6 +7,7 @@ from functools import partial
 from os import walk
 import traceback
 from celery import current_task
+from earkcore.utils.stringutils import multiple_replace, multiple_replacer
 
 import logging
 from workers.ip_state import IpState
@@ -158,7 +159,7 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 
 
 @app.task(bind=True)
-def ip_save_file(self, uuid, ip_file_path, content):
+def ip_save_metadata_file(self, uuid, ip_file_path, content):
     tl = TaskLogger(os.path.join(config_path_work, uuid, "metadata/earkweb.log"))
 
     md_path, _ = os.path.split(ip_file_path)
@@ -166,6 +167,10 @@ def ip_save_file(self, uuid, ip_file_path, content):
     xml_file_path = ip_file_path
     if ip_file_path.startswith("submission"):
         xml_file_path = os.path.join('metadata', ip_file_path)
+        # adapting paths for new storage location
+        replacements = (u"/schema/ ../../schemas/", u"/schema/ ../../../../submission/schemas/"), \
+                       (u"file:../../representations/", u"file:../../../../submission/representations/")
+        content = multiple_replace(content, *replacements)
         logger.debug("Storing file in overruling path: %s" % xml_file_path)
     else:
         logger.debug("Writing file in path: %s" % xml_file_path)
