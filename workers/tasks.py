@@ -174,7 +174,7 @@ def ip_save_metadata_file(self, uuid, ip_file_path, content):
         logger.debug("Writing file in path: %s" % xml_file_path)
 
     md_path, _ = os.path.split(xml_file_path)
-    logger.debug("Trying to create path: %s" % md_path)
+    logger.debug("Creating folder to store metadata file: %s" % md_path)
     mkdir_p(os.path.join(config_path_work, uuid, md_path))
 
     abs_file_path = os.path.join(config_path_work, uuid, xml_file_path)
