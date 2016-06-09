@@ -1,0 +1,20 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    <h2 class="main">Error</h2>
+
+    <p>{{ message }}</p>
+
+    {% if details %}
+    <pre>{{ details }}</pre>
+    {% endif %}
+
+{% endblock %}

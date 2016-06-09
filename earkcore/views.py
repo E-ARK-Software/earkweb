@@ -228,6 +228,7 @@ def read_ipfc(request, ip_sub_file_path):
             else:
                 logger.debug('Return content for other file types')
                 file_content = read_file_content(file_path)
+                logger.debug(file_content)
             return HttpResponse(file_content)
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
