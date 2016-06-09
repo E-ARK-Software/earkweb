@@ -162,8 +162,6 @@ def extract_and_remove_package(self, package_file_path, target_directory, proc_l
 def ip_save_metadata_file(self, uuid, ip_file_path, content):
     tl = TaskLogger(os.path.join(config_path_work, uuid, "metadata/earkweb.log"))
 
-    md_path, _ = os.path.split(ip_file_path)
-    mkdir_p(md_path)
     xml_file_path = ip_file_path
     if ip_file_path.startswith("submission"):
         xml_file_path = os.path.join('metadata', ip_file_path)
@@ -174,6 +172,10 @@ def ip_save_metadata_file(self, uuid, ip_file_path, content):
         logger.debug("Storing file in overruling path: %s" % xml_file_path)
     else:
         logger.debug("Writing file in path: %s" % xml_file_path)
+
+    md_path, _ = os.path.split(xml_file_path)
+    logger.debug("Trying to create path: %s" % md_path)
+    mkdir_p(os.path.join(config_path_work, uuid, md_path))
 
     abs_file_path = os.path.join(config_path_work, uuid, xml_file_path)
 
