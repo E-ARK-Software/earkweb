@@ -16,15 +16,18 @@
 
     <div class="standard-form-container">
 
-        <!--form class="form-horizontal" role="form" method="POST" action="celery_nlp" enctype="multipart/form-data"-->
-        <form class="form-horizontal" role="form" method="POST" enctype="multipart/form-data">
+        <form class="form-horizontal" role="form" method="POST" action="celery_nlp" enctype="multipart/form-data">
+        <!--form class="form-horizontal" role="form" method="POST" enctype="multipart/form-data"-->
         <fieldset>
             <legend>NLP via Celery: Task configuration</legend>
             {% csrf_token %}
 
             <!-- TODO: dynamically list all tools and actions that are possible? -->
-            <p>Please provide the package identifier and the content type of the files you want to process:</p>
+            <p>Please provide the Solr query specifying the files you want to process:</p>
             <p>{{ solr_query_form.as_p }}</p>
+
+            <p>Where should the file contents be stored for further processing?</p>
+            <p>{{ tar_path_form }}</p>
 
             <p>Select the NLP tools that should be applied on the data above:</p>
             <p>{{ ner_model_select.as_p }}</p>
