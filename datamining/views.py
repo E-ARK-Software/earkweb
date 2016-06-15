@@ -29,12 +29,60 @@ from operator import itemgetter, attrgetter, methodcaller
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
+from .forms import SolrQuery, NERSelect, CSelect
+from sandbox.datamining.dm_start import dm_start
 @login_required
 @csrf_exempt
+
 
 @login_required
 def start(request):
     template = loader.get_template('datamining/start.html')
+    solr_query_form = SolrQuery()
+    ner_model_select = NERSelect()
+    categoriser_select = CSelect()
     context = RequestContext(request, {
+        'solr_query_form': solr_query_form,
+        'ner_model_select': ner_model_select,
+        'categoriser_select': categoriser_select
     })
     return HttpResponse(template.render(context))
+
+
+@login_required
+def celery_nlp(request):
+    if request.method == 'POST':
+        # TODO: feedback
+        # template = loader.get_template('datamining/start.html')
+        try:
+            print request.POST
+            # package_id = request.POST['package_id']
+            # print package_id
+            # ctrlfile = request.FILES['ctrl_file']
+            # tomarctrl = ctrlToHDFS(ctrlfile)
+            #
+            # if tomarctrl is not False:
+            #     args = ['hadoop', 'jar', 'tomar-2.0.0-SNAPSHOT-jar-with-dependencies.jar',
+            #             '-r', 'tomarspecs', '-i', '%s', '-o', 'output-ner', '-n', '1'] % tomarctrl
+            #     subprocess32.Popen(args)
+            #
+            #     context = RequestContext(request, {
+            #         'status': 'LAUNCHED'
+            #     })
+            # else:
+            #     context = RequestContext(request, {
+            #         'status': 'Upload of control file failed.'
+            #     })
+        except Exception, e:
+            # # return error message
+            # context = RequestContext(request, {
+            #     'status': 'ERROR: %s' % e.message
+            # })
+            pass
+    # else:
+    #     template = loader.get_template('datamining/start.html')
+    #     context = RequestContext(request, {
+    #
+    #     })
+    # return HttpResponse(template.render(context))
+
