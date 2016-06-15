@@ -13,11 +13,17 @@ class CreateNLPArchive(object):
     * no duplicate files
     * no non-text files
     * etc.
-
-    @return     The archives path as a string.
     """
 
     def get_data_from_solr(self, solr_query, archive_name):
+        """
+        Takes a Solr query and sends every document in the JSON result to a tar file. Takes care of paging the results
+        (default: 10 documents per query).
+
+        @param solr_query:      Complete solry query (url to JSON result as string)
+        @param archive_name:    Path to where the tar file should be created (string)
+        @return:                Path to tar (string)
+        """
         # these file types should be stored
 
         # get JSON result
@@ -58,6 +64,14 @@ class CreateNLPArchive(object):
         return archive_name
 
     def add_to_archive(self, document, archive):
+        """
+        Takes JSON objects and adds them to a tar file. The filename inside the tar equals 'entry' (with '/' replaced
+        by '.').
+
+        @param document:    The document, taken from the Solr query (JSON)
+        @param archive:     Path to the tar file, where the document should be stored.
+        @return:            
+        """
         entry = document['entry'][0].encode('utf-8')
         content = document['content'][0].encode('utf-8')
 
