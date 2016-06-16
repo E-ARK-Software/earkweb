@@ -1,6 +1,8 @@
 import os
+import sys
 import shutil
 import tarfile
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from config.configuration import root_dir
 from earkcore.metadata.mets.metsgenerator import MetsGenerator
 from earkcore.metadata.premis.premisgenerator import PremisGenerator
