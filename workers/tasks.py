@@ -1,15 +1,15 @@
+import logging
 import os
 import shutil
 import sys
-import tarfile
 import time
+import traceback
 from functools import partial
 from os import walk
-import traceback
-from celery import current_task
-from earkcore.utils.stringutils import multiple_replace, multiple_replacer
 
-import logging
+from celery import current_task
+
+from earkcore.utils.stringutils import multiple_replace
 from workers.ip_state import IpState
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ from earkcore.search.solrserver import SolrServer
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
-from earkcore.utils.fileutils import mkdir_p, increment_file_name_suffix, read_file_content
+from earkcore.utils.fileutils import mkdir_p, read_file_content
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
@@ -65,9 +65,13 @@ from config.configuration import hdfs_upload_service_endpoint_path, hdfs_upload_
 import requests
 from workers.concurrent_task import ConcurrentTask
 from earkcore.utils.datetimeutils import ts_date
-import tarfile
 from earkcore.utils.pathutils import strip_prefixes
 from earkcore.utils.pathutils import backup_file_path
+from nltk.tag import StanfordNERTagger
+from nltk import word_tokenize
+from config.configuration import stanford_ner_models, stanford_jar, text_category_models, config_path_nlp
+from workers.dmhelpers.createarchive import CreateNLPArchive
+import tarfile
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -1488,7 +1492,7 @@ class AIPIndexing(DefaultTask):
         """
         AIP Index
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:17,type:0,stage:0
+        @param      tc: order:17,type:2,stage:2
         """
 
         # no premis event
@@ -1869,3 +1873,97 @@ class DIPImportSIARD(DefaultTask):
             pass
 
         task_context.task_status = 0
+
+
+class DMMainTask(ConcurrentTask):
+
+    accept_input_from = 'All'
+
+    def run_task(self, task_context, *args, **kwargs):
+        """
+        DMMMainTask
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:0,type:0,stage:0
+        """
+
+        query = kwargs['solr_query']
+        ner_model = kwargs['ner_model']
+        category_model = kwargs['category_model']
+        tar_path = kwargs['tar_path']
+
+        archive_creator = CreateNLPArchive()
+        archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
+
+        # initialise NLP tasks
+        ner_task = DMNERecogniser()
+        # cat_task = DMTextCategoriser()    # TODO
+
+        with tarfile.open(tar_path, 'r') as tar:
+            for filename in tar.getmembers():
+                content = tar.extractfile(filename).read()
+                if ner_model is not 'None':
+                    details = {'model': ner_model,
+                               'identifier': filename.name}
+                    taskid = uuid.uuid4().__str__()
+                    t_context = DefaultTaskContext('', '', 'workers.tasks.DMNERecogniser', None, '', None)
+                    t_context.file_content = content
+                    ner_task.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+                # if cat is not 'None':
+                #     pass
+
+        return
+
+
+class DMNERecogniser(ConcurrentTask):
+
+    accept_input_from = [DMMainTask.__name__]
+
+    def run_task(self, task_context, *args, **kwargs):
+        """
+        DMNERecogniser
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:0,type:0,stage:0
+        """
+        # TODO: add geo-referencing?
+
+        content = task_context.file_content
+        identifier = kwargs['identifier']
+        model = kwargs['model']
+
+        # prepare XML file
+        E = objectify.ElementMaker(annotate=False)
+        root = E.entities({'file': identifier,
+                           'classifier': model})
+
+        # initialise tagger
+        jar = os.path.join(stanford_jar, 'stanford-ner.jar')
+        model = os.path.join(stanford_ner_models, model)
+        tagger = StanfordNERTagger(model, jar, encoding='utf-8', java_options='-mx8000m')
+
+        print 'initialised with model: %s' % model
+        print 'now tagging: %s' % identifier
+
+        tokenized = []
+        content = content.strip().decode('utf-8')
+        tokens = word_tokenize(content, language='english')     # TODO: change tokenizer language dynamically
+        for token in tokens:
+            tokenized.append(token + '\n')
+
+        position = 0
+        for result in tagger.tag(tokenized):
+            position += 1
+            if result[1] != 'O':
+                entity = E.entity({'position': position,
+                                   'class': result[1],
+                                   'entity': result[0]})
+                root.append(entity)
+
+        xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+
+        # test only
+        with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
+            testfile.write(xml_string)
+
+        # exist_db = write_to_exist(xml_string, identifier)     # TODO
+        #
+        # return 0 if exist_db in (200, 201) else 1
