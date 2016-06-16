@@ -1,14 +1,14 @@
 #!/bin/bash
-#DEST=http://localhost:8000/earkweb/search/submit_order
-DEST=http://localhost:8000/earkweb/search/order_status
-CAS_HOSTNAME=
-USERNAME=
-PASSWORD=
+DEST=http://earkdev.ait.ac.at/earkweb/search/order_status
+#DEST=http://localhost:8000/earkweb/search/order_status
+CAS_HOSTNAME=https://earkdev.ait.ac.at:8443
+USERNAME=earkadmin
+PASSWORD=Archive4You
 COOKIE_JAR=.cookieJar
 HEADER_DUMP_DEST=.headers
 
 # Start by logging out 
-curl -s -k https://earkdev.ait.ac.at:8443/cas/logout -o /dev/null
+curl -s -k $CAS_HOSTNAME/cas/logout -o /dev/null
 
 #Cleanup existing coockie and header
 rm $COOKIE_JAR
@@ -22,7 +22,7 @@ CAS_ID=`curl -s -k -c $COOKIE_JAR https://earkdev.ait.ac.at:8443/cas/login?servi
 echo "CAS_ID=$CAS_ID"
 
 # Get headers
-curl -s -k --data "username=$USERNAME&password=$PASSWORD&lt=$CAS_ID&execution=e1s1&_eventId=submit" -i -b $COOKIE_JAR -c $COOKIE_JAR https://$CAS_HOSTNAME/cas/login?service=$ENCODED_DEST -D $HEADER_DUMP_DEST -o /dev/null
+curl -s -k --data "username=$USERNAME&password=$PASSWORD&lt=$CAS_ID&execution=e1s1&_eventId=submit" -i -b $COOKIE_JAR -c $COOKIE_JAR $CAS_HOSTNAME/cas/login?service=$ENCODED_DEST -D $HEADER_DUMP_DEST -o /dev/null
 cat ./.headers
 # Get the location from headers
 CURL_DEST=`grep Location $HEADER_DUMP_DEST | sed 's/Location: //'`
@@ -53,8 +53,8 @@ echo "POST_DEST=$POST_DEST"
 #POST_RESULT=`curl -s -X POST -k -L --data @./earkcore/xml/resources/order.xml -b $COOKIE_JAR -c $COOKIE_JAR $POST_DEST`
 #echo "POST_RESULT=$POST_RESULT"
 #echo "$POST_RESULT" > result.html
-
+PKG_UUID="20ce1828-8890-439c-9827-b237d5162b90"
 #POST_RESULT=`curl -s -X POST -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST?$ENCODED_TICKET&pkg_id=28f07c7c-ad73-4113-81c3-59534c4f6f9b"`
-POST_RESULT=`curl -s -X POST -k -L --data "pkg_uuid=28f07c7c-ad73-4113-81c3-59534c4f6f9b" -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/?$ENCODED_TICKET"`
+POST_RESULT=`curl -s -X POST -k -L --data "pkg_uuid=$PKG_UUID" -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/?$ENCODED_TICKET"`
 echo "$POST_RESULT" > result.html
-cat ./result.html
+#cat ./result.html

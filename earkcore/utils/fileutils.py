@@ -3,6 +3,7 @@ from shutil import rmtree
 import os
 import errno
 import fnmatch
+import shutil
 import unittest
 
 MAX_TRIES = 10000
@@ -125,6 +126,14 @@ class TestPathFunctions(unittest.TestCase):
     def test_remove_protocol(self):
         self.assertEqual('./test', remove_protocol("file://./test"))
 
+
+def copy_folder(src, dest):
+    _, leaf_folder = os.path.split(src)
+    shutil.copytree(src, os.path.join(dest, leaf_folder))
+    if os.path.exists(dest):
+        print "Folder \"%s\" moved to target directory: \"%s\"" % (src, dest)
+    else:
+        print "Failed moving folder \"%s\" to \"%s\"" % (src, dest)
 
 if __name__ == '__main__':
     unittest.main()

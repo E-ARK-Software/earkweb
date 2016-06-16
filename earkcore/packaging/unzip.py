@@ -73,6 +73,7 @@ class Unzip(Processor):
             curdir = os.path.join(basedir, dir)
             if not os.path.exists(curdir):
                 os.makedirs(curdir)
+                print curdir
 
     @classmethod
     def _listdirs(self, file):
@@ -80,11 +81,13 @@ class Unzip(Processor):
         zf = zipfile.ZipFile(file)
         dirs = []
         filelist = filter( lambda x: not x.endswith( '/' ), zf.namelist() )
+        dirlist = filter( lambda x: x.endswith( '/' ), zf.namelist() )
         for f in filelist:
             path, filename = os.path.split(f)
             if path.startswith("/"):
                 path = path[1:len(path)]
             dirs.append(path)
+        dirs.extend(dirlist)
         dirs.sort()
         return dirs
 
@@ -92,15 +95,20 @@ class TestExtraction(unittest.TestCase):
 
     delivery_dir = root_dir + '/earkresources/Delivery-test/'
     temp_extract_dir = root_dir + '/tmp/temp-' + randomutils.randomword(10)
+    package_dir = root_dir + '/earkresources/packaging-test/'
+    temp_extract_dir2 = root_dir + '/tmp/temp-' + randomutils.randomword(10)
 
     @classmethod
     def setUpClass(cls):
         if not os.path.exists(TestExtraction.temp_extract_dir):
             os.makedirs(TestExtraction.temp_extract_dir)
+        if not os.path.exists(TestExtraction.temp_extract_dir2):
+            os.makedirs(TestExtraction.temp_extract_dir2)
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(TestExtraction.temp_extract_dir)
+        shutil.rmtree(TestExtraction.temp_extract_dir2)
 
     def test_extract_sip(self):
         print "Extracting to %s" % self.temp_extract_dir
@@ -126,6 +134,29 @@ class TestExtraction(unittest.TestCase):
         )
         for file in files_to_check:
             self.assertTrue(os.path.isfile(file), "File %s not found in extracted directory" + file)
+
+
+    def test_extract_package_with_empty_folder(self):
+        package_file = self.package_dir + 'pkg.zip'
+        sip_extraction = Unzip()
+        result = sip_extraction.extract_with_report(package_file, TestExtraction.temp_extract_dir2)
+        print "Extracting package %s to %s" % (package_file, self.temp_extract_dir2)
+        self.assertTrue(result.success)
+        for log in result.log:
+            print log
+        # must be 8 extracted files
+        cpt = sum([len(files) for r, d, files in os.walk(TestExtraction.temp_extract_dir2)])
+        ndirs = sum([len(d) for r, d, files in os.walk(TestExtraction.temp_extract_dir2)])
+        self.assertEqual(cpt, 2, "Number of extracted files not as expected: %s" % cpt)
+        self.assertEqual(ndirs, 3, "Number of extracted directories not as expected: %s" % ndirs)
+        items_to_check = (
+            os.path.join(TestExtraction.temp_extract_dir2, "pgk",'emptydir'),
+            os.path.join(TestExtraction.temp_extract_dir2, "pgk",'somedir'),
+            os.path.join(TestExtraction.temp_extract_dir2, "pgk",'somedir/fileinsomedir.txt'),
+            os.path.join(TestExtraction.temp_extract_dir2, "pgk",'testfile.txt'),
+        )
+        for item in items_to_check:
+            self.assertTrue(os.path.exists(item), "Item %s not found in extracted directory: " + item)
 
 if __name__ == '__main__':
     unittest.main()

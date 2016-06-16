@@ -162,7 +162,7 @@ class PremisGenerator(object):
             {q(XSI_NS, 'type'): 'representation', "xmlID": premis_id},
             P.objectIdentifier(
                 P.objectIdentifierType('repository'),
-                P.objectIdentifierValue('package-id-goes-here-?')
+                P.objectIdentifierValue(premis_id)
             ),
         )
         premis.append(object)
@@ -234,7 +234,7 @@ class PremisGenerator(object):
                     P.agentIdentifierType('LOCAL'),
                     P.agentIdentifierValue(identifier_value)
                 ),
-                P.agentName('E-ARK AIP to DIP Converter'),
+                P.agentName('E-ARK Web'),
                 P.agentType('Software')))
 
         # create the Premis file
@@ -260,7 +260,7 @@ class PremisGenerator(object):
             {q(XSI_NS, 'type'): 'representation', "xmlID": premis_id},
             P.objectIdentifier(
                 P.objectIdentifierType('repository'),
-                P.objectIdentifierValue('package-id-goes-here-?')
+                P.objectIdentifierValue(premis_id)
             ),
         )
         premis.append(object)
@@ -301,7 +301,7 @@ class PremisGenerator(object):
                 P.agentIdentifierType('LOCAL'),
                 P.agentIdentifierValue(identifier_value)
             ),
-            P.agentName('E-ARK AIP to DIP Converter'),
+            P.agentName('E-ARK Web'),
             P.agentType('Software')))
 
         str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
