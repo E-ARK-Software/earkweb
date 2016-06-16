@@ -11,7 +11,7 @@ class SolrQuery(forms.Form):
 
 
 class ArchivePath(forms.Form):
-    tar_path = forms.CharField(max_length=300, label='Path for tar file', initial='/home/janrn/test.tar', required=True)
+    tar_path = forms.CharField(max_length=300, label='Path for tar file', initial='', required=True)
 
 
 class NERSelect(forms.Form):

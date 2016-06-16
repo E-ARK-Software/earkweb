@@ -23,7 +23,7 @@ def start(request):
     context = RequestContext(request, {
         'solr_query_form': solr_query_form,
         'ner_model_select': ner_model_select,
-        'categoriser_select': categoriser_select,
+        # 'categoriser_select': categoriser_select,
         'tar_path_form': tar_path
     })
     return HttpResponse(template.render(context))
