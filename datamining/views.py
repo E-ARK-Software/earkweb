@@ -8,8 +8,9 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 logger = logging.getLogger(__name__)
 from .forms import SolrQuery, NERSelect, CSelect, ArchivePath
-from sandbox.datamining.helpers.createarchive import CreateNLPArchive
-
+from workers.tasks import DMMainTask
+from workers.default_task_context import DefaultTaskContext
+import uuid
 
 @login_required
 @csrf_exempt
@@ -28,8 +29,8 @@ def start(request):
     return HttpResponse(template.render(context))
 
 
-def build_query(package_id, content_type, additional_query):
-    # TODO: additional_query is not used
+def build_query(package_id, content_type, add_and, add_and_not):
+    # TODO: additional items are not used
     solr_prefix = 'http://localhost:8983/solr/earkstorage/select?q='
     q_and = ' AND '
     q_or = ' OR '
@@ -56,16 +57,26 @@ def celery_nlp(request):
             print request.POST
             package_id = request.POST['package_id']
             content_type = request.POST['content_type']
-            additional_query = request.POST['content_type']
+            additional_and = request.POST['additional_and']
+            additional_and_not = request.POST['additional_and_not']
             tar_path = request.POST['tar_path']
 
-            solr_query = build_query(package_id, content_type, additional_query)
+            # build the query
+            solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
 
-            category_model = request.POST['category_model']
             ner_model = request.POST['ner_model']
+            category_model = request.POST['category_model']
 
-            archive_creator = CreateNLPArchive()
-            archive_creator.get_data_from_solr(solr_query=solr_query, archive_name=tar_path)
+            datamining_main = DMMainTask()
+            taskid = uuid.uuid4().__str__()
+            details = {'solr_query': solr_query,
+                       'ner_model': ner_model,
+                       'category_model': category_model,
+                       'tar_path': tar_path}
+            # use kwargs, those can be seen in Celery Flower
+            t_context = DefaultTaskContext('', '', 'workers.tasks.DMMainTask', None, '', None)
+            datamining_main.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+
         except Exception, e:
             # # return error message
             # context = RequestContext(request, {

@@ -57,3 +57,10 @@ config_path_reception = /var/data/earkweb/reception
 config_path_work = /var/data/earkweb/work
 config_path_storage = /var/data/earkweb/storage
 config_path_access = /var/data/earkweb/access
+
+[nlp]
+
+stanford_jar_path = /var/data/earkweb/nlp/stanford
+stanford_models_path = /var/data/earkweb/nlp/stanford/classifiers
+category_models_path = /var/data/earkweb/nlp/textcategories/models
+config_path_nlp = /var/data/earkweb/nlp

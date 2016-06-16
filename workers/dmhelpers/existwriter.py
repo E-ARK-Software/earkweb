@@ -15,7 +15,7 @@ def write_to_exist(xml, xml_id):
     con.putheader('Content-Type', 'application/xml')
     clen = len(xml)
     con.putheader('Content-Length', `clen`)
-    con.putheader('Authorization', 'Basic %s' % base64.b64encode('nlp-user:earknlp'))
+    con.putheader('Authorization', 'Basic %s' % base64.b64encode('nlp-user:earknlp'))   # TODO: set this in settings.py
     con.endheaders()
     con.send(xml)
     errcode, errmsg, headers = con.getreply()
