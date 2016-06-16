@@ -462,7 +462,9 @@ def submit_order(request):
     if request.method == 'POST':
         order_xml = BytesIO(request.body)
         parsed_order_xml = lxml.etree.parse(order_xml)
-        parsed_order_schema = lxml.etree.parse("./earkcore/xml/resources/order.xsd")
+        from config.configuration import root_dir
+        xsd_path = os.path.join(root_dir, "earkcore/xml/resources/order.xsd")
+        parsed_order_schema = lxml.etree.parse(xsd_path)
         result = validator.validate_XML(parsed_order_xml, parsed_order_schema)
         root = parsed_order_xml.getroot()
 

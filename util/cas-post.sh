@@ -17,11 +17,23 @@ rm $HEADER_DUMP_DEST
 #Encode destination
 ENCODED_DEST=`echo "$DEST" | perl -p -e 's/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg' | sed 's/%2E/./g' | sed 's/%0A//g'`
 
-# Get CAS id
+echo "---------------------------------------------------"
+echo "getting CAS_ID"
+#Visit CAS and get a login form. This includes a unique ID for the form, which we will store in CAS_ID and attach to our form submission. jsessionid cookie will be set here
 CAS_ID=`curl -s -k -c $COOKIE_JAR https://earkdev.ait.ac.at:8443/cas/login?service=$ENCODED_DEST | grep name=.lt | sed 's/.*value..//' | sed 's/\".*//'`
+cat $COOKIE_JAR
 echo "CAS_ID=$CAS_ID"
+if [[ "$CAS_ID" = "" ]]; then
+   echo "Login ticket is empty."
+   exit 1
+fi
 
-# Get headers
+echo "---------------------------------------------------"
+sleep 2
+
+echo "Logging in"
+#Submit the login form, using the cookies saved in the cookie jar and the form submission ID just extracted. We keep the headers from this request as the return value should be a 302 including a "ticket" param which we'll need in the next request
+
 curl -s -k --data "username=$USERNAME&password=$PASSWORD&lt=$CAS_ID&execution=e1s1&_eventId=submit" -i -b $COOKIE_JAR -c $COOKIE_JAR $CAS_HOSTNAME/cas/login?service=$ENCODED_DEST -D $HEADER_DUMP_DEST -o /dev/null
 cat ./.headers
 # Get the location from headers
@@ -40,7 +52,7 @@ echo "ENCODED_TICKET=$ENCODED_TICKET"
 GET_DEST="$DEST?$ENCODED_TICKET"
 echo "GET_DEST=$GET_DEST"
 
-# Issue a GET first (do not remove is necessary)
+# Visit the URL with the ticket param to finally set the casprivacy and, more importantly, MOD_AUTH_CAS cookie. Now we've got a MOD_AUTH_CAS cookie, anything we do in this session will pass straight through CAS
 GET_RESULT=`curl -s -k -L -b $COOKIE_JAR -c $COOKIE_JAR $GET_DEST`
 echo "GET_RESULT=$GET_RESULT"
 
@@ -57,4 +69,6 @@ PKG_UUID="20ce1828-8890-439c-9827-b237d5162b90"
 #POST_RESULT=`curl -s -X POST -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST?$ENCODED_TICKET&pkg_id=28f07c7c-ad73-4113-81c3-59534c4f6f9b"`
 POST_RESULT=`curl -s -X POST -k -L --data "pkg_uuid=$PKG_UUID" -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/?$ENCODED_TICKET"`
 echo "$POST_RESULT" > result.html
+
 #cat ./result.html
+
