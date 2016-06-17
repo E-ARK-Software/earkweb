@@ -59,3 +59,10 @@ mkdir $REPO_DATA_DIRECTORY/storage/pairtree_root
 touch $REPO_DATA_DIRECTORY/storage/pairtree_version0_1
 mkdir $REPO_DATA_DIRECTORY/work
 mkdir $REPO_DATA_DIRECTORY/access
+
+mkdir $REPO_DATA_DIRECTORY/nlp
+mkdir $REPO_DATA_DIRECTORY/nlp/stanford
+mkdir $REPO_DATA_DIRECTORY/nlp/stanford/classifiers
+mkdir -p $REPO_DATA_DIRECTORY/nlp/textcategories/models
+
+

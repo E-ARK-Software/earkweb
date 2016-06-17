@@ -60,6 +60,9 @@ config_path_access = /var/data/earkweb/access
 
 [nlp]
 
+nlp_solr_server_ip = solr
+nlp_solr_port = 8983
+nlp_solr_core = earkstorage
 stanford_jar_path = /var/data/earkweb/nlp/stanford
 stanford_models_path = /var/data/earkweb/nlp/stanford/classifiers
 category_models_path = /var/data/earkweb/nlp/textcategories/models
