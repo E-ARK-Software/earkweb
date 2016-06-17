@@ -259,7 +259,7 @@ class SIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPReset'
+        task_context.event_type = 'SIP Reset'
 
         # implementation
         task_context.task_status = 0
@@ -278,7 +278,7 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIPDescriptiveMetadataValidation'
+        task_context.event_type = 'SIP Descriptive Metadata Validation'
 
         tl = task_context.task_logger
         metadata_dir = os.path.join(task_context.path, 'metadata/')
@@ -320,7 +320,7 @@ class SIPPackageMetadataCreation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPPackageMetadataCreation'
+        task_context.event_type = 'SIP Package Metadata Creation'
 
         reps_path = os.path.join(task_context.path, 'representations')
         for name in os.listdir(reps_path):
@@ -371,7 +371,7 @@ class SIPPackaging(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPPackaging'
+        #task_context.event_type = 'N/A'
 
         task_context.task_logger.addinfo("Package name: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
@@ -427,7 +427,7 @@ class SIPClose(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPClose'
+        #task_context.event_type = 'N/A'
 
         task_context.task_logger.addinfo("Closing package: %s" % task_context.additional_data['packagename'])
         tl = task_context.task_logger
@@ -459,7 +459,7 @@ class SIPtoAIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = SIPtoAIPReset
+        task_context.event_type = "SIP to AIP Conversion Reset"
 
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -501,7 +501,7 @@ class SIPDeliveryValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPDeliveryValidation'
+        task_context.event_type = 'SIP Delivery Validation'
 
         # TODO: rework for new MetsValidation.py?
 
@@ -595,7 +595,7 @@ class IdentifierAssignment(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'IdentifierAssignment'
+        task_context.event_type = 'AIP Identifier Assignment'
 
         tl = task_context.task_logger
 
@@ -653,7 +653,7 @@ class SIPExtraction(DefaultTask):
         tl = task_context.task_logger
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPExtraction'
+        task_context.event_type = 'SIP Extraction'
         if not 'identifier' in task_context.additional_data:
             task_context.task_status = 1
             tl.adderr("Parameter 'identifier' is not defined in additional data!")
@@ -695,7 +695,7 @@ class SIPRestructuring(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPRestructuring'
+        task_context.event_type = 'SIP to AIP Restructuring'
 
         tl = task_context.task_logger
         deliveries = get_deliveries(task_context.path, task_context.task_logger)
@@ -738,7 +738,7 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIPDescriptiveMetadataValidation'
+        task_context.event_type = 'AIP Descriptive Metadata Validation'
 
         tl = task_context.task_logger
         tl.addinfo("EAD metadata file validation.")
@@ -796,7 +796,7 @@ class SIPValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'SIPValidation'
+        task_context.event_type = 'SIP Validation'
 
         tl = task_context.task_logger
         valid = True
@@ -852,7 +852,7 @@ class AIPMigrations(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIPMigrations'
+        task_context.event_type = 'AIP Migrations'
 
         # make metadata/earkweb dir for temporary files
         if not os.path.exists(os.path.join(task_context.path, 'metadata/earkweb')):
@@ -1070,7 +1070,7 @@ class AIPCheckMigrationProgress(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'AIPCheckMigrationProgress'
+        #task_context.event_type = 'N/A'
 
         tl = task_context.task_logger
 
@@ -1174,7 +1174,7 @@ class CreatePremisAfterMigration(DefaultTask):
             return task_context.additional_data
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'CreatePremisAfterMigration'
+        task_context.event_type = 'AIP Migration PREMIS Creation'
 
         for repdir in os.listdir(os.path.join(task_context.path, 'representations')):
             try:
@@ -1207,7 +1207,7 @@ class AIPRepresentationMetsCreation(DefaultTask):
             return task_context.additional_data
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIPRepresentationMetsCreation'
+        task_context.event_type = 'AIP Representation METS Creation'
 
         tl = task_context.task_logger
 
@@ -1257,7 +1257,7 @@ class AIPPackageMetsCreation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIPPackageMetsCreation'
+        task_context.event_type = 'AIP Package Mets Creation'
 
         tl = task_context.task_logger
 
@@ -1313,7 +1313,7 @@ class AIPValidation(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIPValidation'
+        task_context.event_type = 'AIP Validation'
 
         tl = task_context.task_logger
 
@@ -1354,7 +1354,7 @@ class AIPPackaging(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'AIPPackaging'
+        #task_context.event_type = 'N/A'
 
         tl = task_context.task_logger
 
