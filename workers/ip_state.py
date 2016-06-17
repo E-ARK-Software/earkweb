@@ -2,6 +2,7 @@ from xml.etree.ElementTree import Element, SubElement
 from xml.etree import ElementTree as Etree
 from earkcore.utils.xmlutils import prettify
 from earkcore.utils.datetimeutils import current_timestamp
+from earkcore.xml.xmldictobject import ConvertDictToXml
 from workers.taskconfig import TaskConfig
 
 
@@ -202,6 +203,29 @@ class IpState(object):
         if lastchange_elm is None:
             lastchange_elm = SubElement(self.ted, 'lastchange')
         lastchange_elm.text = str(lastchange_value)
+
+    def set_additional_data(self, task_name, additional_data_dict):
+        """
+        Set lastchange value
+
+        @type lastchange: str
+        @param lastchange: lastchange (timestamp)
+        """
+
+        provenance_elm = self.ted.find('.//provenance')
+        if provenance_elm is None:
+            provenance_elm = SubElement(self.ted, 'provenance')
+
+        task_execution_elm = SubElement(provenance_elm, 'task_execution')
+
+        datetime_elm = SubElement(task_execution_elm, 'datetime')
+        datetime_elm.text = str(current_timestamp())
+        task_name_elm = SubElement(task_execution_elm, 'task')
+        task_name_elm.text = str(task_name)
+
+        additional_data = {'additional_data': additional_data_dict}
+        additional_data_elm = ConvertDictToXml(additional_data)
+        task_execution_elm.append(additional_data_elm)
 
     def get_updated_doc_content(self):
         """

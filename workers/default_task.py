@@ -5,8 +5,10 @@ from celery import Task
 from celery import current_task
 
 from earkcore.metadata.premis.premisgenerator import PremisGenerator
+from earkcore.xml.xmldictobject import ConvertDictToXml
 from tasklogger import TaskLogger
 from workers.ip_state import IpState
+from xml.etree import ElementTree
 
 import logging
 logger = logging.getLogger(__name__)
@@ -97,6 +99,7 @@ class DefaultTask(Task):
 
         task_context.ip_state_xml.set_last_task(self.task_name)
         task_context.ip_state_xml.set_state(task_context.task_status)
+        task_context.ip_state_xml.set_additional_data(self.task_name, task_context.additional_data)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
 
         # add event to PREMIS and write file (only if PREMIS file exists)
