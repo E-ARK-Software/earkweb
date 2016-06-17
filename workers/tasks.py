@@ -389,6 +389,12 @@ class SIPPackaging(DefaultTask):
 
         i = 0
         for subdir, dirs, files in os.walk(task_context.path):
+
+            for dir in dirs:
+                entry = os.path.join(subdir, dir)
+                if not os.listdir(entry):
+                    tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
+
             for file in files:
                 entry = os.path.join(subdir, file)
                 tar.add(entry, arcname=os.path.relpath(entry, task_context.path))
@@ -815,7 +821,7 @@ class SIPValidation(DefaultTask):
                 rep_path = os.path.join(representations_path, name)
                 if os.path.isdir(rep_path):
                     mets_validator = MetsValidation(rep_path)
-                    valid = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+                    valid &= mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
                     # TODO: validate possible sub-METS files:
                     # for rep, metspath in mets_validator.subsequent_mets:
                     #     print 'METS file for representation: %s at path: %s' % (rep, metspath)

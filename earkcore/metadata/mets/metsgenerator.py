@@ -36,6 +36,7 @@ class MetsGenerator(object):
     fid = FormatIdentification()
     mime = MimeTypes()
     root_path = ""
+    mets_data = None
 
     def __init__(self, root_path):
         print "Working in rootdir %s" % root_path
@@ -115,27 +116,61 @@ class MetsGenerator(object):
                       "MDTYPE": mdtype}
         return mets_mdref
 
-    def addChildRelation(self, identifier):
+    def setParentRelation(self, identifier):
         parentmets = os.path.join(self.root_path, 'METS.xml')
+        packagetype = self.mets_data['type']
         if os.path.exists(parentmets):
-            parent_parse = etree.parse(parentmets)
+            parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+            parent_parse = etree.parse(parentmets, parser)
             parent_root = parent_parse.getroot()
 
-            child = M.div({'LABEL': 'child AIP'})
+            parent = M.div({'LABEL': "parent %s" % packagetype})
             pointer = M.mptr({"LOCTYPE": "OTHER",
                               "OTHERLOCTYPE": "UUID",
-                              q(XLINK_NS, "title"): ("Referencing a child AIP."),
+                              q(XLINK_NS, "title"): ("Referencing a parent %s." % packagetype),
+                              q(XLINK_NS, "href"): "urn:uuid:" + identifier,
+                              "ID": "ID" + uuid.uuid4().__str__()})
+            parent.append(pointer)
+
+            parent_map = parent_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), packagetype))
+            if parent_map is not None:
+                parent_div = parent_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), packagetype))
+                parent_div.append(parent)
+            else:
+                parent_map = M.structMap({'LABEL': 'parent %s' % packagetype, 'TYPE': 'logical'})
+                parent_div = M.div({'LABEL': 'parent %s identifiers' % packagetype})
+                parent_map.append(parent_div)
+                parent_div.append(parent)
+                parent_root.insert(len(parent_root), parent_map)
+
+            str = etree.tostring(parent_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+            with open(parentmets, 'w') as output_file:
+                output_file.write(str)
+        else:
+            print 'Couldn\'t find the parent %ss Mets file.' %packagetype
+
+    def addChildRelation(self, identifier):
+        parentmets = os.path.join(self.root_path, 'METS.xml')
+        packagetype = self.mets_data['type']
+        if os.path.exists(parentmets):
+            parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+            parent_parse = etree.parse(parentmets, parser)
+            parent_root = parent_parse.getroot()
+            child = M.div({'LABEL': "child %s" % packagetype})
+            pointer = M.mptr({"LOCTYPE": "OTHER",
+                              "OTHERLOCTYPE": "UUID",
+                              q(XLINK_NS, "title"): ("Referencing a child %s." % packagetype),
                               q(XLINK_NS, "href"): "urn:uuid:" + identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
             child.append(pointer)
 
-            children_map = parent_root.find("%s[@LABEL='child AIPs']" % q(METS_NS, 'structMap'))
+            children_map = parent_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), packagetype))
             if children_map is not None:
-                children_div = children_map.find("%s[@LABEL='child AIP identifiers']" % q(METS_NS, 'div'))
+                children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), packagetype))
                 children_div.append(child)
             else:
-                children_map = M.structMap({'LABEL': 'child AIPs', 'TYPE': 'logical'})
-                children_div = M.div({'LABEL': 'child AIP identifiers'})
+                children_map = M.structMap({'LABEL': 'child %s' % packagetype, 'TYPE': 'logical'})
+                children_div = M.div({'LABEL': 'child %s identifiers' % packagetype})
                 children_map.append(children_div)
                 children_div.append(child)
                 parent_root.insert(len(parent_root), children_map)
@@ -144,9 +179,10 @@ class MetsGenerator(object):
             with open(parentmets, 'w') as output_file:
                 output_file.write(str)
         else:
-            print 'Couldn\'t find the parent AIPs Mets file.'
+            print 'Couldn\'t find the parent %ss Mets file.' %packagetype
 
     def createMets(self, mets_data):
+        self.mets_data = mets_data
         packageid = mets_data['packageid']
         packagetype = mets_data['type']
         schemafolder = mets_data['schemas']
@@ -159,7 +195,7 @@ class MetsGenerator(object):
 
         # create Mets root
         METS_ATTRIBUTES = {"OBJID": "urn:uuid:" + packageid,
-                           "LABEL": "METS file describing the AIP matching the OBJID.",
+                           "LABEL": "METS file describing the %s matching the OBJID." % packagetype,
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
         root = M.mets(METS_ATTRIBUTES)
@@ -209,7 +245,7 @@ class MetsGenerator(object):
         mets_earkstructmap.append(package_div)
 
         # structMap and div for the whole package (metadata, schema and /data)
-        mets_structmap = M.structMap({"LABEL": "Simple AIP structuring", "TYPE": "logical"})
+        mets_structmap = M.structMap({"LABEL": "Simple %s structuring" % packagetype, "TYPE": "logical"})
         root.append(mets_structmap)
         mets_structmap_div = M.div({"LABEL": "Package structure"})
         mets_structmap.append(mets_structmap_div)
@@ -234,14 +270,14 @@ class MetsGenerator(object):
 
         # create structmap for parent/child relation, if applicable
         if parent != '':
-            print 'creating link to parent AIP'
+            print 'creating link to parent %s' % packagetype
             mets_structmap_relation = M.structMap({'TYPE': 'logical', 'LABEL': 'parent'})
             root.append(mets_structmap_relation)
-            mets_div_rel = M.div({'LABEL': 'AIP parent identifier'})
+            mets_div_rel = M.div({'LABEL': '%s parent identifier' % packagetype})
             mets_structmap_relation.append(mets_div_rel)
             parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      "OTHERLOCTYPE": "UUID",
-                                     q(XLINK_NS, "title"): ("Referencing the parent AIP of this (urn:uuid:%s) AIP." % packageid),
+                                     q(XLINK_NS, "title"): ("Referencing the parent %s of this (urn:uuid:%s) %s." % (packagetype, packageid, packagetype)),
                                      q(XLINK_NS, "href"): "urn:uuid:" + parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
             mets_div_rel.append(parent_pointer)
@@ -371,7 +407,7 @@ class MetsGenerator(object):
                             # mets_div_reps.append(mets_structmap_rep_div)
                             # add mets file as <mets:mptr>
                             metspointer = M.mptr({"LOCTYPE": "URL",
-                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of AIP: urn:uuid:%s." % (rep_name, packageid)),
+                                                  q(XLINK_NS, "title"): ("Mets file describing representation: %s of %s: urn:uuid:%s." % (rep_name, packagetype, packageid)),
                                                   q(XLINK_NS, "href"): rel_path_file,
                                                   "ID": "ID" + uuid.uuid4().__str__()})
                             #mets_structmap_rep_div.append(metspointer)

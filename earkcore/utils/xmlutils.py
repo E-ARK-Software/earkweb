@@ -17,6 +17,17 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
 
+
+def rewrite_pretty_xml(xml_file_path):
+    parser = ET.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+    parsed_file = ET.parse(xml_file_path, parser)
+    xml_file_root = parsed_file.getroot()
+    mets_content = ET.tostring(xml_file_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+    with open(xml_file_path, 'w') as output_file:
+        output_file.write(mets_content)
+        output_file.close()
+
+
 def get_xml_schemalocations(xml_file):
     XSI = "http://www.w3.org/2001/XMLSchema-instance"
     xml_dir, tail = os.path.split(xml_file)
