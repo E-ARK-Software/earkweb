@@ -95,3 +95,9 @@ commands = {
 # Test settings
 
 test_rest_endpoint_hdfs_upload = "http://%s" % hdfs_upload_service_ip
+
+# NLP settings
+stanford_jar = config.get('nlp', 'stanford_jar_path')
+stanford_ner_models = config.get('nlp', 'stanford_models_path')
+text_category_models = config.get('nlp', 'category_models_path')
+config_path_nlp = config.get('nlp', 'config_path_nlp')

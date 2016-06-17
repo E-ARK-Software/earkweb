@@ -38,3 +38,7 @@ are stored immediately so that the status information in the frontend's database
 
 * [Web user interface guide](./docs/user_guide_webui.md)
 * [Headless task execution (without gui)](./docs/user_guide_remotetask.md)
+
+## NLP Natural Language Processing
+
+E-ARK Web now offers NLP tools. Please check out the [NLP documentation] (./docs/nlp_documentation) if you are interested.

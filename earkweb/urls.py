@@ -24,6 +24,7 @@ urlpatterns = patterns('',
     url(r'^accounts/login/$', 'django.contrib.auth.views.login',
        {'template_name': 'admin/login.html'}),
     url(r'^accounts/logout/$', 'django.contrib.auth.views.logout'),
+    url(r'^datamining/', include('datamining.urls', namespace="datamining")),
 #    url(r'^accounts/login/$', 'django_cas.views.login'),
 #    url(r'^accounts/logout/$', 'django_cas.views.logout'),
 )

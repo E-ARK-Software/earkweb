@@ -117,6 +117,7 @@ INSTALLED_APPS = (
     'workflow',
     'sip2aip',
     'config',
+    'datamining',
 )
 
 MIDDLEWARE_CLASSES = (
