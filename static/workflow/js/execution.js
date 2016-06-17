@@ -1,4 +1,5 @@
 function updateProgressInfo(percent) {
+    $( '#pgwrp' ).removeClass( "pgsuccess" );
     $( '#pg' ).removeClass( "pgsuccess" );
     window.console.log("Progress: "+percent+"%");
     window.document.getElementById("pg").style = 'width:' + percent + '%; background-color: #AD2624';
@@ -14,11 +15,14 @@ function updateStatusInfo(status, result, warning, log, err) {
         $('#err').html(err)
         $("#st").visible();
         if(result) {
+            $( '#pgwrp' ).removeClass( "pgwarning" );
             $( '#pg' ).removeClass( "pgwarning" );
             $('#st').html("Finished successfully");
+            $( '#pgwrp' ).addClass( "pgsuccess" );
             $( '#pg' ).addClass( "pgsuccess" );
         } else {
             if(warning) {
+                $( '#pgwrp' ).addClass( "pgwarning" );
                 $( '#pg' ).addClass( "pgwarning" );
                 $( '#st' ).html("Finished with warning");
             } else {

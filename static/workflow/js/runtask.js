@@ -1,5 +1,6 @@
 $('#apply-task').click( function() {
    $('#pg').css('width', '0%');
+   $( '#pgwrp' ).removeClass( 'pgsuccess' );
    $('#pg').removeClass('pgsuccess');
    window.console.log("Send task application request for ip " +
         $("#id_ips option:selected").text() + ", selected action: " + $("#id_wfs option:selected").text());
@@ -27,6 +28,7 @@ $('#apply-task').click( function() {
 
 $('#apply-tasks').click( function() {
    $('#pg').css('width', '0%');
+   $( '#pgwrp' ).removeClass( 'pgsuccess' );
    $('#pg').removeClass('pgsuccess');
    window.console.log("Send task application request for IP in working directory " +
         $("#id_ips option:selected").text() + ", selected actions: " + $("#id_wfs option:selected").map(function(){ return this.value }).get().join("+"));
@@ -53,7 +55,9 @@ $('#apply-tasks').click( function() {
 });
 
 $('#apply-workflow').click( function() {
+   $( '#pgwrp' ).css( 'width', '0%' );
    $('#pg').css('width', '0%');
+   $( '#pgwrp' ).removeClass( 'pgsuccess' );
    $('#pg').removeClass('pgsuccess');
    window.console.log("Send task application request for ip " +
         $("#id_ips option:selected").text() + ", selected action: " + $("#id_wiref option:selected").text());
