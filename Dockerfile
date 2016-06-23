@@ -33,16 +33,12 @@ RUN cd ghostscript-9.18 && ./configure && make && make install
 
 RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
 
-RUN pip install -r earkweb/requirements.txt
+ADD requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
 
 RUN pip install redis
 
 RUN mkdir -p /var/data/earkweb
-
-#RUN mkdir -p /var/data/earkweb/reception
-#RUN mkdir -p /var/data/earkweb/storage
-#RUN mkdir -p /var/data/earkweb/work
-#RUN mkdir -p /var/data/earkweb/access
 
 RUN mkdir -p /var/log/earkweb
 
