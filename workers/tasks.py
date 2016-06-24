@@ -237,9 +237,8 @@ def run_package_ingest(self, *args, **kwargs):
     from config.configuration import config_path_reception
     from earkcore.batch.import_sip import import_package
     try:
-        #TODO: enable predefined package name-id mapping (uncomment following line)
-        # task_context = import_package(current_task, os.path.join(config_path_reception, package_file), predef_id_mapping)
-        task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
+        task_context = import_package(current_task, os.path.join(config_path_reception, package_file), predef_id_mapping)
+        #task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
             return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}
         else:
@@ -1349,6 +1348,12 @@ class AIPPackageMetsCreation(DefaultTask):
                 #print sip_mets_path
                 sip_parse = etree.parse(sip_mets_path, parser)
                 sip_root = sip_parse.getroot()
+
+                # parse package AIP METS and append children and parent structMaps
+                aip_mets_path = os.path.join(task_context.path, 'METS.xml')
+                aip_parse = etree.parse(aip_mets_path, parser)
+                aip_root = aip_parse.getroot()
+
                 # get children structMap and replace the urn:uuid:packagename with corresponding urn:uuid:uuid
                 children_map = sip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'SIP'))
                 if children_map is not None:
@@ -1364,6 +1369,7 @@ class AIPPackageMetsCreation(DefaultTask):
                         uuid = identifier_map[urn]
                         mptr.set(q(XLINK_NS,'href'), 'urn:uuid:'+uuid)
                         mptr.set(q(XLINK_NS,'title'), 'Referencing a child AIP.')
+                    aip_root.append(children_map)
                 # get parents structMap and replace the urn:uuid:packagename with corresponding urn:uuid:uuid
                 parents_map = sip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'SIP'))
                 if parents_map is not None:
@@ -1379,13 +1385,7 @@ class AIPPackageMetsCreation(DefaultTask):
                         uuid = identifier_map[urn]
                         mptr.set(q(XLINK_NS,'href'), 'urn:uuid:'+uuid)
                         mptr.set(q(XLINK_NS,'title'), 'Referencing a parent AIP.')
-
-                # parse package AIP METS and append children and parent structMaps
-                aip_mets_path = os.path.join(task_context.path, 'METS.xml')
-                aip_parse = etree.parse(aip_mets_path, parser)
-                aip_root = aip_parse.getroot()
-                aip_root.append(children_map)
-                aip_root.append(parents_map)
+                    aip_root.append(parents_map)
 
                 str = etree.tostring(aip_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
                 with open(aip_mets_path, 'w') as output_file:
@@ -1394,8 +1394,11 @@ class AIPPackageMetsCreation(DefaultTask):
             task_context.task_status = 0
             tl.addinfo('METS updated with AIP content.')
 
-        except Exception as err:
-            tl.addinfo('error: %s' % str(err))
+        except Exception, err:
+            logger.debug("AN ERROR OCCURRED when processing package %s" % task_context.additional_data['packagename'])
+            logger.debug(err)
+            tb = traceback.format_exc()
+            logger.debug(tb)
             task_context.task_status = 1
 
         return task_context.additional_data
