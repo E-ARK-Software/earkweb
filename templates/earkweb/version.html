@@ -16,7 +16,38 @@
 
 <h2>Commit log</h2>
 
-<pre>2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/49f1b7b">49f1b7b</a> Add xml editor component
+<pre>2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/5ad8391">5ad8391</a> Fix error in AIP parent/child map creation if either the parent or the child node is missing
+2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/09ea12a">09ea12a</a> modified AIPPackageMetsCreation to append METS parent/child relationships based on the SIP METS submission. Adapted the batch import script to new paramater identifier_map
+2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/0ff915f">0ff915f</a> Batch ingest: define SIP package name to AIP identifier mapping
+2016-06-23 <a href="https://github.com/eark-project/earkweb/commit/dc7fd14">dc7fd14</a> Fix Dockerfile so that the requirements.txt file for installing python dependencies can be found.
+2016-06-17 <a href="https://github.com/eark-project/earkweb/commit/69cfe30">69cfe30</a> Review task event types.
+2016-06-17 <a href="https://github.com/eark-project/earkweb/commit/3b1806c">3b1806c</a> Persist task execution provenance information
+2016-06-17 <a href="https://github.com/eark-project/earkweb/commit/ce68bc5">ce68bc5</a> Adapt configuration and docker setup for nlp module
+2016-06-17 <a href="https://github.com/eark-project/earkweb/commit/12c1a37">12c1a37</a> Quick fix: task execution progress bar not updated in google chrome
+2016-06-17 <a href="https://github.com/eark-project/earkweb/commit/e414e4f">e414e4f</a> Added NLP documentation (work in progress)
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/0b522b8">0b522b8</a> Temporarily disabled text categorisation from NLP options
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/3483a50">3483a50</a> Added parent directory to python path
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/849906c">849906c</a> fixed xsd path for submit_order
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/5232ae8">5232ae8</a> Rewritten NLP tasks to Celery tasks
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/ca58c1d">ca58c1d</a> Dynamically creating NLP options based on existing classifiers/models
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/d945391">d945391</a> minor changes to cas-post.sh
+2016-06-16 <a href="https://github.com/eark-project/earkweb/commit/34ef070">34ef070</a> Generate SIPs using a hierarchical directory structure input
+2016-06-15 <a href="https://github.com/eark-project/earkweb/commit/204ca11">204ca11</a> Changed the UI to support tar creation out of a Solr query
+2016-06-15 <a href="https://github.com/eark-project/earkweb/commit/8e471c2">8e471c2</a> added docstrings
+2016-06-15 <a href="https://github.com/eark-project/earkweb/commit/63fd1ff">63fd1ff</a> added a class to store Solr results in a tar file
+2016-06-15 <a href="https://github.com/eark-project/earkweb/commit/2efb1fd">2efb1fd</a> changes to nlp task form
+2016-06-14 <a href="https://github.com/eark-project/earkweb/commit/f4ad77c">f4ad77c</a> initial commit datamining interface for earkweb
+2016-06-13 <a href="https://github.com/eark-project/earkweb/commit/957e937">957e937</a> First commit: implement all data mining functionalities for Celery
+2016-06-09 <a href="https://github.com/eark-project/earkweb/commit/6f5a62b">6f5a62b</a> Fix: directory not created before writing metadata file.
+2016-06-09 <a href="https://github.com/eark-project/earkweb/commit/730f864">730f864</a> Fix: directory not created before writing metadata file.
+2016-06-09 <a href="https://github.com/eark-project/earkweb/commit/5f95110">5f95110</a> Add xmleditor source
+2016-06-08 <a href="https://github.com/eark-project/earkweb/commit/4de7410">4de7410</a> Adapt relative links in metadata file
+2016-06-08 <a href="https://github.com/eark-project/earkweb/commit/ec46d56">ec46d56</a> Overruling storage path
+2016-06-07 <a href="https://github.com/eark-project/earkweb/commit/73e1443">73e1443</a> Process status state warning
+2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/6107258">6107258</a> Allow 'dash' in SIP name
+2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/9a015ae">9a015ae</a> Limit  file types for preview and editing in working area according to the file types which are supported.
+2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/8e3ee86">8e3ee86</a> version 0.3.2
+2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/49f1b7b">49f1b7b</a> Add xml editor component
 2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/f8ae59a">f8ae59a</a> Minor changes
 2016-06-06 <a href="https://github.com/eark-project/earkweb/commit/0f0320c">0f0320c</a> Metadata editor
 2016-06-03 <a href="https://github.com/eark-project/earkweb/commit/69b716a">69b716a</a> Added metadata validation task to SIP to AIP chain
@@ -543,6 +574,7 @@
 2015-03-25 <a href="https://github.com/eark-project/earkweb/commit/27df97c">27df97c</a> Highlight-plugin added, search interface improved
 2015-03-18 <a href="https://github.com/eark-project/earkweb/commit/15e2c87">15e2c87</a> Initial status
 2015-03-03 <a href="https://github.com/eark-project/earkweb/commit/6c94bc5">6c94bc5</a> Initial commit
+
 </pre>
 
 {% endblock %}
