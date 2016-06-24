@@ -581,6 +581,22 @@ class SIPDeliveryValidation(DefaultTask):
         task_context.additional_data['identifier'] = ""
         return task_context.additional_data
 
+#def getIdentifierFromIdentifierMap(task_context, packagename):
+#    identifier_map = None
+#    if 'identifier_map' in task_context.additional_data:
+#        identifier_map = task_context.additional_data['identifier_map']
+
+def getIdentifierMapFromContext(task_context):
+    identifier_map = None
+    if 'identifier_map' in task_context.additional_data:
+        identifier_map = task_context.additional_data['identifier_map']
+    return identifier_map
+
+def getIdentifierForPackagename(identifier_map, package_name):
+    identifier = None
+    if package_name in identifier_map:
+        identifier = identifier_map[package_name]
+    return identifier
 
 
 class IdentifierAssignment(DefaultTask):
@@ -601,8 +617,21 @@ class IdentifierAssignment(DefaultTask):
 
         # TODO: set identifier in METS file
         # TODO: change identifiers used in Premis retroactively
-        identifier = randomutils.getUniqueID()
-        tl.addinfo("New identifier assigned: %s" % identifier)
+
+        identifier_map = getIdentifierMapFromContext(task_context)
+
+        identifier = None
+        if identifier_map:
+            packagename = task_context.additional_data['packagename']
+            if packagename in identifier_map:
+                identifier = identifier_map[packagename]
+                tl.addinfo("Provided identifier assigned: %s" % identifier)
+            else:
+                tl.adderr("Cannot find uuid for package name %s in provided identifier_map" % packagename)
+                task_context.task_status = 1
+        else:
+            identifier = randomutils.getUniqueID()
+            tl.addinfo("New identifier assigned: %s" % identifier)
 
         try:
             if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
@@ -1290,6 +1319,73 @@ class AIPPackageMetsCreation(DefaultTask):
 
             metsgen = MetsGenerator(task_context.path)
             metsgen.createMets(mets_data)
+
+            #TODO: get structMap from submission root METS, translate SIP packagename to
+            #AIP UUID and add it to the AIP root METS
+
+            # get identifier_map from task_context
+            identifier_map = getIdentifierMapFromContext(task_context)
+            if identifier_map:
+                # check if packagename is in the identifier map
+                packagename = task_context.additional_data['packagename']
+                if packagename in identifier_map:
+                    identifier = identifier_map[packagename]
+                    tl.addinfo("Provided identifier assigned: %s" % identifier)
+                else:
+                    tl.adderr("Cannot find uuid for package name %s in provided identifier_map" % packagename)
+                    task_context.task_status = 1
+                    return task_context.additional_data
+
+                METS_NS = 'http://www.loc.gov/METS/'
+                XLINK_NS = "http://www.w3.org/1999/xlink"
+
+                # parse submission SIP mets
+                parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+                sip_mets_path = os.path.join(task_context.path, 'submission', 'METS.xml')
+                #print sip_mets_path
+                sip_parse = etree.parse(sip_mets_path, parser)
+                sip_root = sip_parse.getroot()
+                # get children structMap and replace the urn:uuid:packagename with corresponding urn:uuid:uuid
+                children_map = sip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'SIP'))
+                if children_map is not None:
+                    children_map.set('LABEL', 'child AIP')
+                    children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), 'SIP'))
+                    children_div.set('LABEL', 'child AIP identifiers')
+                    children = children_div.findall("%s[@LABEL='child %s']" % (q(METS_NS, 'div'), 'SIP'))
+                    for child in children:
+                        child.set('LABEL', 'child AIP')
+                        mptr = child.find("%s" % q(METS_NS, 'mptr'))
+                        urn = mptr.get(q(XLINK_NS, 'href'))
+                        urn = urn.split('urn:uuid:',1)[1]
+                        uuid = identifier_map[urn]
+                        mptr.set(q(XLINK_NS,'href'), 'urn:uuid:'+uuid)
+                        mptr.set(q(XLINK_NS,'title'), 'Referencing a child AIP.')
+                # get parents structMap and replace the urn:uuid:packagename with corresponding urn:uuid:uuid
+                parents_map = sip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'SIP'))
+                if parents_map is not None:
+                    parents_map.set('LABEL', 'parent AIP')
+                    parents_div = parents_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), 'SIP'))
+                    parents_div.set('LABEL', 'parent AIP identifiers')
+                    parents = parents_div.findall("%s[@LABEL='parent %s']" % (q(METS_NS, 'div'), 'SIP'))
+                    for parent in parents:
+                        parent.set('LABEL', 'parent AIP')
+                        mptr = parent.find("%s" % q(METS_NS, 'mptr'))
+                        urn = mptr.get(q(XLINK_NS,'href'))
+                        urn = urn.split('urn:uuid:',1)[1]
+                        uuid = identifier_map[urn]
+                        mptr.set(q(XLINK_NS,'href'), 'urn:uuid:'+uuid)
+                        mptr.set(q(XLINK_NS,'title'), 'Referencing a parent AIP.')
+
+                # parse package AIP METS and append children and parent structMaps
+                aip_mets_path = os.path.join(task_context.path, 'METS.xml')
+                aip_parse = etree.parse(aip_mets_path, parser)
+                aip_root = aip_parse.getroot()
+                aip_root.append(children_map)
+                aip_root.append(parents_map)
+
+                str = etree.tostring(aip_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(aip_mets_path, 'w') as output_file:
+                    output_file.write(str)
 
             task_context.task_status = 0
             tl.addinfo('METS updated with AIP content.')

@@ -20,8 +20,20 @@ from workflow.models import WorkflowModules
 from earkcore.models import InformationPackage
 from config.configuration import config_path_work, config_path_storage
 
+default_map = {'IP.AVID.RA.18005.rep0.seg0':'4294e5eb-6d95-4b31-b544-53eb50711a56',
+    'IP.AVID.RA.18005.rep1.seg1':'d9bb0f20-aa8d-43b8-95ca-9bfcb23da832',
+    'IP.AVID.RA.18005.rep0.seg4':'db293f24-9cde-4491-912e-4025384dfb5d',
+    'IP.AVID.RA.18005.godfather':'dbca4ff0-5d13-4a00-b76a-18325e574f7a',
+    'IP.AVID.RA.18005.rep1.seg2':'f57370a8-34e7-4c1d-9253-7fcf972ac46c',
+    'IP.AVID.RA.18005.rep1.seg3':'a40384ab-d1c0-4294-b17e-3214bada3497',
+    'IP.AVID.RA.18005.rep0.seg2':'c8dde2b4-54e8-4cdd-8e74-ae09edda222e',
+    'IP.AVID.RA.18005.rep0.seg1':'106849f7-aed1-4d8e-aefb-2916421b1869',
+    'IP.AVID.RA.18005.rep0.seg3':'fc6ce832-a273-49db-a88a-65145d710d35',
+    'IP.AVID.RA.18005.rep1.seg4':'d0d04238-5961-4259-b983-3a9036faa05e',
+    'IP.AVID.RA.18005.rep1.seg0':'3097ade8-5a29-4620-be0a-8834096cb76b',
+    'IP.AVID.RA.18005.rep0.seg5':'e69029db-af03-4d22-b256-4fd2bf75ae2c' }
 
-def import_package(current_task, src_zip):
+def import_package(current_task, src_zip, identifier_map = default_map):
 
     logger.info("=================================================================================")
     logger.info("Import package %s" % src_zip)
@@ -56,7 +68,7 @@ def import_package(current_task, src_zip):
     chain_2_classes = [ CreatePremisAfterMigration, AIPRepresentationMetsCreation, AIPPackageMetsCreation, AIPValidation, AIPPackaging, AIPStore]#, LilyHDFSUpload]
 
     task_context = DefaultTaskContext(sip_uuid, work_dir, 'SIPReset', None,
-            {'packagename' : packagename, 'package_file': packagename, 'parent_id':'' ,'parent_path':'', 'storage_dest': config_path_storage, 'storage_loc':'' }, None)
+            {'packagename' : packagename, 'package_file': packagename, 'parent_id':'' ,'parent_path':'', 'storage_dest': config_path_storage, 'storage_loc':'', 'identifier_map':identifier_map }, None)
     result = None
     for task in chain_1_classes:
         logger.info("\n------------------------------------------------")
