@@ -13,6 +13,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerEr
 from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from earkcore.utils.randomutils import getUniqueID
+from earkcore.utils.stringutils import whitespace_separated_text_to_dict
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from sip2aip.forms import UploadSIPDeliveryForm
 from workers import tasks
@@ -377,10 +378,14 @@ def poll_state(request):
 @csrf_exempt
 def submit_package_ingest(request, package_file):
     data = {"success": False, "errmsg": "Unknown error"}
+    predef_id_mapping = {}
+    if 'predef_id_mapping' in request.POST.keys():
+        predef_id_mapping = whitespace_separated_text_to_dict(request.POST['predef_id_mapping'])
+    print "PREDEF_MAPPING: %s" % predef_id_mapping
     try:
         if request.is_ajax():
             try:
-                job = run_package_ingest.delay(package_file=package_file)
+                job = run_package_ingest.delay(package_file=package_file, predef_id_mapping=predef_id_mapping)
                 data = {"success": True, "id": job.id, "packagefile": package_file}
             except Exception, err:
                 tb = traceback.format_exc()

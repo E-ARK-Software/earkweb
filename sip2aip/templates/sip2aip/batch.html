@@ -19,6 +19,17 @@
 
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
+    <script language="JavaScript">
+    function enable_predef_idmap_def_div() {
+        $('#predef_idmap_def').togglevisible();
+    }
+    $(".div_enabler").each(function() {
+    $(this).attr("data-oldhref", $(this).attr("href"));
+    $(this).removeAttr("href");
+});
+
+    </script>
+
 {% endblock %}
 
 {% block content %}
@@ -30,6 +41,11 @@
     <p>Run SIP to AIP conversion for all SIP files in the reception directory. </p>
 
     <p></p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch ingest!</button></p>
+
+    <p><a class="div_enabler" href="#" onclick="enable_predef_idmap_def_div()">Edit SIP package name to AIP identifier mapping</a> </p>
+    <div id="predef_idmap_def">
+        <textarea id="predef_idmap_def_text"></textarea>
+    </div>
 
     <table id="receptiontable" class="table table-striped table-bordered table-condensed">
     <thead>
@@ -47,6 +63,7 @@
 
     <script language="JavaScript">
         var reception_packages = Array();
+        $('#predef_idmap_def').togglevisible();
         $('#batch-apply-task').attr("disabled", "disabled");
 
         // module defining the context of the get directory information request
@@ -56,19 +73,19 @@
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
                 $('#loading').nodisplay();
+                var predef_text = "";
                 for(var i in json_result.children) {
                     var mime = json_result.children[i].data.mimetype;
                     var filename = json_result.children[i].text;
                     var datetime = json_result.children[i].data.datetime;
-
-
                     if(filename.endsWith(".tar") || filename.endsWith(".zip")) {
                         reception_packages.push(filename);
                         $('#iplist').append('<tr><td class="filename"><span id="'+name_to_id(filename)+'" class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+datetime+'</td><td>'+mime+'</td><td><span id="st'+name_to_id(filename)+'" class="label label-default received">Received</span></td></tr>');
+                        predef_text += filename.slice(0, -4) + "    " + guid() + "\n";
                     }
                 }
+                $('#predef_idmap_def_text').text(predef_text);
                 $('#batch-apply-task').prop('disabled', false);
-
             },
             update_func: function(info) {},
             request_params: {},
@@ -117,7 +134,7 @@
                     },
 
                     reception_packages: reception_packages,
-                    request_params: { },
+                    request_params: { "predef_id_mapping": $('#predef_idmap_def_text').text()  },
                     poll_func: pollstate,
                     poll_interval: 20000,
                 }

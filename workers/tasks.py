@@ -231,10 +231,14 @@ def set_process_state(self, uuid, valid):
 @app.task(bind=True)
 def run_package_ingest(self, *args, **kwargs):
     package_file = kwargs['package_file']
+    predef_id_mapping = kwargs['predef_id_mapping']
+    logger.debug("predefined packagename-id mapping: %s" % predef_id_mapping)
     current_task.update_state(state='PENDING', meta={'package_file': package_file, 'last_task': "AIPReset"})
     from config.configuration import config_path_reception
     from earkcore.batch.import_sip import import_package
     try:
+        #TODO: enable predefined package name-id mapping (uncomment following line)
+        # task_context = import_package(current_task, os.path.join(config_path_reception, package_file), predef_id_mapping)
         task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
             return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}

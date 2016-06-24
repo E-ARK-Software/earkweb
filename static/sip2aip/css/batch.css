@@ -49,3 +49,14 @@ span.applicationxtar {
 #receptiontable th.statcol {
     width: 20%;
 }
+
+#predef_idmap_def textarea {
+    width: 100%;
+    height: 100px;
+    font-family: "Courier New", Courier, monospace;
+}
+
+a[disabled]
+{
+    color: grey;
+}
