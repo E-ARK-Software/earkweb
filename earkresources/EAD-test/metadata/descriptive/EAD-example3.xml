@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ead xmlns="http://ead3.archivists.org/schema/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ead3.archivists.org/schema/ ../../ead3.xsd">
+	<!--A required child element of <ead> for recording bibliographic and administrative information about an EAD instance.-->
+	<control>
+	<!--Record Identifier. A required child element of <control> that designates a unique identifier for the EAD instance.-->
+		<recordid>text</recordid>
+		<filedesc>
+			<!--Title Statement. A required child element of <filedesc> that binds together information about the name of an encoded finding aid and those responsible for its content.-->
+			<titlestmt>
+				<titleproper>Title Proper of the Finding Aid</titleproper>
+			</titlestmt>
+			<!--Note Statement. A child element of notestmt, used to provide a general note related to the EAD instance.-->
+			<notestmt>
+				<controlnote>
+					<p>Note Statement</p>
+				</controlnote>
+			</notestmt>
+		</filedesc>
+		<!--A required child element of <control> that records the current version status of the EAD instance.-->
+		<maintenancestatus value="new">text</maintenancestatus>
+		<maintenanceagency>
+			<agencyname>text</agencyname>
+		</maintenanceagency>
+		<maintenancehistory>
+			<maintenanceevent>
+				<eventtype value="created">text</eventtype>
+				<eventdatetime>text</eventdatetime>
+				<agenttype value="human">text</agenttype>
+				<agent>text</agent>
+			</maintenanceevent>
+		</maintenancehistory>
+	</control>
+
+	<!--Archival Description. A required child element of <ead> that binds together all of the archival descriptive information in an EAD instance.-->
+	<archdesc level="collection">
+		<did>
+			<abstract>text</abstract>
+		</did>
+		<dsc dsctype="combined">
+			<!-- An aggregation level - series -->
+			<c01 level="series" >
+				<did>
+					<unitid>Series 1</unitid>
+					<unittitle>Correspondence</unittitle>
+				</did>
+				<!-- If the file plan is related to an aggregation (series) -->
+				<fileplan>
+					<head>File List</head>
+					<fileplan>
+						<head>Business Services (BS)</head>
+						<list listtype="ordered" numeration="upper-roman">
+							<item>Marketing</item>
+						</list>
+					</fileplan>
+				</fileplan>
+				<!-- An aggregation level - sub-series -->
+				<c02 level="subseries">
+					<did>
+						<unitid>Subseries 1.2</unitid>
+						<unittitle>Incoming Correspondence</unittitle>
+					</did>
+					<c03 level="file">
+						<did>
+                            <unitid localtype="system_id">f4d3d161-e48e-4ec4-84df-73606f6c35e2</unitid>
+						</did>
+						<!-- An aggregation level - item -->
+						<c04 level="item">
+							<did>
+								<!--Universally unique identifier for an entity that is generated automatically by the system and stays with the entity forever-->
+								<unitid localtype="system_id">f4d3d161-e48e-4ec4-84df-73606f6c35e1</unitid>
+								<daoset label="Digital Objects" coverage="whole">
+									<dao id="ddf3d161-e48e-4ec4-84df-73606f6c35e1" daotype="borndigital"
+											linktitle="rep1" localtype="fullsize"
+											href="file:../../representations/rep1/data/Example1.docx"/>
+									<dao id="daf6d161-e48e-4ec4-84df-73606f6c35e1" daotype="derived"
+											linktitle="rep2" localtype="fullsize"
+											href="file:../../representations/rep2/data/Example1.pdf"/>
+								</daoset>
+							</did>
+							<!--Related Material-->
+							<relatedmaterial>
+								<p>For identifying archival materials that have an association to the materials being described.</p>
+							</relatedmaterial>
+							<!--Other Descriptive Data-->
+							<odd localtype="OwnElementDescription">
+								<p>For recording additional information about the described materials that is not easily incorporated into one of the other named elements within archdesc and c.</p>
+							</odd>
+							<!-- If the file plan is related to an item (a record). The classification of the entity, used by child aggregations and records. -->
+							<!-- Contains an ID as an attribute.-->
+							<fileplan id="d8d4d161-e48e-4ec4-84df-73606f6c35e1">
+								<head>File List</head>
+								<fileplan>
+									<head>Business Services (BS)</head>
+									<list listtype="ordered" numeration="upper-roman">
+										<item>Marketing</item>
+									</list>
+								</fileplan>
+							</fileplan>
+						</c04>
+					</c03>
+				</c02>
+			</c01>
+		</dsc>
+	</archdesc>
+</ead>

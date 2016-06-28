@@ -52,6 +52,20 @@ docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
 echo "Creating solr core for storage area ..."
 docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
 
+curl http://localhost:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
+        "name":"content",
+        "type":"text_general",
+        "stored":true,
+"indexed": true
+    }
+}'
+
+curl -X POST -H 'Content-type:application/json' --data-binary '{
+    "add-copy-field":{
+        "source":"_text_", "dest":[ "content" ]
+    }
+}' http://localhost:8983/solr/earkstorage/schema
+
 echo "Creating repository directories and files ..."
 mkdir $REPO_DATA_DIRECTORY/reception
 mkdir $REPO_DATA_DIRECTORY/storage

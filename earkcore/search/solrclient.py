@@ -118,7 +118,7 @@ class SolrClient(object):
         puid = self.ffid.identify_file(file_path)
         content_type = self.ffid.get_mime_for_puid(puid)
         docs = []
-        document = {"package": identifier, "entry": entry, "content_type": content_type}
+        document = {"package": identifier, "path": entry, "content_type": content_type}
         docs.append(document)
         _, status = self.update(docs)
         return status
@@ -151,7 +151,7 @@ class SolrClient(object):
             afile = os.path.join(extract_dir, t.name)
             if os.path.exists(afile):
                 files = {'file': ('userfile', open(afile, 'rb'))}
-                params = {'literal.package': identifier, 'literal.entry': t.name}
+                params = {'literal.package': identifier, 'literal.path': t.name}
                 post_url = '%s/update/extract?%s' % (self.url, urllib.urlencode(params))
                 response = requests.post(post_url, files=files)
                 result = {"url": post_url, "status": response.status_code}

@@ -1,6 +1,6 @@
 var identifier_field = 'package';
-var blobField = '_text_';
-var titleField = 'entry';
+var blobField = 'content';
+var titleField = 'path';
 var bytesField = 'stream_size';
 var typeField = 'content_type';
 var rows = 20;
@@ -75,6 +75,11 @@ function askSolr(start) {
   if (package) {
     packageQuery += identifier_field + ':' + package + '';
   }
+
+  if($('#submission_data_only').prop('checked')) {
+    packageQuery += "path:*/submission/representations/*/data/*";
+  }
+
   
   var query = '';
   if (blobQuery) query = blobQuery;
