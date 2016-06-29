@@ -1746,15 +1746,8 @@ class AIPDescriptiveMetadataIndexUpdate(DefaultTask):
                 else:
                     tl.addinfo("No overruling version of descriptive metadata file in AIP metadata folder found.")
 
-
-
-                md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
-            if len(md_files_valid) == 0:
-                tl.addinfo("No descriptive metadata files found.")
-            valid = False not in md_files_valid
-            if valid:
-                tl.addinfo("Descriptive metadata validation completed successfully.")
-            task_context.task_status = 0 if valid else 2
+                # TODO implement
+            task_context.task_status = 2
         except Exception, err:
             tb = traceback.format_exc()
             tl.adderr("An error occurred: %s" % err)
