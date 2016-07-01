@@ -146,12 +146,55 @@ class SolrClient(object):
         logger.debug("Number of files in tarfile: %s " % numfiles)
 
         num = 0
+        import dicom
+        from dicom.errors import InvalidDicomError
         for t in tfile:
             tfile.extract(t, extract_dir)
             afile = os.path.join(extract_dir, t.name)
+
             if os.path.exists(afile):
+                params = None
+                if afile.endswith(".dcm"):
+                    logger.info("Posting Dicom file")
+                    logger.info("")
+                    try:
+                        df = dicom.read_file(afile)
+                        logger.info("afile: %s" % afile)
+                        logger.info("Patient name: %s" % df.PatientName)
+
+                        PatientAge = df.PatientAge if hasattr(df, 'PatientAge') else ""
+                        PatientBirthDate = df.PatientBirthDate if hasattr(df, 'PatientBirthDate') else ""
+                        PatientID = df.PatientID if hasattr(df, 'PatientID') else ""
+                        PatientName = df.PatientName if hasattr(df, 'PatientName') else ""
+                        PatientSex = df.PatientSex if hasattr(df, 'PatientSex') else ""
+                        PatientWeight = df.PatientWeight if hasattr(df, 'PatientWeight') else ""
+                        PerformingPhysicianName = df.PerformingPhysicianName if hasattr(df, 'PerformingPhysicianName') else ""
+                        RequestingPhysician = df.RequestingPhysician if hasattr(df, 'RequestingPhysician') else ""
+                        InstitutionAddress = df.InstitutionAddress if hasattr(df, 'InstitutionAddress') else ""
+                        InstitutionName = df.InstitutionName if hasattr(df, 'InstitutionName') else ""
+
+                        params = {
+                            'literal.package': identifier,
+                            'literal.path': t.name,
+                            "literal.PatientAge": PatientAge,
+                            "literal.PatientBirthDate": PatientBirthDate,
+                            "literal.PatientID": PatientID,
+                            "literal.PatientName": PatientName,
+                            "literal.PatientSex": PatientSex,
+                            "literal.PatientWeight": PatientWeight,
+                            "literal.PerformingPhysicianName": PerformingPhysicianName,
+                            "literal.RequestingPhysician": RequestingPhysician,
+                            "literal.InstitutionAddress": InstitutionAddress,
+                            "literal.InstitutionName": InstitutionName,
+                            "literal.content_type": "application/dicom"
+                        }
+                    except InvalidDicomError as err:
+                        logger.error("Error reading dicom: %s" % err)
+                else:
+                    logger.info("Posting file")
+                    params = {'literal.package': identifier, 'literal.path': t.name}
+
                 files = {'file': ('userfile', open(afile, 'rb'))}
-                params = {'literal.package': identifier, 'literal.path': t.name}
                 post_url = '%s/update/extract?%s' % (self.url, urllib.urlencode(params))
                 response = requests.post(post_url, files=files)
                 result = {"url": post_url, "status": response.status_code}

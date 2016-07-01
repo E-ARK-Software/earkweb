@@ -30,7 +30,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state
+from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state, index_aip_storage
 from workers.tasks import run_package_ingest
 
 import traceback
@@ -319,4 +319,23 @@ def poll_state(request):
         logging.error(str(tb))
     return JsonResponse(data)
 
+
+@login_required
+def reindex_aip_storage(request):
+    """
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task state metadata)
+    """
+    data = {"success": False, "errmsg": "undefined"}
+    try:
+        if request.is_ajax():
+            job = index_aip_storage.delay(dir)
+            data = {"success": True, "id": job.id}
+    except Exception, err:
+        data = {"success": False, "errmsg": err.message}
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+    return JsonResponse(data)
 

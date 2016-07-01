@@ -60,6 +60,14 @@ def copy_tree_content(source_dir, target_dir):
         source_item = os.path.join(source_dir, fs_child)
         copytree(source_item, os.path.join(target_dir, fs_child))
 
+def delete_directory_content(root_dir):
+    fs_childs = os.listdir(root_dir)
+    for fs_child in fs_childs:
+        item = os.path.join(root_dir, fs_child)
+        if os.path.isdir(item):
+            shutil.rmtree(item)
+        else:
+            os.remove(item)
 
 def increment_file_name_suffix(abspath_basename, extension):
     """

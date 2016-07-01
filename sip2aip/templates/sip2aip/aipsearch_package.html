@@ -23,7 +23,7 @@
 
 {% block content %}
 
-<div class="content" style="display: block">
+<div class="content" style="display: block; width: 1300px">
 
     <div class="left-box">
     <form name="find" class="form-horizontal" role="form">
@@ -39,10 +39,36 @@
           <input type="text" class="form-control" id="package" name="package" placeholder="package name">
         </div>
       </div>
+
+
+
+     <div class="form-group">
+        <label class="control-label col-sm-2" for="package">Institution name</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="institutionname" name="institutionname" placeholder="institutionname">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="package">Address:</label>
+        <div class="col-sm-10">
+          <input type="text" class="form-control" id="institution_address" name="institution_address" placeholder="institution_address">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="package">Year of Birth:</label>
+        <div class="col-sm-10">
+           <input style="width:60px; float: left " type="text" class="form-control" id="yob_from" name="yob_from" placeholder="from">
+           <input style="width:60px; float: left" type="text" class="form-control" id="yob_to" name="yob_to" placeholder="to">
+        </div>
+      </div>
+
+
       <div class="form-group">
         <label class="control-label col-sm-2" for="contentTypes">content type:</label>
         <div class="col-sm-10">
-          <select class="form-control" id="contentTypes" name="contentTypes" size="8" multiple>
+          <select class="form-control" id="contentTypes" name="contentTypes" size="4" multiple>
 
                 <option value="application/vnd.oasis.opendocument.text">odt</option>
                 <option value="application/msword">doc</option>
@@ -55,13 +81,16 @@
                 <option value="application/xml">xml</option>
                 <option value="image/png">png</option>
                 <option value="image/jpeg">jpeg</option>
+                <option value="application/dicom">application/dicom</option>
+
+
               </select>
         </div>
       </div>
       <div class="form-group">
         <label class="control-label col-sm-2" for="sort">sort:</label>
         <div class="col-sm-10">
-          <select id="sort" name="sort">
+          <select style="font-size:1em" id="sort" name="sort">
                 <option value="">relevance</option>
                 <option value="size asc">size (ascending)</option>
                 <option value="size desc">size (descending)</option>

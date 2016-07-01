@@ -40,7 +40,7 @@ from earkcore.search.solrserver import SolrServer
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
-from earkcore.utils.fileutils import mkdir_p, read_file_content
+from earkcore.utils.fileutils import mkdir_p, read_file_content, delete_directory_content
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
@@ -227,6 +227,32 @@ def set_process_state(self, uuid, valid):
         ip_state_xml.write_doc(ip_state_doc_path)
     return { 'status': '0', "success": True}
 
+@app.task(bind=True)
+def index_aip_storage(self, *args, **kwargs):
+    from config.configuration import local_solr_server_ip
+    from config.configuration import local_solr_port
+    solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+    logger.info("Solr server base url: %s" % solr_server.get_base_url())
+    sq = SolrQuery(solr_server)
+    r = requests.get(sq.get_base_url())
+    if not r.status_code == 200:
+        return "Solr server is not available at: %s" % sq.get_base_url()
+    # delete index first
+    r = requests.get(sq.get_base_url() + "earkstorage/update?stream.body=%3Cdelete%3E%3Cquery%3E*%3C/query%3E%3C/delete%3E&commit=true")
+    from config.configuration import config_path_storage
+    from earkcore.utils.fileutils import find_files
+     # initialize solr client
+    solr_client = SolrClient(solr_server, "earkstorage")
+    for file in find_files(config_path_storage, "*.tar"):
+        _,file_name = os.path.split(file)
+        identifier = file_name[0:-4]
+        results = solr_client.post_tar_file(file, identifier)
+        logger.info("Total number of files posted: %d" % len(results))
+        num_ok = sum(1 for result in results if result['status'] == 200)
+        logger.info("Number of files posted successfully: %d" % num_ok)
+        num_failed = sum(1 for result in results if result['status'] != 200)
+        logger.info("Number of plain documents: %d" % num_failed)
+
 
 @app.task(bind=True)
 def run_package_ingest(self, *args, **kwargs):
@@ -310,10 +336,70 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
         return task_context.additional_data
 
 
+class SIPDicomValidation(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:2,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'SIP Dicom Validation'
+
+        tl = task_context.task_logger
+        metadata_dir = os.path.join(task_context.path, 'representations/')
+        tl.addinfo("Looking for Dicom image data directory: %s" % metadata_dir)
+
+        # "warning" state for validation errors
+        try:
+            md_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(metadata_dir, "*.dcm"):
+                path, dicom_image_file = os.path.split(filename)
+                tl.addinfo("Validating Dicom image file '%s'" % dicom_image_file)
+                import dicom
+                from dicom.errors import InvalidDicomError
+                try:
+                    df = dicom.read_file(filename)
+                    tl.addinfo("Dicom image file rows %d" % int(df.Rows))
+                    tl.addinfo("Dicom image file rows %d" % int(df.Columns))
+                    tl.addinfo("%s" % df, False)
+                    tech_md_dir = os.path.join(task_context.path, "metadata/technical")
+                    mkdir_p(tech_md_dir)
+                    tech_md_file = os.path.join(tech_md_dir, "%s.log" % dicom_image_file)
+                    with open(tech_md_file, "w") as md_file:
+                        md_file.write("%s" % df)
+                    tl.addinfo("Dicom image '%s' validated successfully." % dicom_image_file)
+                    md_files_valid.append(True)
+                except InvalidDicomError as err:
+                    tl.adderr('Invalid Dicom file %s: %s' % (dicom_image_file, err))
+                    md_files_valid.append(False)
+            if len(md_files_valid) == 0:
+                tl.addinfo("No Dicom image data files found.")
+            valid = False not in md_files_valid
+            if valid:
+                tl.addinfo("Dicom image files validated successfully.")
+                task_context.task_status = 0
+            else:
+                tl.adderr("Warning: Dicom image file validation errors occurred.")
+                task_context.task_status = 2
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+
+        return task_context.additional_data
+
+
 class SIPPackageMetadataCreation(DefaultTask):
 
     # Descriptive metadata check can be skipped
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPDicomValidation.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
@@ -417,16 +503,47 @@ class SIPPackaging(DefaultTask):
         return task_context.additional_data
 
 
+class SIPTransferToReception(DefaultTask):
 
-class SIPClose(DefaultTask):
-
-    accept_input_from = [SIPPackaging.__name__, 'SIPClose']
+    accept_input_from = [SIPPackaging.__name__, 'SIPTransferToReception']
 
     def run_task(self, task_context):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:1,stage:2
+        @param      tc: order:5,type:1,stage:0
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'N/A'
+
+        task_context.task_logger.addinfo("Transfer package: %s" % task_context.additional_data['packagename'])
+        tl = task_context.task_logger
+
+        from config.configuration import config_path_reception
+        #delete_directory_content(config_path_reception)
+
+        tar_file_name = task_context.additional_data['packagename']+ '.tar'
+        delivery_xml_file_name = task_context.additional_data['packagename']+ '.xml'
+        storage_tar_file = os.path.join(task_context.path, tar_file_name)
+        delivery_xml_file = os.path.join(task_context.path, delivery_xml_file_name)
+        shutil.copy(storage_tar_file, os.path.join(config_path_reception, tar_file_name))
+        shutil.copy(delivery_xml_file, os.path.join(config_path_reception, delivery_xml_file_name))
+
+
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+class SIPClose(DefaultTask):
+
+    accept_input_from = [SIPPackaging.__name__, SIPTransferToReception.__name__, 'SIPClose']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:6,type:1,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -1595,7 +1712,7 @@ class AIPStore(DefaultTask):
 
 class AIPIndexing(DefaultTask):
 
-    accept_input_from = [AIPStore.__name__, "AIPIndexing", AIPDescriptiveMetadataIndexUpdate.__name__]
+    accept_input_from = [AIPStore.__name__, "AIPIndexing"]
 
     def run_task(self, task_context):
         """

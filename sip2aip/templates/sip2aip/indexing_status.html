@@ -7,6 +7,10 @@
 
     <!-- SIP to AIP javascript -->
     <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkcore/js/csrfajax.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
 
 {% endblock %}
 
@@ -15,6 +19,12 @@
     {% include "sip2aip/about_module.html" %}
 
     <h2 class="main">Indexing status of packages in AIP storage</h2>
+
+    <p>The indexing of packages available in AIP storage can be initiated here.</p>
+
+    <p><button id="reindexbtn" class="btn btn-default">Index AIP storage</button></p>
+
+    <p>Note that re-indexing AIP storage will delete the existing index first.</p>
 
     <p>The following table gives an overview about the indexing status of packages available in AIP storage.</p>
 
@@ -45,5 +55,21 @@
         {% endfor %}
     </tbody>
     </table>
+
+    <script>
+        $( "#reindexbtn" ).click(function() {
+            $.ajax({
+                url: "/earkweb/earkcore/reindex_aip_storage",
+                context: document.body,
+            }).success(function(data) {
+                $('#reindexbtn').attr("disabled", "disabled");
+                $('.top-right').notify({
+                    message: { text: 'Indexing of AIP storage started!' }
+                  }).show();
+            }).error(function(err, message, status_text) {
+                alert("Error!");
+            });
+        });
+	</script>
 
 {% endblock %}

@@ -30,7 +30,8 @@ function callback(data) {
   var searchResults = '';
   for (doc of data.response.docs) {
     // strip off extended mime type information string (following ';') if it exists
-    var mimeStr = doc[typeField];
+    var mimeStr = doc[typeField][0];
+
     var mime = mimeStr.toString().replace(/;.*/g, '');
     var fileAdress = repo_item_access_endpoint + doc[identifier_field] + "/" + mime + "/" + doc[titleField]; // encodeURIComponent(doc['lily.id']) + '/field/n$' + blobField + '/data?ns.n=' + lilyNamespace;
     var link = '<a href="' + fileAdress + '" target="_blank">' + doc[titleField] + '</a>';
@@ -71,14 +72,33 @@ function askSolr(start) {
   }
 
   var package = document.forms.find.package.value;
-  var packageQuery = '';
+  var packageQuery = '*:*';
   if (package) {
-    packageQuery += identifier_field + ':' + package + '';
+    packageQuery += " AND " + identifier_field + ':' + package + '';
   }
 
   if($('#submission_data_only').prop('checked')) {
-    packageQuery += "path:*/submission/representations/*/data/*";
+    packageQuery += " AND path:*/submission/representations/*/data/*";
   }
+
+  if($('#institution_address').val() != "") {
+    packageQuery += " AND institutionaddress:*"+$('#institution_address').val()+"*";
+  }
+  if($('#institutionname').val() != "") {
+    packageQuery += " AND institutionname:*"+$('#institutionname').val()+"*";
+  }
+
+  if($('#yob_from').val() != "" && $('#yob_to').val() != "") {
+    var yob_from_full = $('#yob_from').val() + "0000";
+    var yob_to_full = $('#yob_to').val() + "1231";
+    packageQuery += " AND patientbirthdate:["+yob_from_full+" TO "+yob_to_full+"]";
+  }
+
+
+
+
+
+
 
   
   var query = '';
