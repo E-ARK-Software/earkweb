@@ -167,6 +167,9 @@ class PremisGenerator(object):
         )
         premis.append(object)
 
+        # list of software agents
+        software_agents = []
+
         # parse the migration.xml, add events and objects
         migrations = etree.iterparse(open(premis_info['info']), events=('start',))
         eventlist = []
@@ -179,19 +182,23 @@ class PremisGenerator(object):
                     target_object_abs = os.path.join(element.attrib['targetdir'], element.attrib['output'])
                     target_object_rel = "file://./%s" % os.path.relpath(target_object_abs, self.root_path)
 
+                    # add agent to list
+                    if element.attrib['agent'] not in software_agents:
+                        software_agents.append(element.attrib['agent'])
+
                     # event
                     event = P.event(
                         P.eventIdentifier(
                             P.eventIdentifierType('local'),
                             P.eventIdentifierValue(event_id)),
                         P.eventType('migration'),
-                        P.eventDateTime(element.attrib['starttime']), # TODO: use event start or event end time?
+                        P.eventDateTime(element.attrib['starttime']),
                         P.eventOutcomeInformation(
                             P.eventOutcome('success')
                         ),
                         P.linkingAgentIdentifier(
                             P.linkingAgentIdentifierType('software'),
-                            P.linkingAgentIdentifierValue('should probably come from migrations.xml')),
+                            P.linkingAgentIdentifierValue(element.attrib['agent'])),
                         P.linkingObjectIdentifier(
                             P.linkingObjectIdentifierType('filepath'),
                             P.linkingObjectIdentifierValue(target_object_rel))
@@ -227,7 +234,7 @@ class PremisGenerator(object):
         for event in eventlist:
             premis.append(event)
 
-        # add agent
+        # add earkweb agent
         identifier_value = 'earkweb'
         premis.append(P.agent(
                 P.agentIdentifier(
@@ -236,6 +243,16 @@ class PremisGenerator(object):
                 ),
                 P.agentName('E-ARK Web'),
                 P.agentType('Software')))
+
+        # add software agents
+        for agent in software_agents:
+            premis.append(P.agent(
+                    P.agentIdentifier(
+                        P.agentIdentifierType('LOCAL'),
+                        P.agentIdentifierValue(agent)
+                    ),
+                    P.agentName(agent),
+                    P.agentType('Software')))
 
         # create the Premis file
         str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
