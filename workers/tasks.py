@@ -337,6 +337,10 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
 
 
 class SIPDicomValidation(DefaultTask):
+    """
+    Task requires module "dicom" (not installed by default):
+    pip install pydicom==0.9.9
+    """
 
     accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
 
@@ -344,7 +348,7 @@ class SIPDicomValidation(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:1,stage:1
+        @param      tc: order:2,type:0,stage:0
         """
 
         # Add the event type - will be put into Premis.

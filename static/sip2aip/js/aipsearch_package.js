@@ -81,25 +81,18 @@ function askSolr(start) {
     packageQuery += " AND path:*/submission/representations/*/data/*";
   }
 
-  if($('#institution_address').val() != "") {
-    packageQuery += " AND institutionaddress:*"+$('#institution_address').val()+"*";
-  }
-  if($('#institutionname').val() != "") {
-    packageQuery += " AND institutionname:*"+$('#institutionname').val()+"*";
-  }
-
-  if($('#yob_from').val() != "" && $('#yob_to').val() != "") {
-    var yob_from_full = $('#yob_from').val() + "0000";
-    var yob_to_full = $('#yob_to').val() + "1231";
-    packageQuery += " AND patientbirthdate:["+yob_from_full+" TO "+yob_to_full+"]";
-  }
-
-
-
-
-
-
-
+//  if($('#institution_address').val() != "") {
+//    packageQuery += " AND institutionaddress:*"+$('#institution_address').val()+"*";
+//  }
+//  if($('#institutionname').val() != "") {
+//    packageQuery += " AND institutionname:*"+$('#institutionname').val()+"*";
+//  }
+//
+//  if($('#yob_from').val() != "" && $('#yob_to').val() != "") {
+//    var yob_from_full = $('#yob_from').val() + "0000";
+//    var yob_to_full = $('#yob_to').val() + "1231";
+//    packageQuery += " AND patientbirthdate:["+yob_from_full+" TO "+yob_to_full+"]";
+//  }
   
   var query = '';
   if (blobQuery) query = blobQuery;
