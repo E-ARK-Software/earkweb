@@ -1020,7 +1020,9 @@ class AIPMigrations(DefaultTask):
 
         # migration policy
         pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+        pdf_software = subprocess32.check_output(['convert', '-version']).replace('\n', '')     # ImageMagick version
         gif = ['fmt/3', 'fmt/4']
+        image_software = subprocess32.check_output(['ghostscript', '-version']).replace('\n', '')   # Ghostscript version
 
         tl = task_context.task_logger
 
@@ -1059,14 +1061,16 @@ class AIPMigrations(DefaultTask):
                     # fido, file format identification
                     identification = FormatIdentification()
                     fido_result = identification.identify_file(os.path.join(directory, filename))
-                    self.args= ''
+                    self.args = ''
                     if fido_result in pdf:
+                        software = pdf_software
                         tl.addinfo('File %s is queued for migration to PDF/A.' % filename)
                         outputfile = filename.rsplit('.', 1)[0] + '.pdf'
                         cliparams = {'output_file': '-sOutputFile=' + os.path.join(migration_target, filename),
                                      'input_file': os.path.join(directory, filename)}
                         self.args = CliCommand.get('pdftopdfa', cliparams)
                     elif fido_result in gif:
+                        software = image_software
                         tl.addinfo('File %s is queued for migration to TIFF.' % filename)
                         outputfile = filename.rsplit('.', 1)[0] + '.tiff'
                         cliparams = {'input_file': os.path.join(directory, filename),
@@ -1115,7 +1119,7 @@ class AIPMigrations(DefaultTask):
                                                                                   'taskid': id,
                                                                                   'status': 'queued',
                                                                                   'starttime': current_timestamp(),
-                                                                                  'endtime': ''})
+                                                                                  'agent': software})
                         total += 1
                     else:
                         pass
