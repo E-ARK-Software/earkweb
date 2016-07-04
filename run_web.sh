@@ -1,7 +1,8 @@
 #!/bin/bash
 
-echo "Delay to give database time to start up"
-sleep 5
+echo "Waiting for database to start up ..."
+#sleep 5
+./earkweb/docker/wait-for-it/wait-for-it.sh db:3306
 
 # Apply database migrations
 echo "Apply database migrations"

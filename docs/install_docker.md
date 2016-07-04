@@ -15,6 +15,7 @@ Alternatively, the images can be created using docker individually and configure
     - [Build and run images individually](#build-and-run-images-individually)
       - [MySQL image](#mysql-image)
       - [earkweb image](#earkweb-image)
+   - [Troubleshooting](#troubleshooting)
       
 ## Install and run using Docker Compose
 
@@ -33,7 +34,28 @@ at https://docs.docker.com/v1.5/installation/ubuntulinux/).
 
 ### Build and run using docker compose
 
-Use the script `docker-compose-run.sh` or execute the commands described below.
+The script `docker-compose-run.sh` available in the earkweb root directory can be used to build and initialise the images and to run the multi-container application for the first 
+time:
+
+    ./docker-compose-run.sh
+        
+This will initialize the containers needed to run the multi-container application.
+
+Stop the containers by pressing Ctrl+C in the shell where the services were started or execute:
+
+    docker-compose stop -t 120
+    
+The 2 minutes timeout (-t 120) is to give the services enough time to exit gracefully (default: 10 seconds). After the timeout limit is exceeded, the corresponding processes will be killed.
+
+The second time, to start the earkweb services again it suffices to execute:
+
+    docker-compose start
+    
+Stopping the database container can lead to MySQL tables being "marked as crashed", see section [MySQL Data tables crashed](#mysql-data-tables-crashed).
+
+#### Execute docker-compose commands indiviually 
+
+Alternatively, the steps in the docker-compose shell script can be executed individually as described below.
 
 1. Change to the earkweb directory:
 
@@ -198,3 +220,21 @@ Note that mysql must be running and initialized with the required databases (see
 
         http://127.0.0.1:8000
         
+## Troubleshooting
+
+## MySQL Data tables crashed
+
+According to the docker-compose documentation (https://docs.docker.com/compose/faq/) there is a timeout when stopping containers:
+
+    "Compose stop attempts to stop a container by sending a SIGTERM. It then waits for a default timeout of 10 seconds. After the timeout, a SIGKILL is sent to the container to 
+    forcefully kill it. If you are waiting for this timeout, it means that your containers aren’t shutting down when they receive the SIGTERM signal."
+
+If the MySQL container was killed, the tables can be "marked as crashed":
+
+    Table './mydb/mytable' is marked as crashed and should be repaired
+    
+In this case, while the database container (named 'earkdb_1' by default) is running, execute the following command to repair the tables:
+
+    docker exec -it --user=root earkdb_1 /repair_tables.sh
+    
+The `repair_tables.sh` shell script is available at `earkweb/docker/earkdb/repair_tables.sh`.

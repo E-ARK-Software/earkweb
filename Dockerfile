@@ -33,6 +33,8 @@ RUN cd ghostscript-9.18 && ./configure && make && make install
 
 RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
 
+ADD docker/wait-for-it/wait-for-it.sh /wait-for-it.sh
+
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 

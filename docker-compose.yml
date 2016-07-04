@@ -21,8 +21,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-    links:
-      - db
   redis:
     image: tutum/redis
     environment:
@@ -30,8 +28,6 @@ services:
     container_name: redis_1
     ports:
       - "6379:6379"
-    links:
-      - db
   earkweb:
     image: earkwebimg
     build: .
@@ -60,3 +56,16 @@ services:
       - rabbitmq
       - db
       - redis
+  flower:
+    build: .
+    environment:
+      - C_FORCE_ROOT=true
+      - DATABASE_HOST=db
+      - BROKER_URL="amqp://admin:mypass@rabbitmq:5672/"
+    working_dir: /earkweb
+    command: bash -c "sleep 3 && celery flower -A earkweb --port=5555"
+    volumes:
+      - .:/earkweb
+      - /tmp/earkwebdata:/var/data/earkweb
+    ports:
+      - "5555:5555"
