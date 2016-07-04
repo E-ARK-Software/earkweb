@@ -6,6 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
+earkweb_version = '0.3.3.'
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.join(root_dir, 'config/settings.cfg'))

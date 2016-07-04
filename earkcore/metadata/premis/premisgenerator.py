@@ -137,7 +137,7 @@ class PremisGenerator(object):
             ),
             P.linkingAgentIdentifier(
                 P.linkingAgentIdentifierType('software'),
-                P.linkingAgentIdentifierValue(agent)),
+                P.linkingAgentIdentifierValue('E-ARK Web %s (task: %s)' % (configuration.earkweb_version, agent))),
             P.linkingObjectIdentifier(
                 P.linkingObjectIdentifierType('repository'),
                 P.linkingObjectIdentifierValue(linked_object))
@@ -235,7 +235,7 @@ class PremisGenerator(object):
             premis.append(event)
 
         # add earkweb agent
-        identifier_value = 'earkweb'
+        identifier_value = 'E-ARK Web %s' % configuration.earkweb_version
         premis.append(P.agent(
                 P.agentIdentifier(
                     P.agentIdentifierType('LOCAL'),
@@ -312,7 +312,7 @@ class PremisGenerator(object):
         #     ))
 
         # add agent
-        identifier_value = 'earkweb'
+        identifier_value = 'E-ARK Web %s' % configuration.earkweb_version
         premis.append(P.agent(
             P.agentIdentifier(
                 P.agentIdentifierType('LOCAL'),
