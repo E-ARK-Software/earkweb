@@ -19,9 +19,9 @@
 
         sudo apt-get install summain jhove  
     
-2. Install pgmagick (python image conversion):    
+2. Install pgmagick (python image conversion) and image magick:    
     
-        sudo apt-get install graphicsmagick
+        sudo apt-get install imagemagick graphicsmagick
         sudo apt-get install libgraphicsmagick++1-dev libboost-python-dev
     
 3. Install pdfhtml for PDF to HTML conversion:

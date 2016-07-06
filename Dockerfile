@@ -16,7 +16,7 @@ RUN easy_install pip
 
 RUN apt-get install -y summain jhove pdftohtml
 
-RUN apt-get install -y graphicsmagick
+RUN apt-get install -y graphicsmagick imagemagick
 RUN apt-get install -y libgraphicsmagick++1-dev libboost-python-dev
 
 RUN apt-get install -y tar git curl vim wget dialog net-tools build-essential
