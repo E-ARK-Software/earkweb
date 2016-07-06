@@ -52,10 +52,6 @@ services:
     volumes:
       - .:/earkweb
       - /tmp/earkwebdata:/var/data/earkweb
-    links:
-      - rabbitmq
-      - db
-      - redis
   flower:
     build: .
     environment:
