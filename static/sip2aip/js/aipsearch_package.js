@@ -54,7 +54,8 @@ function callback(data) {
 }
 
 function askSolr(start) {
-  var solrEndpoint = 'http://'+local_solr_server_ip+':'+local_solr_port+'/solr/earkstorage/';
+  //var solrEndpoint = 'http://'+local_solr_server_ip+':'+local_solr_port+'/solr/earkstorage/';
+  var solrEndpoint = 'http://'+django_service_ip+':'+django_service_port+'/earkweb/earkcore/solrif/earkstorage/';
   window.console.log("solr endpoint: " + solrEndpoint)
   var queryString = document.forms.find.queryString.value;
 
@@ -122,5 +123,6 @@ function askSolr(start) {
   var script = document.createElement('script');
   script.src = solrEndpoint + 'select?q=' + encodeURIComponent(query) +
       sortParameter + '&start=' + start + '&rows=' + rows + '&wt=json&json.wrf=callback';
+
   document.getElementsByTagName('head')[0].appendChild(script);
 }

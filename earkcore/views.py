@@ -1,4 +1,7 @@
 import logging
+import urllib
+import urllib2
+import requests
 
 from earkcore.utils.xmlutils import get_xml_schemalocations
 from earkcore.xml.xmlschemanotfound import XMLSchemaNotFound
@@ -339,3 +342,36 @@ def reindex_aip_storage(request):
         logging.error(str(tb))
     return JsonResponse(data)
 
+@login_required
+@csrf_exempt
+def solrif(request, core, operation):
+    logger.debug(core)
+    logger.debug(operation)
+    logger.debug(request.GET.get('q', ''))
+    q = urllib.urlencode({'q': request.GET.get('q', ''), "wt": "json", "json.wrf": "callback"})
+
+    from config.configuration import local_solr_server_ip
+    from config.configuration import access_solr_port
+
+    from config.configuration import local_solr_core
+    query_url = "http://%s:%s/solr/%s/%s?%s" % (local_solr_server_ip, access_solr_port, local_solr_core, operation, q)
+    logger.debug(query_url)
+    data = ""
+    try:
+        response = requests.get(query_url)
+        logger.debug(response.status_code)
+        logger.debug("TEXT:")
+        logger.debug(response.text)
+        return HttpResponse(response.text, content_type='text/plain')
+    except Exception, err:
+        logger.error("error")
+        tb = traceback.format_exc()
+
+        logger.error(str(tb))
+        data = ""
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = ""
+        return HttpResponse(response.text, content_type='text/plain')
+    return data
