@@ -166,6 +166,8 @@ if [ "$INITIALIZE" = true ] ; then
     mkdir -p $REPO_DATA_DIRECTORY/nlp/textcategories/models
 fi
 
+sleep 20
+
 echo "Docker deployment ready."
 
 

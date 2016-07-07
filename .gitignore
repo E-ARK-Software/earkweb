@@ -63,4 +63,3 @@ migrations/
 config/settings_*
 config/settings.cfg
 Dockerfile_*
-dockerreset.sh
