@@ -12,6 +12,12 @@ if [ $line != "#docker-config" ]
   echo "Docker configuration file required (first line #docker-config). Sample config file: config/settings.cfg.docker"
   exit 1
 fi
+function get_config_val()
+{
+    local  config_val=`cat $file | grep "$1" | sed "s/"$1"\s\{0,\}=\s\{0,\}//g"`
+    echo "$config_val"
+}
+chmod +x docker/wait-for-it/wait-for-it.sh
 
 INITIALIZE=true
 
@@ -37,9 +43,11 @@ if [ ! -e "$MYSQL_DATA_DIRECTORY" ];
         mkdir $MYSQL_DATA_DIRECTORY
         docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg &
 
-        DB_PAUSE=20 # the lazy way - could check port 3306 until service becomes available
+        DB_PAUSE=60 # the lazy way - could check port 3306 until service becomes available
         echo "Pause $DB_PAUSE seconds ..."
         sleep $DB_PAUSE
+        echo "Waiting for MySQL service to become available"
+        ./docker/wait-for-it/wait-for-it.sh $(get_config_val "mysql_server_ip_external"):3306
 
         echo "Starting intermediate database container to initialize data directory ..."
         docker exec tmpdb /init.sh
@@ -64,9 +72,11 @@ fi
 echo "Starting services (docker-compose up) ..."
 docker-compose up &
 
-SERVICES_PAUSE=30 # the lazy way - could check until services becomes available
+SERVICES_PAUSE=60 # the lazy way - could check until services becomes available
 echo "Pause $SERVICES_PAUSE seconds ..."
 sleep $SERVICES_PAUSE
+echo "Waiting for Web UI to become available"
+./docker/wait-for-it/wait-for-it.sh $(get_config_val "django_service_ip"):8000
 
 if [ "$INITIALIZE" = true ] ; then
     echo "Creating user ..."
@@ -76,11 +86,15 @@ fi
 echo "Scanning tasks ..."
 docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
 
+
+
+django_service_ip=`cat $file | grep "django_service_ip" | sed 's/django_service_ip\s\{0,\}=\s\{0,\}//g'`
+
 if [ "$INITIALIZE" = true ] ; then
     echo "Creating solr core for storage area ..."
     docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
-
-    curl http://localhost:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
+    storage_solr_server_ip=$(get_config_val "django_service_ip")
+    curl http://${storage_solr_server_ip}:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
             "name":"content",
             "type":"text_general",
             "stored":true,
@@ -92,7 +106,7 @@ if [ "$INITIALIZE" = true ] ; then
         "add-copy-field":{
             "source":"_text_", "dest":[ "content" ]
         }
-    }' http://localhost:8983/solr/earkstorage/schema
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
 
     echo "Creating repository directories and files ..."
     mkdir $REPO_DATA_DIRECTORY/reception

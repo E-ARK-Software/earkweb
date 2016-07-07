@@ -52,6 +52,8 @@ services:
     volumes:
       - .:/earkweb
       - /tmp/earkwebdata:/var/data/earkweb
+    links:
+      - solr
   flower:
     build: .
     environment:
