@@ -39,9 +39,9 @@
                         <li class="menu-item"><a href="/earkweb/sip2aip/upload_sip">Upload SIP</a></li>
                         <li class="menu-item"><a href="/earkweb/sip2aip/overview">Active SIP to AIP conversion processes</a></li>
                         {% if user.is_active and user.is_staff %}
-                        <li class="menu-item"><a href="/earkweb/sip2aip/aipsearch/package">AIP package search</a></li>
+                        <!--<li class="menu-item"><a href="/earkweb/sip2aip/aipsearch/package">AIP package search</a></li>-->
                         <li class="menu-item"><a href="/earkweb/sip2aip/batch">Batch SIP ingest</a></li>
-                        <li class="menu-item"><a href="/earkweb/sip2aip/indexing_status">Indexing status</a></li>
+                        <!--<li class="menu-item"><a href="/earkweb/sip2aip/indexing_status">Indexing status</a></li>-->
                         {% endif %}
 
                     </ul>
@@ -68,9 +68,11 @@
                     <ul class="dropdown-menu">
                         <!--li class="menu-item"><a href="/earkweb/search/demosearch/govdocs">Govdocs Corpus File Search</a></li-->
                         <!--li class="menu-item"><a href="/earkweb/search/demosearch/news">News Corpus File Search</a></li-->
-                        <li class="menu-item"><a href="/earkweb/public">Package File Search</a></li>
+                        <!--<li class="menu-item"><a href="/earkweb/public">Package File Search</a></li>-->
+                        <li class="menu-item"><a href="/earkweb/sip2aip/aipsearch/package">Repository search</a></li>
                         {% if user.is_active and user.is_staff %}
-                        <li class="menu-item"><a href="/earkweb/indexing_status">Indexing status</a></li>
+                        <!--<li class="menu-item"><a href="/earkweb/indexing_status">Indexing status</a></li>-->
+                        <li class="menu-item"><a href="/earkweb/sip2aip/indexing_status">Indexing status</a></li>
                         {% endif %}
 
                     </ul>

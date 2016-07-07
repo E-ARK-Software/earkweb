@@ -4,8 +4,7 @@
 
 {% block extra_head %}
 
-    <!-- SIP to AIP javascript -->
-    <script type="text/javascript" src="{% static 'sip2aip/js/sip2aip.js' %}"></script>
+    <script type="text/javascript" src="{% static 'search/js/pubsearch.js' %}"></script>
     <script language="JavaScript">
         var local_solr_server_ip = '{{ local_solr_server_ip }}';
         var django_service_ip = '{{ django_service_ip }}';
