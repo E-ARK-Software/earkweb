@@ -9,6 +9,10 @@
             <td>Process ID</td>
             <td>{{ ip.uuid }}</td>
         </tr>
+        <tr class="row1">
+            <td>Working area path</td>
+            <td><a href="{% url 'sip2aip:working_area' 'aip2dip' ip.uuid %}" title='DIP in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+        </tr>
         <tr>
             <td>Selected AIPs</td>
             <td>
@@ -18,7 +22,7 @@
                 {% endif %}
                 {% for aip in dip.aips.all %}
                     <tr>
-                        <td style="padding:3px"><a href="{% url 'search:aip' dip.name aip.identifier %}">{{ aip.identifier }}</a> </td>
+                        <td style="padding:3px">{{ aip.identifier }}</td>
                         <td style="padding-left:10px">
                             {% if aip.source_available %}
                             <span data-toggle="tooltip" title="AIP is accessible" class="glyphicon glyphicon-ok-sign"/>

@@ -6,6 +6,7 @@ import tarfile
 from threading import Thread
 import traceback
 import urllib
+import uuid
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -32,6 +33,7 @@ from earkcore.utils.stringutils import lstrip_substring
 from sip2aip.forms import AIPtoDIPWorkflowModuleSelectForm
 from earkcore.models import InformationPackage
 from earkcore.utils.randomutils import getUniqueID
+from workers.default_task_context import DefaultTaskContext
 from workflow.models import WorkflowModules
 
 logger = logging.getLogger(__name__)
@@ -46,11 +48,24 @@ import lxml
 from config.configuration import server_hdfs_aip_query
 
 from config.configuration import server_repo_record_content_query
+import time
+
+
+def initialize_dip(dip_creation_process_name):
+    dip = DIP.objects.create(name=dip_creation_process_name)
+    uuid = getUniqueID()
+    wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
+    InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name, last_task=wf)
+    work_dir = "%s/%s" % (config_path_work, uuid)
+    task_context = DefaultTaskContext(uuid, work_dir, 'AIPtoDIPReset', None, {'packagename' : dip_creation_process_name }, None)
+    AIPtoDIPReset().apply((task_context,), queue='default')
+
 
 @login_required
 def index(request, procname):
     if DIP.objects.count() == 0:
-        DIP.objects.create(name='DIP 1')
+        generated_dip_packagename = 'DIP-%s' % time.strftime("%Y%m%d-%H%M%S")
+        initialize_dip(generated_dip_packagename)
     template = loader.get_template('search/index.html')
     form = SearchForm()
     context = RequestContext(request, {
@@ -219,6 +234,7 @@ def search_form(request):
             start = 0
             rows = 20
             query_string = get_query_string(keyword, content_type, start, rows)
+            logger.debug("Query string: %s" % query_string)
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)
             selectedObjects = dip.aips.all()
@@ -231,9 +247,19 @@ def search_form(request):
                 for doc in docs:
                     responseObj = dict()
                     responseObj['title'] = doc["path"]
-                    responseObj['lily_id'] = urllib.quote_plus(doc["lily.id"])
-                    responseObj['contentType'] = doc["contentType"]
-                    responseObj['size'] = doc["size"]
+                    if doc.has_key('lily_id'):
+                        responseObj['lily_id'] = urllib.quote_plus(doc["lily.id"])
+                    else:
+                        responseObj['lily_id'] = doc["path"]
+                    if doc.has_key('contentType'):
+                        responseObj['contentType'] = doc["contentType"]
+                    else:
+                        responseObj['contentType'] = doc["content_type"]
+
+                    if doc.has_key('size'):
+                        responseObj['size'] = doc["size"]
+                    else:
+                        responseObj['size'] = doc["stream_size"]
                     # get package property from path
                     responseObj['is_selected_pack'] = False
                     packageSep = doc["path"].find("/")
@@ -339,6 +365,7 @@ def get_file_content(request, lily_id):
     else:
         pass
 
+
 @login_required
 def create_dip(request):
     if request.method == "POST":
@@ -351,11 +378,8 @@ def create_dip(request):
             })
             return HttpResponse(template.render(context))
         else:
-            dip = DIP.objects.create(name=dip_creation_process_name)
-            uuid = getUniqueID()
-            wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
-            InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=dip_creation_process_name, last_task=wf)
-            url = reverse('search:dip', args=(dip.name,))
+            initialize_dip(dip_creation_process_name)
+            url = reverse('search:dip', args=(dip_creation_process_name,))
             return HttpResponseRedirect(url)
     else:
         pass
