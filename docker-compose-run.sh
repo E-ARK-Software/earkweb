@@ -21,9 +21,10 @@ chmod +x docker/wait-for-it/wait-for-it.sh
 
 INITIALIZE=true
 
-MYSQL_DATA_DIRECTORY="/tmp/earkweb-mysql-data"
-
-REPO_DATA_DIRECTORY="/tmp/earkwebdata"
+docker_mysql_data_directory=$(get_config_val "docker_mysql_data_directory")
+MYSQL_DATA_DIRECTORY="$docker_mysql_data_directory"
+docker_repo_data_directory=$(get_config_val "docker_repo_data_directory")
+REPO_DATA_DIRECTORY="$docker_repo_data_directory"
 
 if [ ! -e "$REPO_DATA_DIRECTORY" ];
     then
