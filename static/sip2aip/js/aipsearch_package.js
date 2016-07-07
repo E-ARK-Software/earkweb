@@ -23,7 +23,7 @@ function callback(data) {
       if (start == data.response.start)
         pages += p + ' ';
       else
-        pages += '<a href="javascript:;" onclick="askSolr(' + start + ')">' + p + '</a> ';
+        pages += '<a href="#" onclick="askSolr(' + start + ')">' + p + '</a> ';
     }
   }
   

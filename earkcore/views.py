@@ -345,10 +345,15 @@ def reindex_aip_storage(request):
 @login_required
 @csrf_exempt
 def solrif(request, core, operation):
-    logger.debug(core)
-    logger.debug(operation)
-    logger.debug(request.GET.get('q', ''))
-    q = urllib.urlencode({'q': request.GET.get('q', ''), "wt": "json", "json.wrf": "callback"})
+    logger.debug("SolR query")
+    logger.debug("Core: %s" % core)
+    logger.debug("Operation: %s" % operation)
+    logger.debug("Query: %s" % request.GET.get('q', ''))
+    start = request.GET.get('start', '0')
+    logger.debug("Start: %s" % start)
+    rows = request.GET.get('rows', '20')
+    logger.debug("Rows: %s" % rows)
+    q = urllib.urlencode({'q': request.GET.get('q', ''), "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
 
     from config.configuration import local_solr_server_ip
     from config.configuration import access_solr_port
@@ -359,9 +364,6 @@ def solrif(request, core, operation):
     data = ""
     try:
         response = requests.get(query_url)
-        logger.debug(response.status_code)
-        logger.debug("TEXT:")
-        logger.debug(response.text)
         return HttpResponse(response.text, content_type='text/plain')
     except Exception, err:
         logger.error("error")
