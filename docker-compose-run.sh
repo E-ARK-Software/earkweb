@@ -1,15 +1,35 @@
 #!/usr/bin/env bash
+HEADER="\e[34m"
+OKGREEN="\e[92m"
+WARNING="\e[93m"
+FAIL="\e[91m"
+ENDC="\e[0m"
+BOLD="\e[1m"
+UNDERLINE="\033[4m"
+
+function echo_highlight()
+{
+    echo -e "$1$2$ENDC"
+}
+
+function echo_highlight_header()
+{
+    echo -e "$1==========================================================="
+    echo -e "$2"
+    echo -e "===========================================================$ENDC"
+}
+
 file="./config/settings.cfg"
 if [ ! -f "$file" ]
   then
-  echo "Docker configuration file does not exist. Rename sample config file config/settings.cfg.docker to config/settings.cfg."
+  echo_highlight $WARNING "Docker configuration file does not exist. Rename sample config file config/settings.cfg.docker to config/settings.cfg."
   exit 1
 
 fi
 line=$(head -n 1 config/settings.cfg)
 if [ $line != "#docker-config" ]
   then
-  echo "Docker configuration file required (first line #docker-config). Sample config file: config/settings.cfg.docker"
+  echo_highlight $WARNING "Docker configuration file required (first line #docker-config). Sample config file: config/settings.cfg.docker"
   exit 1
 fi
 function get_config_val()
@@ -26,22 +46,48 @@ MYSQL_DATA_DIRECTORY="$docker_mysql_data_directory"
 docker_repo_data_directory=$(get_config_val "docker_repo_data_directory")
 REPO_DATA_DIRECTORY="$docker_repo_data_directory"
 
+echo_highlight_header $HEADER "Repository data directories"
+
 if [ ! -e "$REPO_DATA_DIRECTORY" ];
     then
-        echo "Creating new repo directory: $REPO_DATA_DIRECTORY"
+        echo "Creating new repo directory"
         mkdir -p $REPO_DATA_DIRECTORY
+        if [ -e "$REPO_DATA_DIRECTORY" ]
+          then
+            echo "Creating repository directories and files"
+            mkdir $REPO_DATA_DIRECTORY/reception
+            mkdir $REPO_DATA_DIRECTORY/storage
+            mkdir $REPO_DATA_DIRECTORY/storage/pairtree_root
+            touch $REPO_DATA_DIRECTORY/storage/pairtree_version0_1
+            mkdir $REPO_DATA_DIRECTORY/work
+            mkdir $REPO_DATA_DIRECTORY/access
+
+            mkdir $REPO_DATA_DIRECTORY/nlp
+            mkdir $REPO_DATA_DIRECTORY/nlp/stanford
+            mkdir $REPO_DATA_DIRECTORY/nlp/stanford/classifiers
+            mkdir -p $REPO_DATA_DIRECTORY/nlp/textcategories/models
+            echo_highlight $OKGREEN "Repository data directories created:"
+            find $REPO_DATA_DIRECTORY
+        fi
     else
         echo "Repo directory already exists: $REPO_DATA_DIRECTORY"
 fi
 
-echo "Building the images ..."
+echo_highlight_header $HEADER "Building Docker images"
+
 docker-compose build
+
+echo_highlight $HEADER "Creating MySQL image"
 
 if [ ! -e "$MYSQL_DATA_DIRECTORY" ];
     then
-        echo "MySQL data directory does not exist. Creating new data directory at: $MYSQL_DATA_DIRECTORY"
+        echo "MySQL data directory does not exist. Creating new one."
         echo "Running mysql database ..."
         mkdir $MYSQL_DATA_DIRECTORY
+        if [ -e "$MYSQL_DATA_DIRECTORY" ]
+          then
+            echo_highlight $OKGREEN "MySQL data directory created: $MYSQL_DATA_DIRECTORY"
+        fi
         docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg &
 
         DB_PAUSE=60 # the lazy way - could check port 3306 until service becomes available
@@ -70,7 +116,8 @@ if [ ! -e "$MYSQL_DATA_DIRECTORY" ];
         INITIALIZE=false
 fi
 
-echo "Starting services (docker-compose up) ..."
+echo_highlight_header $HEADER "Starting services (docker-compose up)"
+
 docker-compose up &
 
 SERVICES_PAUSE=60 # the lazy way - could check until services becomes available
@@ -79,20 +126,21 @@ sleep $SERVICES_PAUSE
 echo "Waiting for Web UI to become available"
 ./docker/wait-for-it/wait-for-it.sh $(get_config_val "django_service_ip"):8000
 
+echo_highlight_header $HEADER "Configuring earkweb"
+
 if [ "$INITIALIZE" = true ] ; then
-    echo "Creating user ..."
+    echo_highlight $HEADER "Creating user"
     docker exec -it earkweb_1 python /earkweb/util/createuser.py eark user@email eark true
+    echo_highlight $OKGREEN "User created"
 fi
 
-echo "Scanning tasks ..."
+echo_highlight $HEADER "Scanning tasks (registering task modules in the database)"
 docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
-
-
 
 django_service_ip=`cat $file | grep "django_service_ip" | sed 's/django_service_ip\s\{0,\}=\s\{0,\}//g'`
 
 if [ "$INITIALIZE" = true ] ; then
-    echo "Creating solr core for storage area ..."
+    echo_highlight $HEADER "Creating solr core for storage area"
     docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
     storage_solr_server_ip=$(get_config_val "django_service_ip")
 
@@ -151,23 +199,10 @@ if [ "$INITIALIZE" = true ] ; then
             "source":"_text_", "dest":[ "content" ]
         }
     }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    echo "Creating repository directories and files ..."
-    mkdir $REPO_DATA_DIRECTORY/reception
-    mkdir $REPO_DATA_DIRECTORY/storage
-    mkdir $REPO_DATA_DIRECTORY/storage/pairtree_root
-    touch $REPO_DATA_DIRECTORY/storage/pairtree_version0_1
-    mkdir $REPO_DATA_DIRECTORY/work
-    mkdir $REPO_DATA_DIRECTORY/access
-
-    mkdir $REPO_DATA_DIRECTORY/nlp
-    mkdir $REPO_DATA_DIRECTORY/nlp/stanford
-    mkdir $REPO_DATA_DIRECTORY/nlp/stanford/classifiers
-    mkdir -p $REPO_DATA_DIRECTORY/nlp/textcategories/models
 fi
 
 sleep 20
 
-echo "Docker deployment ready."
+echo_highlight $OKGREEN "Docker deployment ready."
 
 
