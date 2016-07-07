@@ -154,14 +154,7 @@ if [ "$INITIALIZE" = true ] ; then
     curl -X POST -H 'Content-type:application/json' --data-binary '{
       "add-field":{
          "name":"path",
-         "type":"text_general",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"path",
-         "type":"text_general",
+         "type":"string",
          "stored":true }
     }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
 
