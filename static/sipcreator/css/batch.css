@@ -1,0 +1,62 @@
+td.filename {
+    color: gray;
+}
+
+.applicationxml {
+    color: gray;
+}
+
+
+.applicationzip {
+    color: gray;
+}
+
+span.applicationxtar {
+    color: gray;
+}
+
+.received {
+    background-color: DarkGray;
+}
+
+
+.running {
+    background-color: DarkOrange;
+}
+
+
+.processed {
+    background-color: DarkGreen;
+}
+
+.error {
+    background-color: DarkRed;
+}
+
+#receptiontable {
+    display: table;
+    width: 100%;
+}
+#receptiontable th.filecol {
+    width: 30%;
+}
+#receptiontable th.daticol {
+    width: 30%;
+}
+#receptiontable th.mimecol {
+    width: 20%;
+}
+#receptiontable th.statcol {
+    width: 20%;
+}
+
+#predef_idmap_def textarea {
+    width: 100%;
+    height: 100px;
+    font-family: "Courier New", Courier, monospace;
+}
+
+a[disabled]
+{
+    color: grey;
+}

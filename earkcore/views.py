@@ -33,7 +33,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state, index_aip_storage
+from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state, index_aip_storage, repo_working_dir_exists
 from workers.tasks import run_package_ingest
 
 import traceback

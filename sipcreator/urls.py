@@ -38,4 +38,7 @@ urlpatterns= patterns('',
     url(r'^uuid/(?P<pk>\d+)/$', views.sip_uuid, name='sip_uuid'),
     url(r'^ins_file/(?P<uuid>[a-z0-9-]{36,36})/(?P<subfolder>[a-z/\._]{1,50})', views.ins_file, name='ins_file'),
     url(r'^finalize/(?P<pk>\d+)/$', views.finalize, name='finalize'),
+
+    url(r'^batch$', views.SipCreationBatchView.as_view(), name='batch'),
+    url(r'^submit_sipcreation_batch/(?P<uuid>[0-9a-zA-Z_\-\./ ]{3,500})/$', views.submit_sipcreation_batch, name='submit_sipcreation_batch'),
 )

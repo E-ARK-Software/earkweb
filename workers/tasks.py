@@ -204,6 +204,11 @@ def ip_save_metadata_file(self, uuid, ip_file_path, content):
         tl.adderr(error_msg)
         return False
 
+@app.task(bind=True)
+def repo_working_dir_exists(self, uuid):
+    from config.configuration import config_path_work
+    working_dir = os.path.join(config_path_work, uuid)
+    return os.path.exists(working_dir)
 
 @app.task(bind=True)
 def reception_dir_status(self, reception_d):
@@ -275,6 +280,26 @@ def run_package_ingest(self, *args, **kwargs):
         logging.error(str(tb))
         current_task.update_state(state='FAILURE', meta={'package_file': package_file})
         return { 'package_file': package_file, 'storage_loc': "", 'status': "1", "success": False, "errmsg": err.message}
+
+
+@app.task(bind=True)
+def run_sipcreation_batch(self, *args, **kwargs):
+    uuid = kwargs['uuid']
+    packagename = kwargs['packagename']
+    current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': "SIPReset"})
+    from earkcore.batch.create_sip import create_sip
+    try:
+        task_context = create_sip(current_task, uuid, packagename)
+        if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            return { 'uuid': uuid, 'status': task_context.task_status, "success": True}
+        else:
+            current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+            return { 'uuid': uuid, 'status': "1", "success": False, "errmsg": "Import workflow failed."}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+        return { 'uuid': uuid, 'status': "1", "success": False, "errmsg": err.message}
 
 class SIPReset(DefaultTask):
 

@@ -1,5 +1,8 @@
+import logging
+logger = logging.getLogger(__name__)
 import os
 import shutil
+from celery.result import AsyncResult
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.template import RequestContext, loader
@@ -11,7 +14,7 @@ from earkcore.packaging.untar import Untar
 from forms import TinyUploadFileForm
 from forms import UploadFileForm
 from config.configuration import config_path_work
-from earkcore.utils.stringutils import safe_path_string
+from earkcore.utils.stringutils import safe_path_string, whitespace_separated_text_to_dict
 from earkcore.utils.fileutils import mkdir_p, copy_tree_content
 from django.views.decorators.csrf import csrf_exempt
 from django.core.urlresolvers import reverse
@@ -25,7 +28,7 @@ from earkcore.models import StatusProcess_CHOICES
 from sip2aip.forms import SIPCreationPackageWorkflowModuleSelectForm
 import json
 from earkcore.filesystem.fsinfo import path_to_dict
-from workers.tasks import extract_and_remove_package, SIPReset
+from workers.tasks import extract_and_remove_package, SIPReset, run_sipcreation_batch
 from workflow.models import WorkflowModules
 from django.shortcuts import render_to_response
 from workers.ip_state import IpState
@@ -87,6 +90,8 @@ class InformationPackageList(ListView):
     model = InformationPackage
     template_name='sipcreator/index.html'
     context_object_name='ips'
+
+
 
     sql_query = """
     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
@@ -440,3 +445,83 @@ def ins_file(request, uuid, subfolder):
 def finalize(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
     return HttpResponse("success")
+
+
+class SipCreationBatchView(ListView):
+    """
+    Processing status
+    """
+    model = WorkflowModules
+    template_name = 'sipcreator/batch.html'
+    context_object_name = 'sips'
+
+    queryset=InformationPackage.objects.extra(where=["uuid!='' and last_task_id='%s'" % SIPReset.__name__]).order_by('last_change')
+    logger.info("How many? %d" % len(queryset))
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(SipCreationBatchView, self).dispatch(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(SipCreationBatchView, self).get_context_data(**kwargs)
+        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        return context
+
+@login_required
+def batch(request):
+    template = loader.get_template('sipcreator/batch.html')
+    from config.configuration import config_path_reception
+    context = RequestContext(request, {
+        'config_path_reception': config_path_reception
+    })
+    return HttpResponse(template.render(context))
+
+
+@login_required
+@csrf_exempt
+def poll_state(request):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        if request.is_ajax():
+            if 'task_id' in request.POST.keys() and request.POST['task_id']:
+                task_id = request.POST['task_id']
+                task = AsyncResult(task_id)
+                if task.state == "SUCCESS":
+                    aggr_log = '\n'.join(task.result.log)
+                    aggr_err = '\n'.join(task.result.err)
+                    data = {"success": True, "result": task.result.success, "state": task.state, "log": aggr_log, "err": aggr_err}
+                elif task.state == "PROGRESS":
+                    data = {"success": True, "result": task.state, "state": task.state, "info": task.info}
+            else:
+                data = {"success": False, "errmsg": "No task_id in the request"}
+        else:
+            data = {"success": False, "errmsg": "Not ajax"}
+    except Exception, err:
+        data = {"success": False, "errmsg": err.message}
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+    return JsonResponse(data)
+
+
+@login_required
+@csrf_exempt
+def submit_sipcreation_batch(request, uuid):
+    data = {"success": False, "errmsg": "Unknown error"}
+    try:
+        if request.is_ajax():
+            try:
+                ip = InformationPackage.objects.get(uuid=uuid)
+                job = run_sipcreation_batch.delay(uuid=uuid, packagename=ip.packagename)
+                data = {"success": True, "id": job.id, "uuid": uuid}
+            except Exception, err:
+                tb = traceback.format_exc()
+                logging.error(str(tb))
+                data = {"success": False, "errmsg": "Error", "errdetail": str(tb)}
+        else:
+            data = {"success": False, "errmsg": "not ajax"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
+        return JsonResponse(data)
+    return JsonResponse(data)
