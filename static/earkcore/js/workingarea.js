@@ -72,7 +72,7 @@ function isStateXML(name) {
 }
 
 function previewSupported(name) {
-    return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd$)/));
+    return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd|.txt$)/));
 }
 
 /**
