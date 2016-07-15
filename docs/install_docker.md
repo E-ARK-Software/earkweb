@@ -238,3 +238,21 @@ In this case, while the database container (named 'earkdb_1' by default) is runn
     docker exec -it --user=root earkdb_1 /repair_tables.sh
     
 The `repair_tables.sh` shell script is available at `earkweb/docker/earkdb/repair_tables.sh`.
+
+## `ERROR: driver failed programming external connectivity on endpoint [...]`
+
+_You should know what you are doing here to avoid unwanted side effects._ It is currently unclear why this happens,
+but it occurs after updating the docker containers/images, most likely because services/containers are not shut
+down properly.
+
+This error is tied to local services listening on specific ports. Those processes can be identified through:
+
+    sudo netstat -peanut | grep ":8000"
+    
+Subsitute `:8000` with the port in the error message. The last output column is `PID/Program name`. Either stop 
+the service with `sudo service <servicename> stop` or kill the process with `kill -9 <PID>`. 
+
+_Known error ports and their services:_
+
+* `0.0.0.0:3306` is a mysql service. Use `sudo service mysql stop`.
+* `0.0.0.0:15672` is probably related to RabbitMQ. Use `kill -9 <PID>`.
