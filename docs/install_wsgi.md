@@ -16,6 +16,12 @@ Django’s primary deployment platform is WSGI, the Python standard for web serv
 
 ## Install and Configure as WSGI app
 
+### Install apache and mod wsgi
+
+    sudo apt-get install libapache2-mod-wsgi
+    
+### Configure apache
+
 Edit Apache web server configuration, e.g. `/etc/apache2/sites-enabled/000-default`, and add the variable `WSGIScriptAlias` which marks the file path to the WSGI script, that 
 should be processed by mod_wsgi's wsgi-script handler, define a daemon process which allows running the wsgi app using a separate virtual environment, and add the earkweb 
 Location statement:
