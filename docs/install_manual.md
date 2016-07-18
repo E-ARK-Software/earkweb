@@ -13,20 +13,9 @@
 
 ## Installing dependencies
 
-### Debian packages
+### Install Debian packages
 
-1. Install jhove (file format characterisation):
-
-        sudo apt-get install summain jhove  
-    
-2. Install pgmagick (python image conversion) and image magick:    
-    
-        sudo apt-get install imagemagick graphicsmagick
-        sudo apt-get install libgraphicsmagick++1-dev libboost-python-dev
-    
-3. Install pdfhtml for PDF to HTML conversion:
-
-        sudo apt-get install pdftohtml
+    sudo apt-get install python python-setuptools build-essential python-virtualenv python-dev  summain jhove pdftohtml graphicsmagick imagemagick libgraphicsmagick++1-dev libboost-python-dev
 
 ### Python modules
 
