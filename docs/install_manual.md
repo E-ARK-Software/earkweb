@@ -59,7 +59,7 @@ Install message queue:
 
 Install result backend database:
 
-    sudo apt-get install redis
+    sudo apt-get install redis-server
 
 ## Install solr
 
