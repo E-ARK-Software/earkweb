@@ -17,8 +17,6 @@ class ParsedEad(object):
     """
     Parsed EAD object
     """
-    ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
-
     ead_tree = None
     ead_file_path = None
 
@@ -31,6 +29,8 @@ class ParsedEad(object):
         @type       ead_file_path: string
         @param      ead_file_path: Path to the EAD metadata file
         """
+        self.ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+
         self.root_dir = rdir
         self.ead_tree = None
         self.ead_file_path = ead_file_path
@@ -53,7 +53,7 @@ class ParsedEad(object):
         return self.ead_tree.getroot()
 
     def get_dao_elements(self):
-        return self.ead_tree.getroot().xpath('//ead:dao', namespaces=ParsedEad.ns)
+        return self.ead_tree.getroot().xpath('//ead:dao', namespaces=self.ns)
 
     def _first_md_val_ancpath(self, current_elm, md_tag):
         parent_elms = current_elm.findall("..")
@@ -74,6 +74,7 @@ class ParsedEad(object):
             return None
 
     def dao_path_mdval_tuples(self, md_tag):
+        md_tag = '{%s}%s' % (self.ns['ead'], md_tag)
         dao_elements = self.get_dao_elements()
         return [{
             "path": package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href']),
@@ -144,7 +145,7 @@ class TestParsedEad(unittest.TestCase):
         root_dir = TestParsedEad.test_dir
         ead_file_path = TestParsedEad.test_dir + 'metadata/descriptive/EAD-example1.xml'
         pead = ParsedEad(root_dir, ead_file_path)
-        md_tag = "{http://ead3.archivists.org/schema/}unittitle"
+        md_tag = "unittitle"
         res = pead.dao_path_mdval_tuples(md_tag)
         self.assertEqual("representations/rep1/data/Example1.docx", res[0]['path'])
         self.assertEqual("representations/rep2/data/Example1.pdf", res[1]['path'])
