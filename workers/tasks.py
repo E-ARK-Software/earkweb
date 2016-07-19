@@ -8,6 +8,8 @@ from functools import partial
 from os import walk
 
 from celery import current_task
+from earkcore.conversion.peripleo.pelagios_convert import pelagios_convert_gml_to_ttl
+from earkcore.utils.randomutils import randomword
 
 from earkcore.utils.stringutils import multiple_replace
 from workers.ip_state import IpState
@@ -44,7 +46,7 @@ from earkcore.utils.fileutils import mkdir_p, read_file_content, delete_director
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
-from earkcore.metadata.task_utils import validate_ead_metadata
+from earkcore.metadata.task_utils import validate_ead_metadata, validate_gml_data
 from earkweb.celeryapp import app
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from tasklogger import TaskLogger
@@ -361,19 +363,210 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
         return task_context.additional_data
 
 
+class SIPGMLDataValidation(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPGMLDataValidation']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:3,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'SIP GML Data Validation'
+
+        tl = task_context.task_logger
+        representations_dir = os.path.join(task_context.path, 'representations/')
+        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
+
+        # "warning" state for validation errors
+        try:
+            gml_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(representations_dir, "*.gml"):
+                path, md_file = os.path.split(filename)
+                tl.addinfo("Found GML file '%s'" % md_file)
+                gml_files_valid.append(validate_gml_data(path, md_file, None, tl))
+            if len(gml_files_valid) == 0:
+                tl.addinfo("No GML data files found.")
+            valid = False not in gml_files_valid
+            if valid:
+                tl.addinfo("GML data file validation completed successfully.")
+            task_context.task_status = 0 if valid else 2
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
+class SIPGMLDataConversion(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:4,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'SIP GML Data Validation'
+        self.update_state(state='PROGRESS', meta={'process_percent': 1})
+
+        tl = task_context.task_logger
+        representations_dir = os.path.join(task_context.path, 'representations/')
+        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
+
+        from config.configuration import django_service_ip, django_service_port
+        # "warning" state for validation errors
+        uri_part = "http://%s:%s/earkweb/sip2aip/working_area/aip2dip/%s/" % (django_service_ip, django_service_port, task_context.uuid)
+        try:
+            from earkcore.utils.fileutils import find_files
+            num_gml_files = sum([1 for f in find_files(representations_dir, "*.gml")])
+            tl.addinfo("Found %d GML files in working directory" % num_gml_files)
+            if num_gml_files > 0:
+                ttl_rep_data_dir = 'representations/peripleottl/data'
+                peripleottl_data_dir = os.path.join(task_context.path, ttl_rep_data_dir)
+                if not os.path.exists(peripleottl_data_dir):
+                    mkdir_p(peripleottl_data_dir)
+                i = 0
+                for gml_file_path in find_files(representations_dir, "*.gml"):
+                    path, gml_file = os.path.split(gml_file_path)
+                    file_name, ext = os.path.splitext(gml_file)
+                    ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
+                    file_name_parts = file_name.split("_")
+                    specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
+                    pelagios_convert_gml_to_ttl(gml_file_path, ttl_file_path, uri_part, specific_part)
+                    perc = (i * 100) / num_gml_files
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
+                    i += 1
+            else:
+                tl.addinfo("No GML files in working directory")
+            task_context.task_status = 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
+class SIPGMLDataConversion(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:4,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'GML Data Conversion'
+        self.update_state(state='PROGRESS', meta={'process_percent': 0})
+
+        tl = task_context.task_logger
+        representations_dir = os.path.join(task_context.path, 'representations/')
+        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
+
+        from config.configuration import django_service_ip, django_service_port
+        # "warning" state for validation errors
+        uri_part = "http://%s:%s/earkweb/sip2aip/working_area/aip2dip/%s/" % (django_service_ip, django_service_port, task_context.uuid)
+        try:
+            from earkcore.utils.fileutils import find_files
+            num_gml_files = sum([1 for f in find_files(representations_dir, "*.gml")])
+            tl.addinfo("Found %d GML files in working directory" % num_gml_files)
+            if num_gml_files > 0:
+                ttl_rep_data_dir = 'representations/peripleottl/data'
+                peripleottl_data_dir = os.path.join(task_context.path, ttl_rep_data_dir)
+                if not os.path.exists(peripleottl_data_dir):
+                    mkdir_p(peripleottl_data_dir)
+                i = 0
+                for gml_file_path in find_files(representations_dir, "*.gml"):
+                    path, gml_file = os.path.split(gml_file_path)
+                    file_name, ext = os.path.splitext(gml_file)
+                    ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
+                    file_name_parts = file_name.split("_")
+                    specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
+                    pelagios_convert_gml_to_ttl(gml_file_path, ttl_file_path, uri_part, specific_part)
+                    perc = (i * 100) / num_gml_files
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
+                    i += 1
+            else:
+                tl.addinfo("No GML files in working directory")
+            task_context.task_status = 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
+class SIPPeripleoDeployment(DefaultTask):
+
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:5,type:1,stage:1
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'SIP Peripleo Deployment'
+        self.update_state(state='PROGRESS', meta={'process_percent': 0})
+
+        tl = task_context.task_logger
+        representations_dir = os.path.join(task_context.path, 'representations/peripleottl')
+        tl.addinfo("Looking for TTL data files in peripleo representation directory: %s" % representations_dir)
+
+        # "warning" state for validation errors
+        try:
+            from earkcore.utils.fileutils import find_files
+            num_ttl_files = sum([1 for f in find_files(representations_dir, "*.ttl")])
+            tl.addinfo("Found %d TTL files in working directory" % num_ttl_files)
+            if num_ttl_files > 0:
+                i = 0
+                for ttl_file_path in find_files(representations_dir, "*.ttl"):
+                    tl.addinfo("- Do nothing")
+                    perc = (i * 100) / num_ttl_files
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    tl.addinfo("TTL file '%s' published to Peripleo" % (ttl_file_path))
+                    i += 1
+            else:
+                tl.addinfo("No GML files in working directory")
+            task_context.task_status = 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
 class SIPDicomValidation(DefaultTask):
     """
     Task requires module "dicom" (not installed by default):
     pip install pydicom==0.9.9
     """
 
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
+    accept_input_from = [SIPReset.__name__, SIPGMLDataValidation.__name__, SIPGMLDataConversion.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
 
     def run_task(self, task_context):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:2,type:0,stage:0
+        @param      tc: order:6,type:0,stage:0
         """
 
         # Add the event type - will be put into Premis.
@@ -428,13 +621,13 @@ class SIPDicomValidation(DefaultTask):
 class SIPPackageMetadataCreation(DefaultTask):
 
     # Descriptive metadata check can be skipped
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPDicomValidation.__name__, 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, SIPGMLDataConversion.__name__,  SIPDicomValidation.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,stage:1
+        @param      tc: order:7,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
@@ -485,7 +678,7 @@ class SIPPackaging(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,stage:1
+        @param      tc: order:8,type:1,stage:1
         """
 
         # Add the event type - will be put into Premis.
@@ -540,7 +733,7 @@ class SIPTransferToReception(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:1,stage:0
+        @param      tc: order:9,type:1,stage:0
         """
 
         # Add the event type - will be put into Premis.
@@ -559,10 +752,9 @@ class SIPTransferToReception(DefaultTask):
         shutil.copy(storage_tar_file, os.path.join(config_path_reception, tar_file_name))
         shutil.copy(delivery_xml_file, os.path.join(config_path_reception, delivery_xml_file_name))
 
-
-
         task_context.task_status = 0
         return task_context.additional_data
+
 
 class SIPClose(DefaultTask):
 
@@ -572,7 +764,7 @@ class SIPClose(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:1,stage:2
+        @param      tc: order:10,type:1,stage:2
         """
 
         # Add the event type - will be put into Premis.
