@@ -61,6 +61,64 @@ Install result backend database:
 
     sudo apt-get install redis-server
 
+## Install peripleo
+
+### Install postgres
+
+    sudo apt-get install postgresql
+    sudo -i -u postgres
+    psql
+    > psql (9.3.4)
+    Type "help" for help.
+    postgres=# create database peripleo ;
+    CREATE DATABASE
+    postgres=# create user peripleo_user ;
+    CREATE ROLE
+    postgres=# alter user peripleo_user with encrypted password 'arkiv';
+    ALTER ROLE
+    postgres=# alter database peripleo owner to peripleo_user ;
+    ALTER DATABASE
+    postgres=# \q
+    postgres@eark-pilot:~$ 
+
+### Install peripleo
+
+    cd /srv/
+    sudo mkdir pelagios
+    sudo chown ${user}:{group} pelagios
+    cd pelagios/
+    git clone https://github.com/pelagios/peripleo.git
+    cd peripleo/lib
+    wget http://earkdev.ait.ac.at/eark/pilots/scalagios-core_2.10-2.0.0.jar
+    cd /srv/pelagios/peripleo/conf/
+    cp application.conf.template application.conf
+  
+#### Adapt settings in `applicaton.conf`
+
+Comment out the sql driver:
+
+    #db.default.driver="org.sqlite.JDBC"
+    #db.default.url="jdbc:sqlite:db/pelagios-api.db"
+
+Activate the postgres driver and adapt username and password settings:
+
+    # Postgres configuration example
+    db.default.driver="org.postgresql.Driver"
+    db.default.url="jdbc:postgresql://localhost/peripleo"
+    db.default.user="peripleo_user"
+    db.default.password="arkiv"
+
+### Install play
+
+    cd /srv/pelagios
+    wget https://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
+    unzip play-2.2.4.zip
+    cd peripleo/
+    
+### Run peripleo
+
+    /srv/pelagios/play-2.2.4/play start
+
 ## Install solr
 
   Install SolR and create core "earkstorage" with the required fields.
