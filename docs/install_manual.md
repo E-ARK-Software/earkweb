@@ -63,12 +63,62 @@ Install result backend database:
 
 ## Install solr
 
-    cd /opt
-    wget http://archive.apache.org/dist/lucene/solr/4.7.2/solr-4.7.2.tgz
-    tar -xvf solr-4.7.2.tgz
-    cp -R solr-4.7.2/example /opt/solr
-    cd /opt/solr
-    java -jar start.jar
+  Install SolR and create core "earkstorage" with the required fields.
+
+    user="user"
+    group="group"
+    solr_version="6.1.0"
+    sudo wget http://archive.apache.org/dist/lucene/solr/${solr_version}/solr-${solr_version}.tgz
+    sudo tar -xzvf solr-${solr_version}.tgz
+    sudo chown -R ${user}:${user} solr-6.1.0
+    cd solr-${solr_version}/
+    bin/solr start
+
+    bin/solr create_core -c earkstorage
+    storage_solr_server_ip=127.0.0.1
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{
+         "name":"package",
+         "type":"string",
+         "stored":true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{
+         "name":"path",
+         "type":"string",
+         "stored":true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{
+         "name":"size",
+         "type":"long",
+         "stored":true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{
+         "name":"confidential",
+         "type":"boolean",
+         "stored":true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+
+    curl -X POST -H 'Content-type:application/json' --data-binary '{
+      "add-field":{
+         "name":"textCategory",
+         "type":"text_general",
+         "stored":true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+
+    curl http://${storage_solr_server_ip}:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
+            "name":"content",
+            "type":"text_general",
+            "stored":true,
+    "indexed": true
+        }
+    }'
 
 ## Installing earkweb 
 
