@@ -30,6 +30,8 @@ packages that have been indexed by Solr can be used as input for the NLP tools.
 Set up folder structure:
     
     sudo mkdir -p /var/data/earkweb/nlp/stanford
+    sudo mkdir -p /var/data/earkweb/nlp/textcategories/models
+    
     sudo chown -R <user>:<group> /var/data/earkweb/nlp
     
 [Download the Stanford NER] (http://nlp.stanford.edu/software/CRF-NER.shtml#Download) and unpack it into the directory 

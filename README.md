@@ -41,4 +41,4 @@ are stored immediately so that the status information in the frontend's database
 
 ## NLP Natural Language Processing
 
-E-ARK Web now offers NLP tools. Please check out the [NLP documentation] (./docs/nlp_documentation) if you are interested.
+E-ARK Web now offers NLP tools. Please check out the [NLP documentation] (./docs/nlp_documentation.md) if you are interested.
