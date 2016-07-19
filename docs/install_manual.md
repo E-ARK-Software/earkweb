@@ -112,13 +112,13 @@ Install result backend database:
          "stored":true }
     }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
 
-    curl http://${storage_solr_server_ip}:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
-            "name":"content",
-            "type":"text_general",
-            "stored":true,
-    "indexed": true
-        }
-    }'
+    curl -X POST -H 'Content-type:application/json' --data-binary '{    
+      "add-field" : {
+          "name":"content",
+          "type":"text_general",
+          "stored":true,
+    "indexed": true }
+    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
 
 ## Installing earkweb 
 
