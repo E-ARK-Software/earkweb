@@ -13,20 +13,9 @@
 
 ## Installing dependencies
 
-### Debian packages
+### Install Debian packages
 
-1. Install jhove (file format characterisation):
-
-        sudo apt-get install summain jhove  
-    
-2. Install pgmagick (python image conversion) and image magick:    
-    
-        sudo apt-get install imagemagick graphicsmagick
-        sudo apt-get install libgraphicsmagick++1-dev libboost-python-dev
-    
-3. Install pdfhtml for PDF to HTML conversion:
-
-        sudo apt-get install pdftohtml
+    sudo apt-get install python python-setuptools build-essential python-virtualenv python-dev  summain jhove pdftohtml graphicsmagick imagemagick libgraphicsmagick++1-dev libboost-python-dev
 
 ### Python modules
 
@@ -70,16 +59,79 @@ Install message queue:
 
 Install result backend database:
 
-    sudo apt-get install redis
+    sudo apt-get install redis-server
+
+## Install peripleo
+
+### Install postgres
+
+    sudo apt-get install postgresql
+    sudo -i -u postgres
+    psql
+    > psql (9.3.4)
+    Type "help" for help.
+    postgres=# create database peripleo ;
+    CREATE DATABASE
+    postgres=# create user peripleo_user ;
+    CREATE ROLE
+    postgres=# alter user peripleo_user with encrypted password 'arkiv';
+    ALTER ROLE
+    postgres=# alter database peripleo owner to peripleo_user ;
+    ALTER DATABASE
+    postgres=# \q
+    postgres@eark-pilot:~$ 
+
+### Install peripleo
+
+    cd /srv/
+    sudo mkdir pelagios
+    sudo chown ${user}:{group} pelagios
+    cd pelagios/
+    git clone https://github.com/pelagios/peripleo.git
+    cd peripleo/lib
+    wget http://earkdev.ait.ac.at/eark/pilots/scalagios-core_2.10-2.0.0.jar
+    cd /srv/pelagios/peripleo/conf/
+    cp application.conf.template application.conf
+  
+#### Adapt settings in `applicaton.conf`
+
+Comment out the sql driver:
+
+    #db.default.driver="org.sqlite.JDBC"
+    #db.default.url="jdbc:sqlite:db/pelagios-api.db"
+
+Activate the postgres driver and adapt username and password settings:
+
+    # Postgres configuration example
+    db.default.driver="org.postgresql.Driver"
+    db.default.url="jdbc:postgresql://localhost/peripleo"
+    db.default.user="peripleo_user"
+    db.default.password="arkiv"
+
+### Install play
+
+    cd /srv/pelagios
+    wget https://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
+    unzip play-2.2.4.zip
+    cd peripleo/
+    
+### Run peripleo
+
+    /srv/pelagios/play-2.2.4/play start
 
 ## Install solr
 
-    cd /opt
-    wget http://archive.apache.org/dist/lucene/solr/4.7.2/solr-4.7.2.tgz
-    tar -xvf solr-4.7.2.tgz
-    cp -R solr-4.7.2/example /opt/solr
-    cd /opt/solr
-    java -jar start.jar
+  Install SolR and create core "earkstorage" with the required fields.
+
+    user="user"
+    group="group"
+    solr_version="6.1.0"
+    sudo wget http://archive.apache.org/dist/lucene/solr/${solr_version}/solr-${solr_version}.tgz
+    sudo tar -xzvf solr-${solr_version}.tgz
+    sudo chown -R ${user}:${user} solr-6.1.0
+    cd solr-${solr_version}/
+    bin/solr start
+    bin/solr create_core -c earkstorage
 
 ## Installing earkweb 
 
@@ -186,6 +238,15 @@ Install result backend database:
 
         python ./util/createuser.py eark user@email eark true
 
+## Run update script
+
+To update EARKweb, the Solr instance and perform database migrations, do the following:
+
+    cd ${EARKWEB}
+    python autoupdate.py
+    
+If you are using the VM version, simply use the `Update E_ARK Web` desktop shortcut (which will do a `git pull` and
+do everything that is needed to apply the updates).
 
 ## Celery distributed task execution 
 

@@ -102,3 +102,13 @@ stanford_jar = config.get('nlp', 'stanford_jar_path')
 stanford_ner_models = config.get('nlp', 'stanford_models_path')
 text_category_models = config.get('nlp', 'category_models_path')
 config_path_nlp = config.get('nlp', 'config_path_nlp')
+
+# Solr fields
+# {'name': '', 'type': '', 'stored': ''}
+# {'name': '', 'type': '', 'stored': '', 'indexed': 'true'}
+solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
+                   {'name': 'path', 'type': 'string', 'stored': 'true'},
+                   {'name': 'size', 'type': 'long', 'stored': 'true'},
+                   {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
+                   {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
+                   {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'}]

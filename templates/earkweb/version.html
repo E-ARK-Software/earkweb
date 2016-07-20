@@ -16,7 +16,44 @@
 
 <h2>Commit log</h2>
 
-<pre>2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/5ad8391">5ad8391</a> Fix error in AIP parent/child map creation if either the parent or the child node is missing
+<pre>2016-07-20 <a href="https://github.com/eark-project/earkweb/commit/5bff3b5">5bff3b5</a> Python package dependencies added to requirements.txt
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/fda06a5">fda06a5</a> Initial version of Peripleo conversion (SIP creation tasks will become AIP to DIP conversion tasks later)
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/e6b3ad7">e6b3ad7</a> Changed dao_path_mdval_tuples() so that only the tag needs to be passed, without the namespace
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/60186eb">60186eb</a> Added new task: SolrUpdateCurrentMetadata - updates Solr with information extracted from metadata of the package present (currently EAD)
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/0f338fc">0f338fc</a> Added an utility class to query/edit/update Solr
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/0ae58e3">0ae58e3</a> Update install_manual.md
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/5361ec1">5361ec1</a> Update install_manual.md
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/1c9b50a">1c9b50a</a> Update install_manual.md
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/c268dc2">c268dc2</a> reset repository script
+2016-07-19 <a href="https://github.com/eark-project/earkweb/commit/ab01eb7">ab01eb7</a> reset repository script
+2016-07-18 <a href="https://github.com/eark-project/earkweb/commit/dc01c0e">dc01c0e</a> Update README.md
+2016-07-18 <a href="https://github.com/eark-project/earkweb/commit/a780a9d">a780a9d</a> Update nlp_documentation.md
+2016-07-18 <a href="https://github.com/eark-project/earkweb/commit/e28aa54">e28aa54</a> Update install_wsgi.md
+2016-07-18 <a href="https://github.com/eark-project/earkweb/commit/af413b6">af413b6</a> Update install_manual.md
+2016-07-18 <a href="https://github.com/eark-project/earkweb/commit/841f72d">841f72d</a> Update install_manual.md
+2016-07-15 <a href="https://github.com/eark-project/earkweb/commit/0cbd7d3">0cbd7d3</a> Added information about a bug where Docker containers can not connect to endpoints.
+2016-07-08 <a href="https://github.com/eark-project/earkweb/commit/250cbd5">250cbd5</a> Batch SIP creation (initial version)
+2016-07-08 <a href="https://github.com/eark-project/earkweb/commit/24bc1a2">24bc1a2</a> Text file preview
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/6c78f21">6c78f21</a> Fix paging in search result.
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/42d782f">42d782f</a> Several issues in AIP to DIP creation Web-UI resolved.
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/1dc0273">1dc0273</a> Repository search as public search
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/dcc3144">dcc3144</a> Change data type of path field in SolR
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/225de85">225de85</a> Highligthing messages in docker initialisation script.
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/738f62b">738f62b</a> Docker reset script
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/4a68c8b">4a68c8b</a> SolR search via Django query
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/77f2f8d">77f2f8d</a> Docker initialisation script improved
+2016-07-07 <a href="https://github.com/eark-project/earkweb/commit/51d1d20">51d1d20</a> Docker initialisation script improved
+2016-07-06 <a href="https://github.com/eark-project/earkweb/commit/ae9a9e2">ae9a9e2</a> Add imagemagick package installation to docker
+2016-07-06 <a href="https://github.com/eark-project/earkweb/commit/9b92512">9b92512</a> Remove celery links from docker compose definition
+2016-07-04 <a href="https://github.com/eark-project/earkweb/commit/f541746">f541746</a> Celery flower container added
+2016-07-04 <a href="https://github.com/eark-project/earkweb/commit/bb339e5">bb339e5</a> Modified PREMIS agents, Redmine #464
+2016-07-01 <a href="https://github.com/eark-project/earkweb/commit/67e7c44">67e7c44</a> Added software used for file migration as agents to PREMIS files
+2016-07-01 <a href="https://github.com/eark-project/earkweb/commit/4d75c79">4d75c79</a> SolR document parameters per file type
+2016-07-01 <a href="https://github.com/eark-project/earkweb/commit/c661364">c661364</a> Indexing packages in local storage
+2016-06-29 <a href="https://github.com/eark-project/earkweb/commit/30b857e">30b857e</a> To be implemented
+2016-06-28 <a href="https://github.com/eark-project/earkweb/commit/31ee8e3">31ee8e3</a> EAD parser added - ability to get dao href/metadata field value pairs from EAD file - relative paths of the 'dao' href attribute values are resolved to package sub-paths
+2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/5a8c5d0">5a8c5d0</a> version 0.3.3
+2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/5ad8391">5ad8391</a> Fix error in AIP parent/child map creation if either the parent or the child node is missing
 2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/09ea12a">09ea12a</a> modified AIPPackageMetsCreation to append METS parent/child relationships based on the SIP METS submission. Adapted the batch import script to new paramater identifier_map
 2016-06-24 <a href="https://github.com/eark-project/earkweb/commit/0ff915f">0ff915f</a> Batch ingest: define SIP package name to AIP identifier mapping
 2016-06-23 <a href="https://github.com/eark-project/earkweb/commit/dc7fd14">dc7fd14</a> Fix Dockerfile so that the requirements.txt file for installing python dependencies can be found.

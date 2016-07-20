@@ -134,64 +134,18 @@ if [ "$INITIALIZE" = true ] ; then
     echo_highlight $OKGREEN "User created"
 fi
 
-echo_highlight $HEADER "Scanning tasks (registering task modules in the database)"
-docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
+#echo_highlight $HEADER "Scanning tasks (registering task modules in the database)"
+#docker exec -it earkweb_1 python /earkweb/workers/scantasks.py
 
 django_service_ip=`cat $file | grep "django_service_ip" | sed 's/django_service_ip\s\{0,\}=\s\{0,\}//g'`
 
 if [ "$INITIALIZE" = true ] ; then
     echo_highlight $HEADER "Creating solr core for storage area"
     docker exec -it --user=solr solr_1 bin/solr create_core -c earkstorage
-    storage_solr_server_ip=$(get_config_val "django_service_ip")
+#    storage_solr_server_ip=$(get_config_val "django_service_ip")
 
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"package",
-         "type":"string",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"path",
-         "type":"string",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"size",
-         "type":"long",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"confidential",
-         "type":"boolean",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"textCategory",
-         "type":"text_general",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl http://${storage_solr_server_ip}:8983/solr/earkstorage/schema -X POST -H 'Content-type:application/json' --data-binary '{    "add-field" : {
-            "name":"content",
-            "type":"text_general",
-            "stored":true,
-    "indexed": true
-        }
-    }'
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-        "add-copy-field":{
-            "source":"_text_", "dest":[ "content" ]
-        }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
+    echo_highlight $HEADER "Running the update script"
+    docker exec -it earkweb_1 python earkweb/autoupdate.py
 fi
 
 sleep 20
