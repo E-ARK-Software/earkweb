@@ -131,52 +131,7 @@ Activate the postgres driver and adapt username and password settings:
     sudo chown -R ${user}:${user} solr-6.1.0
     cd solr-${solr_version}/
     bin/solr start
-
     bin/solr create_core -c earkstorage
-    storage_solr_server_ip=127.0.0.1
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"package",
-         "type":"string",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"path",
-         "type":"string",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"size",
-         "type":"long",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"confidential",
-         "type":"boolean",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{
-      "add-field":{
-         "name":"textCategory",
-         "type":"text_general",
-         "stored":true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
-
-    curl -X POST -H 'Content-type:application/json' --data-binary '{    
-      "add-field" : {
-          "name":"content",
-          "type":"text_general",
-          "stored":true,
-    "indexed": true }
-    }' http://${storage_solr_server_ip}:8983/solr/earkstorage/schema
 
 ## Installing earkweb 
 
@@ -283,6 +238,15 @@ Activate the postgres driver and adapt username and password settings:
 
         python ./util/createuser.py eark user@email eark true
 
+## Run update script
+
+To update EARKweb, the Solr instance and perform database migrations, do the following:
+
+    cd ${EARKWEB}
+    python autoupdate.py
+    
+If you are using the VM version, simply use the `Update E_ARK Web` desktop shortcut (which will do a `git pull` and
+do everything that is needed to apply the updates).
 
 ## Celery distributed task execution 
 
