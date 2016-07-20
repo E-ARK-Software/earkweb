@@ -5,6 +5,7 @@ import sys
 import time
 import traceback
 from functools import partial
+from StringIO import StringIO
 from os import walk
 
 from celery import current_task
@@ -2105,7 +2106,7 @@ class LilyHDFSUpload(DefaultTask):
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
         except Exception, err:
             tl.adderr("An error occurred: %s" % err)
-        task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        task_context.task_status = 2 if (len(tl.err) > 0) else 0
         return task_context.additional_data
 
 
@@ -2202,7 +2203,7 @@ class AIPtoDIPReset(DefaultTask):
 
         # success status
         task_context.task_status = 0
-        return #{'identifier': ""}
+        return task_context.additional_data
 
 
 class DIPAcquireAIPs(DefaultTask):
@@ -2220,25 +2221,24 @@ class DIPAcquireAIPs(DefaultTask):
         #task_context.event_type = 'DIPAcquireAIPs'
 
         tl = task_context.task_logger
-
         try:
             # create dip working directory
             if not os.path.exists(task_context.path):
                 os.mkdir(task_context.path)
-
-            selected_aips = task_context.additional_data["selected_aips"]
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name=task_context.task_name)
-            print "selected AIPs: %s" % selected_aips
 
             total_bytes_read = 0
             aip_total_size = 0
+
+            selected_aips = task_context.additional_data["selected_aips"]
+            print "selected AIPs: %s" % selected_aips
             for aip_source in selected_aips.values():
                 if not os.path.exists(aip_source):
                     tl.adderr("Missing AIP source %s" % aip_source)
                     tl.adderr("Task failed %s" % task_context.uuid)
                     task_context.task_status = 1
-                    return
+                    return task_context.additional_data
                 else:
                     aip_total_size+=fsize(aip_source)
 
@@ -2262,18 +2262,154 @@ class DIPAcquireAIPs(DefaultTask):
         except Exception as e:
             tl.adderr("Task failed %s" % task_context.uuid)
             task_context.task_status = 1
-        return
 
+        return task_context.additional_data
+
+
+class DIPAcquireDependentAIPs(DefaultTask):
+
+    accept_input_from = ['All', DIPAcquireAIPs.__name__]
+
+    def run_task(self, task_context):
+        """
+        DIPAcquireDependentAIPs
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:14,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'DIPAcquireDependentAIPs'
+
+
+        tl = task_context.task_logger
+        try:
+            # create dip working directory
+            if not os.path.exists(task_context.path):
+                os.mkdir(task_context.path)
+
+            storePath = task_context.additional_data["storage_dest"]
+            if not task_context.additional_data['storage_dest']:
+                tl.adderr("Storage root must be defined to execute this task.")
+                task_context.task_status = 1
+                return task_context.additional_data
+
+            pts = PairtreeStorage(storePath)
+
+            # packagename is identifier of the DIP creation process
+            #dip = DIP.objects.get(name=task_context.task_name)
+
+            selected_aips = task_context.additional_data["selected_aips"]
+            tl.addinfo("selected AIPs: %s" % selected_aips)
+
+            total_bytes_read = 0
+            aip_total_size = 0
+            for aip_source in selected_aips.values():
+                if not os.path.exists(aip_source):
+                    tl.adderr("Missing AIP source %s" % aip_source)
+                    tl.adderr("Task failed %s" % task_context.uuid)
+                    task_context.task_status = 1
+                    return task_context.additional_data
+                else:
+                    aip_total_size += fsize(aip_source)
+            tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
+
+
+
+            for aip_identifier, aip_source in selected_aips.iteritems():
+                package_extension = aip_source.rpartition('.')[2]
+                aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+
+                # get parent and children from existing AIP tar (aip_in_dip_work_dir)
+                METS_NS = 'http://www.loc.gov/METS/'
+                XLINK_NS = "http://www.w3.org/1999/xlink"
+                print "reading METS of selected aip %s" % aip_in_dip_work_dir
+                with tarfile.open(aip_in_dip_work_dir) as tar:
+                    mets_file = aip_identifier+'/METS.xml'
+                    member = tar.getmember(mets_file)
+                    fp = tar.extractfile(member)
+                    mets_content = fp.read()
+
+                    # parse AIP mets
+                    parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+                    aip_parse = etree.parse(StringIO(mets_content), parser)
+                    aip_root = aip_parse.getroot()
+
+                    # find AIP structmap and child identifiers
+                    children_map = aip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+                    if children_map is not None:
+                        children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+                        if children_div is not None:
+                            children = children_div.findall("%s[@LABEL='child %s']" % (q(METS_NS, 'div'), 'AIP'))
+                            for child in children:
+                                mptr = child.find("%s" % q(METS_NS, 'mptr'))
+                                urn = mptr.get(q(XLINK_NS, 'href'))
+                                uuid = urn.split('urn:uuid:',1)[1]
+                                print "found child uuid %s" % uuid
+
+                                # verify if AIP exists in storage
+                                child_object_path = pts.get_object_path(uuid)
+                                print child_object_path
+                                if os.path.exists(child_object_path):
+                                    tl.addinfo('Storage path: %s' % child_object_path)
+                                    print "path exists %s" % child_object_path
+
+                    # find AIP structmap and parent identifiers
+                    parents_map = aip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+                    if parents_map is not None:
+                        parents_div = parents_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+                        if parents_div is not None:
+                            parents = parents_div.findall("%s[@LABEL='parent %s']" % (q(METS_NS, 'div'), 'AIP'))
+                            for parent in parents:
+                                mptr = parent.find("%s" % q(METS_NS, 'mptr'))
+                                urn = mptr.get(q(XLINK_NS,'href'))
+                                uuid = urn.split('urn:uuid:',1)[1]
+                                print "found parent uuid %s" % uuid
+
+                                # verify if AIP exists in storage
+                                parent_object_path = pts.get_object_path(uuid)
+                                print parent_object_path
+                                if os.path.exists(parent_object_path):
+                                    tl.addinfo('Storage path: %s' % parent_object_path)
+                                    print "path exists %s" % parent_object_path
+
+
+                    #str = etree.tostring(aip_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                    #print str
+
+
+
+            # for aip_identifier, aip_source in selected_aips.iteritems():
+            #     aip_source_size = fsize(aip_source)
+            #     partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+            #     package_extension = aip_source.rpartition('.')[2]
+            #     aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+            #     tl.addinfo("Source: %s (%d)" % (aip_source, aip_source_size))
+            #     tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
+            #
+            #     with open(aip_in_dip_work_dir, 'wb') as target_file:
+            #         for chunk in FileBinaryDataChunks(aip_source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, aip_total_size):
+            #             target_file.write(chunk)
+            #         total_bytes_read += aip_source_size
+            #         target_file.close()
+            #
+            #     check_transfer(aip_source, aip_in_dip_work_dir, tl)
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            task_context.task_status = 0
+        except Exception as e:
+            tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+        return task_context.additional_data
 
 class DIPExtractAIPs(DefaultTask):
 
-    accept_input_from = ['All', DIPAcquireAIPs.__name__, "DIPExtractAIPs"]
+    accept_input_from = ['All', DIPAcquireAIPs.__name__, DIPAcquireDependentAIPs.__name__, "DIPExtractAIPs"]
 
     def run_task(self, task_context):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4,stage:4
+        @param      tc: order:15,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2374,7 +2510,7 @@ class DIPImportSIARD(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:4,stage:4
+        @param      tc: order:16,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
