@@ -324,7 +324,7 @@ class PremisGenerator(object):
         str = etree.tostring(premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
         preservation_dir = os.path.join(self.root_path, './metadata/preservation')
         if not os.path.exists(preservation_dir):
-            os.mkdir(preservation_dir)
+            os.makedirs(preservation_dir)
         path_premis = os.path.join(self.root_path, './metadata/preservation/premis.xml')
         with open(path_premis, 'w') as output_file:
             output_file.write(str)
