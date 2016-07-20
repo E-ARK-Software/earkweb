@@ -8,7 +8,7 @@ from config.configuration import access_solr_server_ip
 from config.configuration import access_solr_port
 from config.configuration import access_solr_core
 
-def get_query_string(keyword, content_type, start, rows):
+def get_query_string(keyword, content_type, package, start, rows):
     
     logger.debug("Keyword %s" % keyword)
     logger.debug("Content type %s" % content_type)
@@ -20,6 +20,8 @@ def get_query_string(keyword, content_type, start, rows):
         logger.debug( "Skip wildcard condition: \""+keyword+"\"" )
     else:
         conjunction_parts.append("%s%%3A%s" % ('content', keyword))
+    if package != '':
+        conjunction_parts.append("%s%%3A%s" % ('package', package))
     # contentType
     if not(len(content_type) == 1 and content_type[0] == "*"):
         disjunction_parts = []

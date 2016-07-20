@@ -111,5 +111,6 @@ solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'size', 'type': 'long', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
-                   {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'}]
-solr_copy_fields = [{'source': '_text_', 'dest': 'content'}]
+                   {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'},
+                   {'name': 'contentType', 'type': 'string', 'stored': 'true'}]
+solr_copy_fields = [{'source': '_text_', 'dest': 'content'}, {'source': 'content_type', 'dest': 'contentType'}]
