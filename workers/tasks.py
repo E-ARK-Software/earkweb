@@ -2589,8 +2589,10 @@ class DMMainTask(ConcurrentTask):
 
         query = kwargs['solr_query']
         ner_model = kwargs['ner_model']
-        category_model = kwargs['category_model']
+        # category_model = kwargs['category_model']
         tar_path = kwargs['tar_path']
+
+        print tar_path
 
         archive_creator = CreateNLPArchive()
         archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
@@ -2649,6 +2651,8 @@ class DMNERecogniser(ConcurrentTask):
         tokens = word_tokenize(content, language='english')     # TODO: change tokenizer language dynamically
         for token in tokens:
             tokenized.append(token + '\n')
+
+
 
         position = 0
         for result in tagger.tag(tokenized):
