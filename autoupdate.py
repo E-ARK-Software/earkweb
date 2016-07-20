@@ -1,5 +1,5 @@
 import subprocess32
-from config.configuration import solr_field_list
+from config.configuration import solr_field_list, solr_copy_fields
 
 """ This script performs an update of EARKweb. This includes:
 * db migrations
@@ -56,18 +56,32 @@ if taskscan_err is not None:
 # Solr: create new fields
 print HEADER + '----------------\nNow adding new Solr fields.\n----------------' + ENDC
 for field in solr_field_list:
-    print OKBLUE + '## Adding field: %s ##' % field['name'] + ENDC
+    print OKBLUE + '## Adding new field: %s ##' % field['name'] + ENDC
+    # simple field with name, type, stored parameter
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
                         '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s"}}' % (field['name'], field['type'], field['stored']),
                         'http://localhost:8983/solr/earkstorage/schema']
     try:
-        # check if 'indexed' is set
+        # check if 'indexed' is set (additional to parameters above)
         if field['indexed']:
             solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
                                 '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s", "indexed": "%s"}}' % (field['name'], field['type'], field['stored'], field['indexed']), 'http://localhost:8983/solr/earkstorage/schema']
     except KeyError:
         # expected behaviour if 'indexed' is not set
         pass
+
+    solr_fields_process = subprocess32.Popen(solr_fields_args)
+    solr_fields_out, solr_fields_err = solr_fields_process.communicate()
+    if solr_fields_err is not None:
+        print WARNING + 'There have been errors when updating Solr fields:\n' + ENDC
+        print solr_fields_err
+
+for field in solr_copy_fields:
+    print OKBLUE + '## Adding new copy-field: from %s to %s ##' % (field['source'], field['dest']) + ENDC
+    solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
+                        '--data-binary', '{"add-copy-field": {"source": "%s", "dest": "%s"}}' % (field['source'], field['dest']),
+                        'http://localhost:8983/solr/earkstorage/schema']
+
     solr_fields_process = subprocess32.Popen(solr_fields_args)
     solr_fields_out, solr_fields_err = solr_fields_process.communicate()
     if solr_fields_err is not None:

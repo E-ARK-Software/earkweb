@@ -112,3 +112,4 @@ solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
                    {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'}]
+solr_copy_fields = [{'source': '_text_', 'dest': 'content'}]
