@@ -2403,7 +2403,7 @@ class DIPAcquireDependentAIPs(DefaultTask):
 
 class DIPExtractAIPs(DefaultTask):
 
-    accept_input_from = ['All', DIPAcquireAIPs.__name__, "DIPExtractAIPs"]
+    accept_input_from = ['All', DIPAcquireAIPs.__name__, DIPAcquireDependentAIPs.__name__, "DIPExtractAIPs"]
 
     def run_task(self, task_context):
         """
