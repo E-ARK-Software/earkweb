@@ -99,7 +99,8 @@ class DefaultTask(Task):
 
         task_context.ip_state_xml.set_last_task(self.task_name)
         task_context.ip_state_xml.set_state(task_context.task_status)
-        task_context.ip_state_xml.set_additional_data(self.task_name, task_context.additional_data)
+        #TODO: fix this additional data serialization to xml
+        #task_context.ip_state_xml.set_additional_data(self.task_name, task_context.additional_data)
         task_context.ip_state_xml.write_doc(task_context.ip_state_xml.get_doc_path())
 
         # add event to PREMIS and write file (only if PREMIS file exists)
