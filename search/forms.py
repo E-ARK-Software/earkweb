@@ -1,4 +1,4 @@
-from django.forms import CharField, FileField, Form, MultipleChoiceField, SelectMultiple, TextInput
+from django.forms import BooleanField, CharField, FileField, Form, MultipleChoiceField, SelectMultiple, TextInput
 
 PREDEFINED_CONTENT_TYPES = (
                 ("*", "*"),
@@ -26,9 +26,9 @@ class BootstrapSelectMultiple(SelectMultiple):
 
 
 class SearchForm(Form):
+    package = CharField(widget=BootstrapTextInput, max_length=100, initial="*")
     keyword = CharField(widget=BootstrapTextInput, max_length=100, initial="*")
     content_type = MultipleChoiceField(widget=BootstrapSelectMultiple, choices=PREDEFINED_CONTENT_TYPES,initial={'*': [1, 2]})
-
 
 class UploadFileForm(Form):
     local_aip = FileField(label='Local AIP')
