@@ -1,5 +1,17 @@
 import subprocess32
+
+# check for missing configuration options
+default_config = [
+    ("server", "peripleo_server_ip", "127.0.0.1"),
+    ("server", "peripleo_port", 9000),
+    ("server", "peripleo_path", "peripleo"),
+]
+from earkcore.utils.configutils import set_default_config_if_not_exists
+set_default_config_if_not_exists('config/settings.cfg', default_config)
+
 from config.configuration import solr_field_list, solr_copy_fields
+import os
+import ConfigParser
 
 """ This script performs an update of EARKweb. This includes:
 * db migrations
@@ -87,3 +99,4 @@ for field in solr_copy_fields:
     if solr_fields_err is not None:
         print WARNING + 'There have been errors when updating Solr fields:\n' + ENDC
         print solr_fields_err
+

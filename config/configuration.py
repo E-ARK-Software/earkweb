@@ -55,6 +55,11 @@ hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
 hdfs_upload_service_endpoint_path = config.get('server', 'hdfs_upload_service_endpoint_path')
 hdfs_upload_service_resource_path = config.get('server', 'hdfs_upload_service_resource_path')
 
+# peripleo
+peripleo_server_ip = config.get('server', 'peripleo_server_ip')
+peripleo_port = config.getint('server', 'peripleo_port')
+peripleo_path = config.get('server', 'peripleo_path')
+
 mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
 premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
 

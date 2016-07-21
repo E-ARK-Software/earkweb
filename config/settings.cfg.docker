@@ -38,6 +38,10 @@ hdfs_upload_service_port = 8081
 hdfs_upload_service_endpoint_path = dm-hdfs-storage
 hdfs_upload_service_resource_path = hsink/fileresource/files/
 
+peripleo_server_ip = 127.0.0.1
+peripleo_port = 9000
+peripleo_path = peripleo
+
 [metadata]
 
 metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
