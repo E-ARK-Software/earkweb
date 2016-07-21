@@ -69,11 +69,11 @@ class GMLtoWKT(object):
         for feature_member in self.tree.iter('{http://www.opengis.net/gml}featureMember'):
             for district in feature_member:
                 from gml_to_wkt_helper import ns as ogr_ns
-                distr_name_candidates = ['OB_ATR_OB_IME', 'OB_ATR_D46_IME']
+                distr_name_candidates = ['OB_ATR_D46_IME', 'OB_ATR_OB_IME']
                 district_name_elm = None
                 distr_name = None
                 for distr_name_candidate in distr_name_candidates:
-                    district_name_elm = district.find("ogr:OB_ATR_PE_IME", ogr_ns)
+                    district_name_elm = district.find("ogr:%s" % distr_name_candidate, ogr_ns)
                     if district_name_elm is not None:
                         distr_name = format_location_name(district_name_elm.text)
                         break
