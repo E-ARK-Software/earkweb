@@ -1,12 +1,24 @@
 import subprocess32
-from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
 import time
+import os
+import ConfigParser
+
+from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
+from earkcore.utils.configutils import set_default_config_if_not_exists
 
 """ This script performs an update of EARKweb. This includes:
 * db migrations
 * updates to Solr schema
 * updating existing/adding new Celery tasks
 """
+
+# check for missing configuration options
+default_config = [
+    ("server", "peripleo_server_ip", "127.0.0.1"),
+    ("server", "peripleo_port", 9000),
+    ("server", "peripleo_path", "peripleo"),
+]
+set_default_config_if_not_exists('config/settings.cfg', default_config)
 
 # colour codes
 HEADER = '\033[95m'

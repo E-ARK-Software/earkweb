@@ -58,8 +58,11 @@ def pelagios_convert_gml_to_ttl(gml_file, ttl_output_file, uri_part, specific_pa
     graph_slovenian_districts = Graph(store=store, identifier=slovenia)
     gml_to_wkt = GMLtoWKT(gml_file)
     district_included = {}
+    i = 1
+    print "Processing GML file: %s" % gml_file
     for district_wkt in gml_to_wkt.get_wkt_linear_ring():
         techname = whsp_to_unsc(district_wkt["name"])
+        print "District %d: %s" % (i, whsp_to_unsc(district_wkt["name"]))
         if techname not in district_included:
             # http://earkdev.ait.ac.at/earkweb/sip2aip/working_area/sip2aip/a0201326-f701-4ba9-ba6e-cd881c7a2c73/#place/%s/%s
             district = URIRef("%s#place/%s/%s" % (uri_part, whsp_to_unsc(district_wkt["name"]), specific_part))
@@ -72,6 +75,7 @@ def pelagios_convert_gml_to_ttl(gml_file, ttl_output_file, uri_part, specific_pa
             graph_slovenian_districts.add((district, geosparql_ns['hasGeometry'], polygons))
             g.add((polygons, geosparql_ns['asWKT'], Literal(district_wkt["polygon"])))
             district_included[techname] = True
+        i += 1
     with open(ttl_output_file, 'w') as f:
         f.write(g.serialize(format='n3'))
     f.close()
@@ -79,7 +83,7 @@ def pelagios_convert_gml_to_ttl(gml_file, ttl_output_file, uri_part, specific_pa
 class TestPelagiosConversion(unittest.TestCase):
 
     gml_data_dir = root_dir + '/earkresources/geodata'
-    temp_result_dir = '/tmp/temp-' + randomutils.randomword(10)
+    temp_result_dir = root_dir + '/tmp/temp-' + randomutils.randomword(10)
 
     @classmethod
     def setUpClass(cls):
@@ -88,7 +92,8 @@ class TestPelagiosConversion(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(TestPelagiosConversion.temp_result_dir)
+        #shutil.rmtree(TestPelagiosConversion.temp_result_dir)
+        pass
 
     def convert_gml_to_ttl(self, file_name):
         gml_file_path = os.path.join(TestPelagiosConversion.gml_data_dir, file_name)
