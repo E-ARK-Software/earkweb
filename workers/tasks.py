@@ -7,9 +7,11 @@ import traceback
 from functools import partial
 from StringIO import StringIO
 from os import walk
+import urllib2
 
 from celery import current_task
 from earkcore.conversion.peripleo.pelagios_convert import PeripleoGmlProcessing
+from earkcore.rest.restclient import RestClient
 from earkcore.utils.randomutils import randomword
 
 from earkcore.utils.stringutils import multiple_replace
@@ -1990,6 +1992,10 @@ class AIPtoDIPReset(DefaultTask):
         if not os.path.exists(task_context.path):
             fileutils.mkdir_p(task_context.path)
 
+        representations_path = os.path.join(task_context.path, "representations")
+        if os.path.exists(representations_path):
+            shutil.rmtree(representations_path)
+
         #remove and recreate empty directories
         data_path = os.path.join(task_context.path, "data")
         if os.path.exists(data_path):
@@ -2507,9 +2513,20 @@ class DIPPeripleoDeployment(DefaultTask):
         self.update_state(state='PROGRESS', meta={'process_percent': 0})
 
         tl = task_context.task_logger
+        try:
+            from config.configuration import peripleo_server_ip, peripleo_port, peripleo_path
+            rest_endpoint = RestEndpoint("http://%s:%s" % (peripleo_server_ip, peripleo_port), peripleo_path)
+            urllib2.urlopen(rest_endpoint.get_endpoint_uri())
+            tl.addinfo("Peripleo server available at %s" % rest_endpoint.get_endpoint_uri())
+            task_context.task_status = 0
+        except urllib2.URLError, err:
+            tl.adderr("Peripleo server unavailable: %s" % err.reason)
+            tl.adderr("According to the configuration the Peripleo endpoint must be available at: %s" % rest_endpoint.get_endpoint_uri())
+            task_context.task_status = 2
+            return task_context.additional_data
+
         representations_dir = os.path.join(task_context.path, 'representations/peripleottl')
         tl.addinfo("Looking for TTL data files in peripleo representation directory: %s" % representations_dir)
-
         # "warning" state when errors occur
         try:
             from earkcore.utils.fileutils import find_files
@@ -2518,7 +2535,14 @@ class DIPPeripleoDeployment(DefaultTask):
             if num_ttl_files > 0:
                 i = 0
                 for ttl_file_path in find_files(representations_dir, "*.ttl"):
-                    tl.addinfo("- Do nothing")
+                    _, ttl_file_name = os.path.split(ttl_file_path)
+                    peripleo_client = RestClient(rest_endpoint)
+                    if peripleo_client.post_file("admin/gazetteers", "rdf", ttl_file_path):
+                        logger.info("Peripleo deployment request sent successfully for file: '%s'" % ttl_file_name)
+                    else:
+                        logger.error("Error sending Peripleo deployment request for file: '%s'" % ttl_file_name)
+                    # one request per second
+                    time.sleep(1)
                     perc = (i * 100) / num_ttl_files
                     self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     tl.addinfo("TTL file '%s' published to Peripleo" % (ttl_file_path))
