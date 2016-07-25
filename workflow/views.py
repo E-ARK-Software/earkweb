@@ -245,7 +245,9 @@ def poll_state(request):
                 task_id = request.POST['task_id']
                 task = AsyncResult(task_id)
                 if task.state == "SUCCESS":
-                    aggr_log = '\n'.join(task.result.task_logger.log)
+                    aggr_log = ""
+                    for log_item in task.result.task_logger.log:
+                        aggr_log += log_item.decode('utf-8') + '\n'  # '\n'.join(task.result.task_logger.log)
                     aggr_err = '\n'.join(task.result.task_logger.err)
                     data = {"success": True, "result": task.result.task_status == 0, "warning": task.result.task_status == 2, "state": task.state, "log": aggr_log, "err": aggr_err}
                     # Update specific properties in database; The result is returned as a TaskResult object.

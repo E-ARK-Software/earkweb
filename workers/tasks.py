@@ -9,7 +9,7 @@ from StringIO import StringIO
 from os import walk
 
 from celery import current_task
-from earkcore.conversion.peripleo.pelagios_convert import pelagios_convert_gml_to_ttl
+from earkcore.conversion.peripleo.pelagios_convert import PeripleoGmlProcessing
 from earkcore.utils.randomutils import randomword
 
 from earkcore.utils.stringutils import multiple_replace
@@ -2410,10 +2410,17 @@ class DIPGMLDataValidation(DefaultTask):
             for filename in find_files(task_context.path, "*.gml"):
                 path, md_file = os.path.split(filename)
                 tl.addinfo("Found GML file '%s'" % md_file)
-                # TODO: Do XSD validation
-                # gml_files_valid.append(validate_gml_data(path, md_file, None, tl))
-                from xml.etree import ElementTree
-                self.tree = ElementTree.parse(filename)
+                gml_proc = PeripleoGmlProcessing(filename)
+                gml_files_valid.append(gml_proc.conversion_conditions_fulfilled())
+                if gml_proc.err and len(gml_proc.err) > 0:
+                    tl.adderr("Error in GML file '%s'" % md_file)
+                    for error in gml_proc.err:
+                        tl.adderr("- %s" % error)
+                if gml_proc.log and len(gml_proc.log) > 0:
+                    for info_item in gml_proc.log:
+                        tl.addinfo("- %s" % info_item.encode('utf-8').strip())
+                if not gml_proc.err or (gml_proc.err and len(gml_proc.err) == 0):
+                    tl.addinfo("- Peripleo conversion conditions fulfilled")
             if len(gml_files_valid) == 0:
                 tl.addinfo("No GML data files found.")
             valid = False not in gml_files_valid
@@ -2467,7 +2474,8 @@ class DIPGMLDataConversion(DefaultTask):
                     ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
                     file_name_parts = file_name.split("_")
                     specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
-                    pelagios_convert_gml_to_ttl(gml_file_path, ttl_file_path, uri_part, specific_part)
+                    gml_proc = PeripleoGmlProcessing(gml_file_path)
+                    gml_proc.convert_gml(ttl_file_path, uri_part, specific_part)
                     perc = (i * 100) / num_gml_files
                     self.update_state(state='PROGRESS', meta={'process_percent': perc})
                     tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
