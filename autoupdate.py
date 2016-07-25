@@ -1,5 +1,6 @@
 import subprocess32
-from config.configuration import solr_field_list, solr_copy_fields
+from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
+import time
 
 """ This script performs an update of EARKweb. This includes:
 * db migrations
@@ -76,6 +77,8 @@ for field in solr_field_list:
         print WARNING + 'There have been errors when updating Solr fields:\n' + ENDC
         print solr_fields_err
 
+time.sleep(2.5)
+
 for field in solr_copy_fields:
     print OKBLUE + '## Adding new copy-field: from %s to %s ##' % (field['source'], field['dest']) + ENDC
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
@@ -87,3 +90,15 @@ for field in solr_copy_fields:
     if solr_fields_err is not None:
         print WARNING + 'There have been errors when updating Solr fields:\n' + ENDC
         print solr_fields_err
+
+print HEADER + '----------------\nNow editing the Solr config.\n----------------' + ENDC
+for change in solr_config_changes:
+    print OKBLUE + '## Editing class: %s ##' % change['class'] + ENDC
+    solr_config_args = ['curl', 'http://localhost:8983/solr/earkstorage/config', '-H', '\'Content-type:application/json\'',
+                        '-d', '{"%s":{"name":"%s", "class":"%s", "defaults": %s}}' %
+                        (change['type'], change['path'], change['class'], change['fields'])]
+    solr_change_process = subprocess32.Popen(solr_config_args)
+    solr_change_out, solr_change_err = solr_change_process.communicate()
+    if solr_change_err is not None:
+        print WARNING + 'There have been errors when updating the Solr config file:\n' + ENDC
+        print solr_change_err

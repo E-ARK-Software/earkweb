@@ -112,5 +112,11 @@ solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
                    {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'},
-                   {'name': 'contentType', 'type': 'string', 'stored': 'true'}]
-solr_copy_fields = [{'source': '_text_', 'dest': 'content'}, {'source': 'content_type', 'dest': 'contentType'}]
+                   {'name': 'contentType', 'type': 'strings', 'stored': 'true'},
+                   {'name': 'content_type', 'type': 'strings', 'stored': 'true', 'indexed': 'true'}]
+solr_copy_fields = [{'source': 'content_type', 'dest': 'contentType'}]
+
+# Solr config
+# {'type':'', 'path': '', 'class': '', 'field_name':'', 'field_value': ''}
+solr_config_changes = [{'type': 'update-requesthandler', 'path': '/update/extract', 'class': 'solr.extraction.ExtractingRequestHandler',
+                        'fields': {'fmap.content': 'content', 'lowernames': 'true', 'fmap.meta': 'ignored'}}]

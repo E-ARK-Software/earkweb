@@ -2633,10 +2633,10 @@ class DMNERecogniser(ConcurrentTask):
         identifier = kwargs['identifier']
         model = kwargs['model']
 
-        # prepare XML file
-        E = objectify.ElementMaker(annotate=False)
-        root = E.entities({'file': identifier,
-                           'classifier': model})
+        # # prepare XML file
+        # E = objectify.ElementMaker(annotate=False)
+        # root = E.entities({'file': identifier,
+        #                    'classifier': model})
 
         # initialise tagger
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
@@ -2652,22 +2652,45 @@ class DMNERecogniser(ConcurrentTask):
         for token in tokens:
             tokenized.append(token + '\n')
 
-
-
-        position = 0
+        # position = 0
+        organisations_list = []
+        persons_list = []
+        locations_list = []
         for result in tagger.tag(tokenized):
-            position += 1
             if result[1] != 'O':
-                entity = E.entity({'position': position,
-                                   'class': result[1],
-                                   'entity': result[0]})
-                root.append(entity)
+                if 'LOC' in result[1]:
+                    organisations_list.append(result[0])
+                elif 'PER' in result[1]:
+                    persons_list.append(result[0])
+                elif 'ORG' in result[1]:
+                    locations_list.append(result[0])
 
-        xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+        # update Solr with results
+        solr = SolrUtility()
+        document_id = solr.send_query('path:"%s"' % identifier)[0]['id']
+        loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
+        time.sleep(1)
+        per_status = solr.set_field(document_id, 'persons_ss', persons_list)
+        time.sleep(1)
+        org_status = solr.set_field(document_id, 'organisations_ss', organisations_list)
 
-        # test only
-        with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
-            testfile.write(xml_string)
+        print 'status for %s' % identifier
+        print 'solr identifier: %s' % document_id
+        print loc_status, per_status, org_status
+
+        # for result in tagger.tag(tokenized):
+        #     position += 1
+        #     if result[1] != 'O':
+        #         entity = E.entity({'position': position,
+        #                            'class': result[1],
+        #                            'entity': result[0]})
+        #         root.append(entity)
+        #
+        # xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+        #
+        # # test only
+        # with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
+        #     testfile.write(xml_string)
 
         # exist_db = write_to_exist(xml_string, identifier)     # TODO
         #
