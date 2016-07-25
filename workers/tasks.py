@@ -80,7 +80,7 @@ import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
 from earkcore.utils.solrutils import SolrUtility
 import re
-
+import json
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -2509,16 +2509,23 @@ class DIPPeripleoDeployment(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIP Peripleo Deployment'
+        task_context.event_type = 'DIP Peripleo Deployment'
         self.update_state(state='PROGRESS', meta={'process_percent': 0})
 
         tl = task_context.task_logger
+        gazetteers_json = None
         try:
             from config.configuration import peripleo_server_ip, peripleo_port, peripleo_path
             rest_endpoint = RestEndpoint("http://%s:%s" % (peripleo_server_ip, peripleo_port), peripleo_path)
             urllib2.urlopen(rest_endpoint.get_endpoint_uri())
             tl.addinfo("Peripleo server available at %s" % rest_endpoint.get_endpoint_uri())
-            task_context.task_status = 0
+            gazetteers_response = urllib2.urlopen(rest_endpoint.get_resource_uri("gazetteers"))
+            if gazetteers_response.getcode() == 200:
+                gazetteers_json = json.loads(gazetteers_response.read())
+            else:
+                tl.adderr("Error: Unable to retrieve gazetteers list from Peripleo.")
+                task_context.task_status = 2
+                return task_context.additional_data
         except urllib2.URLError, err:
             tl.adderr("Peripleo server unavailable: %s" % err.reason)
             tl.adderr("According to the configuration the Peripleo endpoint must be available at: %s" % rest_endpoint.get_endpoint_uri())
@@ -2537,15 +2544,19 @@ class DIPPeripleoDeployment(DefaultTask):
                 for ttl_file_path in find_files(representations_dir, "*.ttl"):
                     _, ttl_file_name = os.path.split(ttl_file_path)
                     peripleo_client = RestClient(rest_endpoint)
-                    if peripleo_client.post_file("admin/gazetteers", "rdf", ttl_file_path):
-                        logger.info("Peripleo deployment request sent successfully for file: '%s'" % ttl_file_name)
+                    ttl_file_path_without_ext, _ = os.path.splitext(ttl_file_path)
+                    if not any(gazetteer['name'] == ttl_file_path_without_ext for gazetteer in gazetteers_json):
+                        if peripleo_client.post_file("admin/gazetteers", "rdf", ttl_file_path):
+                            logger.info("Peripleo deployment request sent successfully for file: '%s'" % ttl_file_name)
+                        else:
+                            logger.error("Error sending Peripleo deployment request for file: '%s'" % ttl_file_name)
+                        # one request per second
+                        time.sleep(1)
                     else:
-                        logger.error("Error sending Peripleo deployment request for file: '%s'" % ttl_file_name)
-                    # one request per second
-                    time.sleep(1)
+                        tl.addinfo("TTL file deployed already: %s" % ttl_file_path)
+                        tl.addinfo("Remove gazetteer '%s' from Peripleo to redeploy" % ttl_file_path_without_ext)
                     perc = (i * 100) / num_ttl_files
                     self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    tl.addinfo("TTL file '%s' published to Peripleo" % (ttl_file_path))
                     i += 1
             else:
                 tl.addinfo("No GML files in working directory")
