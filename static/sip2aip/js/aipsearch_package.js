@@ -1,6 +1,7 @@
 var identifier_field = 'package';
 var blobField = 'content';
 var titleField = 'path';
+var labelField = 'eadtitle_t';
 var bytesField = 'stream_size';
 var typeField = 'content_type';
 var rows = 20;
@@ -34,7 +35,10 @@ function callback(data) {
 
     var mime = mimeStr.toString().replace(/;.*/g, '');
     var fileAdress = repo_item_access_endpoint + doc[identifier_field] + "/" + mime + "/" + doc[titleField]; // encodeURIComponent(doc['lily.id']) + '/field/n$' + blobField + '/data?ns.n=' + lilyNamespace;
-    var link = '<a href="' + fileAdress + '" target="_blank">' + doc[titleField] + '</a>';
+
+    var displaytitle = (doc[labelField] != null) ? doc[labelField] : doc[titleField];
+
+    var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '" target="_blank">' + displaytitle + '</a>';
     var bytes = doc[bytesField];
     var filesize;
     if (bytes < 1024)
@@ -79,7 +83,15 @@ function askSolr(start) {
   }
 
   if($('#submission_data_only').prop('checked')) {
-    packageQuery += " AND path:*/submission/representations/*/data/*";
+    packageQuery += " AND path:*/representations/*/data/*";
+  }
+
+  if($('#exclude_migrated_data').prop('checked')) {
+    packageQuery += " AND NOT path:*_mig-*";
+  }
+  var eadtitle = $('#eadtitle').val();
+  if (typeof eadtitle !== 'undefined' && eadtitle !== null && eadtitle != '') {
+    packageQuery += " AND eadtitle_t:*" + eadtitle + "*";
   }
 
 //  if($('#institution_address').val() != "") {

@@ -63,16 +63,18 @@ def celery_nlp(request):
 
             # build the query
             solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
+            print solr_query
 
             ner_model = request.POST['ner_model']
-            category_model = request.POST['category_model']
+            # category_model = request.POST['category_model']
 
             datamining_main = DMMainTask()
             taskid = uuid.uuid4().__str__()
             details = {'solr_query': solr_query,
                        'ner_model': ner_model,
-                       'category_model': category_model,
+                       # 'category_model': category_model,
                        'tar_path': tar_path}
+            print details
             # use kwargs, those can be seen in Celery Flower
             t_context = DefaultTaskContext('', '', 'workers.tasks.DMMainTask', None, '', None)
             datamining_main.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)

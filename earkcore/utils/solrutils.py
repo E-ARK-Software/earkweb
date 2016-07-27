@@ -62,6 +62,16 @@ class SolrUtility(object):
         print update.text
         return update.status_code
 
+    # def set_multiple_fields(self, record_identifier, field_list):
+    #     url_suffix = 'update'
+    #     update_url = self.solr_instance + url_suffix
+    #     update_headers = {'Content-Type': 'application/json'}
+    #     for item in field_list:
+    #         update_data = json.dumps([{field: {'set': content}, self.solr_unique_key: record_identifier}])
+    #     update = requests.post(update_url, data=update_data, headers=update_headers)
+    #     return update.status_code
+
+
     # def add_to_field(self, record_identifier, field, content):
     #     """
     #     Add a new entry to a field. Existing field needs to be a multi-valued string field (a list).

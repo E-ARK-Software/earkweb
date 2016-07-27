@@ -22,3 +22,4 @@ nltk==3.2.1
 flower==0.9.1
 pyproj==1.9.4
 rdflib==4.2.1
+poster==0.8.1

@@ -55,6 +55,11 @@ hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
 hdfs_upload_service_endpoint_path = config.get('server', 'hdfs_upload_service_endpoint_path')
 hdfs_upload_service_resource_path = config.get('server', 'hdfs_upload_service_resource_path')
 
+# peripleo
+peripleo_server_ip = config.get('server', 'peripleo_server_ip')
+peripleo_port = config.getint('server', 'peripleo_port')
+peripleo_path = config.get('server', 'peripleo_path')
+
 mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
 premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
 
@@ -111,10 +116,12 @@ solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'size', 'type': 'long', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
-                   {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'}]
+                   {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'},
+                   {'name': 'contentType', 'type': 'strings', 'stored': 'true'},
+                   {'name': 'content_type', 'type': 'strings', 'stored': 'true', 'indexed': 'true'}]
+solr_copy_fields = [{'source': 'content_type', 'dest': 'contentType'}]
 
-siard_dbptk='/home/bartham/siard/dbptk-app-2.0.0-beta3.2.5.jar'
-siard_db_type = 'mysql'
-siard_db_host = 'localhost'
-siard_db_user = 'root'
-siard_db_passwd='arkiv'
+# Solr config
+# {'type':'', 'path': '', 'class': '', 'field_name':'', 'field_value': ''}
+solr_config_changes = [{'type': 'update-requesthandler', 'path': '/update/extract', 'class': 'solr.extraction.ExtractingRequestHandler',
+                        'fields': {'fmap.content': 'content', 'lowernames': 'true', 'fmap.meta': 'ignored'}}]

@@ -231,9 +231,10 @@ def search_form(request):
         if form.is_valid():
             keyword = form.cleaned_data['keyword']
             content_type = form.cleaned_data['content_type']
+            package = form.cleaned_data['package']
             start = 0
             rows = 20
-            query_string = get_query_string(keyword, content_type, start, rows)
+            query_string = get_query_string(keyword, content_type, package, start, rows)
             logger.debug("Query string: %s" % query_string)
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)

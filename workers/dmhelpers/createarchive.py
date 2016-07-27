@@ -65,21 +65,21 @@ class CreateNLPArchive(object):
 
     def add_to_archive(self, document, archive):
         """
-        Takes JSON objects and adds them to a tar file. The filename inside the tar equals 'entry' (with '/' replaced
+        Takes JSON objects and adds them to a tar file. The filename inside the tar equals 'path' (with '/' replaced
         by '.').
 
         @param document:    The document, taken from the Solr query (JSON)
         @param archive:     Path to the tar file, where the document should be stored.
         @return:            
         """
-        entry = document['entry'][0].encode('utf-8')
+        path = document['path'].encode('utf-8')
         content = document['content'][0].encode('utf-8')
 
         tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         tmpfile.write(content)
         tmpfile.close()
         try:
-            archive.add(tmpfile.name, arcname=entry.replace('/', '.'))
+            archive.add(tmpfile.name, arcname=path)#.replace('/', '.'))
         except tarfile.TarError, e:
             raise e
         os.remove(tmpfile.name)
@@ -87,4 +87,4 @@ class CreateNLPArchive(object):
 
 # if __name__ == '__main__':
 #     tarcreator = CreateNLPArchive()
-#     tarcreator.get_data_from_solr('http://localhost:8983/solr/earkstorage/select?indent=on&q=content_type:%22application/pdf%22%20OR%20content_type:%22text/plain;%20charset=UTF-8%22&rows=31&wt=json', '/home/janrn/test.tar')
+#     tarcreator.get_data_from_solr('http://localhost:8983/solr/earkstorage/select?indent=on&q=content_type:%22application/pdf%22%20OR%20content_type:%22application/pdf;%20charset=UTF-8%22&rows=31&wt=json', '/home/janrn/test.tar')

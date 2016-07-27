@@ -7,9 +7,11 @@ import traceback
 from functools import partial
 from StringIO import StringIO
 from os import walk
+import urllib2
 
 from celery import current_task
-from earkcore.conversion.peripleo.pelagios_convert import pelagios_convert_gml_to_ttl
+from earkcore.conversion.peripleo.pelagios_convert import PeripleoGmlProcessing
+from earkcore.rest.restclient import RestClient
 from earkcore.utils.randomutils import randomword
 
 from earkcore.utils.stringutils import multiple_replace
@@ -80,7 +82,7 @@ import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
 from earkcore.utils.solrutils import SolrUtility
 import re
-
+import json
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -329,6 +331,7 @@ class SIPReset(DefaultTask):
         task_context.additional_data['identifier'] = ""
         return task_context.additional_data
 
+
 class SIPDescriptiveMetadataValidation(DefaultTask):
 
     accept_input_from = [SIPReset.__name__, 'SIPDescriptiveMetadataValidation']
@@ -370,204 +373,13 @@ class SIPDescriptiveMetadataValidation(DefaultTask):
         return task_context.additional_data
 
 
-class SIPGMLDataValidation(DefaultTask):
-
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPGMLDataValidation']
-
-    def run_task(self, task_context):
-        """
-        SIP Packaging run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:3,type:1,stage:1
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIP GML Data Validation'
-
-        tl = task_context.task_logger
-        representations_dir = os.path.join(task_context.path, 'representations/')
-        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
-
-        # "warning" state for validation errors
-        try:
-            gml_files_valid = []
-            from earkcore.utils.fileutils import find_files
-            for filename in find_files(representations_dir, "*.gml"):
-                path, md_file = os.path.split(filename)
-                tl.addinfo("Found GML file '%s'" % md_file)
-                gml_files_valid.append(validate_gml_data(path, md_file, None, tl))
-            if len(gml_files_valid) == 0:
-                tl.addinfo("No GML data files found.")
-            valid = False not in gml_files_valid
-            if valid:
-                tl.addinfo("GML data file validation completed successfully.")
-            task_context.task_status = 0 if valid else 2
-        except Exception, err:
-            tb = traceback.format_exc()
-            tl.adderr("An error occurred: %s" % err)
-            tl.adderr(str(tb))
-            task_context.task_status = 2
-        return task_context.additional_data
-
-
-class SIPGMLDataConversion(DefaultTask):
-
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
-
-    def run_task(self, task_context):
-        """
-        SIP Packaging run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,stage:1
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIP GML Data Validation'
-        self.update_state(state='PROGRESS', meta={'process_percent': 1})
-
-        tl = task_context.task_logger
-        representations_dir = os.path.join(task_context.path, 'representations/')
-        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
-
-        from config.configuration import django_service_ip, django_service_port
-        # "warning" state for validation errors
-        uri_part = "http://%s:%s/earkweb/sip2aip/working_area/aip2dip/%s/" % (django_service_ip, django_service_port, task_context.uuid)
-        try:
-            from earkcore.utils.fileutils import find_files
-            num_gml_files = sum([1 for f in find_files(representations_dir, "*.gml")])
-            tl.addinfo("Found %d GML files in working directory" % num_gml_files)
-            if num_gml_files > 0:
-                ttl_rep_data_dir = 'representations/peripleottl/data'
-                peripleottl_data_dir = os.path.join(task_context.path, ttl_rep_data_dir)
-                if not os.path.exists(peripleottl_data_dir):
-                    mkdir_p(peripleottl_data_dir)
-                i = 0
-                for gml_file_path in find_files(representations_dir, "*.gml"):
-                    path, gml_file = os.path.split(gml_file_path)
-                    file_name, ext = os.path.splitext(gml_file)
-                    ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
-                    file_name_parts = file_name.split("_")
-                    specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
-                    pelagios_convert_gml_to_ttl(gml_file_path, ttl_file_path, uri_part, specific_part)
-                    perc = (i * 100) / num_gml_files
-                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
-                    i += 1
-            else:
-                tl.addinfo("No GML files in working directory")
-            task_context.task_status = 0
-        except Exception, err:
-            tb = traceback.format_exc()
-            tl.adderr("An error occurred: %s" % err)
-            tl.adderr(str(tb))
-            task_context.task_status = 2
-        return task_context.additional_data
-
-
-class SIPGMLDataConversion(DefaultTask):
-
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
-
-    def run_task(self, task_context):
-        """
-        SIP Packaging run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:4,type:1,stage:1
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'GML Data Conversion'
-        self.update_state(state='PROGRESS', meta={'process_percent': 0})
-
-        tl = task_context.task_logger
-        representations_dir = os.path.join(task_context.path, 'representations/')
-        tl.addinfo("Looking for GML data files in representations directory: %s" % representations_dir)
-
-        from config.configuration import django_service_ip, django_service_port
-        # "warning" state for validation errors
-        uri_part = "http://%s:%s/earkweb/sip2aip/working_area/aip2dip/%s/" % (django_service_ip, django_service_port, task_context.uuid)
-        try:
-            from earkcore.utils.fileutils import find_files
-            num_gml_files = sum([1 for f in find_files(representations_dir, "*.gml")])
-            tl.addinfo("Found %d GML files in working directory" % num_gml_files)
-            if num_gml_files > 0:
-                ttl_rep_data_dir = 'representations/peripleottl/data'
-                peripleottl_data_dir = os.path.join(task_context.path, ttl_rep_data_dir)
-                if not os.path.exists(peripleottl_data_dir):
-                    mkdir_p(peripleottl_data_dir)
-                i = 0
-                for gml_file_path in find_files(representations_dir, "*.gml"):
-                    path, gml_file = os.path.split(gml_file_path)
-                    file_name, ext = os.path.splitext(gml_file)
-                    ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
-                    file_name_parts = file_name.split("_")
-                    specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
-                    pelagios_convert_gml_to_ttl(gml_file_path, ttl_file_path, uri_part, specific_part)
-                    perc = (i * 100) / num_gml_files
-                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
-                    i += 1
-            else:
-                tl.addinfo("No GML files in working directory")
-            task_context.task_status = 0
-        except Exception, err:
-            tb = traceback.format_exc()
-            tl.adderr("An error occurred: %s" % err)
-            tl.adderr(str(tb))
-            task_context.task_status = 2
-        return task_context.additional_data
-
-
-class SIPPeripleoDeployment(DefaultTask):
-
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, 'SIPGMLDataConversion']
-
-    def run_task(self, task_context):
-        """
-        SIP Packaging run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:1,stage:1
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIP Peripleo Deployment'
-        self.update_state(state='PROGRESS', meta={'process_percent': 0})
-
-        tl = task_context.task_logger
-        representations_dir = os.path.join(task_context.path, 'representations/peripleottl')
-        tl.addinfo("Looking for TTL data files in peripleo representation directory: %s" % representations_dir)
-
-        # "warning" state for validation errors
-        try:
-            from earkcore.utils.fileutils import find_files
-            num_ttl_files = sum([1 for f in find_files(representations_dir, "*.ttl")])
-            tl.addinfo("Found %d TTL files in working directory" % num_ttl_files)
-            if num_ttl_files > 0:
-                i = 0
-                for ttl_file_path in find_files(representations_dir, "*.ttl"):
-                    tl.addinfo("- Do nothing")
-                    perc = (i * 100) / num_ttl_files
-                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    tl.addinfo("TTL file '%s' published to Peripleo" % (ttl_file_path))
-                    i += 1
-            else:
-                tl.addinfo("No GML files in working directory")
-            task_context.task_status = 0
-        except Exception, err:
-            tb = traceback.format_exc()
-            tl.adderr("An error occurred: %s" % err)
-            tl.adderr(str(tb))
-            task_context.task_status = 2
-        return task_context.additional_data
-
-
 class SIPDicomValidation(DefaultTask):
     """
     Task requires module "dicom" (not installed by default):
     pip install pydicom==0.9.9
     """
 
-    accept_input_from = [SIPReset.__name__, SIPGMLDataValidation.__name__, SIPGMLDataConversion.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, 'SIPDicomValidation']
 
     def run_task(self, task_context):
         """
@@ -628,7 +440,7 @@ class SIPDicomValidation(DefaultTask):
 class SIPPackageMetadataCreation(DefaultTask):
 
     # Descriptive metadata check can be skipped
-    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPGMLDataValidation.__name__, SIPGMLDataConversion.__name__,  SIPDicomValidation.__name__, 'SIPPackageMetadataCreation']
+    accept_input_from = [SIPReset.__name__, SIPDescriptiveMetadataValidation.__name__, SIPDicomValidation.__name__, 'SIPPackageMetadataCreation']
 
     def run_task(self, task_context):
         """
@@ -2008,6 +1820,39 @@ class AIPIndexing(DefaultTask):
         return task_context.additional_data
 
 
+def update_solr_doc(task_context, element, solr_field_name):
+    tl = task_context.task_logger
+    # instantiate Solr communication class
+    solr = SolrUtility()
+    index_path = element['path']
+    index_md_value = element['mdvalue']
+    # need a solr query to retrieve identifier: solr.solr_unique_key
+    query_result = solr.send_query('path:%s%s' % (task_context.additional_data['identifier'], index_path.replace(task_context.path, '')))
+    if query_result is not False:
+        try:
+            identifier = None
+            if "lily.key" in query_result[0]:
+                identifier = query_result[0]['lily.key']
+            else:
+                identifier = query_result[0]['id']
+        except Exception, e:
+            tl.adderr('Retrieving unique identifier failed: %s' % e.message)
+
+        # update 'eadtitle' field afterwards; '_t' marks it as text_general
+        update = solr.set_field(record_identifier=identifier,
+                                field=solr_field_name,
+                                content=index_md_value)
+
+        if update == 200:
+            tl.addinfo('%s updated with status code 200.' % index_path)
+            task_context.task_status = 0
+        else:
+            tl.adderr('%s failed with status code %d.' % (index_path, update))
+            task_context.task_status = 1
+    else:
+        tl.adderr('Query status code: %s' % query_result)
+
+
 class SolrUpdateCurrentMetadata(DefaultTask):
 
     accept_input_from = [AIPIndexing.__name__, "SolrUpdateCurrentMetadata"]
@@ -2024,10 +1869,6 @@ class SolrUpdateCurrentMetadata(DefaultTask):
 
         # task logger
         tl = task_context.task_logger
-
-        # instantiate Solr communication class
-        solr = SolrUtility()
-
         for directory, subdir, filenames in os.walk(task_context.path):
             if directory.endswith('metadata/descriptive'):
                 for filename in filenames:
@@ -2039,29 +1880,9 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                             os.path.join(task_context.path, 'submission/metadata/descriptive'),
                             os.path.join(directory, filename))
                         for element in eadparser.dao_path_mdval_tuples('unittitle'):
-                            index_path = element['path']
-                            index_title = element['title']
-                            # need a solr query to retrieve identifier: solr.solr_unique_key
-                            query_result = solr.send_query('path:%s%s' % (task_context.additional_data['identifier'], index_path.replace(task_context.path, '')))
-                            if query_result is not False:
-                                try:
-                                    identifier = query_result[0]['id']
-                                except Exception, e:
-                                    tl.adderr('Retrieving unique identifier failed: %s' % e.message)
-
-                                # update 'eadtitle' field afterwards; '_t' marks it as text_general
-                                update = solr.set_field(record_identifier=identifier,
-                                                        field='eadtitle_t',
-                                                        content=index_title)
-
-                                if update == 200:
-                                    tl.addinfo('%s updated with status code 200.' % index_path)
-                                    task_context.task_status = 0
-                                else:
-                                    tl.adderr('%s failed with status code %d.' % (index_path, update))
-                                    task_context.task_status = 1
-                            else:
-                                tl.adderr('Query status code: %s' % query_result)
+                            update_solr_doc(task_context, element, 'eadtitle_t')
+                        for element in eadparser.dao_path_mdval_tuples('unitdate'):
+                            update_solr_doc(task_context, element, 'date_t')
 
         return task_context.additional_data
 
@@ -2172,7 +1993,7 @@ class AIPtoDIPReset(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:12,type:4,stage:4
+        @param      tc: order:1000,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2181,6 +2002,10 @@ class AIPtoDIPReset(DefaultTask):
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
             fileutils.mkdir_p(task_context.path)
+
+        representations_path = os.path.join(task_context.path, "representations")
+        if os.path.exists(representations_path):
+            shutil.rmtree(representations_path)
 
         #remove and recreate empty directories
         data_path = os.path.join(task_context.path, "data")
@@ -2233,7 +2058,7 @@ class DIPAcquireAIPs(DefaultTask):
         """
         SIP Validation
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:13,type:4,stage:4
+        @param      tc: order:1010,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2383,7 +2208,7 @@ class DIPAcquireDependentAIPs(DefaultTask):
         """
         DIPAcquireDependentAIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:14,type:4,stage:4
+        @param      tc: order:1020,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2443,7 +2268,7 @@ class DIPExtractAIPs(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:15,type:4,stage:4
+        @param      tc: order:1030,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2543,7 +2368,7 @@ class DIPImportSIARD(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:16,type:4,stage:4
+        @param      tc: order:1040,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2798,6 +2623,184 @@ class DIPPackaging(DefaultTask):
             task_context.task_status = 0
         return task_context.additional_data
 
+class DIPGMLDataValidation(DefaultTask):
+
+    accept_input_from = [DIPImportSIARD.__name__, DIPExtractAIPs.__name__, 'DIPGMLDataValidation']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1050,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'GML Data Validation'
+
+        tl = task_context.task_logger
+        tl.addinfo("Looking for GML data files in the package: %s" % task_context.path)
+
+        # "warning" state for validation errors
+        try:
+            gml_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(task_context.path, "*.gml"):
+                path, md_file = os.path.split(filename)
+                tl.addinfo("Found GML file '%s'" % md_file)
+                gml_proc = PeripleoGmlProcessing(filename)
+                gml_files_valid.append(gml_proc.conversion_conditions_fulfilled())
+                if gml_proc.err and len(gml_proc.err) > 0:
+                    tl.adderr("Error in GML file '%s'" % md_file)
+                    for error in gml_proc.err:
+                        tl.adderr("- %s" % error)
+                if gml_proc.log and len(gml_proc.log) > 0:
+                    for info_item in gml_proc.log:
+                        tl.addinfo("- %s" % info_item.encode('utf-8').strip())
+                if not gml_proc.err or (gml_proc.err and len(gml_proc.err) == 0):
+                    tl.addinfo("- Peripleo conversion conditions fulfilled")
+            if len(gml_files_valid) == 0:
+                tl.addinfo("No GML data files found.")
+            valid = False not in gml_files_valid
+            if valid:
+                tl.addinfo("GML data file validation completed successfully.")
+            task_context.task_status = 0 if valid else 2
+
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
+class DIPGMLDataConversion(DefaultTask):
+
+    accept_input_from = [DIPExtractAIPs.__name__, DIPImportSIARD.__name__, DIPGMLDataValidation.__name__, 'DIPGMLDataConversion']
+
+    def run_task(self, task_context):
+        """
+        SIP Packaging run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1060,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'GML Data Conversion'
+        self.update_state(state='PROGRESS', meta={'process_percent': 0})
+
+        tl = task_context.task_logger
+        package_root_dir = os.path.join(task_context.path)
+        tl.addinfo("Looking for GML data files in package root: %s" % package_root_dir)
+
+        from config.configuration import django_service_ip, django_service_port
+        # "warning" state for validation errors
+        uri_part = "http://%s:%s/earkweb/sip2aip/working_area/aip2dip/%s/" % (django_service_ip, django_service_port, task_context.uuid)
+        try:
+            from earkcore.utils.fileutils import find_files
+            num_gml_files = sum([1 for f in find_files(package_root_dir, "*.gml")])
+            tl.addinfo("Found %d GML files in working directory" % num_gml_files)
+            if num_gml_files > 0:
+                ttl_rep_data_dir = 'representations/peripleottl/data'
+                peripleottl_data_dir = os.path.join(task_context.path, ttl_rep_data_dir)
+                if not os.path.exists(peripleottl_data_dir):
+                    mkdir_p(peripleottl_data_dir)
+                i = 0
+                for gml_file_path in find_files(package_root_dir, "*.gml"):
+                    path, gml_file = os.path.split(gml_file_path)
+                    file_name, ext = os.path.splitext(gml_file)
+                    ttl_file_path = os.path.join(peripleottl_data_dir, "%s.ttl" % file_name)
+                    file_name_parts = file_name.split("_")
+                    specific_part = randomword(5) if len(file_name_parts) != 2 else file_name_parts[1]
+                    gml_proc = PeripleoGmlProcessing(gml_file_path)
+                    gml_proc.convert_gml(ttl_file_path, uri_part, specific_part)
+                    perc = (i * 100) / num_gml_files
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    tl.addinfo("GML file '%s' converted to TTL file '%s" % (gml_file_path, ttl_file_path))
+                    i += 1
+            else:
+                tl.addinfo("No GML files in working directory")
+            task_context.task_status = 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
+class DIPPeripleoDeployment(DefaultTask):
+
+    accept_input_from = [DIPGMLDataConversion.__name__, 'DIPPeripleoDeployment']
+
+    def run_task(self, task_context):
+        """
+        DIP Peripleo Deployment run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1070,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIP Peripleo Deployment'
+        self.update_state(state='PROGRESS', meta={'process_percent': 0})
+
+        tl = task_context.task_logger
+        gazetteers_json = None
+        try:
+            from config.configuration import peripleo_server_ip, peripleo_port, peripleo_path
+            rest_endpoint = RestEndpoint("http://%s:%s" % (peripleo_server_ip, peripleo_port), peripleo_path)
+            urllib2.urlopen(rest_endpoint.get_endpoint_uri())
+            tl.addinfo("Peripleo server available at %s" % rest_endpoint.get_endpoint_uri())
+            gazetteers_response = urllib2.urlopen(rest_endpoint.get_resource_uri("gazetteers"))
+            if gazetteers_response.getcode() == 200:
+                gazetteers_json = json.loads(gazetteers_response.read())
+            else:
+                tl.adderr("Error: Unable to retrieve gazetteers list from Peripleo.")
+                task_context.task_status = 2
+                return task_context.additional_data
+        except urllib2.URLError, err:
+            tl.adderr("Peripleo server unavailable: %s" % err.reason)
+            tl.adderr("According to the configuration the Peripleo endpoint must be available at: %s" % rest_endpoint.get_endpoint_uri())
+            task_context.task_status = 2
+            return task_context.additional_data
+
+        representations_dir = os.path.join(task_context.path, 'representations/peripleottl')
+        tl.addinfo("Looking for TTL data files in peripleo representation directory: %s" % representations_dir)
+        # "warning" state when errors occur
+        try:
+            from earkcore.utils.fileutils import find_files
+            num_ttl_files = sum([1 for f in find_files(representations_dir, "*.ttl")])
+            tl.addinfo("Found %d TTL files in working directory" % num_ttl_files)
+            if num_ttl_files > 0:
+                i = 0
+                for ttl_file_path in find_files(representations_dir, "*.ttl"):
+                    _, ttl_file_name = os.path.split(ttl_file_path)
+                    peripleo_client = RestClient(rest_endpoint)
+                    ttl_file_path_without_ext, _ = os.path.splitext(ttl_file_path)
+                    logger.info("Deployment of file: '%s'" % ttl_file_name)
+                    if not any(gazetteer['name'] == ttl_file_path_without_ext for gazetteer in gazetteers_json):
+                        if peripleo_client.post_file("admin/gazetteers", "rdf", ttl_file_path):
+                            logger.info("Peripleo deployment request sent successfully")
+                        else:
+                            logger.error("Error sending Peripleo deployment request")
+                        # one request per second
+                        time.sleep(1)
+                    else:
+                        tl.addinfo("TTL file deployed already: %s" % ttl_file_path)
+                        tl.addinfo("Remove gazetteer '%s' from Peripleo to redeploy" % ttl_file_path_without_ext)
+                    perc = (i * 100) / num_ttl_files
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    i += 1
+            else:
+                tl.addinfo("No GML files in working directory")
+            task_context.task_status = 0
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
+        return task_context.additional_data
+
+
 class DMMainTask(ConcurrentTask):
 
     accept_input_from = 'All'
@@ -2811,8 +2814,10 @@ class DMMainTask(ConcurrentTask):
 
         query = kwargs['solr_query']
         ner_model = kwargs['ner_model']
-        category_model = kwargs['category_model']
+        # category_model = kwargs['category_model']
         tar_path = kwargs['tar_path']
+
+        print tar_path
 
         archive_creator = CreateNLPArchive()
         archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
@@ -2853,10 +2858,10 @@ class DMNERecogniser(ConcurrentTask):
         identifier = kwargs['identifier']
         model = kwargs['model']
 
-        # prepare XML file
-        E = objectify.ElementMaker(annotate=False)
-        root = E.entities({'file': identifier,
-                           'classifier': model})
+        # # prepare XML file
+        # E = objectify.ElementMaker(annotate=False)
+        # root = E.entities({'file': identifier,
+        #                    'classifier': model})
 
         # initialise tagger
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
@@ -2872,20 +2877,45 @@ class DMNERecogniser(ConcurrentTask):
         for token in tokens:
             tokenized.append(token + '\n')
 
-        position = 0
+        # position = 0
+        organisations_list = []
+        persons_list = []
+        locations_list = []
         for result in tagger.tag(tokenized):
-            position += 1
             if result[1] != 'O':
-                entity = E.entity({'position': position,
-                                   'class': result[1],
-                                   'entity': result[0]})
-                root.append(entity)
+                if 'LOC' in result[1]:
+                    organisations_list.append(result[0])
+                elif 'PER' in result[1]:
+                    persons_list.append(result[0])
+                elif 'ORG' in result[1]:
+                    locations_list.append(result[0])
 
-        xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+        # update Solr with results
+        solr = SolrUtility()
+        document_id = solr.send_query('path:"%s"' % identifier)[0]['id']
+        loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
+        time.sleep(1)
+        per_status = solr.set_field(document_id, 'persons_ss', persons_list)
+        time.sleep(1)
+        org_status = solr.set_field(document_id, 'organisations_ss', organisations_list)
 
-        # test only
-        with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
-            testfile.write(xml_string)
+        print 'status for %s' % identifier
+        print 'solr identifier: %s' % document_id
+        print loc_status, per_status, org_status
+
+        # for result in tagger.tag(tokenized):
+        #     position += 1
+        #     if result[1] != 'O':
+        #         entity = E.entity({'position': position,
+        #                            'class': result[1],
+        #                            'entity': result[0]})
+        #         root.append(entity)
+        #
+        # xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
+        #
+        # # test only
+        # with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
+        #     testfile.write(xml_string)
 
         # exist_db = write_to_exist(xml_string, identifier)     # TODO
         #
