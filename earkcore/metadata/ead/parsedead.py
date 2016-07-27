@@ -78,7 +78,7 @@ class ParsedEad(object):
         dao_elements = self.get_dao_elements()
         return [{
             "path": package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href']),
-            "title": self._first_md_val_ancpath(dao_elm, md_tag)
+            "mdvalue": self._first_md_val_ancpath(dao_elm, md_tag)
         } for dao_elm in dao_elements]
 
 
@@ -149,8 +149,8 @@ class TestParsedEad(unittest.TestCase):
         res = pead.dao_path_mdval_tuples(md_tag)
         self.assertEqual("representations/rep1/data/Example1.docx", res[0]['path'])
         self.assertEqual("representations/rep2/data/Example1.pdf", res[1]['path'])
-        self.assertEqual("Record - Adams-Ayers", res[0]['title'])
-        self.assertEqual("Record - Adams-Ayers", res[1]['title'])
+        self.assertEqual("Record - Adams-Ayers", res[0]['mdvalue'])
+        self.assertEqual("Record - Adams-Ayers", res[1]['mdvalue'])
 
 
 if __name__ == '__main__':

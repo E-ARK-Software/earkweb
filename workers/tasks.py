@@ -1818,6 +1818,39 @@ class AIPIndexing(DefaultTask):
         return task_context.additional_data
 
 
+def update_solr_doc(task_context, element, solr_field_name):
+    tl = task_context.task_logger
+    # instantiate Solr communication class
+    solr = SolrUtility()
+    index_path = element['path']
+    index_md_value = element['mdvalue']
+    # need a solr query to retrieve identifier: solr.solr_unique_key
+    query_result = solr.send_query('path:%s%s' % (task_context.additional_data['identifier'], index_path.replace(task_context.path, '')))
+    if query_result is not False:
+        try:
+            identifier = None
+            if "lily.key" in query_result[0]:
+                identifier = query_result[0]['lily.key']
+            else:
+                identifier = query_result[0]['id']
+        except Exception, e:
+            tl.adderr('Retrieving unique identifier failed: %s' % e.message)
+
+        # update 'eadtitle' field afterwards; '_t' marks it as text_general
+        update = solr.set_field(record_identifier=identifier,
+                                field=solr_field_name,
+                                content=index_md_value)
+
+        if update == 200:
+            tl.addinfo('%s updated with status code 200.' % index_path)
+            task_context.task_status = 0
+        else:
+            tl.adderr('%s failed with status code %d.' % (index_path, update))
+            task_context.task_status = 1
+    else:
+        tl.adderr('Query status code: %s' % query_result)
+
+
 class SolrUpdateCurrentMetadata(DefaultTask):
 
     accept_input_from = [AIPIndexing.__name__, "SolrUpdateCurrentMetadata"]
@@ -1834,10 +1867,6 @@ class SolrUpdateCurrentMetadata(DefaultTask):
 
         # task logger
         tl = task_context.task_logger
-
-        # instantiate Solr communication class
-        solr = SolrUtility()
-
         for directory, subdir, filenames in os.walk(task_context.path):
             if directory.endswith('metadata/descriptive'):
                 for filename in filenames:
@@ -1849,29 +1878,9 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                             os.path.join(task_context.path, 'submission/metadata/descriptive'),
                             os.path.join(directory, filename))
                         for element in eadparser.dao_path_mdval_tuples('unittitle'):
-                            index_path = element['path']
-                            index_title = element['title']
-                            # need a solr query to retrieve identifier: solr.solr_unique_key
-                            query_result = solr.send_query('path:%s%s' % (task_context.additional_data['identifier'], index_path.replace(task_context.path, '')))
-                            if query_result is not False:
-                                try:
-                                    identifier = query_result[0]['id']
-                                except Exception, e:
-                                    tl.adderr('Retrieving unique identifier failed: %s' % e.message)
-
-                                # update 'eadtitle' field afterwards; '_t' marks it as text_general
-                                update = solr.set_field(record_identifier=identifier,
-                                                        field='eadtitle_t',
-                                                        content=index_title)
-
-                                if update == 200:
-                                    tl.addinfo('%s updated with status code 200.' % index_path)
-                                    task_context.task_status = 0
-                                else:
-                                    tl.adderr('%s failed with status code %d.' % (index_path, update))
-                                    task_context.task_status = 1
-                            else:
-                                tl.adderr('Query status code: %s' % query_result)
+                            update_solr_doc(task_context, element, 'eadtitle_t')
+                        for element in eadparser.dao_path_mdval_tuples('unitdate'):
+                            update_solr_doc(task_context, element, 'date_t')
 
         return task_context.additional_data
 
