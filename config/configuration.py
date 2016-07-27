@@ -112,3 +112,9 @@ solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
                    {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'}]
+
+siard_dbptk='/home/bartham/siard/dbptk-app-2.0.0-beta3.2.5.jar'
+siard_db_type = 'mysql'
+siard_db_host = 'localhost'
+siard_db_user = 'root'
+siard_db_passwd='arkiv'

@@ -40,6 +40,7 @@ class InformationPackage(models.Model):
     statusprocess = models.IntegerField(null=True, choices=StatusProcess_CHOICES)
     last_task = models.ForeignKey(WorkflowModules, default="DefaultTask")
     last_change = models.DateTimeField(auto_now_add=True, blank=True)
+    additional_data = models.TextField(null=False, default="{}", max_length=8192)
 
     def num_indexed_docs(self):
         if not self.identifier:

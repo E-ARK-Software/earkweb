@@ -183,8 +183,14 @@ def apply_task(request):
                 # additional input parameters for the task can be passed through using the 'additional_params' dictionary.
                 # IMPORTANT: if you want to use any of these parameters in the finalize() function, the task MUST return:
                 # return task_context.additional_input
-                additional_data = {'packagename': ip.packagename,
-                                   'identifier': ip.identifier}
+
+                #deserialize ip.additional_data json string from db
+                import json
+                additional_data = json.loads(ip.additional_data)
+
+                #TODO:// cleanup this starting here
+                additional_data['packagename'] = ip.packagename
+                additional_data['identifier'] = ip.identifier
 
                 if wfm.identifier == AIPStore.__name__ or wfm.identifier == AIPIndexing.__name__:
                     additional_data['storage_dest'] = config_path_storage
@@ -209,9 +215,10 @@ def apply_task(request):
                         additional_data['parent_path'] = InformationPackage.objects.get(identifier=ip.parent_identifier)
                     else:
                         additional_data['parent_path'] = ''
+
                 if wfm.identifier == LilyHDFSUpload.__name__:
                     additional_data['storage_loc'] = ip.storage_loc
-
+                #TODO:// cleanup this finishing here
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)
                 job = taskClass().apply_async((task_context,), queue='default')
@@ -257,14 +264,9 @@ def poll_state(request):
                         date_obj = dateparse.parse_datetime(task.result.ip_state_xml.get_lastchange())
                         ip.last_change = date_obj
                         if task.result.uuid and task.result.additional_data:
-
-                            if 'identifier' in task.result.additional_data:
-                                ip.identifier = task.result.additional_data['identifier']
-
-                            if 'storage_loc' in task.result.additional_data:
-                                ip.storage_loc = task.result.additional_data['storage_loc']
-                                print "Storage location %s" % ip.storage_loc
-
+                            #make json out of additional_data to be written to db
+                            additional_data_str = json.dumps(task.result.additional_data)
+                            ip.additional_data = additional_data_str
                         if task.result.task_name:
                             try:
                                 wf = WorkflowModules.objects.get(identifier=task.result.task_name)

@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 from config.configuration import mets_schema_file, metadata_file_pattern_ead
 from config.configuration import root_dir
 from config.configuration import config_path_work
+from config.configuration import siard_dbptk, siard_db_type, siard_db_host, siard_db_user, siard_db_passwd
+
 from earkcore.filesystem.chunked import FileBinaryDataChunks
 from earkcore.filesystem.fsinfo import fsize
 from earkcore.fixity.ChecksumAlgorithm import ChecksumAlgorithm
@@ -2174,7 +2176,7 @@ class AIPtoDIPReset(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'AIPtoDIPReset'
+        task_context.event_type = 'AIPtoDIPReset'
 
         # create working directory if it does not exist
         if not os.path.exists(task_context.path):
@@ -2199,7 +2201,24 @@ class AIPtoDIPReset(DefaultTask):
             tar_base_name, _ = os.path.splitext(tar_file)
             if os.path.exists(tar_base_name):
                 shutil.rmtree(tar_base_name)
-            task_context.task_logger.addinfo("Extracted SIP folder '%s' removed" % tar_base_name)
+            task_context.task_logger.addinfo("Extracted AIP folder '%s' removed" % tar_base_name)
+
+        # remove representations folder if existing
+        rep_folder = os.path.join(task_context.path, "representations")
+        if os.path.exists(rep_folder):
+            shutil.rmtree(rep_folder)
+            task_context.task_logger.addinfo("Generated DIP representations folder '%s' removed" % rep_folder)
+
+        # remove schemas folder from root if existing
+        schemas_folder = os.path.join(task_context.path, "schemas")
+        if os.path.exists(schemas_folder):
+            shutil.rmtree(schemas_folder)
+            task_context.task_logger.addinfo("Generated DIP schemas folder '%s' removed" % schemas_folder)
+
+        mets_file = os.path.join(task_context.path, "METS.xml")
+        if os.path.exists(mets_file):
+            os.remove(mets_file)
+            task_context.task_logger.addinfo("Generated root METS.xml removed")
 
         # success status
         task_context.task_status = 0
@@ -2218,7 +2237,7 @@ class DIPAcquireAIPs(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'DIPAcquireAIPs'
+        task_context.event_type = 'DIPAcquireAIPs'
 
         tl = task_context.task_logger
         try:
@@ -2266,6 +2285,96 @@ class DIPAcquireAIPs(DefaultTask):
         return task_context.additional_data
 
 
+def get_aip_parent(task_context_path, aip_identifier, package_extension):
+    aip_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (aip_identifier, package_extension)))
+
+    # get parent and children from existing AIP tar (aip_in_dip_work_dir)
+    METS_NS = 'http://www.loc.gov/METS/'
+    XLINK_NS = "http://www.w3.org/1999/xlink"
+    print "reading METS of selected aip %s" % aip_in_dip_work_dir
+    with tarfile.open(aip_in_dip_work_dir) as tar:
+        mets_file = aip_identifier+'/METS.xml'
+        member = tar.getmember(mets_file)
+        fp = tar.extractfile(member)
+        mets_content = fp.read()
+
+        # parse AIP mets
+        parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+        aip_parse = etree.parse(StringIO(mets_content), parser)
+        aip_root = aip_parse.getroot()
+
+        # find AIP structmap and parent identifiers
+        parents_map = aip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+        if parents_map is not None:
+            parents_div = parents_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+            if parents_div is not None:
+                parents = parents_div.findall("%s[@LABEL='parent %s']" % (q(METS_NS, 'div'), 'AIP'))
+                for parent in parents:
+                    mptr = parent.find("%s" % q(METS_NS, 'mptr'))
+                    urn = mptr.get(q(XLINK_NS,'href'))
+                    uuid = urn.split('urn:uuid:',1)[1]
+                    print "found parent uuid %s" % uuid
+                    return uuid
+
+    return None
+
+def get_aip_children(task_context_path, aip_identifier, package_extension):
+    aip_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (aip_identifier, package_extension)))
+
+    children_uuids = []
+    # get parent and children from existing AIP tar (aip_in_dip_work_dir)
+    METS_NS = 'http://www.loc.gov/METS/'
+    XLINK_NS = "http://www.w3.org/1999/xlink"
+    print "reading METS of selected aip %s" % aip_in_dip_work_dir
+    with tarfile.open(aip_in_dip_work_dir) as tar:
+        mets_file = aip_identifier+'/METS.xml'
+        member = tar.getmember(mets_file)
+        fp = tar.extractfile(member)
+        mets_content = fp.read()
+
+        # parse AIP mets
+        parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+        aip_parse = etree.parse(StringIO(mets_content), parser)
+        aip_root = aip_parse.getroot()
+
+        # find AIP structmap and child identifiers
+        children_map = aip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+        if children_map is not None:
+            children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+            if children_div is not None:
+                children = children_div.findall("%s[@LABEL='child %s']" % (q(METS_NS, 'div'), 'AIP'))
+                for child in children:
+                    mptr = child.find("%s" % q(METS_NS, 'mptr'))
+                    urn = mptr.get(q(XLINK_NS, 'href'))
+                    print "found child urn %s" % urn
+                    uuid = urn.split('urn:uuid:',1)[1]
+                    print "found child uuid %s" % uuid
+                    children_uuids.append(uuid)
+    return children_uuids
+
+def get_package_from_storage(task_context_path, package_uuid, package_extension, tl):
+    from config.configuration import config_path_storage
+    pts = PairtreeStorage(config_path_storage)
+    parent_object_path = pts.get_object_path(package_uuid)
+
+    package_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (package_uuid, package_extension)))
+    package_source_size = fsize(parent_object_path)
+    tl.addinfo("Source: %s (%d)" % (parent_object_path, package_source_size))
+    tl.addinfo("Target: %s" % package_in_dip_work_dir)
+    total_bytes_read = 0
+    with open(package_in_dip_work_dir, 'wb') as target_file:
+         for chunk in FileBinaryDataChunks(parent_object_path, 65536).chunks(total_bytes_read):
+             target_file.write(chunk)
+         total_bytes_read += package_source_size
+         target_file.close()
+    check_transfer(parent_object_path, package_in_dip_work_dir, tl)
+
+def get_children_from_storage(task_context_path, package_uuid, package_extension, tl):
+    get_package_from_storage(task_context_path, package_uuid, package_extension, tl)
+    child_uuids = get_aip_children(task_context_path, package_uuid, package_extension)
+    for child_uuid in child_uuids:
+        get_children_from_storage(task_context_path, child_uuid, package_extension, tl)
+
 class DIPAcquireDependentAIPs(DefaultTask):
 
     accept_input_from = ['All', DIPAcquireAIPs.__name__]
@@ -2278,8 +2387,7 @@ class DIPAcquireDependentAIPs(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'DIPAcquireDependentAIPs'
-
+        task_context.event_type = 'DIPAcquireDependentAIPs'
 
         tl = task_context.task_logger
         try:
@@ -2293,106 +2401,32 @@ class DIPAcquireDependentAIPs(DefaultTask):
                 task_context.task_status = 1
                 return task_context.additional_data
 
-            pts = PairtreeStorage(storePath)
-
             # packagename is identifier of the DIP creation process
             #dip = DIP.objects.get(name=task_context.task_name)
 
             selected_aips = task_context.additional_data["selected_aips"]
             tl.addinfo("selected AIPs: %s" % selected_aips)
 
-            total_bytes_read = 0
-            aip_total_size = 0
-            for aip_source in selected_aips.values():
-                if not os.path.exists(aip_source):
-                    tl.adderr("Missing AIP source %s" % aip_source)
-                    tl.adderr("Task failed %s" % task_context.uuid)
-                    task_context.task_status = 1
-                    return task_context.additional_data
-                else:
-                    aip_total_size += fsize(aip_source)
-            tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
-
-
-
+            aip_parents = []
             for aip_identifier, aip_source in selected_aips.iteritems():
+                #TODO: get package_extension from METS as is not necessarily the same
                 package_extension = aip_source.rpartition('.')[2]
-                aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
+                head_parent = None
+                while True:
+                    parent_uuid = get_aip_parent(task_context.path, aip_identifier, package_extension)
+                    if parent_uuid:
+                        #get the parent from storage
+                        get_package_from_storage(task_context.path, parent_uuid, package_extension, tl)
+                        aip_identifier = parent_uuid
+                        head_parent = parent_uuid
+                    else:
+                        print "Head Parent UUID %s" % head_parent
+                        aip_parents.append(head_parent)
+                        break
 
-                # get parent and children from existing AIP tar (aip_in_dip_work_dir)
-                METS_NS = 'http://www.loc.gov/METS/'
-                XLINK_NS = "http://www.w3.org/1999/xlink"
-                print "reading METS of selected aip %s" % aip_in_dip_work_dir
-                with tarfile.open(aip_in_dip_work_dir) as tar:
-                    mets_file = aip_identifier+'/METS.xml'
-                    member = tar.getmember(mets_file)
-                    fp = tar.extractfile(member)
-                    mets_content = fp.read()
+            for aip_parent in aip_parents:
+                get_children_from_storage(task_context.path, aip_parent, package_extension, tl)
 
-                    # parse AIP mets
-                    parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
-                    aip_parse = etree.parse(StringIO(mets_content), parser)
-                    aip_root = aip_parse.getroot()
-
-                    # find AIP structmap and child identifiers
-                    children_map = aip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'AIP'))
-                    if children_map is not None:
-                        children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
-                        if children_div is not None:
-                            children = children_div.findall("%s[@LABEL='child %s']" % (q(METS_NS, 'div'), 'AIP'))
-                            for child in children:
-                                mptr = child.find("%s" % q(METS_NS, 'mptr'))
-                                urn = mptr.get(q(XLINK_NS, 'href'))
-                                uuid = urn.split('urn:uuid:',1)[1]
-                                print "found child uuid %s" % uuid
-
-                                # verify if AIP exists in storage
-                                child_object_path = pts.get_object_path(uuid)
-                                print child_object_path
-                                if os.path.exists(child_object_path):
-                                    tl.addinfo('Storage path: %s' % child_object_path)
-                                    print "path exists %s" % child_object_path
-
-                    # find AIP structmap and parent identifiers
-                    parents_map = aip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'AIP'))
-                    if parents_map is not None:
-                        parents_div = parents_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
-                        if parents_div is not None:
-                            parents = parents_div.findall("%s[@LABEL='parent %s']" % (q(METS_NS, 'div'), 'AIP'))
-                            for parent in parents:
-                                mptr = parent.find("%s" % q(METS_NS, 'mptr'))
-                                urn = mptr.get(q(XLINK_NS,'href'))
-                                uuid = urn.split('urn:uuid:',1)[1]
-                                print "found parent uuid %s" % uuid
-
-                                # verify if AIP exists in storage
-                                parent_object_path = pts.get_object_path(uuid)
-                                print parent_object_path
-                                if os.path.exists(parent_object_path):
-                                    tl.addinfo('Storage path: %s' % parent_object_path)
-                                    print "path exists %s" % parent_object_path
-
-
-                    #str = etree.tostring(aip_root, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-                    #print str
-
-
-
-            # for aip_identifier, aip_source in selected_aips.iteritems():
-            #     aip_source_size = fsize(aip_source)
-            #     partial_custom_progress_reporter = partial(custom_progress_reporter, self)
-            #     package_extension = aip_source.rpartition('.')[2]
-            #     aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
-            #     tl.addinfo("Source: %s (%d)" % (aip_source, aip_source_size))
-            #     tl.addinfo("Target: %s" % (aip_in_dip_work_dir))
-            #
-            #     with open(aip_in_dip_work_dir, 'wb') as target_file:
-            #         for chunk in FileBinaryDataChunks(aip_source, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, aip_total_size):
-            #             target_file.write(chunk)
-            #         total_bytes_read += aip_source_size
-            #         target_file.close()
-            #
-            #     check_transfer(aip_source, aip_in_dip_work_dir, tl)
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception as e:
@@ -2413,7 +2447,7 @@ class DIPExtractAIPs(DefaultTask):
         """
 
         # Add the event type - will be put into Premis.
-        #task_context.event_type = 'DIPExtractAIPs'
+        task_context.event_type = 'DIPExtractAIPs'
 
         tl = task_context.task_logger
 
@@ -2427,7 +2461,6 @@ class DIPExtractAIPs(DefaultTask):
                 os.mkdir(task_context.path)
 
             # packagename is identifier of the DIP creation process
-            #dip = DIP.objects.get(name = ip.packagename)
             selected_aips = task_context.additional_data["selected_aips"]
 
             total_members = 0
@@ -2436,7 +2469,7 @@ class DIPExtractAIPs(DefaultTask):
                     tl.adderr("Missing AIP source %s" % aip_source)
                     tl.adderr("Task failed %s" % task_context.uuid)
                     task_context.task_status = 1
-                    return
+                    return task_context.additional_data
                 else:
                     package_extension = aip_source.rpartition('.')[2]
                     aip_in_dip_work_dir = os.path.join(task_context.path, ("%s.%s" % (aip_identifier, package_extension)))
@@ -2463,8 +2496,7 @@ class DIPExtractAIPs(DefaultTask):
                     tl.addinfo(("File extracted: %s" % member.name), display=False)
                     total_processed_members += 1
                     current_package_total_members += 1
-                # ip.statusprocess = tc.success_status
-                # ip.save()
+
                 tl.addinfo("Untar of %d items from package %s finished" % (current_package_total_members, aip_identifier))
             tl.addinfo(("Untar of %d items in total finished" % total_processed_members))
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
@@ -2473,7 +2505,8 @@ class DIPExtractAIPs(DefaultTask):
             tl.adderr("Task failed %s" % task_context.uuid)
             tl.adderr("Task failed %s" % e.message)
             task_context.task_status = 1
-            pass
+
+        return task_context.additional_data
 
 from subprocess import Popen, PIPE
 def runCommand(args, stdin=PIPE, stdout=PIPE, stderr=PIPE):
@@ -2515,66 +2548,255 @@ class DIPImportSIARD(DefaultTask):
 
         # Add the event type - will be put into Premis.
         task_context.event_type = 'DIPImportSIARD'
-
         tl = task_context.task_logger
+        siard_dbs = []
 
         try:
             import sys
             reload(sys)
             sys.setdefaultencoding('utf8')
 
-            # create dip working directory
-            #if not os.path.exists(task_context.path):
-            #    os.mkdir(task_context.path)
-
-
-            dbptk='/home/bartham/siard/dbptk-app-2.0.0-beta3.2.5.jar'
-            db_user = 'root'
-            db_passwd='arkiv'
-            db_type = 'mysql'
-            db_host = 'localhost'
             # find SIARD2 file in working dir
             for root, dirs, files in os.walk(task_context.path):
                 for file in files:
                     if file.endswith(".siard2"):
                         siard_path = os.path.join(root, file)
                         print siard_path
-                        db_name = os.path.splitext(file)[0]
+                        siard_db_name = os.path.splitext(file)[0]
 
-                        print "Database name: %s" % db_name
+                        print "Database name: %s" % siard_db_name
                         # drop database if existing
                         command = [
                             'mysql',
                             'mysql',
-                            '-u', db_user,
-                            '-p%s' % db_passwd,
-                            '-e', 'DROP DATABASE IF EXISTS %s;' % db_name,
+                            '-u', siard_db_user,
+                            '-p%s' % siard_db_passwd,
+                            '-e', 'DROP DATABASE IF EXISTS %s;' % siard_db_name,
                             ]
                         runCommand(command)
                         # create database
                         command = [
                             'mysql',
                             'mysql',
-                            '-u', db_user,
-                            '-p%s' % db_passwd,
-                            '-e', 'CREATE DATABASE IF NOT EXISTS %s;' % db_name,
+                            '-u', siard_db_user,
+                            '-p%s' % siard_db_passwd,
+                            '-e', 'CREATE DATABASE IF NOT EXISTS %s;' % siard_db_name,
                             ]
                         runCommand(command)
                         # import file to database
                         command = [
-                            'java', '-jar', dbptk, '-i', 'siard-2', '-if', siard_path, '-e', db_type, '-eh', db_host, '-edb', db_name, '-eu', db_user, '-ep', db_passwd,
+                            'java', '-jar', siard_dbptk,
+                            '-i', 'siard-2',
+                            '-if', siard_path,
+                            '-e', siard_db_type,
+                            '-eh', siard_db_host,
+                            '-edb', siard_db_name,
+                            '-eu', siard_db_user,
+                            '-ep', siard_db_passwd,
                         ]
                         runCommand(command)
                         #java -jar $DBPTK -i siard-2 --import-file=world.siard2 -e mysql --export-hostname=localhost --export-database=world --export-user=$USER --export-password=$PASSWORD
+                        siard_dbs.append(siard_db_name)
+
+            task_context.additional_data['siard_dbs'] = siard_dbs
+            task_context.task_status = 0
 
         except Exception as e:
             tl.adderr("Task failed %s" % task_context.uuid)
             tl.adderr("Task failed %s" % e.message)
             task_context.task_status = 1
-            pass
+
+        print "additional_data %s" % task_context.additional_data
+        return task_context.additional_data
+
+class DIPExportSIARD(DefaultTask):
+
+    accept_input_from = ['All', DIPImportSIARD.__name__, "DIPExportSIARD"]
+
+    def run_task(self, task_context):
+        """
+        DIP Extract AIPs
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:17,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIPExportSIARD'
+        tl = task_context.task_logger
+
+        print "additional_data %s" % task_context.additional_data
+
+        if not "siard_dbs" in task_context.additional_data:
+            print "Task parameter \"siard_dbs\" missing"
+            tl.adderr("Task parameter \"siard_dbs\" missing")
+            task_context.task_status = 1
+            return task_context.additional_data
+
+        siard_dbs = task_context.additional_data["siard_dbs"]
+
+        #create representations/siard_rep/data folder
+        siard_data_path = os.path.join(task_context.path, 'representations', 'siard_rep', 'data')
+        if not os.path.exists(siard_data_path):
+            os.makedirs(siard_data_path)
+
+        #create metadata folder
+        siard_metadata_path = os.path.join(task_context.path, 'representations', 'siard_rep', 'metadata', 'preservation')
+        if not os.path.exists(siard_metadata_path):
+            os.makedirs(siard_metadata_path)
+
+        try:
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
+            for siard_db_name in siard_dbs:
+                # create representations directory (aka path to dump siard)
+                tl.addinfo("Dumping Database %s to %s" % (siard_db_name, siard_data_path))
+                siard_path = os.path.join(siard_data_path, siard_db_name+'.siard2')
+                # export database to file
+                command = [
+                    'java', '-jar', siard_dbptk,
+                    '-i', siard_db_type,
+                    '--import-hostname', siard_db_host,
+                    '-idb', siard_db_name,
+                    '-iu', siard_db_user,
+                    '-ip', siard_db_passwd,
+                    '-e', 'siard-2',
+                    '-ef', siard_path,
+                ]
+                runCommand(command)
+                #java -jar $DBPTK -i mysql -ih=localhost -idb world -iu $USER -ip $PASSWORD -e siard-2 -ef world.siard2
+            task_context.task_status = 0
+
+        except Exception as e:
+            tl.adderr("Task failed %s" % task_context.uuid)
+            tl.adderr("Task failed %s" % e.message)
+            task_context.task_status = 1
+
+        return task_context.additional_data
+
+class DIPMetadataCreation(DefaultTask):
+
+    # Descriptive metadata check can be skipped
+    accept_input_from = [SIPReset.__name__, DIPExportSIARD.__name__, 'DIPMetadataCreation']
+
+    def run_task(self, task_context):
+        """
+        SIP Package metadata creation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:18,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIPMetadataCreation'
+
+        reps_path = os.path.join(task_context.path, 'representations')
+        for name in os.listdir(reps_path):
+            rep_path = os.path.join(reps_path, name)
+            if os.path.isdir(rep_path):
+                # Premis
+                premisgen = PremisGenerator(rep_path)
+                premisgen.createPremis()
+                # Mets
+                mets_data = {'packageid': task_context.uuid,
+                             'type': 'DIP',
+                             'schemas': os.path.join(task_context.path, 'schemas'),
+                             'parent': ''}
+                metsgen = MetsGenerator(rep_path)
+                metsgen.createMets(mets_data)
+
+        # Premis not needed as already existing
+        #premisgen = PremisGenerator(task_context.path)
+        #premisgen.createPremis()
+
+        # create DIP parent Mets
+        mets_data = {'packageid': task_context.uuid,
+                     'type': 'DIP',
+                     'schemas': os.path.join(task_context.path, 'schemas'),
+                     'parent': ''}
+        metsgen = MetsGenerator(task_context.path)
+        metsgen.createMets(mets_data)
+
+        # copy schemas folder from extracted tar to root
+        selected_aips = task_context.additional_data["selected_aips"]
+        src_schemas_folder = os.path.join(task_context.path, selected_aips.keys()[0], 'schemas')
+        dst_schemas_folder = os.path.join(task_context.path, 'schemas')
+        shutil.copytree(src_schemas_folder, dst_schemas_folder)
 
         task_context.task_status = 0
+        return task_context.additional_data
 
+class DIPPackaging(DefaultTask):
+
+    accept_input_from = [DIPMetadataCreation.__name__, "DIPPackaging"]
+
+    def run_task(self, task_context):
+        """
+        AIP Packaging
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:19,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'N/A'
+
+        tl = task_context.task_logger
+
+        try:
+            # identifier (not uuid of the working directory) is used as first part of the tar file
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
+            tl.addinfo("Packaging working directory: %s" % task_context.path)
+            # append generation number to tar file; if tar file exists, the generation number is incremented
+
+            #storage_path = task_context.additional_data["storage_path"]
+            storage_file = os.path.join(task_context.path, "%s.tar" % task_context.uuid)
+            tar = tarfile.open(storage_file, "w:")
+            tl.addinfo("Creating archive: %s" % storage_file)
+
+            item_list = ['metadata', 'representations', 'schemas', 'METS.xml']
+            total = 0
+            for item in item_list:
+                pack_item = os.path.join(task_context.path, item)
+                if os.path.isdir(pack_item):
+                    total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
+                else:
+                    total += 1
+            tl.addinfo("Total number of files in working directory %d" % total)
+            # log file is closed at this point because it will be included in the package,
+            # subsequent log messages can only be shown in the gui
+
+            i = 0
+            for item in item_list:
+                pack_item = os.path.join(task_context.path, item)
+                if os.path.isdir(pack_item):
+                    for subdir, dirs, files in os.walk(pack_item):
+                        for file in files:
+                            if os.path.join(subdir, file):
+                                entry = os.path.join(subdir, file)
+                                arcname = new_id + "/" + os.path.relpath(entry, task_context.path)
+                                tar.add(entry, arcname = arcname)
+                                if i % 10 == 0:
+                                    perc = (i * 100) / total
+                                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                            i += 1
+                else:
+                    arcname = new_id + "/" + os.path.relpath(pack_item, task_context.path)
+                    tar.add(pack_item, arcname = arcname)
+                    if i % 10 == 0:
+                            perc = (i * 100) / total
+                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    i += 1
+            tar.close()
+            tl.log.append("Package created: %s" % storage_file)
+
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            task_context.task_status = 0
+        except Exception, err:
+            task_context.task_status = 0
+        return task_context.additional_data
 
 class DMMainTask(ConcurrentTask):
 
