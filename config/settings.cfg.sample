@@ -46,7 +46,7 @@ siard_dbptk = /usr/local/bin/dbptk-app-2.0.0-beta3.2.5.jar
 siard_db_type = mysql
 siard_db_host = localhost
 siard_db_user = root
-siard_db_password = password
+siard_db_passwd = password
 
 [metadata]
 
