@@ -65,7 +65,7 @@ siard_dbptk = config.get('server', 'siard_dbptk')
 siard_db_type = config.get('server','siard_db_type')
 siard_db_host = config.get('server', 'siard_db_host')
 siard_db_user = config.get('server', 'siard_db_user')
-siard_db_password = config.get('server', 'siard_db_password')
+siard_db_passwd = config.get('server', 'siard_db_passwd')
 
 mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
 premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
