@@ -2442,7 +2442,7 @@ class DIPExportSIARD(DefaultTask):
         """
         DIP Extract AIPs
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:17,type:4,stage:4
+        @param      tc: order:1050,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2509,7 +2509,7 @@ class DIPMetadataCreation(DefaultTask):
         """
         SIP Package metadata creation run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:18,type:4,stage:4
+        @param      tc: order:1060,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2559,7 +2559,7 @@ class DIPPackaging(DefaultTask):
         """
         AIP Packaging
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:19,type:4,stage:4
+        @param      tc: order:1070,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2631,7 +2631,7 @@ class DIPGMLDataValidation(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1050,type:4,stage:4
+        @param      tc: order:1080,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2681,7 +2681,7 @@ class DIPGMLDataConversion(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1060,type:4,stage:4
+        @param      tc: order:1090,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2736,7 +2736,7 @@ class DIPPeripleoDeployment(DefaultTask):
         """
         DIP Peripleo Deployment run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1070,type:4,stage:4
+        @param      tc: order:1100,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
