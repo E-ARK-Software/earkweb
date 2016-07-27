@@ -41,6 +41,13 @@ peripleo_server_ip = 127.0.0.1
 peripleo_port = 9000
 peripleo_path = peripleo
 
+#siard
+siard_dbptk = /usr/local/bin/dbptk-app-2.0.0-beta3.2.5.jar
+siard_db_type = mysql
+siard_db_host = localhost
+siard_db_user = root
+siard_db_password = password
+
 [metadata]
 
 metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
