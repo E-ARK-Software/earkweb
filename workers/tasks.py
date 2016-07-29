@@ -58,7 +58,7 @@ from tasklogger import TaskLogger
 from workers.default_task import DefaultTask
 from earkcore.metadata.XmlHelper import q
 import uuid
-from earkcore.utils.datetimeutils import current_timestamp
+from earkcore.utils.datetimeutils import current_timestamp, LengthBasedDateFormat
 from lxml import etree, objectify
 import fnmatch
 from workers.default_task_context import DefaultTaskContext
@@ -1839,8 +1839,8 @@ def update_solr_doc(task_context, element, solr_field_name):
             tl.adderr('Retrieving unique identifier failed: %s' % e.message)
 
         if solr_field_name.endswith("_dt"):
-            from earkcore.utils.datetimeutils import reformat_date_string
-            index_md_value = reformat_date_string("%d.%m.%Y", index_md_value, '%Y-%m-%dT%H:%M:%SZ')
+            lbdf = LengthBasedDateFormat(index_md_value)
+            index_md_value = lbdf.reformat()
 
         # update 'eadtitle' field afterwards; '_t' marks it as text_general
         update = solr.set_field(record_identifier=identifier,
