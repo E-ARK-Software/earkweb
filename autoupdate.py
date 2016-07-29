@@ -2,9 +2,8 @@ import subprocess32
 import time
 import os
 import ConfigParser
-
-from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
 from earkcore.utils.configutils import set_default_config_if_not_exists
+
 
 """ This script performs an update of EARKweb. This includes:
 * db migrations
@@ -24,6 +23,9 @@ default_config = [
     ("server", "siard_db_passwd", "password"),
 ]
 set_default_config_if_not_exists('config/settings.cfg', default_config)
+
+from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
+
 
 # colour codes
 HEADER = '\033[95m'
