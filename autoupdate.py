@@ -17,6 +17,11 @@ default_config = [
     ("server", "peripleo_server_ip", "127.0.0.1"),
     ("server", "peripleo_port", 9000),
     ("server", "peripleo_path", "peripleo"),
+    ("server", "siard_dbptk", "/usr/local/bin/dbptk-app-2.0.0-beta3.2.5.jar"),
+    ("server", "siard_db_type", "mysql"),
+    ("server", "siard_db_host", "localhost"),
+    ("server", "siard_db_user", "root"),
+    ("server", "siard_db_passwd", "password"),
 ]
 set_default_config_if_not_exists('config/settings.cfg', default_config)
 
