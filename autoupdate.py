@@ -48,6 +48,12 @@ UNDERLINE = '\033[4m'
 
 # migrations - prepare
 print HEADER + '----------------\nNow preparing database migrations.\n----------------' + ENDC
+migrations_update_args = ['python', 'manage.py', 'makemigrations', 'earkcore']
+migrations_process = subprocess32.Popen(migrations_update_args)
+migrations_out, migrations_err = migrations_process.communicate()
+if migrations_err is not None:
+    print WARNING + 'There have been errors when performing "earkcore" migrations:\n' + ENDC
+    print migrations_err
 migrations_update_args = ['python', 'manage.py', 'makemigrations']
 migrations_process = subprocess32.Popen(migrations_update_args)
 migrations_out, migrations_err = migrations_process.communicate()
