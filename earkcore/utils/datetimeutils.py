@@ -13,6 +13,9 @@ EU_UI_FORMAT='%d.%m.%Y %H:%M:%S'
 
 TASK_EXEC_TIMES = {}
 
+def reformat_date_string(origin_fmt, origin_dts, target_fmt):
+    return datetime.datetime.strptime(origin_dts, origin_fmt).strftime(target_fmt)
+
 def get_file_ctime_iso_date_str(file_path, fmt=DT_ISO_FORMAT, wd=None):
     fp = remove_protocol(file_path)
     path = fp if wd is None else os.path.join(wd,fp)

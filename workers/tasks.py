@@ -1838,6 +1838,10 @@ def update_solr_doc(task_context, element, solr_field_name):
         except Exception, e:
             tl.adderr('Retrieving unique identifier failed: %s' % e.message)
 
+        if solr_field_name.endswith("_dt"):
+            from earkcore.utils.datetimeutils import reformat_date_string
+            index_md_value = reformat_date_string("%d.%m.%Y", index_md_value, '%Y-%m-%dT%H:%M:%SZ')
+
         # update 'eadtitle' field afterwards; '_t' marks it as text_general
         update = solr.set_field(record_identifier=identifier,
                                 field=solr_field_name,
@@ -1882,7 +1886,7 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                         for element in eadparser.dao_path_mdval_tuples('unittitle'):
                             update_solr_doc(task_context, element, 'eadtitle_t')
                         for element in eadparser.dao_path_mdval_tuples('unitdate'):
-                            update_solr_doc(task_context, element, 'date_t')
+                            update_solr_doc(task_context, element, 'eaddate_dt')
 
         return task_context.additional_data
 

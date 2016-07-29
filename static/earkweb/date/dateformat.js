@@ -123,3 +123,19 @@ dateFormat.i18n = {
 Date.prototype.format = function (mask, utc) {
 	return dateFormat(this, mask, utc);
 };
+
+function dateStringToUTCString(st) {
+	var pattern = /(\d{2})\.(\d{2})\.(\d{4})/;
+	var dateParsed = new Date(st.replace(pattern,'$3-$2-$1'));
+	return dateParsed.format(dateFormat.masks.isoUtcDateTime);
+}
+
+function acceptedDateFormat(str) {
+    var re = /([0-3]{1,1}[0-9]{1,1}\.[0-1]{1,1}[0-9]{1,1}\.2[0-9]{1,1}[0-9]{1,1}[0-9]{1,1}|\*)/;
+    var m;
+
+    if ((m = re.exec(str)) !== null) {
+        return true;
+    }
+    return false;
+}
