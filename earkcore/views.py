@@ -356,10 +356,10 @@ def solrif(request, core, operation):
     q = urllib.urlencode({'q': request.GET.get('q', ''), "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
 
     from config.configuration import local_solr_server_ip
-    from config.configuration import access_solr_port
+    from config.configuration import local_solr_port
 
     from config.configuration import local_solr_core
-    query_url = "http://%s:%s/solr/%s/%s?%s" % (local_solr_server_ip, access_solr_port, local_solr_core, operation, q)
+    query_url = "http://%s:%s/solr/%s/%s?%s" % (local_solr_server_ip, local_solr_port, local_solr_core, operation, q)
     logger.debug(query_url)
     data = ""
     try:
