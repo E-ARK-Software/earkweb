@@ -79,6 +79,12 @@ if taskscan_err is not None:
     print WARNING + + 'There have been errors when updating Celery tasks:\n' + ENDC
     print taskscan_err
 
+from config.configuration import local_solr_server_ip
+from config.configuration import local_solr_port
+from config.configuration import local_solr_core
+
+local_solr_core_uri = 'http://%s:%d/solr/%d' % (local_solr_server_ip, local_solr_port, local_solr_core)
+
 # Solr: create new fields
 print HEADER + '----------------\nNow adding new Solr fields.\n----------------' + ENDC
 for field in solr_field_list:
@@ -86,12 +92,12 @@ for field in solr_field_list:
     # simple field with name, type, stored parameter
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
                         '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s"}}' % (field['name'], field['type'], field['stored']),
-                        'http://localhost:8983/solr/earkstorage/schema']
+                        '%s/schema' % local_solr_core_uri]
     try:
         # check if 'indexed' is set (additional to parameters above)
         if field['indexed']:
             solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
-                                '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s", "indexed": "%s"}}' % (field['name'], field['type'], field['stored'], field['indexed']), 'http://localhost:8983/solr/earkstorage/schema']
+                                '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s", "indexed": "%s"}}' % (field['name'], field['type'], field['stored'], field['indexed']), '%s/schema' % local_solr_core_uri]
     except KeyError:
         # expected behaviour if 'indexed' is not set
         pass
@@ -108,7 +114,7 @@ for field in solr_copy_fields:
     print OKBLUE + '## Adding new copy-field: from %s to %s ##' % (field['source'], field['dest']) + ENDC
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
                         '--data-binary', '{"add-copy-field": {"source": "%s", "dest": "%s"}}' % (field['source'], field['dest']),
-                        'http://localhost:8983/solr/earkstorage/schema']
+                        '/schema' % local_solr_core_uri]
 
     solr_fields_process = subprocess32.Popen(solr_fields_args)
     solr_fields_out, solr_fields_err = solr_fields_process.communicate()
@@ -119,7 +125,7 @@ for field in solr_copy_fields:
 print HEADER + '----------------\nNow editing the Solr config.\n----------------' + ENDC
 for change in solr_config_changes:
     print OKBLUE + '## Editing class: %s ##' % change['class'] + ENDC
-    solr_config_args = ['curl', 'http://localhost:8983/solr/earkstorage/config', '-H', '\'Content-type:application/json\'',
+    solr_config_args = ['curl', '%s/config' % local_solr_core_uri, '-H', '\'Content-type:application/json\'',
                         '-d', '{"%s":{"name":"%s", "class":"%s", "defaults": %s}}' %
                         (change['type'], change['path'], change['class'], change['fields'])]
     solr_change_process = subprocess32.Popen(solr_config_args)
