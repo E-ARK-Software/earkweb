@@ -120,18 +120,58 @@ Activate the postgres driver and adapt username and password settings:
     /srv/pelagios/play-2.2.4/play start
 
 ## Install solr
+    
+  Note: SolR version 6.1.0 requires [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
 
-  Install SolR and create core "earkstorage" with the required fields.
+  Install SolR:
 
     user="user"
     group="group"
     solr_version="6.1.0"
+    SOLR_INSTALL_DIR=/path/to/solr/install/dir
+    cd ${SOLR_INSTALL_DIR}
+    
     sudo wget http://archive.apache.org/dist/lucene/solr/${solr_version}/solr-${solr_version}.tgz
     sudo tar -xzvf solr-${solr_version}.tgz
     sudo chown -R ${user}:${user} solr-6.1.0
-    cd solr-${solr_version}/
-    bin/solr start
-    bin/solr create_core -c earkstorage
+  
+  Create SOLR_HOME directory:
+    
+    SOLR_HOME = "/path/to/solrhome"
+    sudo mkdir ${SOLR_HOME}
+    sudo chown ${user}:${user} ${SOLR_HOME}
+    
+  Copy solr.xml to SOLR_HOME:
+  
+    cp ${SOLR_INSTALL_DIR}/server/solr/solr.xml ${SOLR_HOME}    
+    
+  Create core directory in SOLR_HOME:
+  
+    sudo -u ${user} mkdir ${SOLR_HOME}/newcore
+    
+  Copy data driven schema configuration:
+    
+    cp -R ${SOLR_INSTALL_DIR}/server/solr/configsets/data_driven_schema_configs/conf ${SOLR_HOME}/newcore
+    
+  Copy SolR service configuration file and adapt settings:
+    
+    sudo cp ${SOLR_INSTALL_DIR}/bin/solr.in.sh /etc/default/solr.in.sh
+    
+  Define the Java Home directory in`/etc/default/solr.in.sh`:
+  
+    SOLR_JAVA_HOME="/path/to/jdk1.8.x_xxx"  
+    
+  Copy service initialization script and adapt settings:
+    
+    cp ${SOLR_INSTALL_DIR}/bin/init.d/solr /etc/init.d/
+    
+  Activate Solr configuration in `${SOLR_INSTALL_DIR}bin/solr`:
+  
+    SOLR_INCLUDE="/etc/default/solr.in.sh"
+  
+  Create new core:
+    
+    sudo ${SOLR_INSTALL_DIR}/bin/solr create_core -c earkstorage
 
 ## Installing earkweb 
 
