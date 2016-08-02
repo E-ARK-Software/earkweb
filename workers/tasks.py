@@ -1816,7 +1816,7 @@ class AIPIndexing(DefaultTask):
         except Exception as e:
             tl.adderr("AIP indexing task failed: %s" % e.message)
             tl.adderr(traceback.format_exc())
-            task_context.task_status = 1
+            task_context.task_status = 2
         return task_context.additional_data
 
 
