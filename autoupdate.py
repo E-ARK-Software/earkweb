@@ -114,7 +114,7 @@ for field in solr_copy_fields:
     print OKBLUE + '## Adding new copy-field: from %s to %s ##' % (field['source'], field['dest']) + ENDC
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
                         '--data-binary', '{"add-copy-field": {"source": "%s", "dest": "%s"}}' % (field['source'], field['dest']),
-                        '/schema' % local_solr_core_uri]
+                        '%s/schema' % local_solr_core_uri]
 
     solr_fields_process = subprocess32.Popen(solr_fields_args)
     solr_fields_out, solr_fields_err = solr_fields_process.communicate()
