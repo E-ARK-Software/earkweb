@@ -190,7 +190,7 @@ def apply_task(request):
 
                 #TODO:// cleanup this starting here
                 additional_data['packagename'] = ip.packagename
-                additional_data['identifier'] = ip.identifier
+                #additional_data['identifier'] = ip.identifier
 
                 if wfm.identifier == AIPStore.__name__ or wfm.identifier == AIPIndexing.__name__:
                     additional_data['storage_dest'] = config_path_storage
