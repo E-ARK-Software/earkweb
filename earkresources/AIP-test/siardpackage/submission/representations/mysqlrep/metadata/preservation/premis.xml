@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:schemaLocation="info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd">
+  <object xmlID="IDa23456d9-24b6-4269-a25d-c4d642d52e66" xsi:type="representation">
+    <objectIdentifier>
+      <objectIdentifierType>repository</objectIdentifierType>
+      <objectIdentifierValue>IDa23456d9-24b6-4269-a25d-c4d642d52e66</objectIdentifierValue>
+    </objectIdentifier>
+  </object>
+  <object xmlID="ID7810d452-6dec-4c06-b070-7537232e4daf" xsi:type="file">
+    <objectIdentifier>
+      <objectIdentifierType>filepath</objectIdentifierType>
+      <objectIdentifierValue>file://./data/earksiardtest.tar.gz</objectIdentifierValue>
+    </objectIdentifier>
+    <objectCharacteristics>
+      <compositionLevel>0</compositionLevel>
+      <fixity>
+        <messageDigestAlgorithm>SHA-256</messageDigestAlgorithm>
+        <messageDigest>7203d76d3e13bee18b930823737c687d899a5374cc19784753acf8b5fb3dc3da</messageDigest>
+        <messageDigestOriginator>hashlib</messageDigestOriginator>
+      </fixity>
+      <size>1001</size>
+      <format>
+        <formatRegistry>
+          <formatRegistryName>PRONOM</formatRegistryName>
+          <formatRegistryKey>x-fmt/266</formatRegistryKey>
+          <formatRegistryRole>identification</formatRegistryRole>
+        </formatRegistry>
+      </format>
+    </objectCharacteristics>
+  </object>
+  <agent>
+    <agentIdentifier>
+      <agentIdentifierType>LOCAL</agentIdentifierType>
+      <agentIdentifierValue>E-ARK Web 0.3.3.</agentIdentifierValue>
+    </agentIdentifier>
+    <agentName>E-ARK Web</agentName>
+    <agentType>Software</agentType>
+  </agent>
+</premis>
