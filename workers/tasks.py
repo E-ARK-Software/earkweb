@@ -1878,7 +1878,6 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                 for filename in filenames:
                     # if meta_identification(os.path.join(directory, filename)) is 'ead':
                     ead_pattern = re.compile(metadata_file_pattern_ead)
-                    # if filename == 'ead.xml':   # TODO: make this dynamic
                     if re.match(ead_pattern, filename):
                         eadparser = ParsedEad(
                             os.path.join(task_context.path, 'submission/metadata/descriptive'),
@@ -1936,58 +1935,6 @@ class LilyHDFSUpload(DefaultTask):
         task_context.task_status = 2 if (len(tl.err) > 0) else 0
         return task_context.additional_data
 
-
-class AIPDescriptiveMetadataIndexUpdate(DefaultTask):
-
-    accept_input_from = [LilyHDFSUpload.__name__, AIPIndexing.__name__, "AIPDescriptiveMetadataIndexUpdate"]
-
-    def run_task(self, task_context):
-        """
-        SIP Packaging run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:20,type:2,stage:2
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'AIP Descriptive Metadata Index Update'
-
-        tl = task_context.task_logger
-        tl.addinfo("EAD metadata index update.")
-
-        submiss_dir = 'submission'
-        md_dir = 'metadata'
-        md_subdir_descr = 'descriptive'
-
-        descriptive_md_dir = os.path.join(md_dir, md_subdir_descr)
-        submiss_descr_md_dir = os.path.join(task_context.path, submiss_dir, descriptive_md_dir)
-        overruling_metadata_dir = os.path.join(task_context.path, md_dir, submiss_dir, descriptive_md_dir)
-
-        tl.addinfo("Looking for EAD metadata files in metadata directory: %s" % strip_prefixes(submiss_descr_md_dir, task_context.path))
-
-        # "warning" state for validation errors
-        try:
-            from earkcore.utils.fileutils import find_files
-            for filename in find_files(submiss_descr_md_dir, metadata_file_pattern_ead):
-                md_path, md_file = os.path.split(filename)
-                tl.addinfo("Found descriptive metadata file in submission folder: '%s'" % md_file)
-                tl.addinfo("Looking for overruling version in AIP metadata folder: '%s'" % strip_prefixes(overruling_metadata_dir, task_context.path))
-                overruling_md_file = os.path.join(overruling_metadata_dir, md_file)
-                validation_md_path = md_path
-                if os.path.exists(overruling_md_file):
-                    tl.addinfo("Overruling version of descriptive metadata file found: %s" % strip_prefixes(overruling_md_file, task_context.path))
-                    validation_md_path = overruling_metadata_dir
-                else:
-                    tl.addinfo("No overruling version of descriptive metadata file in AIP metadata folder found.")
-
-                # TODO implement
-            task_context.task_status = 2
-        except Exception, err:
-            tb = traceback.format_exc()
-            tl.adderr("An error occurred: %s" % err)
-            tl.adderr(str(tb))
-            task_context.task_status = 2
-
-        return task_context.additional_data
 
 class AIPtoDIPReset(DefaultTask):
 
