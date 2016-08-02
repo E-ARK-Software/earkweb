@@ -83,7 +83,7 @@ from config.configuration import local_solr_server_ip
 from config.configuration import local_solr_port
 from config.configuration import local_solr_core
 
-local_solr_core_uri = 'http://%s:%d/solr/%d' % (local_solr_server_ip, local_solr_port, local_solr_core)
+local_solr_core_uri = 'http://%s:%d/solr/%s' % (local_solr_server_ip, local_solr_port, local_solr_core)
 
 # Solr: create new fields
 print HEADER + '----------------\nNow adding new Solr fields.\n----------------' + ENDC
