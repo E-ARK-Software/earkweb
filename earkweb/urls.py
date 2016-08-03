@@ -14,7 +14,7 @@ urlpatterns = patterns('',
     url(r'^earkweb/version/$', views.version, name='version'),
 
     url(r'^public', views.public_search, name='public_search'),
-    url(r'^indexing_status', views.IndexingStatusList.as_view(), name='indexing_status'),
+    url(r'^indexing_status', views.indexingstatus, name='indexing_status'),
     url(r'^earkcore/', include('earkcore.urls', namespace="earkcore")),
     url(r'^search/', include('search.urls', namespace="search")),
     url(r'^sipcreator/', include('sipcreator.urls', namespace="sipcreator")),

@@ -36,7 +36,7 @@ urlpatterns= patterns('',
 
     url(r'^get_directory_json$', earkcore.views.get_directory_json, name='get_directory_json'),
 
-    url(r'^indexing_status$', views.IndexingStatusList.as_view(), name='indexing_status'),
+    url(r'^indexing_status$', views.indexingstatus, name='indexing_status'),
 
     url(r'^aipsearch/package$', views.aipsearch_package, name='aipsearch_package$'),
 

@@ -65,30 +65,71 @@ def index(request):
     return HttpResponse(template.render(context))
 
 
-class IndexingStatusList(ListView):
-    """
-    Processing status
-    """
-    model = InformationPackage
-    template_name = 'sip2aip/indexing_status.html'
-    context_object_name = 'ips'
+class IndexingStatusTable(tables.Table):
 
+    from django_tables2.utils import A
+
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
+    uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sip2aip', 'uuid': A('uuid')})
+    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')})
+
+    class Meta:
+        model = InformationPackage
+        fields = ('identifier', 'packagename', 'uuid', 'last_change', 'last_task', 'statusprocess', 'num_indexed_docs_storage')
+        attrs = {'class': 'paleblue table table-striped table-bordered table-condensed' }
+        row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_statusprocess(value):
+        if value == "Success":
+            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
+        elif value == "Error":
+            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
+        elif value == "Warning":
+            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
+        else:
+            return value
+
+
+def indexingstatus(request):
+    """
+    Indexing Status Table view
+    """
     list_tasks = [
         "last_task_id='%s'" % AIPIndexing.__name__,
         "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
         "last_task_id='%s'" % AIPStore.__name__,
     ]
     task_cond = " or ".join(list_tasks)
-
     queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
+    table = IndexingStatusTable(queryset)
+    table.paginate(per_page=2)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    return render(request, 'sip2aip/indexing_status.html', {'informationpackage': table})
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(IndexingStatusList, self).dispatch(*args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(IndexingStatusList, self).get_context_data(**kwargs)
-        return context
+# class IndexingStatusList(ListView):
+#     """
+#     Processing status
+#     """
+#     model = InformationPackage
+#     template_name = 'sip2aip/indexing_status.html'
+#     context_object_name = 'ips'
+#
+#     list_tasks = [
+#         "last_task_id='%s'" % AIPIndexing.__name__,
+#         "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
+#         "last_task_id='%s'" % AIPStore.__name__,
+#     ]
+#     task_cond = " or ".join(list_tasks)
+#     queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
+#
+#     @method_decorator(login_required)
+#     def dispatch(self, *args, **kwargs):
+#         return super(IndexingStatusList, self).dispatch(*args, **kwargs)
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(IndexingStatusList, self).get_context_data(**kwargs)
+#         return context
 
 
 @login_required
