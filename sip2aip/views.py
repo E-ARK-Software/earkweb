@@ -57,6 +57,30 @@ def ip_detail_table(request):
 
 
 @login_required
+@csrf_exempt
+def ips_table(request):
+    filterword = request.POST['filterword']
+    sql_query = """
+    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
+    from workflow_workflowmodules as wf
+    inner join earkcore_informationpackage as ip
+    on wf.identifier=ip.last_task_id
+    where wf.tstage & 2 and (ip.uuid like '%%{0}%%' or ip.packagename like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    order by ip.last_change desc;
+    """.format(filterword)
+    print sql_query
+    queryset = InformationPackage.objects.raw(sql_query)
+    table = InformationPackageTable(queryset)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+
+    context = RequestContext(request, {
+        'informationpackage': table,
+    })
+    return render_to_response('sip2aip/ipstable.html', locals(), context_instance=context)
+
+
+
+@login_required
 def index(request):
     template = loader.get_template('sip2aip/index.html')
     context = RequestContext(request, {

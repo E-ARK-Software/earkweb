@@ -110,7 +110,7 @@ color: red;
 }
 
 /* django_tables2 bootstrap adaptions */
-.table-container { width: 100%; padding-top: 20px; padding-bottom: 20px }
+.table-container { width: 100%; }
 .table-container table { width: 100% }
 .table-container ul.pagination {
     overflow: auto;
