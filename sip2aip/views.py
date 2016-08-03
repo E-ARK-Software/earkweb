@@ -28,6 +28,7 @@ from config.configuration import config_path_reception
 from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
+from workers.tasks import SolrUpdateCurrentMetadata
 from config.configuration import local_solr_server_ip
 from config.configuration import django_service_port
 from config.configuration import django_service_ip
@@ -71,12 +72,12 @@ class IndexingStatusList(ListView):
 
     list_tasks = [
         "last_task_id='%s'" % AIPIndexing.__name__,
-        "last_task_id='%s'" % LilyHDFSUpload.__name__,
+        "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
         "last_task_id='%s'" % AIPStore.__name__,
     ]
     task_cond = " or ".join(list_tasks)
 
-    queryset=InformationPackage.objects.extra(where=["identifier!='' and (%s)" % task_cond]).order_by('last_change')
+    queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
