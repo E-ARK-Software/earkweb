@@ -34,7 +34,10 @@ from config.configuration import django_service_port
 from config.configuration import django_service_ip
 from config.configuration import local_solr_port
 from workers.tasks import reception_dir_status
-
+import django_tables2 as tables
+from django.utils.safestring import mark_safe
+from django.shortcuts import render
+from django_tables2 import RequestConfig
 
 import logging
 logger = logging.getLogger(__name__)
@@ -157,18 +160,36 @@ def upload_file(upload_path, f):
     destination.close()
 
 
-class InformationPackageList(ListView):
-    """
-    Information Package List View
-    """
-    status_lower_limit = 100
-    status_upper_limit = 10000
-    filter_divisor = 20 # used with modulo operator to filter status values
+class InformationPackageTable(tables.Table):
 
-    model = InformationPackage
-    template_name = 'sip2aip/reception.html'
-    context_object_name = 'ips'
+    from django_tables2.utils import A
 
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
+    uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sip2aip', 'uuid': A('uuid')})
+    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')})
+
+    class Meta:
+        model = InformationPackage
+        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
+        attrs = {'class': 'table table-striped table-bordered table-condensed' }
+        row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_statusprocess(value):
+        if value == "Success":
+            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
+        elif value == "Error":
+            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
+        elif value == "Warning":
+            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
+        else:
+            return value
+
+
+def informationpackage(request):
+    """
+    Information Package Table view
+    """
     sql_query = """
     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
     from workflow_workflowmodules as wf
@@ -178,26 +199,52 @@ class InformationPackageList(ListView):
     order by ip.last_change desc;
     """
     queryset = InformationPackage.objects.raw(sql_query)
+    table = InformationPackageTable(queryset)
+    table.paginate(per_page=2)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    return render(request, 'sip2aip/overview.html', {'informationpackage': table})
 
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(InformationPackageList, self).dispatch(*args, **kwargs)
-
-    def get_success_status_set(self, status_model, filter_func):
-        for tuple in status_model:
-            if (self.status_lower_limit <= tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
-                yield tuple[0], tuple[1]
-
-    def get_context_data(self, **kwargs):
-        context = super(InformationPackageList, self).get_context_data(**kwargs)
-        context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
-        success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
-        error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
-        context['success_status_set'] = success_status_set
-        context['error_status_set'] = error_status_set
-        context['config_path_work'] = config_path_work
-        context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
-        return context
+# class InformationPackageList(ListView):
+#     """
+#     Information Package List View
+#     """
+#     status_lower_limit = 100
+#     status_upper_limit = 10000
+#     filter_divisor = 20 # used with modulo operator to filter status values
+#
+#     model = InformationPackage
+#     template_name = 'sip2aip/reception.html'
+#     context_object_name = 'ips'
+#
+#     sql_query = """
+#     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
+#     from workflow_workflowmodules as wf
+#     inner join earkcore_informationpackage as ip
+#     on wf.identifier=ip.last_task_id
+#     where wf.tstage & 2
+#     order by ip.last_change desc;
+#     """
+#     queryset = InformationPackage.objects.raw(sql_query)
+#
+#     @method_decorator(login_required)
+#     def dispatch(self, *args, **kwargs):
+#         return super(InformationPackageList, self).dispatch(*args, **kwargs)
+#
+#     def get_success_status_set(self, status_model, filter_func):
+#         for tuple in status_model:
+#             if (self.status_lower_limit <= tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
+#                 yield tuple[0], tuple[1]
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(InformationPackageList, self).get_context_data(**kwargs)
+#         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+#         success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
+#         error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
+#         context['success_status_set'] = success_status_set
+#         context['error_status_set'] = error_status_set
+#         context['config_path_work'] = config_path_work
+#         context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
+#         return context
 
 @login_required
 def aipsearch_package(request):

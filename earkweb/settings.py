@@ -34,6 +34,7 @@ TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
     "earkweb.context_processors.django_ip",
+    'django.core.context_processors.request',
  )
 
 ALLOWED_HOSTS = []
@@ -109,7 +110,6 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'djcelery',
     'earkcore',
     'sipcreator',
     'search',
@@ -118,6 +118,7 @@ INSTALLED_APPS = (
     'sip2aip',
     'config',
     'datamining',
+    'django_tables2',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -141,7 +142,7 @@ WSGI_APPLICATION = 'earkweb.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/1.7/ref/settings/#databases
+# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -154,7 +155,8 @@ DATABASES = {
         'PORT': str(mysql_port),                           # Set to empty string for default. Not used with sqlite3.
         # This options for storage_engine have to be set for "south migrate" to work.
         'OPTIONS': {
-           "init_command": "SET storage_engine=MyISAM",
+           #"init_command": "SET storage_engine=MyISAM",
+           "init_command": "SET default_storage_engine=MyISAM",
         }
     }
 }
@@ -162,6 +164,10 @@ DATABASES = {
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 
+#SHORT_DATETIME_FORMAT = '%d.%m.%y'
+#DATETIME_FORMAT = '%d.%m.%y'
+DATETIME_FORMAT = 'Y N jH:i:s.u'
+SHORT_DATETIME_FORMAT = 'Y N jH:i:s.u'
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Vienna'

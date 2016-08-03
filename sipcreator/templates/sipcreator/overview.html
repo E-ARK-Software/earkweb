@@ -1,0 +1,30 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP creator javascript -->
+    <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "sipcreator/about_module.html" %}
+
+    <h2 class="main">Active SIP creation processes</h2>
+
+    <p>The following table gives an overview about open SIP to AIP conversion processes. Each package has a package name which was provided in the first step of the
+    SIP creation process and an internal process identifier (Process ID). The process identifier is also the name of the working directory where information package
+    transformations take place (Working directory).</p>
+
+    {% render_table informationpackage %}
+
+    <p>Proceed to the next step by clicking on a package name which is where information package transformation tasks can be executed. If the SIP
+    is extracted, the working area of the information package can be accessed (working directory).</p>
+
+    <p><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span> <a href="{% url 'sipcreator:help_processing_status' %}">SIP creation tasks overview.</a></p>
+
+{% endblock %}

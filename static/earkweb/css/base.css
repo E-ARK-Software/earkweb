@@ -109,3 +109,30 @@ color: red;
     font-weight: bold;
 }
 
+/* django_tables2 bootstrap adaptions */
+.table-container { width: 100%; padding-top: 20px; padding-bottom: 20px }
+.table-container table { width: 100% }
+.table-container ul.pagination {
+    overflow: auto;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #DDD;
+    list-style: none;
+}
+.table-container ul.pagination > li > a {
+    text-decoration: none;
+    font-weight: bold;
+}
+.table-container ul.pagination li {
+    float: left;
+    line-height: 10px;
+    margin-left: 10px;
+}
+.table-container ul.pagination li:first-child {
+    margin-left: 0;
+}
+
+.table-container ul.pagination li.cardinality {
+    float: right;
+    color: #8d8d8d;
+}

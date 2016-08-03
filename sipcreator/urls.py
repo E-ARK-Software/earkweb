@@ -7,9 +7,12 @@ from django.views.decorators.csrf import csrf_exempt
  
 urlpatterns= patterns('',
 
-    url(r'^$', views.InformationPackageList.as_view(), name='index'),
+    url(r'^$', views.informationpackage, name='index'),
+    url(r'^overview$', views.informationpackage, name='index'),
+    url(r'^index$', views.informationpackage, name='index'),
 
-    url(r'^index$', views.InformationPackageList.as_view(), name='index'),
+    # url(r'^$', views.InformationPackageList.as_view(), name='index'),
+    # url(r'^index$', views.InformationPackageList.as_view(), name='index'),
 
     url(r'^start$', views.start, name='start'),
 
