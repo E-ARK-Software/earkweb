@@ -269,6 +269,8 @@ def poll_state(request):
                             #make json out of additional_data to be written to db
                             additional_data_str = json.dumps(task.result.additional_data)
                             ip.additional_data = additional_data_str
+                            if (not ip.identifier or ip.identifier == '') and 'identifier' in task.result.additional_data.keys() and task.result.additional_data['identifier'] != '':
+                                ip.identifier = task.result.additional_data['identifier']
                         if task.result.task_name:
                             try:
                                 wf = WorkflowModules.objects.get(identifier=task.result.task_name)
