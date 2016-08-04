@@ -271,6 +271,8 @@ def poll_state(request):
                             ip.additional_data = additional_data_str
                             if (not ip.identifier or ip.identifier == '') and 'identifier' in task.result.additional_data.keys() and task.result.additional_data['identifier'] != '':
                                 ip.identifier = task.result.additional_data['identifier']
+                            if (not ip.storage_loc or ip.storage_loc == '') and 'storage_loc' in task.result.additional_data.keys() and task.result.additional_data['storage_loc'] != '':
+                                ip.storage_loc = task.result.additional_data['storage_loc']
                         if task.result.task_name:
                             try:
                                 wf = WorkflowModules.objects.get(identifier=task.result.task_name)
