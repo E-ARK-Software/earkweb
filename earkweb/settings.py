@@ -119,6 +119,7 @@ INSTALLED_APPS = (
     'config',
     'datamining',
     'django_tables2',
+    'djcelery',
 )
 
 MIDDLEWARE_CLASSES = (
