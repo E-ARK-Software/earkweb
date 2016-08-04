@@ -3,13 +3,15 @@ from django.conf.urls import patterns, url
 from sipcreator import views
 import earkcore
 
-from django.views.decorators.csrf import csrf_exempt
- 
+from earkcore.views import informationpackages_overview
+
 urlpatterns= patterns('',
 
-    url(r'^$', views.informationpackage, name='index'),
-    url(r'^overview$', views.informationpackage, name='index'),
-    url(r'^index$', views.informationpackage, name='index'),
+    url(r'^$', informationpackages_overview, name='index'),
+    url(r'^overview$', informationpackages_overview, name='index'),
+    url(r'^index$', informationpackages_overview, name='index'),
+                      
+    url(r'^ips_table$', informationpackages_overview, name='ips_table'),
 
     # url(r'^$', views.InformationPackageList.as_view(), name='index'),
     # url(r'^index$', views.InformationPackageList.as_view(), name='index'),

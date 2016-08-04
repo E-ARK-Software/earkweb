@@ -127,49 +127,6 @@ def informationpackage(request):
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
     return render(request, 'sipcreator/overview.html', {'informationpackage': table})
 
-# class InformationPackageList(ListView):
-#     """
-#     Information Package List View
-#     """
-#     status_lower_limit = 0
-#     status_upper_limit = 100
-#     filter_divisor = 2 # used with modulo operator to filter status values
-#
-#     model = InformationPackage
-#     template_name='sipcreator/index.html'
-#     context_object_name='ips'
-#
-#
-#
-#     sql_query = """
-#     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
-#     from workflow_workflowmodules as wf
-#     inner join earkcore_informationpackage as ip
-#     on wf.identifier=ip.last_task_id
-#     where wf.tstage & 1
-#     order by ip.last_change desc;
-#     """
-#     queryset = InformationPackage.objects.raw(sql_query)
-#
-#     @method_decorator(login_required)
-#     def dispatch(self, *args, **kwargs):
-#         return super(InformationPackageList, self).dispatch( *args, **kwargs)
-#
-#     def get_success_status_set(self, status_model, filter_func):
-#         for tuple in status_model:
-#             if (self.status_lower_limit < tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
-#                 yield tuple[0], tuple[1]
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(InformationPackageList, self).get_context_data(**kwargs)
-#         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
-#         success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
-#         error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
-#         context['success_status_set'] = success_status_set
-#         context['error_status_set'] = error_status_set
-#         context['config_path_work'] = config_path_work
-#         return context
-
 
 class HelpProcessingStatus(ListView):
     """

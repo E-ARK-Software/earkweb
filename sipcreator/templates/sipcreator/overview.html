@@ -7,6 +7,7 @@
 
     <!-- SIP creator javascript -->
     <script type="text/javascript" src="{% static 'sipcreator/js/sipcreator.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkcore/js/iptablefilter.js' %}"></script>
 
 {% endblock %}
 
@@ -20,7 +21,11 @@
     SIP creation process and an internal process identifier (Process ID). The process identifier is also the name of the working directory where information package
     transformations take place (Working directory).</p>
 
-    {% render_table informationpackage %}
+    <p><input type="text" id="filterchars" placeholder="filter by identifier, packagename, or uuid" style="width: 21em"></p>
+
+    <div id="ips-table">
+        {% render_table informationpackage %}
+    </div>
 
     <p>Proceed to the next step by clicking on a package name which is where information package transformation tasks can be executed. If the SIP
     is extracted, the working area of the information package can be accessed (working directory).</p>

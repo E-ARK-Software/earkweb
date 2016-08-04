@@ -46,6 +46,12 @@ from celery.result import AsyncResult
 #from workers.tasks import AIPtoDIPReset
 #from django.core.urlresolvers import reverse
 
+import django_tables2 as tables
+from django.utils.safestring import mark_safe
+from django.shortcuts import render
+from django_tables2 import RequestConfig
+from django.shortcuts import render_to_response
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -100,14 +106,11 @@ def check_submission_exists(request, packagename):
 def working_area(request, section, uuid):
     template = loader.get_template('earkcore/workingarea.html')
     request.session['uuid'] = uuid
-    def f(x):
-        return {
-            'sip2aip': "SIP to AIP conversion",
-            'sipcreator': "SIP creation",
-            'aip2dip': "AIP to DIP conversion",
-        }[x]
+    r = request.META['HTTP_REFERER']
+    title = "SIP to AIP conversion" if "sip2aip" in r else "SIP creation" if "sipcreator" in r else "AIP to DIP conversion"
+    section = "sip2aip" if "sip2aip" in r else "sipcreator" if "sipcreator" in r else "aip2dip"
     context = RequestContext(request, {
-        "title": f(section),
+        "title": title,
         "section": section,
         "uuid": uuid,
         "dirtree": json.dumps(path_to_dict("%s/%s" % (config_path_work, uuid), strip_path_part=config_path_work), indent=4, sort_keys=False, encoding="utf-8")
@@ -194,6 +197,88 @@ def set_proc_state_valid(request, uuid):
         data = {"success": False, "errmsg": err.message, "errdetail": str(tb)}
         return JsonResponse(data)
     return JsonResponse(data)
+
+
+class SCInformationPackageTable(tables.Table):
+
+    from django_tables2.utils import A
+    area = "sipcreator"
+
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
+    uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')})
+    packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')})
+
+    class Meta:
+        model = InformationPackage
+        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
+        attrs = {'class': 'table table-striped table-bordered table-condensed' }
+        row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_statusprocess(value):
+        if value == "Success":
+            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
+        elif value == "Error":
+            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
+        elif value == "Warning":
+            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
+        else:
+            return value
+
+
+class S2AInformationPackageTable(tables.Table):
+
+    from django_tables2.utils import A
+    area = "sip2aip"
+
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
+    uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')})
+    packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')})
+
+    class Meta:
+        model = InformationPackage
+        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
+        attrs = {'class': 'table table-striped table-bordered table-condensed' }
+        row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_statusprocess(value):
+        if value == "Success":
+            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
+        elif value == "Error":
+            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
+        elif value == "Warning":
+            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
+        else:
+            return value
+
+
+@login_required
+@csrf_exempt
+def informationpackages_overview(request):
+    area = "sip2aip" if "sip2aip" in request.path else "sipcreator"
+    areacode = "2" if "sip2aip" in request.path else "1"
+    tablecls = S2AInformationPackageTable if "sip2aip" in request.path else SCInformationPackageTable
+    filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
+    sql_query = """
+    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
+    from workflow_workflowmodules as wf
+    inner join earkcore_informationpackage as ip
+    on wf.identifier=ip.last_task_id
+    where wf.tstage & {1} and (ip.uuid like '%%{0}%%' or ip.packagename like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    order by ip.last_change desc;
+    """.format(filterword, areacode)
+    queryset = InformationPackage.objects.raw(sql_query)
+    table = tablecls(queryset)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    context = RequestContext(request, {
+        'informationpackage': table,
+    })
+    if request.method == "POST":
+        return render_to_response('earkcore/ipstable.html', locals(), context_instance=context)
+    else:
+        return render(request, '%s/overview.html' % area, {'informationpackage': table})
+
 
 @login_required
 @csrf_exempt

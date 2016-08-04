@@ -57,30 +57,6 @@ def ip_detail_table(request):
 
 
 @login_required
-@csrf_exempt
-def ips_table(request):
-    filterword = request.POST['filterword']
-    sql_query = """
-    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
-    from workflow_workflowmodules as wf
-    inner join earkcore_informationpackage as ip
-    on wf.identifier=ip.last_task_id
-    where wf.tstage & 2 and (ip.uuid like '%%{0}%%' or ip.packagename like '%%{0}%%' or ip.identifier like '%%{0}%%')
-    order by ip.last_change desc;
-    """.format(filterword)
-    print sql_query
-    queryset = InformationPackage.objects.raw(sql_query)
-    table = InformationPackageTable(queryset)
-    RequestConfig(request, paginate={'per_page': 10}).configure(table)
-
-    context = RequestContext(request, {
-        'informationpackage': table,
-    })
-    return render_to_response('sip2aip/ipstable.html', locals(), context_instance=context)
-
-
-
-@login_required
 def index(request):
     template = loader.get_template('sip2aip/index.html')
     context = RequestContext(request, {
@@ -127,33 +103,8 @@ def indexingstatus(request):
     task_cond = " or ".join(list_tasks)
     queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
     table = IndexingStatusTable(queryset)
-    table.paginate(per_page=2)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
     return render(request, 'sip2aip/indexing_status.html', {'informationpackage': table})
-
-# class IndexingStatusList(ListView):
-#     """
-#     Processing status
-#     """
-#     model = InformationPackage
-#     template_name = 'sip2aip/indexing_status.html'
-#     context_object_name = 'ips'
-#
-#     list_tasks = [
-#         "last_task_id='%s'" % AIPIndexing.__name__,
-#         "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
-#         "last_task_id='%s'" % AIPStore.__name__,
-#     ]
-#     task_cond = " or ".join(list_tasks)
-#     queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
-#
-#     @method_decorator(login_required)
-#     def dispatch(self, *args, **kwargs):
-#         return super(IndexingStatusList, self).dispatch(*args, **kwargs)
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(IndexingStatusList, self).get_context_data(**kwargs)
-#         return context
 
 
 @login_required
@@ -224,92 +175,6 @@ def upload_file(upload_path, f):
             destination.write(chunk)
     destination.close()
 
-
-class InformationPackageTable(tables.Table):
-
-    from django_tables2.utils import A
-
-    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sip2aip', 'uuid': A('uuid')})
-    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')})
-
-    class Meta:
-        model = InformationPackage
-        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
-        attrs = {'class': 'table table-striped table-bordered table-condensed' }
-        row_attrs = {'data-id': lambda record: record.pk}
-
-    @staticmethod
-    def render_statusprocess(value):
-        if value == "Success":
-            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
-        elif value == "Error":
-            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
-        elif value == "Warning":
-            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
-        else:
-            return value
-
-
-def informationpackage(request):
-    """
-    Information Package Table view
-    """
-    sql_query = """
-    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
-    from workflow_workflowmodules as wf
-    inner join earkcore_informationpackage as ip
-    on wf.identifier=ip.last_task_id
-    where wf.tstage & 2
-    order by ip.last_change desc;
-    """
-    queryset = InformationPackage.objects.raw(sql_query)
-    table = InformationPackageTable(queryset)
-    table.paginate(per_page=2)
-    RequestConfig(request, paginate={'per_page': 10}).configure(table)
-    return render(request, 'sip2aip/overview.html', {'informationpackage': table})
-
-# class InformationPackageList(ListView):
-#     """
-#     Information Package List View
-#     """
-#     status_lower_limit = 100
-#     status_upper_limit = 10000
-#     filter_divisor = 20 # used with modulo operator to filter status values
-#
-#     model = InformationPackage
-#     template_name = 'sip2aip/reception.html'
-#     context_object_name = 'ips'
-#
-#     sql_query = """
-#     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
-#     from workflow_workflowmodules as wf
-#     inner join earkcore_informationpackage as ip
-#     on wf.identifier=ip.last_task_id
-#     where wf.tstage & 2
-#     order by ip.last_change desc;
-#     """
-#     queryset = InformationPackage.objects.raw(sql_query)
-#
-#     @method_decorator(login_required)
-#     def dispatch(self, *args, **kwargs):
-#         return super(InformationPackageList, self).dispatch(*args, **kwargs)
-#
-#     def get_success_status_set(self, status_model, filter_func):
-#         for tuple in status_model:
-#             if (self.status_lower_limit <= tuple[0] < self.status_upper_limit) and filter_func(tuple[0]):
-#                 yield tuple[0], tuple[1]
-#
-#     def get_context_data(self, **kwargs):
-#         context = super(InformationPackageList, self).get_context_data(**kwargs)
-#         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
-#         success_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor == 0)
-#         error_status_set = self.get_success_status_set(StatusProcess_CHOICES, lambda arg: arg % self.filter_divisor != 0)
-#         context['success_status_set'] = success_status_set
-#         context['error_status_set'] = error_status_set
-#         context['config_path_work'] = config_path_work
-#         context['working_directory_available'] = os.path.exists(os.path.join(config_path_work))
-#         return context
 
 @login_required
 def aipsearch_package(request):
