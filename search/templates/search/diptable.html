@@ -5,6 +5,13 @@
             <td class="emph">Package name</td>
             <td class="emph">{{ ip.packagename }}</td>
         </tr>
+
+		{% if ip.identifier %}
+    	<tr class="row2">
+    		<td data-toggle="tooltip" title="DIP identifier">DIP Identifier</td>
+    		<td>{{ ip.identifier }}</td>
+    	</tr>
+        {% endif %}
         <tr>
             <td>Process ID</td>
             <td>{{ ip.uuid }}</td>

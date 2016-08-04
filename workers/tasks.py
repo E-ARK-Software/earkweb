@@ -775,7 +775,6 @@ class IdentifierAssignment(DefaultTask):
 
         tl = task_context.task_logger
 
-        # TODO: set identifier in METS file
         # TODO: change identifiers used in Premis retroactively
 
         identifier_map = getIdentifierMapFromContext(task_context)
@@ -792,6 +791,31 @@ class IdentifierAssignment(DefaultTask):
         else:
             identifier = randomutils.getUniqueID()
             tl.addinfo("New identifier assigned: %s" % identifier)
+
+        # Set identifier in METS
+        try:
+            mets_path = os.path.join(task_context.path, 'METS.xml')
+            if os.path.isfile(mets_path):
+                # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+                # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+                parsed_mets = etree.parse(mets_path)
+                root = parsed_mets.getroot()
+                root.set('OBJID', 'urn:uuid:%s' % identifier)
+
+                # write changed METS file
+                mets_content = etree.tostring(parsed_mets, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(mets_path, 'w') as output_file:
+                    output_file.write(mets_content)
+                tl.addinfo("AIP identifier set in METS file.")
+                task_context.task_status = 0
+            else:
+                tl.adderr('Can\'t find a METS file to update it with new identifier!')
+                task_context.task_status = 1
+        except Exception, e:
+            tl.adderr('An error ocurred when trying to update the METS file with the new identifier: %s' % str(e))
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+            return task_context.additional_data
 
         try:
             if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
@@ -1959,11 +1983,11 @@ class AIPtoDIPReset(DefaultTask):
             shutil.rmtree(representations_path)
 
         #remove and recreate empty directories
-        data_path = os.path.join(task_context.path, "data")
-        if os.path.exists(data_path):
-            shutil.rmtree(data_path)
-        mkdir_p(data_path)
-        task_context.task_logger.addinfo("New empty 'data' directory created")
+        # data_path = os.path.join(task_context.path, "data")
+        # if os.path.exists(data_path):
+        #     shutil.rmtree(data_path)
+        # mkdir_p(data_path)
+        # task_context.task_logger.addinfo("New empty 'data' directory created")
 
         metadata_path = os.path.join(task_context.path, "metadata")
         if os.path.exists(metadata_path):
@@ -1995,6 +2019,10 @@ class AIPtoDIPReset(DefaultTask):
         if os.path.exists(mets_file):
             os.remove(mets_file)
             task_context.task_logger.addinfo("Generated root METS.xml removed")
+
+        # reset identifier
+        task_context.additional_data['identifier'] = ''
+        task_context.task_logger.addinfo("Identifier removed.")
 
         # success status
         task_context.task_status = 0
@@ -2036,6 +2064,33 @@ class DIPAcquireAIPs(DefaultTask):
                     return task_context.additional_data
                 else:
                     aip_total_size+=fsize(aip_source)
+
+            # TODO: Register selected AIPs in premis (relationship: derivation)
+            # if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
+            #     # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+            #     # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+            #     premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+            #     PREMIS_NS = 'info:lc/xmlns/premis-v2'
+            #     parsed_premis = etree.parse(premis_path)
+            #
+            #     object = parsed_premis.find(q(PREMIS_NS, 'object'))
+            #     object_id_value = object.find('.//%s' % q(PREMIS_NS, 'objectIdentifierValue'))
+            #     object_id_value.text = identifier
+            #
+            #     events = parsed_premis.findall(q(PREMIS_NS, 'event'))
+            #     for event in events:
+            #         event_rel_obj = event.find('.//%s' % q(PREMIS_NS, 'linkingObjectIdentifierValue'))
+            #         event_rel_obj.text = identifier
+            #
+            #     # write the changed Premis file
+            #     str = etree.tostring(parsed_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+            #     with open(premis_path, 'w') as output_file:
+            #         output_file.write(str)
+            #     tl.addinfo("DIP identifier set in PREMIS file.")
+            #     task_context.task_status = 0
+            # else:
+            #     tl.adderr('Can\'t find a Premis file to update selected AIPs!')
+            #     task_context.task_status = 1
 
             tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
             #for aip in dip.aips.all():
@@ -2151,6 +2206,7 @@ def get_children_from_storage(task_context_path, package_uuid, package_extension
     for child_uuid in child_uuids:
         get_children_from_storage(task_context_path, child_uuid, package_extension, tl)
 
+
 class DIPAcquireDependentAIPs(DefaultTask):
 
     accept_input_from = ['All', DIPAcquireAIPs.__name__]
@@ -2210,6 +2266,7 @@ class DIPAcquireDependentAIPs(DefaultTask):
             tl.adderr(traceback.format_exc())
             task_context.task_status = 1
         return task_context.additional_data
+
 
 class DIPExtractAIPs(DefaultTask):
 
@@ -2311,6 +2368,7 @@ def runCommand(args, stdin=PIPE, stdout=PIPE, stderr=PIPE):
 
         return result, res_stdout, res_stderr
 
+
 class DIPImportSIARD(DefaultTask):
 
     accept_input_from = ['All', DIPExtractAIPs.__name__, "DIPImportSIARD"]
@@ -2387,6 +2445,7 @@ class DIPImportSIARD(DefaultTask):
         print "additional_data %s" % task_context.additional_data
         return task_context.additional_data
 
+
 class DIPExportSIARD(DefaultTask):
 
     accept_input_from = ['All', DIPImportSIARD.__name__, "DIPExportSIARD"]
@@ -2453,138 +2512,16 @@ class DIPExportSIARD(DefaultTask):
 
         return task_context.additional_data
 
-class DIPMetadataCreation(DefaultTask):
-
-    # Descriptive metadata check can be skipped
-    accept_input_from = [SIPReset.__name__, DIPExportSIARD.__name__, 'DIPMetadataCreation']
-
-    def run_task(self, task_context):
-        """
-        SIP Package metadata creation run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1060,type:4,stage:4
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'DIPMetadataCreation'
-
-        reps_path = os.path.join(task_context.path, 'representations')
-        for name in os.listdir(reps_path):
-            rep_path = os.path.join(reps_path, name)
-            if os.path.isdir(rep_path):
-                # Premis
-                premisgen = PremisGenerator(rep_path)
-                premisgen.createPremis()
-                # Mets
-                mets_data = {'packageid': task_context.uuid,
-                             'type': 'DIP',
-                             'schemas': os.path.join(task_context.path, 'schemas'),
-                             'parent': ''}
-                metsgen = MetsGenerator(rep_path)
-                metsgen.createMets(mets_data)
-
-        # Premis not needed as already existing
-        #premisgen = PremisGenerator(task_context.path)
-        #premisgen.createPremis()
-
-        # create DIP parent Mets
-        mets_data = {'packageid': task_context.uuid,
-                     'type': 'DIP',
-                     'schemas': os.path.join(task_context.path, 'schemas'),
-                     'parent': ''}
-        metsgen = MetsGenerator(task_context.path)
-        metsgen.createMets(mets_data)
-
-        # copy schemas folder from extracted tar to root
-        selected_aips = task_context.additional_data["selected_aips"]
-        src_schemas_folder = os.path.join(task_context.path, selected_aips.keys()[0], 'schemas')
-        dst_schemas_folder = os.path.join(task_context.path, 'schemas')
-        shutil.copytree(src_schemas_folder, dst_schemas_folder)
-
-        task_context.task_status = 0
-        return task_context.additional_data
-
-class DIPPackaging(DefaultTask):
-
-    accept_input_from = [DIPMetadataCreation.__name__, "DIPPackaging"]
-
-    def run_task(self, task_context):
-        """
-        AIP Packaging
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1070,type:4,stage:4
-        """
-
-        # Add the event type - will be put into Premis.
-        #task_context.event_type = 'N/A'
-
-        tl = task_context.task_logger
-
-        try:
-            # identifier (not uuid of the working directory) is used as first part of the tar file
-            import sys
-            reload(sys)
-            sys.setdefaultencoding('utf8')
-
-            tl.addinfo("Packaging working directory: %s" % task_context.path)
-            # append generation number to tar file; if tar file exists, the generation number is incremented
-
-            #storage_path = task_context.additional_data["storage_path"]
-            storage_file = os.path.join(task_context.path, "%s.tar" % task_context.uuid)
-            tar = tarfile.open(storage_file, "w:")
-            tl.addinfo("Creating archive: %s" % storage_file)
-
-            item_list = ['metadata', 'representations', 'schemas', 'METS.xml']
-            total = 0
-            for item in item_list:
-                pack_item = os.path.join(task_context.path, item)
-                if os.path.isdir(pack_item):
-                    total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
-                else:
-                    total += 1
-            tl.addinfo("Total number of files in working directory %d" % total)
-            # log file is closed at this point because it will be included in the package,
-            # subsequent log messages can only be shown in the gui
-
-            i = 0
-            for item in item_list:
-                pack_item = os.path.join(task_context.path, item)
-                if os.path.isdir(pack_item):
-                    for subdir, dirs, files in os.walk(pack_item):
-                        for file in files:
-                            if os.path.join(subdir, file):
-                                entry = os.path.join(subdir, file)
-                                arcname = new_id + "/" + os.path.relpath(entry, task_context.path)
-                                tar.add(entry, arcname = arcname)
-                                if i % 10 == 0:
-                                    perc = (i * 100) / total
-                                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                            i += 1
-                else:
-                    arcname = new_id + "/" + os.path.relpath(pack_item, task_context.path)
-                    tar.add(pack_item, arcname = arcname)
-                    if i % 10 == 0:
-                            perc = (i * 100) / total
-                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    i += 1
-            tar.close()
-            tl.log.append("Package created: %s" % storage_file)
-
-            self.update_state(state='PROGRESS', meta={'process_percent': 100})
-            task_context.task_status = 0
-        except Exception, err:
-            task_context.task_status = 0
-        return task_context.additional_data
 
 class DIPGMLDataValidation(DefaultTask):
 
-    accept_input_from = [DIPImportSIARD.__name__, DIPExtractAIPs.__name__, 'DIPGMLDataValidation']
+    accept_input_from = [DIPImportSIARD.__name__, DIPExportSIARD.__name__, DIPExtractAIPs.__name__, 'DIPGMLDataValidation']
 
     def run_task(self, task_context):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1080,type:4,stage:4
+        @param      tc: order:1060,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2634,7 +2571,7 @@ class DIPGMLDataConversion(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1090,type:4,stage:4
+        @param      tc: order:1070,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2689,7 +2626,7 @@ class DIPPeripleoDeployment(DefaultTask):
         """
         DIP Peripleo Deployment run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:1100,type:4,stage:4
+        @param      tc: order:1080,type:4,stage:4
         """
 
         # Add the event type - will be put into Premis.
@@ -2751,6 +2688,269 @@ class DIPPeripleoDeployment(DefaultTask):
             tl.adderr("An error occurred: %s" % err)
             tl.adderr(str(tb))
             task_context.task_status = 2
+        return task_context.additional_data
+
+
+class DIPMetadataCreation(DefaultTask):
+
+    # Descriptive metadata check can be skipped
+    accept_input_from = [SIPReset.__name__, DIPExtractAIPs.__name__, DIPExportSIARD.__name__, 'DIPMetadataCreation']
+
+    def run_task(self, task_context):
+        """
+        SIP Package metadata creation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1090,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIPMetadataCreation'
+
+        reps_path = os.path.join(task_context.path, 'representations')
+        if os.path.isdir(reps_path):
+            for name in os.listdir(reps_path):
+                rep_path = os.path.join(reps_path, name)
+                if os.path.isdir(rep_path):
+                    # Premis
+                    premisgen = PremisGenerator(rep_path)
+                    premisgen.createPremis()
+                    # Mets
+                    mets_data = {'packageid': task_context.uuid,
+                                 'type': 'DIP',
+                                 'schemas': os.path.join(task_context.path, 'schemas'),
+                                 'parent': ''}
+                    metsgen = MetsGenerator(rep_path)
+                    metsgen.createMets(mets_data)
+        else:
+            task_context.task_logger.addinfo("No DIP representations found.")
+
+        # Premis not needed as already existing
+        #premisgen = PremisGenerator(task_context.path)
+        #premisgen.createPremis()
+
+        # create DIP parent Mets
+        mets_data = {'packageid': task_context.uuid,
+                     'type': 'DIP',
+                     'schemas': os.path.join(task_context.path, 'schemas'),
+                     'parent': ''}
+        metsgen = MetsGenerator(task_context.path)
+        metsgen.createMets(mets_data)
+
+        # copy schemas folder from extracted tar to root
+        selected_aips = task_context.additional_data["selected_aips"]
+        src_schemas_folder = os.path.join(task_context.path, selected_aips.keys()[0], 'schemas')
+        dst_schemas_folder = os.path.join(task_context.path, 'schemas')
+        shutil.copytree(src_schemas_folder, dst_schemas_folder)
+
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
+class DIPIdentifierAssignment(DefaultTask):
+
+    accept_input_from = [DIPMetadataCreation.__name__, "DIPIdentifierAssignment"]
+
+    def run_task(self, task_context):
+        """
+        Identifier Assignment run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1100,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'DIP Identifier Assignment'
+
+        tl = task_context.task_logger
+
+        # Get new identifier
+        identifier = randomutils.getUniqueID()
+        task_context.additional_data['identifier'] = identifier
+
+        # Set identifier in METS
+        try:
+            mets_path = os.path.join(task_context.path, 'METS.xml')
+            if os.path.isfile(mets_path):
+                # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+                # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+                parsed_mets = etree.parse(mets_path)
+                root = parsed_mets.getroot()
+                root.set('OBJID', 'urn:uuid:%s' % identifier)
+
+                # write changed METS file
+                mets_content = etree.tostring(parsed_mets, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(mets_path, 'w') as output_file:
+                    output_file.write(mets_content)
+                tl.addinfo("DIP identifier set in METS file.")
+                task_context.task_status = 0
+            else:
+                tl.adderr('Can\'t find a METS file to update it with new identifier!')
+                task_context.task_status = 1
+        except Exception, e:
+            tl.adderr('An error ocurred when trying to update the METS file with the new identifier: %s' % str(e))
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+            return task_context.additional_data
+
+        # Set identifier in PREMIS
+        try:
+            if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
+                # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
+                # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
+                premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+                PREMIS_NS = 'info:lc/xmlns/premis-v2'
+                parsed_premis = etree.parse(premis_path)
+
+                object = parsed_premis.find(q(PREMIS_NS, 'object'))
+                object_id_value = object.find('.//%s' % q(PREMIS_NS, 'objectIdentifierValue'))
+                object_id_value.text = identifier
+
+                events = parsed_premis.findall(q(PREMIS_NS, 'event'))
+                for event in events:
+                    event_rel_obj = event.find('.//%s' % q(PREMIS_NS, 'linkingObjectIdentifierValue'))
+                    event_rel_obj.text = identifier
+
+                # write the changed Premis file
+                str = etree.tostring(parsed_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
+                with open(premis_path, 'w') as output_file:
+                    output_file.write(str)
+                tl.addinfo("DIP identifier set in PREMIS file.")
+                task_context.task_status = 0
+            else:
+                tl.adderr('Can\'t find a Premis file to update it with new identifier!')
+                task_context.task_status = 1
+        except Exception, e:
+            tl.adderr('An error ocurred when trying to update the Premis file with the new identifier: %s' % e)
+            task_context.task_status = 1
+            return task_context.additional_data
+
+        task_context.additional_data['identifier'] = identifier
+
+        tl.addinfo("New identifier assigned: %s" % identifier)
+        return task_context.additional_data
+
+
+class DIPPackaging(DefaultTask):
+
+    accept_input_from = [DIPIdentifierAssignment.__name__, "DIPPackaging"]
+
+    def run_task(self, task_context):
+        """
+        AIP Packaging
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1110,type:4,stage:4
+        """
+
+        # Add the event type - will be put into Premis.
+        #task_context.event_type = 'N/A'
+
+        tl = task_context.task_logger
+
+        dip_identifier = task_context.additional_data['identifier']
+
+        try:
+            # identifier (not uuid of the working directory) is used as first part of the tar file
+            import sys
+            reload(sys)
+            sys.setdefaultencoding('utf8')
+
+            tl.addinfo("Packaging working directory: %s" % task_context.path)
+
+            storage_file = os.path.join(task_context.path, "%s.tar" % dip_identifier)
+            tar = tarfile.open(storage_file, "w:")
+            tl.addinfo("Creating archive: %s" % storage_file)
+
+            item_list = ['metadata', 'representations', 'schemas', 'METS.xml']
+            total = 0
+            for item in item_list:
+                pack_item = os.path.join(task_context.path, item)
+                if os.path.isdir(pack_item):
+                    total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
+                else:
+                    total += 1
+            tl.addinfo("Total number of files in working directory %d" % total)
+            # log file is closed at this point because it will be included in the package,
+            # subsequent log messages can only be shown in the gui
+
+            i = 0
+            for item in item_list:
+                pack_item = os.path.join(task_context.path, item)
+                if os.path.isdir(pack_item):
+                    for subdir, dirs, files in os.walk(pack_item):
+                        for file in files:
+                            if os.path.join(subdir, file):
+                                entry = os.path.join(subdir, file)
+                                arcname = dip_identifier + "/" + os.path.relpath(entry, task_context.path)
+                                tar.add(entry, arcname = arcname)
+                                if i % 10 == 0:
+                                    perc = (i * 100) / total
+                                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                            i += 1
+                else:
+                    arcname = dip_identifier + "/" + os.path.relpath(pack_item, task_context.path)
+                    tar.add(pack_item, arcname = arcname)
+                    if i % 10 == 0:
+                            perc = (i * 100) / total
+                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                    i += 1
+            tar.close()
+            tl.log.append("Package created: %s" % storage_file)
+
+            self.update_state(state='PROGRESS', meta={'process_percent': 100})
+            task_context.task_status = 0
+        except Exception, err:
+            task_context.task_status = 0
+        return task_context.additional_data
+
+
+class DIPStore(DefaultTask):
+
+    accept_input_from = [DIPPackaging.__name__, "DIPStore"]
+
+    def run_task(self, task_context):
+        """
+        Store DIP
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1120,type:4,stage:4
+        """
+
+        # no premis event
+        #task_context.event_type = 'N/A'
+
+        tl = task_context.task_logger
+
+        from config.configuration import config_path_storage
+        if not os.path.exists(os.path.join(config_path_storage, "pairtree_version0_1")):
+            tl.adderr("Storage path is not a pairtree storage directory.")
+            task_context.task_status = 2
+            return task_context.additional_data
+        if not ("identifier" in task_context.additional_data.keys() and task_context.additional_data["identifier"] != ""):
+            tl.adderr("DIP identifier is not defined.")
+            task_context.task_status = 2
+            return task_context.additional_data
+        package_identifier = task_context.additional_data["identifier"]
+        package_file_name = "%s.tar" % task_context.additional_data["identifier"]
+        package_file_path = os.path.join(task_context.path, package_file_name)
+        if not os.path.exists(package_file_path):
+            tl.adderr("DIP TAR package does not exist: %s" % package_file_path)
+            task_context.task_status = 2
+            return task_context.additional_data
+        try:
+            pts = PairtreeStorage(config_path_storage)
+            pts.store(package_identifier, package_file_path)
+
+            package_object_path = pts.get_object_path(package_identifier)
+            if os.path.exists(package_object_path):
+                tl.addinfo('Storage path: %s' % (package_object_path))
+                if ChecksumFile(package_file_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(package_object_path).get(ChecksumAlgorithm.SHA256):
+                    tl.addinfo("Checksum verification completed, the package was transmitted successfully.")
+                    task_context.additional_data["storage_loc"] = package_object_path
+                else:
+                    tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+            task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        except Exception as e:
+            tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
         return task_context.additional_data
 
 
