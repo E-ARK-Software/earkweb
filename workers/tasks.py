@@ -2337,10 +2337,10 @@ class DIPImportSIARD(DefaultTask):
                 for file in files:
                     if file.endswith(".siard2"):
                         siard_path = os.path.join(root, file)
-                        print siard_path
+                        tl.addinfo(("SIARD file found at: %s" % siard_path))
                         siard_db_name = os.path.splitext(file)[0]
 
-                        print "Database name: %s" % siard_db_name
+                        tl.addinfo("Creating new database: %s" % siard_db_name)
                         # drop database if existing
                         command = [
                             'mysql',
@@ -2370,9 +2370,11 @@ class DIPImportSIARD(DefaultTask):
                             '-eu', siard_db_user,
                             '-ep', siard_db_passwd,
                         ]
+                        tl.addinfo("Importing SIARD file '%s' to database '%s'." % (siard_path, siard_db_name))
                         runCommand(command)
                         #java -jar $DBPTK -i siard-2 --import-file=world.siard2 -e mysql --export-hostname=localhost --export-database=world --export-user=$USER --export-password=$PASSWORD
                         siard_dbs.append(siard_db_name)
+
 
             task_context.additional_data['siard_dbs'] = siard_dbs
             task_context.task_status = 0
