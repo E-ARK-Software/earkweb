@@ -62,34 +62,15 @@ def start(request):
     return HttpResponse(template.render(context))
 
 
-# @login_required
-# def index(request):
-#     template = loader.get_template('sipcreator/index.html')
-#     ulform = TinyUploadFileForm()
-#     ulform.form_show_labels = False
-#     uuid = ""
-#     packagename = ""
-#
-#     if 'uuid' in request.session:
-#         uuid = request.session['uuid']
-#     if 'packagename' in request.session:
-#         packagename = request.session['packagename']
-#     print "uuid: "+uuid
-#     print "packagename: "+packagename
-#     context = RequestContext(request, {
-#         'uploadFileForm': ulform,
-#         'uuid': uuid,
-#         'packagename': packagename,
-#     })
-#     return HttpResponse(template.render(context))
 
 class InformationPackageTable(tables.Table):
 
     from django_tables2.utils import A
+    area = "sipcreator"
 
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sipcreator', 'uuid': A('uuid')})
-    packagename = tables.LinkColumn('sipcreator:ip_detail', kwargs={'pk': A('pk')})
+    uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')})
+    packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')})
 
     class Meta:
         model = InformationPackage
@@ -109,23 +90,30 @@ class InformationPackageTable(tables.Table):
             return value
 
 
-def informationpackage(request):
-    """
-    Information Package Table view
-    """
+@login_required
+@csrf_exempt
+def informationpackages_overview(request):
+    area = "sipcreator"
+    areacode = "1"
+    filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
     sql_query = """
     select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
     from workflow_workflowmodules as wf
     inner join earkcore_informationpackage as ip
     on wf.identifier=ip.last_task_id
-    where wf.tstage & 1
+    where wf.tstage & {1} and (ip.uuid like '%%{0}%%' or ip.packagename like '%%{0}%%' or ip.identifier like '%%{0}%%')
     order by ip.last_change desc;
-    """
+    """.format(filterword, areacode)
     queryset = InformationPackage.objects.raw(sql_query)
     table = InformationPackageTable(queryset)
-    table.paginate(per_page=2)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
-    return render(request, 'sipcreator/overview.html', {'informationpackage': table})
+    context = RequestContext(request, {
+        'informationpackage': table,
+    })
+    if request.method == "POST":
+        return render_to_response('earkcore/ipstable.html', locals(), context_instance=context)
+    else:
+        return render(request, '%s/overview.html' % area, {'informationpackage': table})
 
 
 class HelpProcessingStatus(ListView):

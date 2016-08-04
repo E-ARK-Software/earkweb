@@ -3,15 +3,15 @@ from django.conf.urls import patterns, url
 from sip2aip import views
 
 import earkcore
-from earkcore.views import informationpackages_overview
 
+import views
 
 urlpatterns= patterns('',
 
-    url(r'^$', informationpackages_overview, name='reception'),
-    url(r'^overview$', informationpackages_overview, name='reception'),
+    url(r'^$', views.informationpackages_overview, name='reception'),
+    url(r'^overview$', views.informationpackages_overview, name='reception'),
 
-    url(r'^ips_table$', informationpackages_overview, name='ips_table'),
+    url(r'^ips_table$', views.informationpackages_overview, name='ips_table'),
 
     url(r'^detail/(?P<pk>\d+)/$', views.InformationPackageDetail.as_view(), name='ip_detail'),
     url(r'^detail2/(?P<pk>\d+)/$', views.InformationPackageDetail2.as_view(), name='ip_detail2'),
