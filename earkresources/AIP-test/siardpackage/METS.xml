@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<mets xmlns:ext="ExtensionMETS" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.loc.gov/METS/" PROFILE="http://www.ra.ee/METS/v01/IP.xml" TYPE="AIP" OBJID="urn:uuid:" LABEL="METS file describing the AIP matching the OBJID." xsi:schemaLocation="http://www.loc.gov/METS/ schemas/mets_1_11.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd">
+<mets xmlns:ext="ExtensionMETS" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.loc.gov/METS/" PROFILE="http://www.ra.ee/METS/v01/IP.xml" TYPE="AIP" OBJID="urn:uuid:89b8ab18-79f5-4893-bb22-0b25399901b5" LABEL="METS file describing the AIP matching the OBJID." xsi:schemaLocation="http://www.loc.gov/METS/ schemas/mets_1_11.xsd http://www.w3.org/1999/xlink schemas/xlink.xsd">
   <metsHdr RECORDSTATUS="NEW" CREATEDATE="2016-08-02T15:07:33">
     <agent TYPE="OTHER" ROLE="CREATOR" OTHERTYPE="SOFTWARE">
       <name>E-ARK earkweb</name>

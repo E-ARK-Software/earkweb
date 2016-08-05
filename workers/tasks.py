@@ -233,6 +233,7 @@ def reception_dir_status(self, reception_d):
     logger.debug("Get information about directory: %s" % reception_d)
     return path_to_dict(reception_d)
 
+
 @app.task(bind=True)
 def set_process_state(self, uuid, valid):
     logger.debug("Set process state of process '%s' to '%s'." % (uuid, valid))
@@ -242,6 +243,7 @@ def set_process_state(self, uuid, valid):
         ip_state_xml.set_state(0 if valid else 1)
         ip_state_xml.write_doc(ip_state_doc_path)
     return { 'status': '0', "success": True}
+
 
 @app.task(bind=True)
 def index_aip_storage(self, *args, **kwargs):
@@ -774,8 +776,6 @@ class IdentifierAssignment(DefaultTask):
         task_context.event_type = 'AIP Identifier Assignment'
 
         tl = task_context.task_logger
-
-        # TODO: change identifiers used in Premis retroactively
 
         identifier_map = getIdentifierMapFromContext(task_context)
 
@@ -2031,7 +2031,7 @@ class AIPtoDIPReset(DefaultTask):
 
 class DIPAcquireAIPs(DefaultTask):
 
-    accept_input_from = ['All', AIPtoDIPReset.__name__]
+    accept_input_from = ['DIPAcquireAIPs', AIPtoDIPReset.__name__]
 
     def run_task(self, task_context):
         """
@@ -2065,32 +2065,7 @@ class DIPAcquireAIPs(DefaultTask):
                 else:
                     aip_total_size+=fsize(aip_source)
 
-            # TODO: Register selected AIPs in premis (relationship: derivation)
-            # if os.path.isfile(os.path.join(task_context.path, 'metadata/preservation/premis.xml')):
-            #     # If the Premis file exists, replace every events <linkingObjectIdentifierValue> with the new
-            #     # identifier, as well as the <objectIdentifierValue> for the object resembling the package.
-            #     premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
-            #     PREMIS_NS = 'info:lc/xmlns/premis-v2'
-            #     parsed_premis = etree.parse(premis_path)
-            #
-            #     object = parsed_premis.find(q(PREMIS_NS, 'object'))
-            #     object_id_value = object.find('.//%s' % q(PREMIS_NS, 'objectIdentifierValue'))
-            #     object_id_value.text = identifier
-            #
-            #     events = parsed_premis.findall(q(PREMIS_NS, 'event'))
-            #     for event in events:
-            #         event_rel_obj = event.find('.//%s' % q(PREMIS_NS, 'linkingObjectIdentifierValue'))
-            #         event_rel_obj.text = identifier
-            #
-            #     # write the changed Premis file
-            #     str = etree.tostring(parsed_premis, encoding='UTF-8', pretty_print=True, xml_declaration=True)
-            #     with open(premis_path, 'w') as output_file:
-            #         output_file.write(str)
-            #     tl.addinfo("DIP identifier set in PREMIS file.")
-            #     task_context.task_status = 0
-            # else:
-            #     tl.adderr('Can\'t find a Premis file to update selected AIPs!')
-            #     task_context.task_status = 1
+            task_context.additional_data["selected_aips"] = selected_aips.keys()
 
             tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
             #for aip in dip.aips.all():
@@ -2111,7 +2086,9 @@ class DIPAcquireAIPs(DefaultTask):
             task_context.task_status = 0
         except Exception as e:
             tl.adderr("Task failed %s" % task_context.uuid)
-            task_context.task_status = 1
+            tb = traceback.format_exc()
+            tl.adderr(str(tb))
+            task_context.task_status = 2
 
         return task_context.additional_data
 
@@ -2284,6 +2261,10 @@ class DIPExtractAIPs(DefaultTask):
 
         tl = task_context.task_logger
 
+        selected_aips = task_context.additional_data["selected_aips"]
+        for selected_aip in selected_aips:
+            tl.addinfo(str(selected_aip))
+
         try:
             import sys
             reload(sys)
@@ -2334,6 +2315,18 @@ class DIPExtractAIPs(DefaultTask):
             tl.addinfo(("Untar of %d items in total finished" % total_processed_members))
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
+
+            # Add related AIPs to PREMIS based on the extracted AIP directories available in the working directory
+            premis_path = os.path.join(task_context.path, 'metadata/preservation/premis.xml')
+            from earkcore.metadata.mets.metsutil import get_mets_objids_from_basedir
+            extracted_aips = get_mets_objids_from_basedir(task_context.path)
+            from earkcore.metadata.premis.dippremis import DIPPremis
+            if os.path.isfile(premis_path):
+                dip_premis = DIPPremis(premis_path)
+                dip_premis.add_related_aips(extracted_aips, 'DIPAcquireAIPs')
+                with open(premis_path, 'w') as output_file:
+                    output_file.write(str(dip_premis))
+            tl.addinfo("Related AIPs added to PREMIS: %s" % ", ".join(extracted_aips))
         except Exception as e:
             tl.adderr("Task failed %s" % task_context.uuid)
             tl.adderr("Task failed %s" % e.message)
@@ -2432,7 +2425,6 @@ class DIPImportSIARD(DefaultTask):
                         runCommand(command)
                         #java -jar $DBPTK -i siard-2 --import-file=world.siard2 -e mysql --export-hostname=localhost --export-database=world --export-user=$USER --export-password=$PASSWORD
                         siard_dbs.append(siard_db_name)
-
 
             task_context.additional_data['siard_dbs'] = siard_dbs
             task_context.task_status = 0

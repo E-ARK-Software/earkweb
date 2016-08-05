@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0"
+        xsi:schemaLocation="info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd">
+    <object xmlID="IDe0ae1a10-9749-42cc-9d18-7e73ee360021" xsi:type="representation">
+        <objectIdentifier>
+            <objectIdentifierType>repository</objectIdentifierType>
+            <objectIdentifierValue>537c8524-3d34-4248-ac94-5ec33dea4aa1</objectIdentifierValue>
+        </objectIdentifier>
+    </object>
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>local</eventIdentifierType>
+            <eventIdentifierValue>IDeccc3eae-98bf-4c44-b625-c055747b680b</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>DIPAcquireAIPs</eventType>
+        <eventDateTime>2016-08-04T17:06:06</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>success</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>software</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>E-ARK Web 0.3.3. (task: DIPAcquireAIPs)</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>repository</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>537c8524-3d34-4248-ac94-5ec33dea4aa1</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>local</eventIdentifierType>
+            <eventIdentifierValue>IDd5957861-2403-4b0c-8059-550f051fba90</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>DIPExtractAIPs</eventType>
+        <eventDateTime>2016-08-04T17:06:10</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>success</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>software</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>E-ARK Web 0.3.3. (task: DIPExtractAIPs)</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>repository</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>537c8524-3d34-4248-ac94-5ec33dea4aa1</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>local</eventIdentifierType>
+            <eventIdentifierValue>ID6e3173ac-63f3-4aeb-a76b-2a7c98fbe8e8</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>DIPMetadataCreation</eventType>
+        <eventDateTime>2016-08-04T17:06:15</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>success</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>software</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>E-ARK Web 0.3.3. (task: DIPMetadataCreation)</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>repository</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>537c8524-3d34-4248-ac94-5ec33dea4aa1</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>local</eventIdentifierType>
+            <eventIdentifierValue>ID1077626e-7f98-4c9e-91eb-200a8290f5ad</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>DIP Identifier Assignment</eventType>
+        <eventDateTime>2016-08-04T17:06:19</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>success</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>software</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>E-ARK Web 0.3.3. (task: DIPIdentifierAssignment)</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier>
+        <linkingObjectIdentifier>
+            <linkingObjectIdentifierType>repository</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>537c8524-3d34-4248-ac94-5ec33dea4aa1</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+    <agent>
+        <agentIdentifier>
+            <agentIdentifierType>LOCAL</agentIdentifierType>
+            <agentIdentifierValue>E-ARK Web 0.3.3.</agentIdentifierValue>
+        </agentIdentifier>
+        <agentName>E-ARK Web</agentName>
+        <agentType>Software</agentType>
+    </agent>
+</premis>

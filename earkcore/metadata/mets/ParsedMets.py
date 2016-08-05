@@ -74,6 +74,10 @@ class ParsedMets(object):
     def get_file_element_reference(file_element):
         return ''.join(file_element.xpath('mets:FLocat/@xlink:href', namespaces=ParsedMets.ns))
 
+    def get_obj_id(self):
+        xpath_result = self.mets_tree.getroot().xpath('@OBJID', namespaces=ParsedMets.ns)
+        return xpath_result[0] if len(xpath_result) == 1 else "urn:uuid:none"
+
     def get_mets_schema_from_schema_location(self):
         if self.mets_tree is None:
             raise ValueError("Attribute 'mets_tree' of type ElementTree must be initialized")
