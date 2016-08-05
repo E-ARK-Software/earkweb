@@ -124,7 +124,7 @@ class SolrClient(object):
         _, status = self.update(docs)
         return status
 
-    def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter):
+    def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter, package_type="IP"):
         """
         Iterate over tar file and post documents it contains to Solr API (extract)
 
@@ -154,6 +154,7 @@ class SolrClient(object):
 
             if os.path.exists(afile):
                 params = SolrDocParams(afile).get_params()
+                params['literal.packagetype'] = package_type
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
                 files = {'file': ('userfile', open(afile, 'rb'))}
