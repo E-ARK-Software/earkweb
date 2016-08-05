@@ -78,6 +78,10 @@ class ParsedMets(object):
         xpath_result = self.mets_tree.getroot().xpath('@OBJID', namespaces=ParsedMets.ns)
         return xpath_result[0] if len(xpath_result) == 1 else "urn:uuid:none"
 
+    def get_package_type(self):
+        xpath_result = self.mets_tree.getroot().xpath('@TYPE', namespaces=ParsedMets.ns)
+        return xpath_result[0] if len(xpath_result) == 1 else "NONE"
+
     def get_mets_schema_from_schema_location(self):
         if self.mets_tree is None:
             raise ValueError("Attribute 'mets_tree' of type ElementTree must be initialized")
@@ -125,6 +129,12 @@ class TestParsedMets(unittest.TestCase):
         """
         file_element = self.pmets.get_first_file_element()
         self.assertEquals(file_element.tag, "{http://www.loc.gov/METS/}file", "Must return a file element")
+
+    def test_get_package_type(self):
+        """
+        Must return first file element
+        """
+        self.assertEquals("SIP", self.pmets.get_package_type())
 
 
 if __name__ == '__main__':

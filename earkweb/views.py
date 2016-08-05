@@ -10,6 +10,8 @@ from config.configuration import local_solr_server_ip
 from config.configuration import access_solr_port
 from config.configuration import lily_content_access_ip
 from config.configuration import lily_content_access_port
+from config.configuration import earkweb_version
+from config.configuration import earkweb_version_date
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
 from django.shortcuts import render
@@ -31,7 +33,8 @@ def home(request):
     print request.user
     template = loader.get_template('earkweb/home.html')
     context = RequestContext(request, {
-
+        'earkweb_version': earkweb_version,
+        'earkweb_version_date': earkweb_version_date,
     })
     return HttpResponse(template.render(context))
 
