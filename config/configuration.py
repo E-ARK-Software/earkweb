@@ -6,7 +6,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
-earkweb_version = '0.3.3.'
+earkweb_version = '0.9.0.'
+earkweb_version_date = "01.08.2016"
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.join(root_dir, 'config/settings.cfg'))
@@ -118,7 +119,8 @@ config_path_nlp = config.get('nlp', 'config_path_nlp')
 # Solr fields
 # {'name': '', 'type': '', 'stored': ''}
 # {'name': '', 'type': '', 'stored': '', 'indexed': 'true'}
-solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
+solr_field_list = [{'name': 'packagetype', 'type': 'string', 'stored': 'true'},
+                   {'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'path', 'type': 'string', 'stored': 'true'},
                    {'name': 'size', 'type': 'long', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
