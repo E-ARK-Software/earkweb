@@ -1,6 +1,7 @@
 """Solr client"""
 import logging
 from earkcore.format.formatidentification import FormatIdentification
+from earkcore.metadata.mets.ParsedMets import ParsedMets
 from earkcore.search.solrdocparams import SolrDocParams
 
 logger = logging.getLogger(__name__)
@@ -124,7 +125,7 @@ class SolrClient(object):
         _, status = self.update(docs)
         return status
 
-    def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter, package_type="IP"):
+    def post_tar_file(self, tar_file_path, identifier, progress_reporter=default_reporter):
         """
         Iterate over tar file and post documents it contains to Solr API (extract)
 
@@ -147,6 +148,24 @@ class SolrClient(object):
         logger.debug("Number of files in tarfile: %s " % numfiles)
 
         num = 0
+
+        mets_entry = "%s/METS.xml" % identifier
+        package_type = "IP"
+        try:
+            tfile.extract(mets_entry, extract_dir)
+            mets_path = os.path.join(extract_dir, identifier, "METS.xml")
+            if os.path.exists(mets_path):
+                try:
+                    mets = ParsedMets(extract_dir)
+                    mets.load_mets(mets_path)
+                    package_type = mets.get_package_type()
+                except:
+                    logger.warn("Error loading METS from package during indexing, assigning default package type instead.")
+
+            else:
+                logger.warn("METS file does not exist: %s" % mets_path)
+        except KeyError:
+            logger.warn("METS entry does not exist in TAR file: %s" % mets_entry)
 
         for t in tfile:
             tfile.extract(t, extract_dir)
