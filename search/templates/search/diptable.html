@@ -17,9 +17,16 @@
             <td>{{ ip.uuid }}</td>
         </tr>
         <tr class="row1">
-            <td>Working area path</td>
-            <td><a href="{% url 'sip2aip:working_area' 'aip2dip' ip.uuid %}" title='DIP in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
-        </tr>
+			<td>Working area path</td>
+			<td>
+				{% if ip.path != '' %}
+				<a href="{% url 'sip2aip:working_area' 'aip2dip' ip.uuid %}" title='DIP in working area'>{{ config_path_work }}/{{ ip.uuid }}</a>
+				{% else %}
+				--
+				{% endif %}
+			</td>
+		</tr>
+        {% if ip.path != '' %}
         <tr>
             <td>Selected AIPs</td>
             <td>
@@ -42,6 +49,7 @@
                 </table>
             </td>
         </tr>
+        {% endif %}
         {% if ip.statusprocess > 10000 %}
 		<tr class="row1">
 			<td>Working area path</td>

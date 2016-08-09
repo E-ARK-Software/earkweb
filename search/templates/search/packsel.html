@@ -1,5 +1,6 @@
 {% extends "earkweb/base.html" %}
-
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
 {% load staticfiles %}
 
 {% block extra_head %}
@@ -15,60 +16,23 @@
 
 {% block content %}
 
-{% include "search/about_module.html" %}
+    {% include "search/about_module.html" %}
 
-<h2 class="main">Active AIP to DIP conversion processes</h2>
+    <h2 class="main">Active SIP to AIP conversion processes</h2>
 
-<p>The following table gives an overview about open the DIP creation processes. Each package has a package name which was provided in the first step of the
-    DIP creation process, and the AIP selection used to create the DIP is shown.</p>
+    <p>The following table gives an overview about open the DIP creation processes. Each package has a package name which was provided in the first step of the
+    DIP creation process.</p>
 
-<table class="table table-striped table-bordered table-condensed">
-    <thead>
-      <tr>
-                <th>DIP package name</th>
-                <th>Selected AIPs</th>
-      </tr>
-    </thead>
+    <p><input type="text" id="filterchars" placeholder="filter by identifier, packagename, or uuid" style="width: 21em"></p>
 
-        <tbody>
+    <div id="ips-table">
+        {% render_table informationpackage %}
+    </div>
 
-        {% for dip in package_list %}
-        <div id="{{ dip.safe_path_string }}">
 
-        <tr>
-            <td><a href="{% url 'search:dip' dip.name %}"><b>{{ dip.name }}</b></a>
-                <a id="remproc{{ dip.safe_path_string }}" title="remproc{{ dip.name }}" href="#">
-                    <span data-toggle="tooltip" title="Remove this process" class="glyphicon glyphicon-remove"></span>
-                </a></td>
-            <td>
-                <ul>
-                    {% if dip.aips.all %}
-                    {% for aip in dip.aips.all %}
-                    <li id="{{ dip.safe_path_string }}{{ aip.safe_string }}">{{ aip.identifier }}
+    <p>Proceed to the next step by clicking on a package name which is where information package transformation tasks can be executed. If the SIP
+    is extracted, the working area of the information package can be accessed (working directory).</p>
 
-                        <a id="remaip{{ aip.safe_string }}" title="remaip{{ dip.name }}~{{ aip.identifier }}" href="#">
-                            <span data-toggle="tooltip" title="Remove this package" class="glyphicon glyphicon-remove" style="color:gray"></span>
-                        </a>
-                    </li>
-                    {% endfor %}
-                    {% else %}
-                    <li><a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a></li>
-                    {% endif %}
-                </ul>
-                {% if dip.aips.all %}
-                <p style="margin-left: 2em"><a href="{% url 'search:search' dip.name|urlencode %}">Modify selection</a></p>
-                {% endif %}
-            </td>
-        </tr>
-
-        </div>
-        {% endfor %}
-
-        </tbody>
-
-  </table></form>
-
-<p>Proceed to the next step by clicking on the corresponding DIP package name link which is where transformation tasks can be executed.</p>
+    <p><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span> <a href="{% url 'sip2aip:help_processing_status' %}">SIP to AIP conversion tasks overview.</a></p>
 
 {% endblock %}
-

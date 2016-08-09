@@ -49,7 +49,10 @@ from config.configuration import server_hdfs_aip_query
 
 from config.configuration import server_repo_record_content_query
 import time
-
+import django_tables2 as tables
+from django.utils.safestring import mark_safe
+from django.shortcuts import render
+from django_tables2 import RequestConfig
 
 def initialize_dip(dip_creation_process_name):
     dip = DIP.objects.create(name=dip_creation_process_name)
@@ -99,6 +102,61 @@ def packsel(request):
         'error_status_set': error_status_set,
     })
     return HttpResponse(template.render(context))
+
+
+class InformationPackageTable(tables.Table):
+
+    from django_tables2.utils import A
+    area = "aip2dip"
+
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
+    uuid = tables.LinkColumn('search:working_area', kwargs={'section': area, 'uuid': A('uuid')})
+
+    packagename = tables.LinkColumn('search:dip', args={A('packagename')})
+
+    class Meta:
+        model = InformationPackage
+        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
+        attrs = {'class': 'table table-striped table-bordered table-condensed' }
+        row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_statusprocess(value):
+        if value == "Success":
+            return mark_safe('Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>')
+        elif value == "Error":
+            return mark_safe('Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>')
+        elif value == "Warning":
+            return mark_safe('Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>')
+        else:
+            return value
+
+
+@login_required
+@csrf_exempt
+def informationpackages_overview(request):
+    area = "aip2dip"
+    areacode = "4"
+    filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
+    sql_query = """
+    select ip.id as id, ip.path as path, ip.statusprocess as statusprocess, ip.uuid as uuid, ip.packagename as packagename, ip.identifier as identifier
+    from workflow_workflowmodules as wf
+    inner join earkcore_informationpackage as ip
+    on wf.identifier=ip.last_task_id
+    where wf.tstage & {1} and (ip.uuid like '%%{0}%%' or ip.packagename like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    order by ip.last_change desc;
+    """.format(filterword, areacode)
+    queryset = InformationPackage.objects.raw(sql_query)
+    table = InformationPackageTable(queryset)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    context = RequestContext(request, {
+        'informationpackage': table,
+    })
+    if request.method == "POST":
+        return render_to_response('earkcore/ipstable.html', locals(), context_instance=context)
+    else:
+        return render(request, 'search/packsel.html', {'informationpackage': table})
+
 
 class HelpProcessingStatus(ListView):
     """
