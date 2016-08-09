@@ -69,13 +69,16 @@ class InformationPackageTable(tables.Table):
     from django_tables2.utils import A
     area = "sip2aip"
 
-    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')})
-    packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')})
+    identifier = tables.Column(verbose_name='Identifier' )
+    last_task = tables.Column(verbose_name='Last task')
+    statusprocess = tables.Column(verbose_name='Process status' )
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
+    uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
+    packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name= 'Package name')
 
     class Meta:
         model = InformationPackage
-        fields = ('packagename', 'uuid', 'last_change', 'last_task', 'statusprocess')
+        fields = ('packagename', 'uuid', 'identifier', 'last_change', 'last_task', 'statusprocess')
         attrs = {'class': 'table table-striped table-bordered table-condensed' }
         row_attrs = {'data-id': lambda record: record.pk}
 

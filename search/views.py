@@ -109,10 +109,11 @@ class InformationPackageTable(tables.Table):
     from django_tables2.utils import A
     area = "aip2dip"
 
-    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    uuid = tables.LinkColumn('search:working_area', kwargs={'section': area, 'uuid': A('uuid')})
-
-    packagename = tables.LinkColumn('search:dip', args={A('packagename')})
+    packagename = tables.LinkColumn('search:dip', args={A('packagename')}, verbose_name= 'Package name')
+    uuid = tables.LinkColumn('search:working_area', kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
+    last_task = tables.Column(verbose_name='Last task')
+    statusprocess = tables.Column(verbose_name='Process status' )
 
     class Meta:
         model = InformationPackage
