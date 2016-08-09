@@ -21,7 +21,7 @@ from django.http import JsonResponse
 from sip2aip import forms
 from workers.ip_state import IpState
 from workers.taskconfig import TaskConfig
-from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore, run_package_ingest
+from workers.tasks import SIPtoAIPReset, AIPIndexing, AIPStore, run_package_ingest, IPClose, DIPStore, IPDelete
 from workflow.models import WorkflowModules
 from config.configuration import config_path_work
 from config.configuration import config_path_reception
@@ -124,12 +124,19 @@ class IndexingStatusTable(tables.Table):
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
     uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sip2aip', 'uuid': A('uuid')})
     packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')})
+    verbose_name= 'Development Environment'
+    num_indexed_docs_storage = tables.Column(verbose_name= 'Number of indexed documents' )
+
 
     class Meta:
         model = InformationPackage
-        fields = ('identifier', 'packagename', 'uuid', 'last_change', 'last_task', 'statusprocess', 'num_indexed_docs_storage')
+        fields = ('identifier', 'packagename', 'uuid', 'last_change', 'last_task', 'num_indexed_docs_storage')
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed' }
         row_attrs = {'data-id': lambda record: record.pk}
+
+    @staticmethod
+    def render_num_indexed_docs_storage(value):
+        return mark_safe('<b>%s</b>' % value)
 
     @staticmethod
     def render_statusprocess(value):
@@ -151,9 +158,12 @@ def indexingstatus(request):
         "last_task_id='%s'" % AIPIndexing.__name__,
         "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
         "last_task_id='%s'" % AIPStore.__name__,
+        "last_task_id='%s'" % DIPStore.__name__,
+        "last_task_id='%s'" % IPClose.__name__,
+        "last_task_id='%s'" % IPDelete.__name__,
     ]
     task_cond = " or ".join(list_tasks)
-    queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
+    queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
     return render(request, 'sip2aip/indexing_status.html', {'informationpackage': table})

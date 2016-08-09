@@ -31,9 +31,6 @@
             <td>Selected AIPs</td>
             <td>
                 <table>
-                {% if not dip.aips.all %}
-                    <a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a>
-                {% endif %}
                 {% for aip in dip.aips.all %}
                     <tr>
                         <td style="padding:3px">{{ aip.identifier }}</td>
@@ -47,6 +44,11 @@
                     </tr>
                 {% endfor %}
                 </table>
+                {% if not dip.aips.all %}
+                    <a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a>
+                {% else %}
+                    <a href="{% url 'search:search' dip.name|urlencode %}">Modify selection</a>
+                {% endif %}
             </td>
         </tr>
         {% endif %}

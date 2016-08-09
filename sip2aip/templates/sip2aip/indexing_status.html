@@ -16,17 +16,15 @@
 
 {% block content %}
 
-    {% include "sip2aip/about_module.html" %}
+    <h1 class="main">Search</h1>
 
-    <h2 class="main">Indexing status of packages in AIP storage</h2>
+    <h2 class="main">Indexing status of packages available in the local repository.</h2>
 
-    <p>The indexing of packages available in AIP storage can be initiated here.</p>
+    <p><button id="reindexbtn" class="btn btn-default">Start indexing local repository</button></p>
 
-    <p><button id="reindexbtn" class="btn btn-default">Index AIP storage</button></p>
+    <p>Note that re-indexing packages available in the local repository will delete the existing index first.</p>
 
-    <p>Note that re-indexing AIP storage will delete the existing index first.</p>
-
-    <p>The following table gives an overview about the indexing status of packages available in AIP storage.</p>
+    <p>The following table gives an overview about the number of documents indexed for each package.</p>
 
     {% render_table informationpackage %}
 
