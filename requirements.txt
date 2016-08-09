@@ -44,3 +44,4 @@ SQLAlchemy==1.0.6
 subprocess32==3.2.6
 tornado==4.2
 wheel==0.24.0
+dirtools==0.2.0

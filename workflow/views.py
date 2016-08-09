@@ -281,6 +281,8 @@ def poll_state(request):
                                 ip.last_task = wf
                             except Exception, err:
                                 data[err].append("Last task workflow module not found!")
+                            if task.result.task_name == "IPClose" or task.result.task_name == "IPDelete":
+                                ip.path = ""
                         ip.save()
                 else:
                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}

@@ -2984,7 +2984,7 @@ class DMMainTask(ConcurrentTask):
                 # if cat is not 'None':
                 #     pass
 
-        return
+        return task_context.additional_data
 
 
 class DMNERecogniser(ConcurrentTask):
@@ -3065,3 +3065,38 @@ class DMNERecogniser(ConcurrentTask):
         # exist_db = write_to_exist(xml_string, identifier)     # TODO
         #
         # return 0 if exist_db in (200, 201) else 1
+        return task_context.additional_data
+
+
+class IPClose(DefaultTask):
+
+    accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, SolrUpdateCurrentMetadata.__name__, LilyHDFSUpload, DIPStore.__name__]
+
+    def run_task(self, task_context, *args, **kwargs):
+        """
+        IPClose
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:100000,type:6,stage:0
+        """
+        if os.path.exists(task_context.path) and task_context.path == os.path.join(config_path_work, task_context.uuid):
+            shutil.rmtree(task_context.path)
+            task_context.task_logger.addinfo("Working directory deleted: %s" % task_context.path)
+        task_context.task_status = 0
+        return task_context.additional_data
+
+
+class IPDelete(DefaultTask):
+
+    accept_input_from = ['All']
+
+    def run_task(self, task_context, *args, **kwargs):
+        """
+        IPClose
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:100100,type:6,stage:0
+        """
+        if os.path.exists(task_context.path) and task_context.path == os.path.join(config_path_work, task_context.uuid):
+            shutil.rmtree(task_context.path)
+            task_context.task_logger.addinfo("Working directory deleted: %s" % task_context.path)
+        task_context.task_status = 0
+        return task_context.additional_data

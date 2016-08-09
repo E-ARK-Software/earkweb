@@ -97,6 +97,7 @@ class DefaultTask(Task):
         #    task_context.ip_state_xml.set_last_task(new_state.get_last_task())
         #else:
 
+
         task_context.ip_state_xml.set_last_task(self.task_name)
         task_context.ip_state_xml.set_state(task_context.task_status)
         #TODO: fix this additional data serialization to xml
@@ -172,8 +173,10 @@ class DefaultTask(Task):
             task_context.task_logger.adderr("An error occurred: %s" % e)
             traceback.print_exc()
             task_context.task_status = 1
-
-        return self.finalize(task_context)
+        if self.task_name == 'IPClose' or self.task_name == 'IPDelete':
+            return task_context
+        else:
+            return self.finalize(task_context)
 
     def can_connect(self, task):
         return task in self.accept_input_from

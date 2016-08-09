@@ -23,7 +23,9 @@ import tarfile
 from earkcore.utils import randomutils
 
 from config.configuration import root_dir
-
+from dirtools import Dir
+from itertools import groupby
+from config.configuration import config_path_storage
 from pairtree import PairtreeStorageFactory, ObjectNotFoundException
 
 VersionDirFormat = '%05d'
@@ -209,6 +211,34 @@ class PairtreeStorage(object):
         except KeyError:
             logger.error('ERROR: Did not find %s in tar archive' % entry)
             raise ObjectNotFoundException("Entry not found in repository object")
+
+    def latest_version_ip_list(self):
+        """
+        Get a list of latest version packages from repository storage.
+        @return:    List of dictionary items of IPs available in repository storage.
+        """
+        files = Dir(config_path_storage, exclude_file='').files()
+        sortkeyfn = lambda s: s[1]
+        tuples = []
+        for repofile in files:
+            if repofile.endswith(".tar"):
+                f, fname = os.path.split(repofile)
+                repoitem = (repofile, f[-5:])
+                tuples.append(repoitem)
+        tuples.sort(key=sortkeyfn, reverse=True)
+        items_grouped_by_version = []
+        for key, valuesiter in groupby(tuples, key=sortkeyfn):
+            items_grouped_by_version.append(dict(version=key, items=list(v[0] for v in valuesiter)))
+        lastversionfiles = []
+        for version_items in items_grouped_by_version:
+            for item in version_items['items']:
+                p, f = os.path.split(item)
+                p2 = os.path.join(self.repository_storage_dir, p[:p.find("/data/")])
+                obj_id = self.repo_storage_client._get_id_from_dirpath(p2)
+                if not obj_id in [x['id'] for x in lastversionfiles]:
+                    lastversionfiles.append({ "id": obj_id, "version": version_items['version'], "path": item})
+        return lastversionfiles
+
 
 class TestPairtreeStorage(unittest.TestCase):
     source_dir = root_dir + '/earkresources/storage-test/'

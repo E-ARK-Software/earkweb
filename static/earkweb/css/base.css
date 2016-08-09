@@ -136,3 +136,14 @@ color: red;
     float: right;
     color: #8d8d8d;
 }
+
+.current {
+    padding-left: 12px;
+    padding-top: 12px;
+
+}
+.cardinality {
+    padding-left: 12px;
+    padding-top: 12px;
+
+}

@@ -1,3 +1,13 @@
+
+
+<div id="dialog-message" title="Close information package" style="display: none">
+  <p>
+    <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 100px 0;"></span>
+    Note that by closing this information package, the working directory will be permanently deleted and cannot be recovered.
+      However, this will not affect information packages stored in the repository.
+  </p>
+    <p></p>
+</div>
 <div id="container">
   	<div id="action" class="form-group">
       <form class="form-horizontal" role="form" method="POST" onsubmit="return false">
@@ -12,3 +22,26 @@
   	        </fieldset>
       </form>
   </div>
+
+<script>
+$( "#id_wfs" )
+  .change(function () {
+    var str = "";
+    $( "select option:selected" ).each(function() {
+        if($( this ).text() === "IPClose" || $( this ).text() === "IPDelete") {
+            $( function() {
+                $( "#dialog-message" ).dialog({
+                  modal: true,
+                  buttons: {
+                    Ok: function() {
+                      $( this ).dialog( "close" );
+                    }
+                  }
+                });
+            } );
+        }
+    });
+    window.console.log(str);
+  })
+  .change();
+</script>

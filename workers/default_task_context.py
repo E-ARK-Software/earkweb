@@ -46,7 +46,7 @@ class DefaultTaskContext(object):
             self.task_logger.adderr("Task execution request rejected ('package task_status=%d')" % status)
 
         last_task = self.ip_state_xml.get_last_task()
-        if not "Reset" in current_task_name and last_task != 'All' and last_task not in accept_input_from:
+        if not "Reset" in current_task_name and not 'All' in accept_input_from and last_task not in accept_input_from:
             self.task_logger.adderr(
                 "Task cannot be executed at the current task state (last executed task: %s, input accepted from previous tasks: %s)" % (last_task, str(accept_input_from)))
         return len(self.task_logger.err) == 0

@@ -23,7 +23,15 @@
 		{% endif %}
 		<tr class="row1">
 			<td>Working area path</td>
-			<td><a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a></td>
+
+			<td>
+				{% if ip.path != '' %}
+				<a href="{% url 'sip2aip:working_area' 'sip2aip' ip.uuid %}" title='Package in working area'>{{ config_path_work }}/{{ ip.uuid }}</a>
+				{% else %}
+				--
+				{% endif %}
+			</td>
+
 		</tr>
     	<tr class="row2">
     		<td data-toggle="tooltip" title="Public identifier">Last task <a href="{% url 'sip2aip:help_processing_status' %}"><span class="glyphicon glyphicon-info-sign" aria-hidden="true" style="color:gray"></span></a></td>
