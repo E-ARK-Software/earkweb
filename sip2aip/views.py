@@ -121,14 +121,16 @@ class IndexingStatusTable(tables.Table):
 
     from django_tables2.utils import A
 
-    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')}, verbose_name= 'Package name')
+    identifier = tables.Column(verbose_name='Identifier' )
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
+    last_task = tables.Column(verbose_name='Last task' )
+    #packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')}, verbose_name= 'Package name')
     num_indexed_docs_storage = tables.Column(verbose_name= 'Number of indexed documents' )
 
 
     class Meta:
         model = InformationPackage
-        fields = ('identifier', 'packagename', 'last_change', 'last_task', 'num_indexed_docs_storage')
+        fields = ('identifier', 'last_change', 'last_task', 'num_indexed_docs_storage')
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed' }
         row_attrs = {'data-id': lambda record: record.pk}
 
