@@ -32,6 +32,24 @@ if __name__ == "__main__":
                 packagename="",
                 last_task=WorkflowModules.objects.get(identifier="IPClose")
             )
+    p_list_ids = map(lambda x: x['id'], p_list)
+    ips = InformationPackage.objects.all()
+    for ip in ips:
+        if ip.storage_loc != '':
+            if not os.path.exists(ip.storage_loc):
+                print "Object is not accessible: %s (unsetting storage_loc)" % ip.identifier
+                ip.storage_loc = ''
+                ip.save()
+            try:
+                ps.get_object_path(ip.identifier)
+            except ValueError:
+                print "Cant get object: %s (identifier changed, unsetting storage_loc)" % ip.identifier
+                ip.storage_loc = ''
+                ip.save()
+
+
+
+
 
 
 

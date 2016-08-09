@@ -122,15 +122,13 @@ class IndexingStatusTable(tables.Table):
     from django_tables2.utils import A
 
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s")
-    uuid = tables.LinkColumn('sip2aip:working_area', kwargs={'section': 'sip2aip', 'uuid': A('uuid')})
-    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')})
-    verbose_name= 'Development Environment'
+    packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')}, verbose_name= 'Package name')
     num_indexed_docs_storage = tables.Column(verbose_name= 'Number of indexed documents' )
 
 
     class Meta:
         model = InformationPackage
-        fields = ('identifier', 'packagename', 'uuid', 'last_change', 'last_task', 'num_indexed_docs_storage')
+        fields = ('identifier', 'packagename', 'last_change', 'last_task', 'num_indexed_docs_storage')
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed' }
         row_attrs = {'data-id': lambda record: record.pk}
 
@@ -163,7 +161,8 @@ def indexingstatus(request):
         "last_task_id='%s'" % IPDelete.__name__,
     ]
     task_cond = " or ".join(list_tasks)
-    queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('-last_change')
+    # where=["(%s)" % task_cond]
+    queryset=InformationPackage.objects.extra(where=["storage_loc != ''"]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
     return render(request, 'sip2aip/indexing_status.html', {'informationpackage': table})
