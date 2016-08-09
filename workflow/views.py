@@ -194,6 +194,8 @@ def apply_task(request):
 
                 if wfm.identifier == AIPStore.__name__ or wfm.identifier == AIPIndexing.__name__:
                     additional_data['storage_dest'] = config_path_storage
+                    if ip.storage_loc and ip.storage_loc != '':
+                        additional_data['identifier'] = ip.identifier
                     print "Storage destination %s" % additional_data['storage_dest']
 
                 if wfm.identifier in [DIPAcquireAIPs.__name__, DIPAcquireDependentAIPs.__name__, DIPExtractAIPs.__name__]:
@@ -269,7 +271,8 @@ def poll_state(request):
                             #make json out of additional_data to be written to db
                             additional_data_str = json.dumps(task.result.additional_data)
                             ip.additional_data = additional_data_str
-                            ip.identifier = task.result.additional_data['identifier']
+                            if 'identifier' in task.result.additional_data.keys() and task.result.additional_data['identifier'] != '':
+                                ip.identifier = task.result.additional_data['identifier']
                             if (not ip.storage_loc or ip.storage_loc == '') and 'storage_loc' in task.result.additional_data.keys() and task.result.additional_data['storage_loc'] != '':
                                 ip.storage_loc = task.result.additional_data['storage_loc']
                         if task.result.task_name:
