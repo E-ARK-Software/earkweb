@@ -161,7 +161,7 @@ def indexingstatus(request):
     """
     Indexing Status Table view
     """
-    local_solr = 'http://%s:%s/solr/%s/' % (local_solr_server_ip, local_solr_port, local_solr_core)
+    local_solr = 'http://%s:%s/solr/%s/admin/ping' % (local_solr_server_ip, local_solr_port, local_solr_core)
     if not service_available(local_solr):
         return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % local_solr})
     list_tasks = [
