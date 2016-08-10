@@ -258,13 +258,17 @@ def index_aip_storage(self, *args, **kwargs):
     # delete index first
     r = requests.get(sq.get_base_url() + "earkstorage/update?stream.body=%3Cdelete%3E%3Cquery%3E*%3C/query%3E%3C/delete%3E&commit=true")
     from config.configuration import config_path_storage
-    from earkcore.utils.fileutils import find_files
      # initialize solr client
     solr_client = SolrClient(solr_server, "earkstorage")
-    for file in find_files(config_path_storage, "*.tar"):
-        _,file_name = os.path.split(file)
+    ps = PairtreeStorage(config_path_storage)
+    p_list = ps.latest_version_ip_list()
+    for p in p_list:
+        logger.info("Indexing information package: %s (version %s)" % (p['id'], p['version']))
+        package_abs_path = os.path.join(config_path_storage, p['path'])
+        logger.info("Storage path: %s" % package_abs_path)
+        _, file_name = os.path.split(p['path'])
         identifier = file_name[0:-4]
-        results = solr_client.post_tar_file(file, identifier)
+        results = solr_client.post_tar_file(package_abs_path, identifier)
         logger.info("Total number of files posted: %d" % len(results))
         num_ok = sum(1 for result in results if result['status'] == 200)
         logger.info("Number of files posted successfully: %d" % num_ok)
@@ -284,6 +288,9 @@ def run_package_ingest(self, *args, **kwargs):
         task_context = import_package(current_task, os.path.join(config_path_reception, package_file), predef_id_mapping)
         #task_context = import_package(current_task, os.path.join(config_path_reception, package_file))
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            os.remove(os.path.join(config_path_reception, package_file))
+            p, _ = os.path.splitext(os.path.join(config_path_reception, package_file))
+            os.remove("%s.xml" % p)
             return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}
         else:
             current_task.update_state(state='FAILURE', meta={'package_file': package_file})

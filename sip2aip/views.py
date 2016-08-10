@@ -128,7 +128,8 @@ class IndexingStatusTable(tables.Table):
 
     from django_tables2.utils import A
 
-    identifier = tables.Column(verbose_name='Identifier' )
+    identifier = tables.LinkColumn('earkcore:ipview', args={A('identifier')}, verbose_name= 'Identifier')
+
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
     last_task = tables.Column(verbose_name='Last task' )
     #packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')}, verbose_name= 'Package name')

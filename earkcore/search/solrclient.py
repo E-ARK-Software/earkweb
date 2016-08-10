@@ -43,6 +43,20 @@ class SolrClient(object):
         self.url = base_url + collection
         self.ffid = FormatIdentification()
 
+    def select_params_suffix(self, params_suffix, rows=1000, start=0):
+        """
+        Search Solr, return URL and JSON response
+
+        @type       params: string
+        @param      params: Parameter suffix
+
+        @rtype: string, int
+        @return: Return url and return code
+        """
+        url = self.url + '/select?q=%s&rows=%d&start=%d&wt=json' % (urllib.quote(params_suffix), rows, start)
+        conn = urllib2.urlopen(url)
+        return url, json.load(conn)
+
     def select(self, params):
         """
         Search Solr, return URL and JSON response

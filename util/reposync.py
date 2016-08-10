@@ -2,8 +2,8 @@
 # coding=UTF-8
 """
 Repository file system and frontend database synchronization
-Note: Requires the django frontend and the backend storage to be accessible.
-Created on June 9, 2015
+Note: Requires the django frontend and the storage backend and can therefore not be used in a distributed setup.
+Created on August 9, 2016
 
 @author: Sven Schlarb
 """

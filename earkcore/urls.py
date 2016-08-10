@@ -4,6 +4,7 @@ from earkcore import views
 
 urlpatterns= patterns('',
 
+    url(r'^ipview/(?P<identifier>[0-9a-zA-Z-_/\.]{3,200})/$', views.ipview, name='ipview'),
     url(r'^check_folder_exists/(?P<folder>[0-0a-zA-Z_/]{3,200})/$', views.check_folder_exists, name='check_folder_exists'),
     url(r'^check_submission_exists/(?P<packagename>[0-9a-zA-Z-_/\.]{3,200})/$', views.check_submission_exists, name='check_submission_exists'),
     url(r'^check_identifier_exists/(?P<identifier>[0-9a-zA-Z-_/\.]{3,200})/$', views.check_identifier_exists, name='check_identifier_exists'),
@@ -19,5 +20,6 @@ urlpatterns= patterns('',
     url(r'^savexml/(?P<uuid>[0-9a-zA-Z-]{3,200})/(?P<ip_xml_file_path>[0-9a-zA-Z_\-/\. ]{3,500})/$', views.savexml, name='savexml'),
     url(r'^set_proc_state_valid/(?P<uuid>[0-9a-zA-Z-]{3,200})/$', views.set_proc_state_valid, name='setprocvalid'),
     url(r'^solrif/(?P<core>[0-9a-zA-Z-]{3,200})/(?P<operation>[0-9a-zA-Z-]{3,200})/$', views.solrif, name='solrif'),
+    url(r'^solrinterface/(?P<query>.*)/$', views.solrinterface, name='solrinterface'),
 
 )

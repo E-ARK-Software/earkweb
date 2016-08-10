@@ -2,6 +2,8 @@ import logging
 import urllib
 import urllib2
 import requests
+from earkcore.search.solrclient import SolrClient
+from earkcore.search.solrserver import SolrServer
 
 from earkcore.utils.xmlutils import get_xml_schemalocations
 from earkcore.xml.xmlschemanotfound import XMLSchemaNotFound
@@ -51,7 +53,11 @@ from django.utils.safestring import mark_safe
 from django.shortcuts import render
 from django_tables2 import RequestConfig
 from django.shortcuts import render_to_response
-
+import pprint
+from config.configuration import local_solr_server_ip
+from config.configuration import local_solr_core
+from config.configuration import local_solr_port
+from collections import Counter
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,6 +65,21 @@ logger = logging.getLogger(__name__)
 class InformationPackageDetailView(DetailView):
     model = InformationPackage
     template_name = 'earkcore/ip_detail.html'
+
+
+@login_required
+def ipview(request, identifier):
+    template = loader.get_template('earkcore/ipview.html')
+
+    from config.configuration import django_service_ip
+    from config.configuration import django_service_port
+
+    context = RequestContext(request, {
+        "django_service_ip": django_service_ip,
+        "django_service_port": django_service_port,
+        "identifier": identifier,
+    })
+    return HttpResponse(template.render(context))
 
 @login_required
 @csrf_exempt
@@ -376,6 +397,25 @@ def reindex_aip_storage(request):
         logging.error(str(tb))
     return JsonResponse(data)
 
+
+@login_required
+@csrf_exempt
+def solrinterface(request, query):
+    from config.configuration import local_solr_server_ip
+    from config.configuration import local_solr_port
+    from config.configuration import local_solr_core
+    query_url = "http://%s:%s/solr/%s/select?%s" % (local_solr_server_ip, local_solr_port, local_solr_core, query)
+    logger.debug(query_url)
+    try:
+        response = requests.get(query_url)
+        return HttpResponse(response.text, content_type='text/plain')
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        return HttpResponse('{"error": "%s"}' % str(err), content_type='text/plain')
+    return data
+
+
 @login_required
 @csrf_exempt
 def solrif(request, core, operation):
@@ -387,7 +427,9 @@ def solrif(request, core, operation):
     logger.debug("Start: %s" % start)
     rows = request.GET.get('rows', '20')
     logger.debug("Rows: %s" % rows)
-    q = urllib.urlencode({'q': request.GET.get('q', ''), "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
+    field_list = request.GET.get('fl', '')
+    logger.debug("Field list: %s" % field_list)
+    q = urllib.urlencode({'q': request.GET.get('q', ''), "fl": field_list, "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
 
     from config.configuration import local_solr_server_ip
     from config.configuration import local_solr_port

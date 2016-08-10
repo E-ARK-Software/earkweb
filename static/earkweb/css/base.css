@@ -138,12 +138,9 @@ color: red;
 }
 
 .current {
-    padding-left: 12px;
-    padding-top: 12px;
-
+    padding: 12px;
 }
 .cardinality {
-    padding-left: 12px;
-    padding-top: 12px;
+    padding: 12px;
 
 }
