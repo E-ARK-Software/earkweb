@@ -5,6 +5,7 @@ import socket
 from django.contrib import admin
 
 from earkweb import views
+from sip2aip.views import indexingstatus
 
 from django.conf import settings
 
@@ -14,7 +15,7 @@ urlpatterns = patterns('',
     url(r'^earkweb/version/$', views.version, name='version'),
 
     url(r'^public', views.public_search, name='public_search'),
-    url(r'^indexing_status', views.indexingstatus, name='indexing_status'),
+    url(r'^indexing_status', indexingstatus, name='indexing_status'),
     url(r'^earkcore/', include('earkcore.urls', namespace="earkcore")),
     url(r'^search/', include('search.urls', namespace="search")),
     url(r'^sipcreator/', include('sipcreator.urls', namespace="sipcreator")),

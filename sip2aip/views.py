@@ -5,6 +5,8 @@ from django.views.generic.detail import DetailView
 from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 from django.contrib.auth.decorators import login_required
+import requests
+from requests.packages.urllib3.exceptions import ConnectionError
 from earkcore.models import StatusProcess_CHOICES
 from earkcore.models import InformationPackage
 from django.shortcuts import render_to_response
@@ -13,6 +15,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseServerEr
 from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from earkcore.utils.randomutils import getUniqueID
+from earkcore.utils.serviceutils import service_available
 from earkcore.utils.stringutils import whitespace_separated_text_to_dict
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
 from sip2aip.forms import UploadSIPDeliveryForm
@@ -32,6 +35,7 @@ from workers.tasks import SolrUpdateCurrentMetadata
 from config.configuration import local_solr_server_ip
 from config.configuration import django_service_port
 from config.configuration import django_service_ip
+from config.configuration import local_solr_core
 from config.configuration import local_solr_port
 from workers.tasks import reception_dir_status
 import django_tables2 as tables
@@ -157,6 +161,9 @@ def indexingstatus(request):
     """
     Indexing Status Table view
     """
+    local_solr = 'http://%s:%s/solr/%s/' % (local_solr_server_ip, local_solr_port, local_solr_core)
+    if not service_available(local_solr):
+        return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % local_solr})
     list_tasks = [
         "last_task_id='%s'" % AIPIndexing.__name__,
         "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,

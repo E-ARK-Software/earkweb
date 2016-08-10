@@ -73,20 +73,6 @@ class IndexingStatusTable(tables.Table):
         else:
             return value
 
-
-def indexingstatus(request):
-    """
-    Indexing Status Table view
-    """
-    list_tasks = [
-        "last_task_id='%s'" % LilyHDFSUpload.__name__,
-    ]
-    task_cond = " or ".join(list_tasks)
-    queryset=InformationPackage.objects.extra(where=["(%s)" % task_cond]).order_by('last_change')
-    table = IndexingStatusTable(queryset)
-    RequestConfig(request, paginate={'per_page': 10}).configure(table)
-    return render(request, 'earkweb/indexing_status.html', {'informationpackage': table})
-
 # class IndexingStatusList(ListView):
 #     """
 #     Processing status
