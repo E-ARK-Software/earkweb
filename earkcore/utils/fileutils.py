@@ -143,5 +143,15 @@ def copy_folder(src, dest):
     else:
         print "Failed moving folder \"%s\" to \"%s\"" % (src, dest)
 
+
+def get_immediate_subdirectories(a_dir):
+    return [name for name in os.listdir(a_dir)
+            if os.path.isdir(os.path.join(a_dir, name))]
+
+
+def sub_dirs(a_dir):
+    return sorted([name for name in os.listdir(a_dir) if os.path.isdir(os.path.join(a_dir, name))])
+
+
 if __name__ == '__main__':
     unittest.main()

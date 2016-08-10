@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# coding=UTF-8
+__author__ = "Sven Schlarb"
+__copyright__ = "Copyright 2016, The E-ARK Project"
+__license__ = "GPL"
+__version__ = "0.0.1"
 import os
 import sys
 import shutil
@@ -9,37 +15,10 @@ from earkcore.metadata.premis.premisgenerator import PremisGenerator
 from earkcore.packaging.unzip import Unzip
 from earkcore.utils.xmlutils import rewrite_pretty_xml
 from sandbox.sipgenerator.sipgenerator import SIPGenerator
-
-
-class CC:
-    def __init__(self):
-        pass
-    HEADER = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-
-def sub_dirs(a_dir):
-    return sorted([name for name in os.listdir(a_dir) if os.path.isdir(os.path.join(a_dir, name))])
-
-
-def print_headline(headline):
-    print "%s===========================================================%s" % (CC.HEADER, CC.ENDC)
-    print "%s%s%s" % (CC.HEADER, headline, CC.ENDC)
-    print "%s===========================================================%s" % (CC.HEADER, CC.ENDC)
-
-
-def success(msg):
-    print "%s%s%s" % (CC.OKGREEN, msg, CC.ENDC)
-
-
-def failure(msg):
-    print "%s%s%s" % (CC.FAIL, msg, CC.ENDC)
-    exit(1)
+from earkcore.utils.scripthelper import success
+from earkcore.utils.scripthelper import failure
+from earkcore.utils.scripthelper import print_headline
+from earkcore.utils.fileutils import sub_dirs
 
 
 def verify_file_created(file_type, file_path):
