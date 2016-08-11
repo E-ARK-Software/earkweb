@@ -10,9 +10,9 @@ var solrEndpoint = 'http://{{ django_service_ip }}:{{django_service_port}}/earkw
 
 
 $( document ).ready(function() {
-
+    var id = "{{identifier}}".replace("urn:uuid:", "");
     $.ajax({
-      url: solrEndpoint + "fl=package,%20packagetype,%20path,%20content_type&indent=on&q=package:{{identifier}}&start=0&rows=500&wt=json",
+      url: solrEndpoint + "fl=package,%20packagetype,%20path,%20content_type&indent=on&q=package:*"+id+"&start=0&rows=500&wt=json",
       type: "GET",
     }).success(function(response, data, more){
         var json = $.parseJSON(response);

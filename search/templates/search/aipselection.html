@@ -1,0 +1,97 @@
+{% extends "earkweb/base.html" %}
+
+{% load dictionary_extras %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <script language="JavaScript">
+        var dip_name = "{{ dip.name }}";
+    </script>
+
+    <!-- AIP to DIP javascript -->
+    <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'search/js/aipselection.js' %}"></script>
+    <script type="text/javascript" src="{% static 'search/js/dip.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
+    <script type="text/javascript"  src="{% static 'search/js/packsel.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static "search/css/packsel.css" %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "search/about_module.html" %}
+
+
+
+<p>Multiple source AIPs can be used to build a DIP. AIPs are added to the AIP to the DIP creation process by selecting them from the local repository or directly uploading them
+    into the working area.</p>
+
+<p>The following table shows the currently selected AIPs for this AIP to the DIP creation process:</p>
+
+    <table id="selaipstab" class="table table-striped table-bordered table-condensed">
+
+        {% include "search/selectedaipstable.html" %}
+    </table>
+
+<h2>AIP Selection</h2>
+
+<p>There are different ways of adding an AIP to the DIP creation process. The AIPs can be selected based on their identifier, it can be added by selecting the AIP corresponding to
+    a file-based, or it can be directly uploaded to the working area.</p>
+
+<h3>Select AIPs by their identifier from the local repository</h3>
+
+<p>Select AIPs available in the local repository by typing in letters contained in the AIP identifier:</p>
+<div id="reperr" style="color: red; width: width: 450px"></div>
+
+<div class="input-group" style="width: 450px">
+    <input placeholder="filter by identifier, packagename, or uuid" id="aipidfilter" type="text" class="form-control small" value="{{ rep }}"  data-toggle="tooltip" title="filter by identifier, packagename, or uuid and add the package by clicking on the 'plus' symbol beneath.">
+    <div class="input-group-btn">
+        <button id="addaipbutton" type="button" class="btn btn-default dropdown-toggle" onclick="addaip($('#aipidfilter').val(), dip_name); return false;" data-toggle="tooltip" title="Add package with the name given in the text box beneath."><span class="glyphicon-plus"></span></button>
+        <!--<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" data-toggle="tooltip" title="Choose another existing representation and load the corresponding subfolder directory tree views."><span class="caret"></span></button>-->
+        <ul id="aipsel-dropdown-menu" class="dropdown-menu dropdown-menu-right" role="menu" style="width: 450px">
+        {% include "search/aipselectiondropdown.html" %}
+        </ul>
+    </div>
+</div>
+
+<p style="padding-top: 20px">By clicking in the text field above the most recent identifiers are retrieved. If the AIP identifier is green it means that the
+corresponding AIP exists and can be added to the DIP creation process by clicking on the 'plus' sign.</p>
+
+<h3>Search AIPs in the local repository</h3>
+
+<p>AIPs can be added to the DIP creation process by searching in the local repository. It is possible to search for individual files based on their content and results are grouped
+    by AIP identifier in order to allow adding matched AIPs to the DIP creation process.</p>
+
+<p><a href="{% url 'search:search' dip.name %}">Select AIPs by searching in the local repository.</a></p>
+
+
+
+<h3>Uploading AIPs</h3>
+
+<p>AIPs can be added to the DIP creation process by uploading the AIP TAR files to the DIP working area.</p>
+
+<div id="file-upload">
+
+    <form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data" class="form-horizontal">
+        <fieldset>
+            <p>Additional files can be uploaded into the working area of this DIP creation process:</p>
+            {% csrf_token %}
+            {{ uploadFileForm.as_p }}
+            <p><button type="submit">Add selected AIP</button></p>
+        </fieldset>
+    </form>
+
+</div>
+
+
+<p style="padding-top:20px"><a href="{% url 'search:dip' dip.name %}" title='Back to overview'>Back to the DIP task/workflow execution area</a></p>
+
+{% endblock %}

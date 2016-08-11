@@ -3,7 +3,7 @@
  * @param str String 
  * @return Variable name string
  */
-function toVarName(str) { return  str.replace(/[|&;$%@"<>()+,. ]/g, "").toLowerCase(); }
+function toVarName(str) { return  str.replace(/[|&;$%@"<>()+,.: ]/g, "").toLowerCase(); }
 
 /**
  * Append new element
@@ -100,10 +100,10 @@ $(document).ready(function() {
                 appendNewElement(packArtListItemSpanElm, "input", {type:'hidden', id: toVarName(key),  value: key});
                 
                 appendNewTextNode(packArtListItemSpanElm, " "+key);
-                var addBtnProps = {id:"add-"+toVarName(key), class:'glyphicon glyphicon-plus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.name, "add")'};
+                var addBtnProps = {title: key, id:"add-"+toVarName(key), class:'glyphicon glyphicon-plus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.title, "add")'};
                 if(isSelected) addBtnProps.style = 'display:none'; 
                 appendNewElement(packArtListItemElm, "button", addBtnProps);
-                var remBtnProps = {id:"rem-"+toVarName(key), class:'glyphicon glyphicon-minus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.name, "remove")' };
+                var remBtnProps = {title: key, id:"rem-"+toVarName(key), class:'glyphicon glyphicon-minus', name: toVarName(key), type: 'button', onclick: 'togglePackage($(this).context.title, "remove")' };
                 if(!isSelected) remBtnProps.style = 'display:none'; 
                 appendNewElement(packArtListItemElm, "button", remBtnProps);
                 var packArtListItemUlElm = appendNewElement(packArtListItemElm, "ul", {id:'package-'+toVarName(key)});
@@ -235,17 +235,18 @@ function togglePackage(identifier, action) {
         data: "identifier="+identifier+"&dip="+dip+"&action="+action,
     }).success(function(response){
         var jsonResp = JSON.parse(response);
+        var idvar = toVarName(identifier);
         if(jsonResp.success == 'true') {
             if(action == "add") {
-                $('#result-'+identifier).css("background-color", "green");
-                $('#result-'+identifier).css("color", "white");
-                $('#add-'+identifier).hide();
-                $('#rem-'+identifier).show();onchange="$(this).submit();"
+                $('#result-'+idvar).css("background-color", "green");
+                $('#result-'+idvar).css("color", "white");
+                $('#add-'+idvar).hide();
+                $('#rem-'+idvar).show();onchange="$(this).submit();"
             } else if(action == "remove") {
-                $('#result-'+identifier).css("background-color", "transparent");
-                $('#result-'+identifier).css("color", "gray");
-                $('#add-'+identifier).show();
-                $('#rem-'+identifier).hide();
+                $('#result-'+idvar).css("background-color", "transparent");
+                $('#result-'+idvar).css("color", "gray");
+                $('#add-'+idvar).show();
+                $('#rem-'+idvar).hide();
             }
         } else {
             window.console.log("Error toggle package")

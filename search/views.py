@@ -159,6 +159,31 @@ def informationpackages_overview(request):
         return render(request, 'search/packsel.html', {'informationpackage': table})
 
 
+@login_required
+@csrf_exempt
+def selectedaipstable(request):
+    dip_name = request.POST['dip_name']
+    print "Update DIP table with the new list of AIPs: %s" % dip_name
+    dip = DIP.objects.get(name=dip_name)
+    context = RequestContext(request, {
+        'dip': dip,
+    })
+    return render_to_response('search/selectedaipstable.html', locals(), context_instance=context)
+
+
+@login_required
+@csrf_exempt
+def aipselectiondropdown(request):
+    filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
+    aips = InformationPackage.objects.extra(where=["identifier != '' AND identifier like '%%{0}%%'".format(filterword)]).order_by('-last_change')[:10]
+    print "NUMBER: %d" % len(aips)
+    print filterword
+    context = RequestContext(request, {
+        'aips': aips,
+    })
+    return render_to_response('search/aipselectiondropdown.html', locals(), context_instance=context)
+
+
 class HelpProcessingStatus(ListView):
     """
     Processing status
@@ -290,7 +315,7 @@ def search_form(request):
         if form.is_valid():
             keyword = form.cleaned_data['keyword']
             content_type = form.cleaned_data['content_type']
-            package = form.cleaned_data['package']
+            package = form.cleaned_data['package'].replace(":", "\\:")
             start = 0
             rows = 20
             query_string = get_query_string(keyword, content_type, package, start, rows)
@@ -510,6 +535,18 @@ def copy_to_local(aips):
 def extractTar(filename):
     with tarfile.open('working_area/' + filename) as tar:
         tar.extractall('working_area/')
+
+
+@login_required
+def aipselection(request, name):
+    dip = DIP.objects.get(name=name)
+    ip = InformationPackage.objects.get(packagename=name)
+    template = loader.get_template('search/aipselection.html')
+    form = AIPtoDIPWorkflowModuleSelectForm()
+    stat_proc_choices = dict(StatusProcess_CHOICES),
+    context = RequestContext(request, {'dip': dip, 'ip': ip, 'uploadFileForm': UploadFileForm(), 'form': form,  "StatusProcess_CHOICES": stat_proc_choices[0], "config_path_work": config_path_work})
+    return HttpResponse(template.render(context))
+
 
 @login_required
 def dip(request, name):

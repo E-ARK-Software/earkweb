@@ -45,9 +45,9 @@
                 {% endfor %}
                 </table>
                 {% if not dip.aips.all %}
-                    <a href="{% url 'search:search' dip.name|urlencode %}">Select AIPs</a>
+                    <a href="{% url 'search:aipselection' dip.name|urlencode %}">Select AIPs</a>
                 {% else %}
-                    <a href="{% url 'search:search' dip.name|urlencode %}">Modify selection</a>
+                    <a href="{% url 'search:aipselection' dip.name|urlencode %}">Modify selection</a>
                 {% endif %}
             </td>
         </tr>

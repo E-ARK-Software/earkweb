@@ -26,26 +26,11 @@
 
     <h2 class="main">DIP task/workflow execution</h2>
 
-<p>The following table gives an overview about the information package.</p>
+<p>The following table gives an overview about the information package. It is required to  <a href="{% url 'search:aipselection' dip.name|urlencode %}">select AIPs</a> first
+    before the AIP to DIP conversion process can be started.</p>
 
 <div id="dip-detail-table">
     {% include "search/diptable.html" %}
-</div>
-
-
-
-<div id="file-upload">
-
-    <form action="{% url 'search:attach_aip' dip.name %}" method="post" enctype="multipart/form-data" class="form-horizontal">
-        <fieldset>
-            <legend>File upload</legend>
-            <p>Additional files can be uploaded into the working area of this DIP creation process:</p>
-            {% csrf_token %}
-            {{ uploadFileForm.as_p }}
-            <p><button type="submit">Add selected AIP</button></p>
-        </fieldset>
-    </form>
-
 </div>
 
 {% include "workflow/execution_form.html" %}

@@ -81,7 +81,7 @@
                     if(filename.endsWith(".tar") || filename.endsWith(".zip")) {
                         reception_packages.push(filename);
                         $('#iplist').append('<tr><td class="filename"><span id="'+name_to_id(filename)+'" class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+datetime+'</td><td>'+mime+'</td><td><span id="st'+name_to_id(filename)+'" class="label label-default received">Received</span></td></tr>');
-                        predef_text += filename.slice(0, -4) + "    " + guid() + "\n";
+                        predef_text += filename.slice(0, -4) + "    urn:uuid:" + guid() + "\n";
                     }
                 }
                 $('#predef_idmap_def_text').text(predef_text);

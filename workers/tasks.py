@@ -290,7 +290,9 @@ def run_package_ingest(self, *args, **kwargs):
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
             os.remove(os.path.join(config_path_reception, package_file))
             p, _ = os.path.splitext(os.path.join(config_path_reception, package_file))
-            os.remove("%s.xml" % p)
+            delivery_xml = "%s.xml" % p
+            if os.path.exists(delivery_xml):
+                os.remove(delivery_xml)
             return { 'package_file': package_file, 'storage_loc': task_context.additional_data['storage_loc'], 'status': task_context.task_status, "success": True}
         else:
             current_task.update_state(state='FAILURE', meta={'package_file': package_file})
@@ -796,7 +798,7 @@ class IdentifierAssignment(DefaultTask):
                 tl.adderr("Cannot find uuid for package name %s in provided identifier_map" % packagename)
                 task_context.task_status = 1
         else:
-            identifier = randomutils.getUniqueID()
+            identifier = "urn:uuid:%s" % randomutils.getUniqueID() #
             tl.addinfo("New identifier assigned: %s" % identifier)
 
         # Set identifier in METS
@@ -1725,7 +1727,7 @@ class AIPPackaging(DefaultTask):
 
 class AIPStore(DefaultTask):
 
-    accept_input_from = [AIPPackaging.__name__, "AIPStore"]
+    accept_input_from = [AIPPackaging.__name__, "AIPStore", "AIPIndexing"]
 
     def run_task(self, task_context):
         """
@@ -1858,7 +1860,8 @@ def update_solr_doc(task_context, element, solr_field_name):
     index_path = element['path']
     index_md_value = element['mdvalue']
     # need a solr query to retrieve identifier: solr.solr_unique_key
-    query_result = solr.send_query('path:%s%s' % (task_context.additional_data['identifier'], index_path.replace(task_context.path, '')))
+    identifier_query_param = (task_context.additional_data['identifier']).replace(":", "\\:")
+    query_result = solr.send_query('path:%s%s' % (identifier_query_param, index_path.replace(task_context.path, '')))
     if query_result is not False:
         try:
             identifier = None
@@ -2762,7 +2765,7 @@ class DIPIdentifierAssignment(DefaultTask):
         tl = task_context.task_logger
 
         # Get new identifier
-        identifier = randomutils.getUniqueID()
+        identifier = randomutils.getUniqueID() # "urn:uuid:%s" %
         task_context.additional_data['identifier'] = identifier
 
         # Set identifier in METS

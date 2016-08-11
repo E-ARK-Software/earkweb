@@ -79,7 +79,9 @@ function askSolr(start) {
   var package = document.forms.find.package.value;
   var packageQuery = '*:*';
   if (package) {
-    packageQuery += " AND " + identifier_field + ':' + package + '';
+    stripped_package_identifier = package.replace("urn:uuid:", "")
+    window.console.log(stripped_package_identifier);
+    packageQuery += " AND " + identifier_field + ':*' + stripped_package_identifier + '*';
   }
 
   if($('#submission_data_only').prop('checked')) {
