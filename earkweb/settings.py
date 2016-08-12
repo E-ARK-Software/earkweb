@@ -244,7 +244,11 @@ LOGGING = {
         },
         'earkcore': {
                  'handlers': ['default', 'console'],
-                 'level': 'INFO',
+                 'level': 'DEBUG',
+         },
+        'search': {
+                 'handlers': ['default', 'console'],
+                 'level': 'DEBUG',
          },
     }
 }

@@ -8,7 +8,7 @@ from config.configuration import access_solr_server_ip
 from config.configuration import access_solr_port
 from config.configuration import access_solr_core
 
-def get_query_string(keyword, content_type, package, start, rows):
+def get_query_string(keyword, content_type, package, representation_data_only, start, rows):
     
     logger.debug("Keyword %s" % keyword)
     logger.debug("Content type %s" % content_type)
@@ -22,6 +22,9 @@ def get_query_string(keyword, content_type, package, start, rows):
         conjunction_parts.append("%s%%3A%s" % ('content', keyword))
     if package != '':
         conjunction_parts.append("%s%%3A%s" % ('package', package))
+    if representation_data_only:
+        conjunction_parts.append("%s%%3A%s" % ('path', '*/representations/*/data/*'))
+
     # contentType
     if not(len(content_type) == 1 and content_type[0] == "*"):
         disjunction_parts = []
@@ -36,8 +39,7 @@ def get_query_string(keyword, content_type, package, start, rows):
         conjunctions = "*%3A*"
     else:
         conjunctions = "+AND+".join(conjunction_parts)
-    
-    
+
     limit = "start=%d&rows=%d" % (start,rows)
     
     query_part = conjunctions + "&" + limit

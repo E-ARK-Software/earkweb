@@ -71,9 +71,13 @@ def index(request, procname):
         initialize_dip(generated_dip_packagename)
     template = loader.get_template('search/index.html')
     form = SearchForm()
+    from config.configuration import django_service_ip
+    from config.configuration import django_service_port
     context = RequestContext(request, {
-        'form':form,
-        'dips':DIP.objects.all(),
+        'django_service_ip': django_service_ip,
+        'django_service_port': django_service_port,
+        'form': form,
+        'dips': DIP.objects.all(),
         'procname': procname
     })
     return HttpResponse(template.render(context))
@@ -316,9 +320,11 @@ def search_form(request):
             keyword = form.cleaned_data['keyword']
             content_type = form.cleaned_data['content_type']
             package = form.cleaned_data['package'].replace(":", "\\:")
+            representation_data_only = form.cleaned_data['representation_data_only']
+            logger.debug("representation_data_only: %s" % representation_data_only)
             start = 0
-            rows = 20
-            query_string = get_query_string(keyword, content_type, package, start, rows)
+            rows = 100
+            query_string = get_query_string(keyword, content_type, package, representation_data_only, start, rows)
             logger.debug("Query string: %s" % query_string)
             dip_name = request.POST["dip"]
             dip = DIP.objects.get(name=dip_name)

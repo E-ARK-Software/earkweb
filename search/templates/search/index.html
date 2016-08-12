@@ -4,6 +4,11 @@
 
 {% block extra_head %}
 
+    <script language="JavaScript">
+        var django_service_ip = '{{django_service_ip}}';
+        var django_service_port = '{{django_service_port}}';
+    </script>
+
     <!-- AIP to DIP javascript -->
     <script type="text/javascript" src="{% static 'search/js/aip2dip.js' %}"></script>
 

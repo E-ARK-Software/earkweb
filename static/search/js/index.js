@@ -117,9 +117,14 @@ $(document).ready(function() {
                     title = title.substring(key.length+1, title.length);
                     var articleListItemElm = appendNewElement(packArtListItemUlElm, "li", {});
                     var articleListItemSpanElm = appendNewElement(articleListItemElm, "span", {});
-                    var linkprops = {id: 'fileItem', name: encodeURIComponent(lilyId), 'data-mime': contentType, 'data-size': size };
-                    if(contentType != 'application/xml') linkprops.style = 'color:gray;text-decoration:none'; 
+
+                    var identifier = key;
+                    var contentType = (grouped[key][k].contentType)[0];
+                    var href = "http://"+django_service_ip+":"+django_service_port+"/earkweb/earkcore/access_aip_item/"+identifier+"/"+contentType+"/"+identifier+"/" + title;
+                    var linkprops = {href: href, id: 'fileItem', name: encodeURIComponent(lilyId), 'data-mime': contentType, 'data-size': size };
+                    //if(contentType != 'application/xml') linkprops.style = 'color:gray;text-decoration:none';
                     var articleListItemAhrefElm = appendNewElement(articleListItemSpanElm, "a", linkprops);
+
                     appendNewTextNode(articleListItemAhrefElm, title);
                 }
             }
@@ -184,42 +189,42 @@ $(document).on("click", "[id^=result]", function() {
  /**
   * Get file content ajax request (file item links onclick event)
   */
-$(document).on("click", "[id^=fileItem]", function() {
-show('loadingpreview', true);
-    var fileContentPath = "/earkweb/search/filecontent/";
-    var selectedItem = ($(this)[0]);
-    var identifier = selectedItem.getAttribute("name");
-    var encodedIdentifier = encodeURICompmonent(identifier);
-    window.console.log("File content path: " + fileContentPath+identifier);
-    
-    var mime = selectedItem.dataset.mime;
-    window.console.log("MIME-Type: " + mime);
-    var size = parseInt(selectedItem.dataset.size);
-    window.console.log("Size: " + size);
-    $.ajax({
-        url : fileContentPath+identifier,
-        success : function(result){                
-            bootbox.dialog({
-                message: "<div id='XmlPreview' class='xmlview'></div>",
-                title: "File preview",
-                className: "modal70"
-            }); 
-            switch (mime) {
-                case "application/xml":
-                    
-onchange="$(this).submit();"
-                    LoadXMLString('XmlPreview',result);
-                    show('loadingpreview', false);
-                    break;
-                case "image/jpeg":
-                    window.console.log("load image");
-                    appendNewElement(document.getElementById("XmlPreview"), "img", {src: fileContentPath+identifier });
-                    
-                    break;
-            }
-        } 
-    });
- }); 
+//$(document).on("click", "[id^=fileItem]", function() {
+//show('loadingpreview', true);
+//    var fileContentPath = "/earkweb/search/filecontent/";
+//    var selectedItem = ($(this)[0]);
+//    var identifier = selectedItem.getAttribute("name");
+//    var encodedIdentifier = encodeURICompmonent(identifier);
+//    window.console.log("File content path: " + fileContentPath+identifier);
+//
+//    var mime = selectedItem.dataset.mime;
+//    window.console.log("MIME-Type: " + mime);
+//    var size = parseInt(selectedItem.dataset.size);
+//    window.console.log("Size: " + size);
+//    $.ajax({
+//        url : fileContentPath+identifier,
+//        success : function(result){
+//            bootbox.dialog({
+//                message: "<div id='XmlPreview' class='xmlview'></div>",
+//                title: "File preview",
+//                className: "modal70"
+//            });
+//            switch (mime) {
+//                case "application/xml":
+//
+//onchange="$(this).submit();"
+//                    LoadXMLString('XmlPreview',result);
+//                    show('loadingpreview', false);
+//                    break;
+//                case "image/jpeg":
+//                    window.console.log("load image");
+//                    appendNewElement(document.getElementById("XmlPreview"), "img", {src: fileContentPath+identifier });
+//
+//                    break;
+//            }
+//        }
+//    });
+// });
  function show(id, value) {
     document.getElementById(id).style.display = value ? 'block' : 'none';
 }

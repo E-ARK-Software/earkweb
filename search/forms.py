@@ -28,6 +28,7 @@ class BootstrapSelectMultiple(SelectMultiple):
 class SearchForm(Form):
     package = CharField(widget=BootstrapTextInput, max_length=100, initial="*")
     keyword = CharField(widget=BootstrapTextInput, max_length=100, initial="*")
+    representation_data_only = BooleanField(initial=True)
     content_type = MultipleChoiceField(widget=BootstrapSelectMultiple, choices=PREDEFINED_CONTENT_TYPES,initial={'*': [1, 2]})
 
 class UploadFileForm(Form):
