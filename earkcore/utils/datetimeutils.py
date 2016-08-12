@@ -59,6 +59,8 @@ class LengthBasedDateFormat(object):
         self.date_str = date_str
 
     def reformat(self, target_fmt='%Y-%m-%dT%H:%M:%SZ'):
+        if not self.date_str:
+            return "1970-01-01T00:00:00Z"
         method_name = 'format_' + str(len(self.date_str))
         method = getattr(self, method_name, lambda: "1970-01-01T00:00:00Z")
         return method(target_fmt)

@@ -1819,7 +1819,7 @@ class AIPIndexing(DefaultTask):
         r = requests.get(sq.get_base_url())
         if not r.status_code == 200:
             tl.adderr("Solr server is not available at: %s" % sq.get_base_url())
-            task_context.task_status = 0
+            task_context.task_status = 2
             return task_context.additional_data
 
         storage_dest = task_context.additional_data["storage_dest"]
@@ -1893,7 +1893,7 @@ def update_solr_doc(task_context, element, solr_field_name):
 
 class SolrUpdateCurrentMetadata(DefaultTask):
 
-    accept_input_from = [AIPIndexing.__name__, "SolrUpdateCurrentMetadata"]
+    accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, "SolrUpdateCurrentMetadata"]
 
     def run_task(self, task_context):
         """
@@ -1905,23 +1905,56 @@ class SolrUpdateCurrentMetadata(DefaultTask):
         # no premis event
         task_context.event_type = None
 
-        # task logger
         tl = task_context.task_logger
-        for directory, subdir, filenames in os.walk(task_context.path):
-            if directory.endswith('metadata/descriptive'):
-                for filename in filenames:
-                    # if meta_identification(os.path.join(directory, filename)) is 'ead':
-                    ead_pattern = re.compile(metadata_file_pattern_ead)
-                    if re.match(ead_pattern, filename):
-                        eadparser = ParsedEad(
-                            os.path.join(task_context.path, 'submission/metadata/descriptive'),
-                            os.path.join(directory, filename))
-                        for element in eadparser.dao_path_mdval_tuples('unittitle'):
-                            update_solr_doc(task_context, element, 'eadtitle_t')
-                        for element in eadparser.dao_path_mdval_tuples('unitdate'):
-                            update_solr_doc(task_context, element, 'eaddate_dt')
+        tl.addinfo("Updating SolR records with metadata.")
 
-        return task_context.additional_data
+        submiss_dir = 'submission'
+        md_dir = 'metadata'
+        md_subdir_descr = 'descriptive'
+
+        descriptive_md_dir = os.path.join(md_dir, md_subdir_descr)
+        submiss_descr_md_dir = os.path.join(task_context.path, submiss_dir, descriptive_md_dir)
+        overruling_metadata_dir = os.path.join(task_context.path, md_dir, submiss_dir, descriptive_md_dir)
+
+        tl.addinfo("Looking for EAD metadata files in metadata directory: %s" % strip_prefixes(submiss_descr_md_dir, task_context.path))
+
+        # "warning" state for validation errors
+        try:
+            md_files_valid = []
+            from earkcore.utils.fileutils import find_files
+            for filename in find_files(submiss_descr_md_dir, metadata_file_pattern_ead):
+                md_path, md_file = os.path.split(filename)
+                tl.addinfo("Found descriptive metadata file in submission folder: '%s'" % md_file)
+                tl.addinfo("Looking for overruling version in AIP metadata folder: '%s'" % strip_prefixes(overruling_metadata_dir, task_context.path))
+                overruling_md_file = os.path.join(overruling_metadata_dir, md_file)
+                validation_md_path = md_path
+                if os.path.exists(overruling_md_file):
+                    tl.addinfo("Overruling version of descriptive metadata file found: %s" % strip_prefixes(overruling_md_file, task_context.path))
+                    validation_md_path = overruling_metadata_dir
+
+                else:
+                    tl.addinfo("No overruling version of descriptive metadata file in AIP metadata folder found.")
+
+                tl.addinfo("Using EAD metadata file: %s" % filename)
+
+                eadparser = ParsedEad(validation_md_path, filename)
+                for element in eadparser.dao_path_mdval_tuples('unittitle'):
+                    update_solr_doc(task_context, element, 'eadtitle_t')
+                for element in eadparser.dao_path_mdval_tuples('unitdate'):
+                    update_solr_doc(task_context, element, 'eaddate_dt')
+
+                md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
+            if len(md_files_valid) == 0:
+                tl.addinfo("No descriptive metadata files found.")
+            valid = False not in md_files_valid
+            if valid:
+                tl.addinfo("Descriptive metadata validation completed successfully.")
+            task_context.task_status = 0 if valid else 2
+        except Exception, err:
+            tb = traceback.format_exc()
+            tl.adderr("An error occurred: %s" % err)
+            tl.adderr(str(tb))
+            task_context.task_status = 2
 
 
 class LilyHDFSUpload(DefaultTask):
