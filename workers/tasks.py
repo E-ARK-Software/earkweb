@@ -1089,8 +1089,10 @@ class AIPMigrations(DefaultTask):
 
         # migration policy
         pdf = ['fmt/14', 'fmt/15', 'fmt/16', 'fmt/17', 'fmt/18', 'fmt/19', 'fmt/20', 'fmt/276']
+	pdf = []
         pdf_software = subprocess32.check_output(['convert', '-version']).replace('\n', '')     # ImageMagick version
         gif = ['fmt/3', 'fmt/4']
+	gif = []
         image_software = subprocess32.check_output(['ghostscript', '-version']).replace('\n', '')   # Ghostscript version
 
         tl = task_context.task_logger
