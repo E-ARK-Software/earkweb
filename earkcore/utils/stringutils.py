@@ -47,8 +47,8 @@ def whitespace_separated_text_to_dict(textmap):
     for line in textmap.splitlines():
         line = line.strip()
         if line:
-            columns = line.split()
-            entry = {columns[0]: columns[1]}
+            columns = line.rsplit(' ', 1)
+            entry = {columns[0].strip(): columns[1].strip()}
             result_map.update(entry)
     return result_map
 
