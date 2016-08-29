@@ -3,63 +3,12 @@
  */
 function previewfile(node) {
     if(node.data) {
-        ip_work_dir_sub_path = node.data.path
-        mimetype = node.data.mimetype
-        show('loadingpreview', true);
-        $.ajax({
-          url: "/earkweb/earkcore/read_ipfc/" + ip_work_dir_sub_path,
-          context: document.body
-        }).success(function(data) {
-            bootbox.dialog({
-                message: "<div id='XmlPreview' class='xmlview'></div>",
-                title: "File preview (" + mimetype + ")",
-                className: "modal70"
-            });
-            switch (mimetype) {
-                case 'application/xml':
-                case 'text/xml':
-                    LoadXMLString('XmlPreview',data);
-                    break;
-                case 'image/jpeg':
-                     $('#XmlPreview').html("<p>JPEG viewer is not  implemented</p>")
-                    break;
-                case 'image/tiff':
-                     $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
-                     document.getElementById("displayimage").src = data;
-                    break;
-                case 'image/png':
-                     $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
-                     document.getElementById("displayimage").src = data;
-                    break;
-                case 'image/gif':
-                     $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
-                     document.getElementById("displayimage").src = data;
-                    break;
-                case 'application/pdf':
-//                             $('#XmlPreview').html('<p><img src="" id="displayimage" style="max-width: 1000px;" /></p>')
-//                             document.getElementById("displayimage").src = data;
-                     $('#XmlPreview').html(data)
-                    break;
-                case 'text/plain':
-                     $('#XmlPreview').html("<pre>"+data+"</pre>")
-                    break;
-                default:
-                    $('#XmlPreview').html("<pre>"+mimetype+"</pre>")
-                    break;
-            }
-            show('loadingpreview', false);
-        }).error(function(err, message, status_text) {
-            bootbox.dialog({
-              message: err.responseText,
-              title: "Error "+err.status+ "(" + status_text + ")",
-              buttons: {
-                success: {
-                  label: "OK!",
-                  className: "btn-default"
-                }
-              }
-            });
-        });
+        var ip_work_dir_sub_path = node.data.path;
+        var mimetype = node.data.mimetype;
+        var url = "/earkweb/earkcore/read_ipfc/" + ip_work_dir_sub_path;
+
+        window.open(url,'file view','directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=1000,height=800');
+
     }
  }
 

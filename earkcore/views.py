@@ -247,13 +247,10 @@ class SCInformationPackageTable(tables.Table):
             return value
 
 
-
-
-
 @login_required
 @csrf_exempt
 def read_ipfc(request, ip_sub_file_path):
-    # only allow reading from session working directory (ip_sub_file_path must begin with uuid)
+    # TODO: Direct access to the working area file system is not always possible from the frontent. It is therefore necessary to read the file content from a backend service.
     file_path = os.path.join(config_path_work, ip_sub_file_path)
     logger.debug("Read directory content from directory: " + file_path)
     if not os.path.exists(file_path):
@@ -265,29 +262,8 @@ def read_ipfc(request, ip_sub_file_path):
         if file_size <= config_max_filesize_viewer:
             mime = get_mime_type(file_path)
             logger.debug("MIME" + mime)
-            file_content = None
-            if get_mime_type(file_path) == "image/png" or get_mime_type(file_path) == "image/jpg":
-                file_content = read_file_content(file_path)
-                file_content = "data:"+mime+";base64,"+base64.b64encode(file_content)
-            elif get_mime_type(file_path) == "image/tiff" or get_mime_type(file_path) == "image/gif":
-                from pgmagick.api import Image
-                img = Image(file_path)
-                uuid = randomutils.getUniqueID()
-                img.write('/tmp/%s.png' % uuid)
-                logger.debug('Wrote temporary image file to /tmp/%s.png' % uuid)
-                file_content = "data:"+mime+";base64,"+base64.b64encode(read_file_content('/tmp/%s.png' % uuid))
-            elif get_mime_type(file_path) == "application/pdf":
-                logger.debug('Convert PDF to HTML')
-                uuid = randomutils.getUniqueID()
-                html_file = ('/tmp/%s.html' % uuid)
-                pdftohtml_cmd = CliCommand.get("pdftohtml", {'pdf_file': file_path, 'html_file': html_file})
-                out = check_output(pdftohtml_cmd)
-                file_content = read_file_content(html_file)
-            else:
-                logger.debug('Return content for other file types')
-                file_content = read_file_content(file_path)
-                logger.debug(file_content)
-            return HttpResponse(file_content)
+            file_content = read_file_content(file_path)
+            return HttpResponse(file_content, content_type=mime)
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_filesize_viewer))
 
