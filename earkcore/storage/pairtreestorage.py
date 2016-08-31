@@ -223,8 +223,10 @@ class PairtreeStorage(object):
         for repofile in files:
             if repofile.endswith(".tar"):
                 f, fname = os.path.split(repofile)
-                repoitem = (repofile, f[-5:])
-                tuples.append(repoitem)
+                if f.startswith("pairtree_root"):
+                    version = f[-5:] if f[-5:] != '' else '00001'
+                    repoitem = (repofile, version)
+                    tuples.append(repoitem)
         tuples.sort(key=sortkeyfn, reverse=True)
         items_grouped_by_version = []
         for key, valuesiter in groupby(tuples, key=sortkeyfn):
