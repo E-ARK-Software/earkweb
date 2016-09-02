@@ -18,7 +18,7 @@ def start(request):
     template = loader.get_template('datamining/start.html')
     solr_query_form = SolrQuery()
     ner_model_select = NERSelect()
-    categoriser_select = CSelect()
+    # categoriser_select = CSelect()
     tar_path = ArchivePath()
     context = RequestContext(request, {
         'solr_query_form': solr_query_form,
@@ -33,8 +33,8 @@ def build_query(package_id, content_type, add_and, add_and_not):
     # TODO: additional items are not used
     solr_prefix = 'http://localhost:8983/solr/earkstorage/select?q='
     q_and = ' AND '
-    q_or = ' OR '
-    q_not = 'NOT '
+    # q_or = ' OR '
+    # q_not = 'NOT '
 
     q_package_id = 'package:%s' % package_id
     q_content_type = 'content_type:%s' % content_type
@@ -48,7 +48,7 @@ def build_query(package_id, content_type, add_and, add_and_not):
 @csrf_exempt
 def celery_nlp(request):
     if request.method == 'POST':
-        # TODO: feedback
+        # TODO: feedback about what happens
         template = loader.get_template('datamining/start.html')
         context = RequestContext(request, {
 

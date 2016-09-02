@@ -115,6 +115,7 @@ stanford_jar = config.get('nlp', 'stanford_jar_path')
 stanford_ner_models = config.get('nlp', 'stanford_models_path')
 text_category_models = config.get('nlp', 'category_models_path')
 config_path_nlp = config.get('nlp', 'config_path_nlp')
+nlp_storage_path = config.get('nlp', 'tar_path')
 
 # Solr fields
 # {'name': '', 'type': '', 'stored': ''}

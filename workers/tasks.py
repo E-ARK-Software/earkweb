@@ -76,7 +76,7 @@ from earkcore.utils.pathutils import strip_prefixes
 from earkcore.utils.pathutils import backup_file_path
 from nltk.tag import StanfordNERTagger
 from nltk import word_tokenize
-from config.configuration import stanford_ner_models, stanford_jar, text_category_models, config_path_nlp
+from config.configuration import stanford_ner_models, stanford_jar, text_category_models, config_path_nlp, nlp_storage_path
 from workers.dmhelpers.createarchive import CreateNLPArchive
 import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
@@ -3005,9 +3005,9 @@ class DMMainTask(ConcurrentTask):
         query = kwargs['solr_query']
         ner_model = kwargs['ner_model']
         # category_model = kwargs['category_model']
-        tar_path = kwargs['tar_path']
+        tar_path = os.path.join(nlp_storage_path, kwargs['tar_path'])
 
-        print tar_path
+        # print tar_path
 
         archive_creator = CreateNLPArchive()
         archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)

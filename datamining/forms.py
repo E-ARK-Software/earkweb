@@ -6,12 +6,12 @@ import os
 class SolrQuery(forms.Form):
     package_id = forms.CharField(max_length=300, label='Package ID', initial='*')
     content_type = forms.CharField(max_length=200, label='Content type', initial='*')
-    additional_and = forms.CharField(max_length=500, label='AND')
-    additional_and_not = forms.CharField(max_length=500, label='AND NOT')
+    # additional_and = forms.CharField(max_length=500, label='AND')
+    # additional_and_not = forms.CharField(max_length=500, label='AND NOT')
 
 
 class ArchivePath(forms.Form):
-    tar_path = forms.CharField(max_length=300, label='Path for tar file', initial='', required=True)
+    tar_path = forms.CharField(max_length=300, label='Name of tar file', initial='', required=True)
 
 
 class NERSelect(forms.Form):
