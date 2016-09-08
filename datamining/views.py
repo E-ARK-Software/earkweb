@@ -31,7 +31,6 @@ def start(request):
 
 # def build_query(package_id, content_type, add_and, add_and_not):
 def build_query(package_id, content_type):
-    # TODO: additional items are not used
     solr_prefix = 'http://localhost:8983/solr/earkstorage/select?q='
     q_and = ' AND '
     # q_or = ' OR '
@@ -55,7 +54,6 @@ def celery_nlp_new_collection(request):
     @return:
     """
     if request.method == 'POST':
-        # TODO: feedback about what happens
         template = loader.get_template('datamining/start.html')
         context = RequestContext(request, {
 
@@ -99,6 +97,7 @@ def celery_nlp_new_collection(request):
 
         })
     return HttpResponse(template.render(context))
+    # TODO: feedback about what happens
 
 
 @login_required
@@ -111,30 +110,21 @@ def celery_nlp_existing_collection(request):
     @return:
     """
     if request.method == 'POST':
-        # TODO: feedback about what happens
         template = loader.get_template('datamining/start.html')
         context = RequestContext(request, {
 
         })
         try:
             print request.POST
-            # package_id = request.POST['package_id']
-            # content_type = request.POST['content_type']
-            # additional_and = request.POST['additional_and']
-            # additional_and_not = request.POST['additional_and_not']
-            tar_path = request.POST['tar_path']
 
-            # build the query
-            # solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
-            # print solr_query
+            tar_path = request.POST['tar_path']
 
             ner_model = request.POST['ner_model']
             # category_model = request.POST['category_model']
 
             datamining_main = DMMainTask()
             taskid = uuid.uuid4().__str__()
-            details = {  # 'solr_query': solr_query,
-                       'ner_model': ner_model,
+            details = {'ner_model': ner_model,
                        # 'category_model': category_model,
                        'tar_path': tar_path}
             print details
@@ -154,4 +144,5 @@ def celery_nlp_existing_collection(request):
 
         })
     return HttpResponse(template.render(context))
+    # TODO: feedback about what happens
 
