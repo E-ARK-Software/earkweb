@@ -29,7 +29,8 @@ def start(request):
     return HttpResponse(template.render(context))
 
 
-def build_query(package_id, content_type, add_and, add_and_not):
+# def build_query(package_id, content_type, add_and, add_and_not):
+def build_query(package_id, content_type):
     # TODO: additional items are not used
     solr_prefix = 'http://localhost:8983/solr/earkstorage/select?q='
     q_and = ' AND '
@@ -46,7 +47,13 @@ def build_query(package_id, content_type, add_and, add_and_not):
 
 @login_required
 @csrf_exempt
-def celery_nlp(request):
+def celery_nlp_new_collection(request):
+    """
+    Create a new collection (get documents via Solr requests) and start NLP.
+
+    @param request:
+    @return:
+    """
     if request.method == 'POST':
         # TODO: feedback about what happens
         template = loader.get_template('datamining/start.html')
@@ -57,12 +64,13 @@ def celery_nlp(request):
             print request.POST
             package_id = request.POST['package_id']
             content_type = request.POST['content_type']
-            additional_and = request.POST['additional_and']
-            additional_and_not = request.POST['additional_and_not']
+            # additional_and = request.POST['additional_and']
+            # additional_and_not = request.POST['additional_and_not']
             tar_path = request.POST['tar_path']
 
             # build the query
-            solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
+            # solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
+            solr_query = build_query(package_id, content_type)
             print solr_query
 
             ner_model = request.POST['ner_model']
@@ -71,6 +79,61 @@ def celery_nlp(request):
             datamining_main = DMMainTask()
             taskid = uuid.uuid4().__str__()
             details = {'solr_query': solr_query,
+                       'ner_model': ner_model,
+                       # 'category_model': category_model,
+                       'tar_path': tar_path}
+            print details
+            # use kwargs, those can be seen in Celery Flower
+            t_context = DefaultTaskContext('', '', 'workers.tasks.DMMainTask', None, '', None)
+            datamining_main.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+
+        except Exception, e:
+            # # return error message
+            # context = RequestContext(request, {
+            #     'status': 'ERROR: %s' % e.message
+            # })
+            pass
+    else:
+        template = loader.get_template('datamining/start.html')
+        context = RequestContext(request, {
+
+        })
+    return HttpResponse(template.render(context))
+
+
+@login_required
+@csrf_exempt
+def celery_nlp_existing_collection(request):
+    """
+    Use an existing document collection to perform NLP on.
+
+    @param request:
+    @return:
+    """
+    if request.method == 'POST':
+        # TODO: feedback about what happens
+        template = loader.get_template('datamining/start.html')
+        context = RequestContext(request, {
+
+        })
+        try:
+            print request.POST
+            # package_id = request.POST['package_id']
+            # content_type = request.POST['content_type']
+            # additional_and = request.POST['additional_and']
+            # additional_and_not = request.POST['additional_and_not']
+            tar_path = request.POST['tar_path']
+
+            # build the query
+            # solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
+            # print solr_query
+
+            ner_model = request.POST['ner_model']
+            # category_model = request.POST['category_model']
+
+            datamining_main = DMMainTask()
+            taskid = uuid.uuid4().__str__()
+            details = {  # 'solr_query': solr_query,
                        'ner_model': ner_model,
                        # 'category_model': category_model,
                        'tar_path': tar_path}

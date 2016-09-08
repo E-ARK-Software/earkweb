@@ -8,6 +8,8 @@ urlpatterns = patterns('',
 
     url(r'^start$', views.start, name='start'),
 
-    url(r'^celery_nlp$', views.celery_nlp, name='celery_nlp'),
+    url(r'^celery_nlp_new_collection$', views.celery_nlp_new_collection, name='celery_nlp_new_collection'),
+
+    url(r'^celery_nlp_existing_collection$', views.celery_nlp_existing_collection, name='celery_nlp_existing_collection'),
 
 )

@@ -3002,15 +3002,18 @@ class DMMainTask(ConcurrentTask):
         @param      tc: order:0,type:0,stage:0
         """
 
-        query = kwargs['solr_query']
         ner_model = kwargs['ner_model']
         # category_model = kwargs['category_model']
         tar_path = os.path.join(nlp_storage_path, kwargs['tar_path'])
 
-        # print tar_path
+        if 'solr_query' in kwargs:
+            print kwargs['solr_query']
+            query = kwargs['solr_query']
 
-        archive_creator = CreateNLPArchive()
-        archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
+            archive_creator = CreateNLPArchive()
+            archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
+        else:
+            pass
 
         # initialise NLP tasks
         ner_task = DMNERecogniser()
