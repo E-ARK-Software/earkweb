@@ -31,6 +31,14 @@ def start(request):
 
 # def build_query(package_id, content_type, add_and, add_and_not):
 def build_query(package_id, content_type):
+    """
+    Takes the package id and content type from the web interface and constructs a Solr query from it.
+
+    @param package_id:      Package id
+    @param content_type:    Content type (Solr specific)
+    @return:                A Solr query
+    """
+    # TODO: pull solr url info from config
     solr_prefix = 'http://localhost:8983/solr/earkstorage/select?q='
     q_and = ' AND '
     # q_or = ' OR '
@@ -54,12 +62,13 @@ def celery_nlp_new_collection(request):
     @return:
     """
     if request.method == 'POST':
-        template = loader.get_template('datamining/start.html')
-        context = RequestContext(request, {
-
-        })
+        # template = loader.get_template('datamining/start.html')
+        # context = RequestContext(request, {
+        #
+        # })
         try:
-            print request.POST
+            logger.debug('Received POST: ', request.POST)
+            # print request.POST
             package_id = request.POST['package_id']
             content_type = request.POST['content_type']
             # additional_and = request.POST['additional_and']
@@ -69,7 +78,8 @@ def celery_nlp_new_collection(request):
             # build the query
             # solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
             solr_query = build_query(package_id, content_type)
-            print solr_query
+            # print solr_query
+            logger.debug('Solr query: %s' % solr_query)
 
             ner_model = request.POST['ner_model']
             # category_model = request.POST['category_model']
@@ -86,17 +96,21 @@ def celery_nlp_new_collection(request):
             datamining_main.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
 
         except Exception, e:
-            # # return error message
-            # context = RequestContext(request, {
-            #     'status': 'ERROR: %s' % e.message
-            # })
-            pass
-    else:
-        template = loader.get_template('datamining/start.html')
-        context = RequestContext(request, {
+            logger.debug(e.message)
+            # display error message to user
+            template = loader.get_template('datamining/feedback.html')
+            context = RequestContext(request, {
+                'status': 'An error occurred: %s' % e.message
+            })
+            return HttpResponse(template.render(context))
 
+        template = loader.get_template('datamining/feedback.html')
+        context = RequestContext(request, {
+            'status': 'NLP processing has been initiated.'
         })
-    return HttpResponse(template.render(context))
+        return HttpResponse(template.render(context))
+    else:
+        pass
     # TODO: feedback about what happens
 
 
@@ -110,15 +124,15 @@ def celery_nlp_existing_collection(request):
     @return:
     """
     if request.method == 'POST':
-        template = loader.get_template('datamining/start.html')
-        context = RequestContext(request, {
-
-        })
+        # template = loader.get_template('datamining/start.html')
+        # context = RequestContext(request, {
+        #
+        # })
         try:
-            print request.POST
+            logger.debug('Received POST: ', request.POST)
+            # print request.POST
 
             tar_path = request.POST['tar_path']
-
             ner_model = request.POST['ner_model']
             # category_model = request.POST['category_model']
 
@@ -133,16 +147,20 @@ def celery_nlp_existing_collection(request):
             datamining_main.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
 
         except Exception, e:
-            # # return error message
-            # context = RequestContext(request, {
-            #     'status': 'ERROR: %s' % e.message
-            # })
-            pass
-    else:
-        template = loader.get_template('datamining/start.html')
-        context = RequestContext(request, {
+            logger.debug(e.message)
+            # display error message to user
+            template = loader.get_template('datamining/feedback.html')
+            context = RequestContext(request, {
+                'status': 'An error occurred: %s' % e.message
+            })
+            return HttpResponse(template.render(context))
 
+        template = loader.get_template('datamining/feedback.html')
+        context = RequestContext(request, {
+            'status': 'NLP processing has been initiated.'
         })
-    return HttpResponse(template.render(context))
+        return HttpResponse(template.render(context))
+    else:
+        pass
     # TODO: feedback about what happens
 

@@ -69,9 +69,27 @@ settings file.
 * _Existing collection:_ The input required is the name of an existing tar file, that has previously been created by the
 first option. With this, you can use the same data with a different model, for example.
 
+### How it works
+
+Depending on the two input methods above, either a new tar file is created or an existing one is used. This does not affect
+how the tasks work.
+
+Every file stored in the tar file has its Solr path as the file name, and can thus be identified independently from external
+information (provided the Solr index does still exist). No matter the original file format that was ingested, those files
+are all plain text files, so no additional processing step is required. 
+
+#### NER:
+
+The NER model selected in the web interface is used to tag the files. The result of this is - subject to the assigned NER
+classes - further processed. Currently, entities tagged as `LOC`, `ORG` and `PER` (location, organisation, person) are used.
+The Solr index entry for the specific file is updated with these entities; the fields are `locations_ss`, `organisations_ss`
+and `persons_ss` respectively. The `_ss` suffix turns them into an array of strings, which have to match the query aimed
+at that field exactly to return a result.
+
 # Known issues/TODOs
 
-* There is no feedback after a task is started. This includes error messages, status updates...
+* <s>There is no feedback after a task is started. This includes error messages, status updates...</s>
+* Basic feedback is there, but we need info on the tasks next.
 * It is not checked whether a given tar file already exists.
 * NLP results can not be searched for through the earkweb interface (it is possible using Solr directly).
  

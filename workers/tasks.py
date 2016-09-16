@@ -3004,7 +3004,8 @@ class DMMainTask(ConcurrentTask):
 
         ner_model = kwargs['ner_model']
         # category_model = kwargs['category_model']
-        tar_path = os.path.join(nlp_storage_path, kwargs['tar_path'])
+        tar_path = '%s.tar' % os.path.join(nlp_storage_path, kwargs['tar_path'])
+        logger.debug('Creating/using tar at following path: %s' % tar_path)
 
         if 'solr_query' in kwargs:
             print kwargs['solr_query']
@@ -3051,11 +3052,6 @@ class DMNERecogniser(ConcurrentTask):
         identifier = kwargs['identifier']
         model = kwargs['model']
 
-        # # prepare XML file
-        # E = objectify.ElementMaker(annotate=False)
-        # root = E.entities({'file': identifier,
-        #                    'classifier': model})
-
         # initialise tagger
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
         model = os.path.join(stanford_ner_models, model)
@@ -3071,6 +3067,7 @@ class DMNERecogniser(ConcurrentTask):
             tokenized.append(token + '\n')
 
         # position = 0
+        # TODO: make dynamic for more categories!
         organisations_list = []
         persons_list = []
         locations_list = []
@@ -3096,23 +3093,6 @@ class DMNERecogniser(ConcurrentTask):
         print 'solr identifier: %s' % document_id
         print loc_status, per_status, org_status
 
-        # for result in tagger.tag(tokenized):
-        #     position += 1
-        #     if result[1] != 'O':
-        #         entity = E.entity({'position': position,
-        #                            'class': result[1],
-        #                            'entity': result[0]})
-        #         root.append(entity)
-        #
-        # xml_string = etree.tostring(root, encoding='utf-8', pretty_print=True, xml_declaration=True)
-        #
-        # # test only
-        # with open(os.path.join(config_path_nlp, 'nertest.txt'), 'a') as testfile:
-        #     testfile.write(xml_string)
-
-        # exist_db = write_to_exist(xml_string, identifier)     # TODO
-        #
-        # return 0 if exist_db in (200, 201) else 1
         return task_context.additional_data
 
 
