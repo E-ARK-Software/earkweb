@@ -246,9 +246,20 @@ LOGGING = {
                  'handlers': ['default', 'console'],
                  'level': 'DEBUG',
          },
+        'sip2aip': {
+                 'handlers': ['default', 'console'],
+                 'level': 'DEBUG',
+         },
+        'sipcreator': {
+                 'handlers': ['default', 'console'],
+                 'level': 'DEBUG',
+         },
         'search': {
                  'handlers': ['default', 'console'],
                  'level': 'DEBUG',
+         },
+        'datamining': {
+                 'handlers': ['default', 'console'],
          },
     }
 }

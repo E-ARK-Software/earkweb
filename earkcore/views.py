@@ -381,7 +381,7 @@ def solrinterface(request, query):
     from config.configuration import local_solr_port
     from config.configuration import local_solr_core
     query_url = "http://%s:%s/solr/%s/select?%s" % (local_solr_server_ip, local_solr_port, local_solr_core, query)
-    logger.debug(query_url)
+    logger.debug("SolR query URL: %s" % query_url)
     try:
         response = requests.get(query_url)
         return HttpResponse(response.text, content_type='text/plain')
