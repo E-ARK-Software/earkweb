@@ -20,11 +20,12 @@ from django.utils.decorators import method_decorator
 from lxml import etree
 import requests
 
+from earkcore.storage.pairtreestorage import PairtreeStorage
 from forms import SearchForm, UploadFileForm
 from models import AIP, DIP, Inclusion
 from query import get_query_string
 
-from config.configuration import config_path_work
+from config.configuration import config_path_work, config_path_storage
 from earkcore.utils.stringutils import safe_path_string
 from earkcore.utils.fileutils import mkdir_p
 from django.views.decorators.csrf import csrf_exempt
@@ -586,6 +587,7 @@ def dip_detail_table(request):
 def submit_order(request):
     print 'received request' + request.method
     validator = XmlValidation()
+
     if request.method == 'POST':
         order_xml = BytesIO(request.body)
         parsed_order_xml = lxml.etree.parse(order_xml)
@@ -599,14 +601,14 @@ def submit_order(request):
         for child in root.iterchildren('UnitOfDescription'):
             aip_identifier = child.iterchildren('ReferenceCode').next().text
             if AIP.objects.filter(identifier=aip_identifier).count() == 0:
-                return HttpResponse("Unknown AIP for provided UUID %s" % aip_identifier)
-
+                response = {'process_id' : None, 'error' : "Unknown AIP for provided UUID %s" % aip_identifier}
+                return HttpResponse(json.dumps(response))
 
         order_title = root.iterchildren('OrderTitle').next().text
         dip = DIP.objects.create(name=order_title)
-        uuid = getUniqueID()
+        process_id = getUniqueID()
         wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
-        InformationPackage.objects.create(path=os.path.join(config_path_work, uuid), uuid=uuid, statusprocess=0, packagename=order_title, last_task=wf)
+        InformationPackage.objects.create(path=os.path.join(config_path_work, process_id), uuid=process_id, statusprocess=0, packagename=order_title, last_task=wf)
         print "Created DIP with UUID %s" % aip_identifier
 
         for child in root.iterchildren('UnitOfDescription'):
@@ -615,22 +617,55 @@ def submit_order(request):
             Inclusion(aip=aip, dip=dip).save()
             print "Added existing package %s" % aip_identifier
 
-        return HttpResponse(uuid)
+        response = {"process_id": process_id, 'status': 'submitted'}
+        return HttpResponse(json.dumps(response))
     else:
-        return HttpResponse("Unsupported GET request.")
+        response = {'process_id' : None, 'error' : "Unsupported GET request."}
+        return HttpResponse(json.dumps(response))
 
-@login_required
+#@login_required
 @csrf_exempt
 def order_status(request):
     print 'received request' + request.method
-    if request.method == 'POST':
-        pkg_uuid = request.POST['pkg_uuid']
-        ip = InformationPackage.objects.get(uuid=pkg_uuid)
-        dip = DIP.objects.get(name=ip.packagename)
-        print "Found DIP for provided UUID %s = %s" % (pkg_uuid, dip.name)
 
+    if request.method == 'GET':
+        if not 'process_id' in request.GET:
+            response = {'process_id' : None, 'error' : "Missing HTTP request parameter process_id"}
+            return HttpResponse(json.dumps(response))
+
+        process_id = request.GET['process_id']
+        if not process_id:
+            response = {'process_id' : None, 'error' : "Empty HTTP request parameter process_id"}
+            return HttpResponse(json.dumps(response))
+
+        ip = InformationPackage.objects.get(uuid=process_id)
+        if not ip:
+            response = {'process_id' : process_id, 'error' : "InformationPackage package for process_id %s not found" % process_id}
+            return HttpResponse(json.dumps(response))
+
+        dip = DIP.objects.get(name=ip.packagename)
+        if not dip:
+            response = {'process_id' : process_id, 'error' : "DIP for package name %s not found" % ip.packagename}
+            return HttpResponse(json.dumps(response))
+
+        print "Found DIP for provided UUID %s = %s" % (process_id, dip.name)
         stat_proc_choices = dict(StatusProcess_CHOICES)
         print stat_proc_choices[ip.statusprocess]
-        return HttpResponse(stat_proc_choices[ip.statusprocess])
+
+        response = {'process_status' : stat_proc_choices[ip.statusprocess], 'process_id' : process_id}
+        if ip.statusprocess == 0:
+            try:
+                pts = PairtreeStorage(config_path_storage)
+                package_object_path = pts.get_object_path(ip.identifier)
+                if os.path.exists(package_object_path):
+                    print 'Storage path: %s' % package_object_path
+                    response['dip_storage'] = package_object_path
+
+            except Exception as e:
+                response = {'error' : "DIP with uuid %s not found in storage" % ip.identifier, 'process_id' : process_id}
+                return HttpResponse(json.dumps(response))
+
+        return HttpResponse(json.dumps(response))
     else:
-        return HttpResponse("Unsupported GET request.")
+        response = {'process_id' : None, 'error' : "Unsupported POST request."}
+        return HttpResponse(json.dumps(response))
