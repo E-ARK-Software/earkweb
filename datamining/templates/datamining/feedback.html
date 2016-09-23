@@ -1,0 +1,17 @@
+{% extends "earkweb/base.html" %}
+
+{% load staticfiles %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "datamining/about_module.html" %}
+
+    <h2 class="main">NLP task - info</h2>
+
+    <p>{{ status }}</p>
+
+{% endblock %}

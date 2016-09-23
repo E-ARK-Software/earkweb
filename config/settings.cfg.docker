@@ -78,6 +78,7 @@ stanford_jar_path = /var/data/earkweb/nlp/stanford
 stanford_models_path = /var/data/earkweb/nlp/stanford/classifiers
 category_models_path = /var/data/earkweb/nlp/textcategories/models
 config_path_nlp = /var/data/earkweb/nlp
+tar_path = /var/data/earkweb/nlp/storage
 
 [docker]
 
