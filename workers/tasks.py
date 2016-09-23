@@ -247,33 +247,40 @@ def set_process_state(self, uuid, valid):
 
 @app.task(bind=True)
 def index_aip_storage(self, *args, **kwargs):
+    # TODO: only index latest package version
     from config.configuration import local_solr_server_ip
     from config.configuration import local_solr_port
+    from config.configuration import config_path_storage
     solr_server = SolrServer(local_solr_server_ip, local_solr_port)
     logger.info("Solr server base url: %s" % solr_server.get_base_url())
     sq = SolrQuery(solr_server)
     r = requests.get(sq.get_base_url())
     if not r.status_code == 200:
-        return "Solr server is not available at: %s" % sq.get_base_url()
+        logger.error("Solr server is not available at: %s" % sq.get_base_url())
+        return
+    else:
+        logger.info("Using Solr server at: %s" % sq.get_base_url())
     # delete index first
     r = requests.get(sq.get_base_url() + "earkstorage/update?stream.body=%3Cdelete%3E%3Cquery%3E*%3C/query%3E%3C/delete%3E&commit=true")
-    from config.configuration import config_path_storage
-     # initialize solr client
+    package_count = 0
     solr_client = SolrClient(solr_server, "earkstorage")
-    ps = PairtreeStorage(config_path_storage)
-    p_list = ps.latest_version_ip_list()
-    for p in p_list:
-        logger.info("Indexing information package: %s (version %s)" % (p['id'], p['version']))
-        package_abs_path = os.path.join(config_path_storage, p['path'])
-        logger.info("Storage path: %s" % package_abs_path)
-        _, file_name = os.path.split(p['path'])
-        identifier = file_name[0:-4]
-        results = solr_client.post_tar_file(package_abs_path, identifier)
-        logger.info("Total number of files posted: %d" % len(results))
-        num_ok = sum(1 for result in results if result['status'] == 200)
-        logger.info("Number of files posted successfully: %d" % num_ok)
-        num_failed = sum(1 for result in results if result['status'] != 200)
-        logger.info("Number of plain documents: %d" % num_failed)
+    for dirpath,_,filenames in os.walk(config_path_storage):
+       for f in filenames:
+           package_abs_path = os.path.abspath(os.path.join(dirpath, f))
+           if package_abs_path.endswith(".tar"):
+               logger.info("=========================================================")
+               logger.info(package_abs_path)
+               logger.info("=========================================================")
+               _, file_name = os.path.split(package_abs_path)
+               identifier = file_name[0:-4]
+               results = solr_client.post_tar_file(package_abs_path, identifier)
+               logger.info("Total number of files posted: %d" % len(results))
+               num_ok = sum(1 for result in results if result['status'] == 200)
+               logger.info("Number of files posted successfully: %d" % num_ok)
+               num_failed = sum(1 for result in results if result['status'] != 200)
+               logger.info( "Number of plain documents: %d" % num_failed)
+               package_count += 1
+    logger.info("Indexing of %d packages available in local storage finished" % package_count)
 
 
 @app.task(bind=True)
