@@ -1810,7 +1810,7 @@ class AIPStore(DefaultTask):
 
 class AIPIndexing(DefaultTask):
 
-    accept_input_from = [AIPStore.__name__, "AIPIndexing"]
+    accept_input_from = [AIPStore.__name__, 'SolrUpdateCurrentMetadata', "AIPIndexing"]
 
     def run_task(self, task_context):
         """
@@ -1893,6 +1893,8 @@ def update_solr_doc(task_context, element, solr_field_name):
         except Exception, e:
             tl.adderr('Retrieving unique identifier failed: %s' % e.message)
 
+        tl.addinfo("Updating field '%s' of solr record '%s' with value '%s'" %(solr_field_name, identifier, index_md_value))
+
         if solr_field_name.endswith("_dt"):
             lbdf = LengthBasedDateFormat(index_md_value)
             index_md_value = lbdf.reformat()
@@ -1959,18 +1961,19 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                 tl.addinfo("Using EAD metadata file: %s" % filename)
 
                 eadparser = ParsedEad(validation_md_path, filename)
-                for element in eadparser.dao_path_mdval_tuples('unittitle'):
-                    update_solr_doc(task_context, element, 'eadtitle_t')
-                for element in eadparser.dao_path_mdval_tuples('unitdate'):
-                    update_solr_doc(task_context, element, 'eaddate_dt')
-                for element in eadparser.dao_path_mdval_tuples('unitdatestructured'):
-                    update_solr_doc(task_context, element, 'eaddatestructured_dt')
-                for element in eadparser.dao_path_mdval_tuples('origination'):
-                    update_solr_doc(task_context, element, 'eadorigination_t')
-                for element in eadparser.dao_path_mdval_tuples('abstract'):
-                    update_solr_doc(task_context, element, 'eadabstract_t')
-                for element in eadparser.dao_path_mdval_tuples('accessrestrict'):
-                    update_solr_doc(task_context, element, 'eadaccessrestrict_t')
+
+                def update_solr_records_for_element(element_name, solr_record_field, text_val_sub_path=None):
+                    tl.addinfo("Updating field '%s' of all documents solr records for element '%s'" % (solr_record_field, element_name))
+                    for element in eadparser.dao_path_mdval_tuples(element_name, text_val_sub_path):
+                        update_solr_doc(task_context, element, solr_record_field)
+
+                update_solr_records_for_element('unittitle', 'eadtitle_t')
+                update_solr_records_for_element('unitdate', 'eaddate_dt')
+                update_solr_records_for_element('unitdatestructured', 'eaddatestructured_dt', 'ead:datesingle')
+                update_solr_records_for_element('origination', 'eadorigination_t', 'ead:corpname/ead:part')
+                update_solr_records_for_element('abstract', 'eadabstract_t')
+                update_solr_records_for_element('accessrestrict', 'eadaccessrestrict_s', 'ead:head')
+                #update_solr_records_for_element('c04', 'eadclevel_s', '@ead:level')
 
                 md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
             if len(md_files_valid) == 0:
