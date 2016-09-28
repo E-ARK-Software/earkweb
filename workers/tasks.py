@@ -11,6 +11,7 @@ import urllib2
 
 from celery import current_task
 from earkcore.conversion.peripleo.pelagios_convert import PeripleoGmlProcessing
+from earkcore.filesystem.informationpackage import get_last_submission_path, get_first_ip_path
 from earkcore.rest.restclient import RestClient
 from earkcore.utils.randomutils import randomword
 
@@ -47,7 +48,7 @@ from earkcore.search.solrserver import SolrServer
 from earkcore.storage.pairtreestorage import PairtreeStorage
 from earkcore.utils import fileutils
 from earkcore.utils import randomutils
-from earkcore.utils.fileutils import mkdir_p, read_file_content, delete_directory_content
+from earkcore.utils.fileutils import mkdir_p, read_file_content, delete_directory_content, sub_dirs
 from earkcore.utils.fileutils import remove_fs_item
 from earkcore.utils.fileutils import remove_protocol
 from earkcore.xml.deliveryvalidation import DeliveryValidation
@@ -824,9 +825,6 @@ class IdentifierAssignment(DefaultTask):
                     output_file.write(mets_content)
                 tl.addinfo("AIP identifier set in METS file.")
                 task_context.task_status = 0
-            else:
-                tl.adderr('Can\'t find a METS file to update it with new identifier!')
-                task_context.task_status = 1
         except Exception, e:
             tl.adderr('An error ocurred when trying to update the METS file with the new identifier: %s' % str(e))
             tl.adderr(traceback.format_exc())
@@ -899,28 +897,95 @@ class SIPExtraction(DefaultTask):
                 package_file = deliveries[delivery]['package_file']
                 extr = Extract.factory(package_file)
                 custom_reporter = partial(custom_progress_reporter, self)
-                target_folder = os.path.join(task_context.path, str(delivery))
                 package_file_abs_path = os.path.join(task_context.path, package_file)
+                target_folder = os.path.join(task_context.path, str(delivery)) if extr.has_member(package_file_abs_path, 'METS.xml') else task_context.path
                 tl.addinfo("Extracting package file %s to %s" % (package_file_abs_path,target_folder))
                 extr.extract_with_report(package_file_abs_path, target_folder, progress_reporter=custom_reporter)
-                #remove packaged state.xml. No need for it anymore
-                #state_path = os.path.join(target_folder, "state.xml")
-                #if os.path.exists(state_path):
-                #    os.remove(state_path)
             tl.log += extr.log
             tl.err += extr.err
             task_context.task_status = 0
         return task_context.additional_data
 
+
+class SIPValidation(DefaultTask):
+
+    accept_input_from = [SIPExtraction.__name__, "SIPValidation"]
+
+    def run_task(self, task_context):
+        """
+        SIP Validation run task
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:5,type:2,stage:2
+        """
+
+        # Add the event type - will be put into Premis.
+        task_context.event_type = 'SIP Validation'
+
+        tl = task_context.task_logger
+        valid = True
+
+        def item_exists(descr, item):
+            if os.path.exists(item):
+                tl.addinfo("%s found: %s" % (descr, os.path.abspath(item)))
+                task_context.task_status = 0
+                return True
+            else:
+                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(item))))
+                task_context.task_status = 1
+                return False
+
+        # working directory must contain an IP or the IP must be in a subfolder
+        ip_path = get_first_ip_path(task_context.path)
+        if not ip_path:
+            tl.adderr("No information package found")
+            task_context.task_status = 1
+            return task_context.additional_data
+        else:
+            tl.addinfo("Information package folder: %s" % ip_path)
+
+        # package METS file validation
+        # root_mets_path = os.path.join(ip_path, "METS.xml")
+        # root_mets_validator = MetsValidation(ip_path)
+        # if root_mets_validator.validate_mets(root_mets_path):
+        #     tl.addinfo("Information package METS file validated successfully: %s" % root_mets_path)
+        # else:
+        #     tl.adderr("Error validating package METS file: %s" % root_mets_path)
+        #     for err in root_mets_validator.validation_errors:
+        #         tl.adderr(str(err))
+        #     valid = False
+
+        # representations folder is mandatory
+        representations_path = os.path.join(ip_path, "representations")
+        if not item_exists("Representations folder", representations_path):
+            return task_context.additional_data
+
+        # representation METS file validation
+        if os.path.exists(os.path.join(ip_path, "representations")):
+            for name in os.listdir(representations_path):
+                rep_path = os.path.join(representations_path, name)
+                if os.path.isdir(rep_path):
+                    mets_validator = MetsValidation(rep_path)
+                    valid &= mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+
+        # IP is valid if all METS files are valid
+        if valid:
+            task_context.task_status = 0
+        else:
+            task_context.task_status = 1
+            for error in mets_validator.validation_errors:
+                tl.adderr(error)
+        return task_context.additional_data
+
+
 class SIPRestructuring(DefaultTask):
 
-    accept_input_from = [SIPExtraction.__name__]
+    accept_input_from = [SIPValidation.__name__, SIPExtraction.__name__]
 
     def run_task(self, task_context):
         """
         SIP Restructuring run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:5,type:2,stage:2
+        @param      tc: order:6,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -963,7 +1028,7 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
         """
         SIP Packaging run task
         @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:6,type:2,stage:2
+        @param      tc: order:7,type:2,stage:2
         """
 
         # Add the event type - will be put into Premis.
@@ -977,10 +1042,13 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
         md_subdir_descr = 'descriptive'
 
         descriptive_md_dir = os.path.join(md_dir, md_subdir_descr)
-        submiss_descr_md_dir = os.path.join(task_context.path, submiss_dir, descriptive_md_dir)
+
+        submiss_descr_md_dir = os.path.join(get_last_submission_path(task_context.path), descriptive_md_dir)
+
         overruling_metadata_dir = os.path.join(task_context.path, md_dir, submiss_dir, descriptive_md_dir)
 
         tl.addinfo("Looking for EAD metadata files in metadata directory: %s" % strip_prefixes(submiss_descr_md_dir, task_context.path))
+        tl.addinfo("Overruling metadata directory: %s" % strip_prefixes(overruling_metadata_dir, task_context.path))
 
         # "warning" state for validation errors
         try:
@@ -1013,65 +1081,9 @@ class AIPDescriptiveMetadataValidation(DefaultTask):
         return task_context.additional_data
 
 
-class SIPValidation(DefaultTask):
-
-    accept_input_from = [SIPRestructuring.__name__, AIPDescriptiveMetadataValidation.__name__,"SIPValidation"]
-
-    def run_task(self, task_context):
-        """
-        SIP Validation run task
-        @type       tc: task configuration line (used to insert read task properties in database table)
-        @param      tc: order:7,type:2,stage:2
-        """
-
-        # Add the event type - will be put into Premis.
-        task_context.event_type = 'SIP Validation'
-
-        tl = task_context.task_logger
-        valid = True
-
-        def check_file(descr, f):
-            if os.path.exists(f):
-                tl.addinfo("%s found: %s" % (descr, os.path.abspath(f)))
-            else:
-                tl.adderr(("%s missing: %s" % (descr, os.path.abspath(f))))
-
-        submission_path = os.path.join(task_context.path, "submission")
-        check_file("submission METS file", os.path.join(submission_path, "METS.xml"))
-        #check_file("Data directory", os.path.join(reps_path, "data"))
-
-        #check_file("Documentation directory", os.path.join(path, "documentation"))
-        #check_file("Metadata directory", os.path.join(path, "metadata"))
-
-        # submission is not mandatory in an AIP:
-        if os.path.exists(os.path.join(task_context.path, "submission/representations")):
-            representations_path = os.path.join(task_context.path, "submission/representations")
-            for name in os.listdir(representations_path):
-                rep_path = os.path.join(representations_path, name)
-                if os.path.isdir(rep_path):
-                    mets_validator = MetsValidation(rep_path)
-                    valid &= mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
-                    # TODO: validate possible sub-METS files:
-                    # for rep, metspath in mets_validator.subsequent_mets:
-                    #     print 'METS file for representation: %s at path: %s' % (rep, metspath)
-                    #     subsequent_mets_validator = MetsValidation(task_context.path)
-                    #     sub_result = subsequent_mets_validator.validate_mets(metspath)
-                    #     if valid == True and sub_result == False:
-                    #         valid = False
-                    #     tl.addinfo('Validation for the %s Mets file is %s.' % (rep, sub_result))
-
-        # task_context.task_status = 0 if valid else 1
-        if valid:
-            task_context.task_status = 0
-        else:
-            task_context.task_status = 1
-            for error in mets_validator.validation_errors:
-                tl.adderr(error)
-        return task_context.additional_data
-
 class AIPMigrations(DefaultTask):
 
-    accept_input_from = [SIPValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
+    accept_input_from = [SIPRestructuring.__name__, AIPDescriptiveMetadataValidation.__name__, 'MigrationProcess', 'AIPMigrations', 'AIPCheckMigrationProgress']
 
     def run_task(self, task_context):
         """
@@ -1951,6 +1963,14 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                     update_solr_doc(task_context, element, 'eadtitle_t')
                 for element in eadparser.dao_path_mdval_tuples('unitdate'):
                     update_solr_doc(task_context, element, 'eaddate_dt')
+                for element in eadparser.dao_path_mdval_tuples('unitdatestructured'):
+                    update_solr_doc(task_context, element, 'eaddatestructured_dt')
+                for element in eadparser.dao_path_mdval_tuples('origination'):
+                    update_solr_doc(task_context, element, 'eadorigination_t')
+                for element in eadparser.dao_path_mdval_tuples('abstract'):
+                    update_solr_doc(task_context, element, 'eadabstract_t')
+                for element in eadparser.dao_path_mdval_tuples('accessrestrict'):
+                    update_solr_doc(task_context, element, 'eadaccessrestrict_t')
 
                 md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
             if len(md_files_valid) == 0:

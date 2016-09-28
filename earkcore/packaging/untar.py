@@ -49,6 +49,14 @@ class Untar(Processor):
             self.success = False
         return self.result()
 
+    def has_member(self, package_file_path, member_name):
+        tar_object = tarfile.open(name=package_file_path, mode='r', encoding='utf-8')
+        try:
+            tar_object.getmember(member_name)
+            return True
+        except KeyError:
+            return False
+
     def extract_with_report(self, package_file_path, extract_to, progress_reporter=default_reporter, total=0, current=0):
         try:
             self.log.append("Extracting package %s to %s" % (package_file_path, extract_to))
