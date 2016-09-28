@@ -39,7 +39,7 @@ import urllib2
 #import workers.tasks
 from workers.default_task_context import DefaultTaskContext
 from workers.tasks import SIPPackaging, AIPPackaging, LilyHDFSUpload, DIPAcquireAIPs, DIPExtractAIPs, AIPStore, AIPPackageMetsCreation, AIPIndexing, \
-    DIPAcquireDependentAIPs
+    DIPAcquireDependentAIPs, SIPtoAIPReset, AIPtoDIPReset
 from workers.taskconfig import TaskConfig
 from workflow.models import WorkflowModules
 from workflow.models import Wirings
@@ -188,7 +188,6 @@ def apply_task(request):
                 import json
                 additional_data = json.loads(ip.additional_data)
 
-                #TODO:// cleanup this starting here
                 additional_data['packagename'] = ip.packagename
                 if ip.identifier != "":
                     additional_data['identifier'] = ip.identifier
@@ -207,6 +206,11 @@ def apply_task(request):
                     additional_data['selected_aips'] = selected_aips
                     additional_data['storage_dest'] = config_path_storage
 
+                # on reset, the identifier is removed from context and from the information package record
+                if wfm.identifier == SIPtoAIPReset.__name__ or wfm.identifier ==  AIPtoDIPReset.__name__:
+                    additional_data['identifier'] = ''
+                    ip.identifier = ''
+
                 if wfm.identifier == AIPPackageMetsCreation.__name__:
                     additional_data['parent_id'] = ip.parent_identifier
 
@@ -221,11 +225,14 @@ def apply_task(request):
 
                 if wfm.identifier == LilyHDFSUpload.__name__:
                     additional_data['storage_loc'] = ip.storage_loc
-                #TODO:// cleanup this finishing here
+
                 # Execute task
                 task_context = DefaultTaskContext(ip.uuid, ip.path, taskClass.name, None, additional_data, None)
                 job = taskClass().apply_async((task_context,), queue='default')
                 data = {"success": True, "id": job.id}
+
+                # persist changes to information package object
+                ip.save()
             except AttributeError, err:
                 errdetail = """The workflow module '%s' does not exist.
 It might be necessary to run 'python ./workers/scantasks.py' to register new or renamed tasks.""" % wfm.identifier
