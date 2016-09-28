@@ -1,51 +1,43 @@
-import os
 import functools
 import json
 import logging
+import os
 import tarfile
-from threading import Thread
 import traceback
 import urllib
-import uuid
+from threading import Thread
 
-from django.conf import settings
+import requests
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
-from django.shortcuts import render
 from django.template import RequestContext, loader
 from django.utils import timezone
-from django.views.generic.list import ListView
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.list import ListView
 from lxml import etree
-import requests
 
+from config.configuration import config_path_work, config_path_storage
+from earkcore.models import InformationPackage
 from earkcore.storage.pairtreestorage import PairtreeStorage
+from earkcore.utils.fileutils import mkdir_p
+from earkcore.utils.randomutils import getUniqueID
+from earkcore.utils.stringutils import lstrip_substring
+from earkcore.utils.stringutils import safe_path_string
 from forms import SearchForm, UploadFileForm
 from models import AIP, DIP, Inclusion
 from query import get_query_string
-
-from config.configuration import config_path_work, config_path_storage
-from earkcore.utils.stringutils import safe_path_string
-from earkcore.utils.fileutils import mkdir_p
-from django.views.decorators.csrf import csrf_exempt
-
-from earkcore.utils.stringutils import lstrip_substring
 from sip2aip.forms import AIPtoDIPWorkflowModuleSelectForm
-from earkcore.models import InformationPackage
-from earkcore.utils.randomutils import getUniqueID
 from workers.default_task_context import DefaultTaskContext
 from workflow.models import WorkflowModules
 
 logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
-from earkcore.filesystem.fsinfo import path_to_dict
 from workers.tasks import AIPtoDIPReset
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from io import BytesIO
-import lxml
 from config.configuration import server_hdfs_aip_query
 
 from config.configuration import server_repo_record_content_query
@@ -588,42 +580,48 @@ def submit_order(request):
     print 'received request' + request.method
     validator = XmlValidation()
 
+    #{ "order_title" : "example title", "aip_identifiers" : [ "b7738768-032d-3db1-eb42-b09611e6e6c6", "916c659c-909d-ad94-2289-c7ee8e7482d9"]}
     if request.method == 'POST':
-        order_xml = BytesIO(request.body)
-        parsed_order_xml = lxml.etree.parse(order_xml)
-        from config.configuration import root_dir
-        xsd_path = os.path.join(root_dir, "earkcore/xml/resources/order.xsd")
-        parsed_order_schema = lxml.etree.parse(xsd_path)
-        result = validator.validate_XML(parsed_order_xml, parsed_order_schema)
-        root = parsed_order_xml.getroot()
+        order_json = json.loads(request.body)
+
+        if "order_title" not in order_json:
+            response = {'process_id' : None, 'error' : "Missing order_title element in order request."}
+            return HttpResponse(json.dumps(response))
+        if "aip_identifiers" not in order_json:
+            response = {'process_id' : None, 'error' : "Missing aip_identifiers element in order request."}
+            return HttpResponse(json.dumps(response))
+
+        order_title = order_json["order_title"]
+        aip_identifiers = order_json["aip_identifiers"]
 
         # verify that all necessary AIPs exist return error otherwise
-        for child in root.iterchildren('UnitOfDescription'):
-            aip_identifier = child.iterchildren('ReferenceCode').next().text
+        for aip_identifier in aip_identifiers:
             if AIP.objects.filter(identifier=aip_identifier).count() == 0:
                 response = {'process_id' : None, 'error' : "Unknown AIP for provided UUID %s" % aip_identifier}
                 return HttpResponse(json.dumps(response))
+        try:
+            dip = DIP.objects.create(name=order_title)
+        except Exception as e:
+            response = {'process_id' : None, 'error' : repr(e)}
+            return HttpResponse(json.dumps(response))
 
-        order_title = root.iterchildren('OrderTitle').next().text
-        dip = DIP.objects.create(name=order_title)
         process_id = getUniqueID()
         wf = WorkflowModules.objects.get(identifier = AIPtoDIPReset.__name__)
         InformationPackage.objects.create(path=os.path.join(config_path_work, process_id), uuid=process_id, statusprocess=0, packagename=order_title, last_task=wf)
         print "Created DIP with UUID %s" % aip_identifier
 
-        for child in root.iterchildren('UnitOfDescription'):
-            aip_identifier = child.iterchildren('ReferenceCode').next().text
+        for aip_identifier in aip_identifiers:
             aip = AIP.objects.get(identifier=aip_identifier)
             Inclusion(aip=aip, dip=dip).save()
             print "Added existing package %s" % aip_identifier
 
-        response = {"process_id": process_id, 'status': 'submitted'}
+        response = {"process_id": process_id, 'status': 'Submitted'}
         return HttpResponse(json.dumps(response))
     else:
         response = {'process_id' : None, 'error' : "Unsupported GET request."}
         return HttpResponse(json.dumps(response))
 
-#@login_required
+@login_required
 @csrf_exempt
 def order_status(request):
     print 'received request' + request.method
@@ -649,10 +647,13 @@ def order_status(request):
             return HttpResponse(json.dumps(response))
 
         print "Found DIP for provided UUID %s = %s" % (process_id, dip.name)
-        stat_proc_choices = dict(StatusProcess_CHOICES)
-        print stat_proc_choices[ip.statusprocess]
 
-        response = {'process_status' : stat_proc_choices[ip.statusprocess], 'process_id' : process_id}
+        #stat_proc_choices = dict(StatusProcess_CHOICES)
+        #print stat_proc_choices[ip.statusprocess]
+        #response = {'process_status' : stat_proc_choices[ip.statusprocess], 'process_id' : process_id}
+
+        response = {'process_id' : process_id, 'process_status' : "Progress", 'dip_storage' : ""}
+
         if ip.statusprocess == 0:
             try:
                 pts = PairtreeStorage(config_path_storage)
@@ -662,8 +663,7 @@ def order_status(request):
                     response['dip_storage'] = package_object_path
 
             except Exception as e:
-                response = {'error' : "DIP with uuid %s not found in storage" % ip.identifier, 'process_id' : process_id}
-                return HttpResponse(json.dumps(response))
+                print "Storage path not found"
 
         return HttpResponse(json.dumps(response))
     else:
