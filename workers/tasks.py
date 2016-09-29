@@ -1962,18 +1962,18 @@ class SolrUpdateCurrentMetadata(DefaultTask):
 
                 eadparser = ParsedEad(validation_md_path, filename)
 
-                def update_solr_records_for_element(element_name, solr_record_field, text_val_sub_path=None):
+                def update_solr_records_for_element(element_name, solr_record_field, text_val_sub_path=None, is_attr_text_accessor=False):
                     tl.addinfo("Updating field '%s' of all documents solr records for element '%s'" % (solr_record_field, element_name))
-                    for element in eadparser.dao_path_mdval_tuples(element_name, text_val_sub_path):
+                    for element in eadparser.dao_path_mdval_tuples(element_name, text_val_sub_path, is_attr_text_accessor):
                         update_solr_doc(task_context, element, solr_record_field)
 
-                update_solr_records_for_element('unittitle', 'eadtitle_t')
+                update_solr_records_for_element('unittitle', 'eadtitle_s')
                 update_solr_records_for_element('unitdate', 'eaddate_dt')
                 update_solr_records_for_element('unitdatestructured', 'eaddatestructured_dt', 'ead:datesingle')
-                update_solr_records_for_element('origination', 'eadorigination_t', 'ead:corpname/ead:part')
+                update_solr_records_for_element('origination', 'eadorigination_s', 'ead:corpname/ead:part')
                 update_solr_records_for_element('abstract', 'eadabstract_t')
                 update_solr_records_for_element('accessrestrict', 'eadaccessrestrict_s', 'ead:head')
-                #update_solr_records_for_element('c04', 'eadclevel_s', '@ead:level')
+                update_solr_records_for_element('[Cc][0,1][0-9]', 'eadclevel_s', 'level', True)
 
                 md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
             if len(md_files_valid) == 0:
