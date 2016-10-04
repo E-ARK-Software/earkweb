@@ -63,6 +63,10 @@ class Unzip(Processor):
             self.success = False
         return self.result()
 
+    def has_member(self, package_file_path, member_name):
+        zf = zipfile.ZipFile(package_file_path)
+        return member_name in zf.namelist()
+
     def _createstructure(self, file, dir):
         self._makedirs(self._listdirs(file), dir)
 

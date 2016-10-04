@@ -51,7 +51,7 @@ def import_package(current_task, src_zip):
     logger.info( "Delivery METS3 stored: %s" % delivery_mets_file )
 
     #return
-    chain_1_classes = [ SIPtoAIPReset, SIPDeliveryValidation, IdentifierAssignment, SIPExtraction, SIPRestructuring, SIPValidation, AIPMigrations]
+    chain_1_classes = [ SIPtoAIPReset, SIPDeliveryValidation, IdentifierAssignment, SIPExtraction, SIPValidation, SIPRestructuring, AIPMigrations]
     test_task = AIPCheckMigrationProgress
     chain_2_classes = [ CreatePremisAfterMigration, AIPRepresentationMetsCreation, AIPPackageMetsCreation, AIPValidation, AIPPackaging, AIPStore]#, LilyHDFSUpload]
 
