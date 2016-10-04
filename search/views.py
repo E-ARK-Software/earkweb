@@ -636,9 +636,10 @@ def order_status(request):
             response = {'process_id' : None, 'error' : "Empty HTTP request parameter process_id"}
             return HttpResponse(json.dumps(response))
 
-        ip = InformationPackage.objects.get(uuid=process_id)
-        if not ip:
-            response = {'process_id' : process_id, 'error' : "InformationPackage package for process_id %s not found" % process_id}
+        try:
+            ip = InformationPackage.objects.get(uuid=process_id)
+        except Exception as e:
+            response = {'process_id' : process_id, 'error' : repr(e)}
             return HttpResponse(json.dumps(response))
 
         dip = DIP.objects.get(name=ip.packagename)
