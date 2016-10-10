@@ -642,9 +642,10 @@ def order_status(request):
             response = {'process_id' : process_id, 'error' : repr(e)}
             return HttpResponse(json.dumps(response))
 
-        dip = DIP.objects.get(name=ip.packagename)
-        if not dip:
-            response = {'process_id' : process_id, 'error' : "DIP for package name %s not found" % ip.packagename}
+        try:
+            dip = DIP.objects.get(name=ip.packagename)
+        except Exception as e:
+            response = {'process_id' : process_id, 'error' : repr(e)}
             return HttpResponse(json.dumps(response))
 
         print "Found DIP for provided UUID %s = %s" % (process_id, dip.name)
@@ -655,6 +656,7 @@ def order_status(request):
 
         response = {'process_id' : process_id, 'process_status' : "Progress", 'dip_storage' : ""}
 
+        #if staus is ok try finding DIP in storage and return
         if ip.statusprocess == 0:
             try:
                 pts = PairtreeStorage(config_path_storage)
@@ -665,6 +667,8 @@ def order_status(request):
 
             except Exception as e:
                 print "Storage path not found"
+                response = {'process_id' : process_id, 'error' : repr(e)}
+                return HttpResponse(json.dumps(response))
 
         return HttpResponse(json.dumps(response))
     else:
