@@ -596,8 +596,8 @@ def submit_order(request):
 
         # verify that all necessary AIPs exist return error otherwise
         for aip_identifier in aip_identifiers:
-            if AIP.objects.filter(identifier=aip_identifier).count() == 0:
-                response = {'process_id' : None, 'error' : "Unknown AIP for provided UUID %s" % aip_identifier}
+           if InformationPackage.objects.filter(identifier=aip_identifier).count() == 0:
+                response = {'process_id' : None, 'error' : "Unknown IP for provided UUID %s" % aip_identifier}
                 return HttpResponse(json.dumps(response))
         try:
             dip = DIP.objects.create(name=order_title)
@@ -611,6 +611,11 @@ def submit_order(request):
         print "Created DIP with UUID %s" % aip_identifier
 
         for aip_identifier in aip_identifiers:
+            # if entry does not exist in search_aip add it from earkweb_informationpackage
+            if AIP.objects.filter(identifier=aip_identifier).count() == 0:
+                ip = InformationPackage.objects.get(identifier=aip_identifier)
+                aip = AIP.objects.create(identifier=aip_identifier, cleanid="", source=ip.storage_loc, date_selected=timezone.now())
+
             aip = AIP.objects.get(identifier=aip_identifier)
             Inclusion(aip=aip, dip=dip).save()
             print "Added existing package %s" % aip_identifier
@@ -656,7 +661,7 @@ def order_status(request):
 
         response = {'process_id' : process_id, 'process_status' : "Progress", 'dip_storage' : ""}
 
-        #if staus is ok try finding DIP in storage and return
+        #if staus is ok try finding ip in storage and return
         if ip.statusprocess == 0:
             try:
                 pts = PairtreeStorage(config_path_storage)
@@ -667,8 +672,8 @@ def order_status(request):
 
             except Exception as e:
                 print "Storage path not found"
-                response = {'process_id' : process_id, 'error' : repr(e)}
-                return HttpResponse(json.dumps(response))
+                #response = {'process_id' : process_id, 'error' : repr(e)}
+                #return HttpResponse(json.dumps(response))
 
         return HttpResponse(json.dumps(response))
     else:
