@@ -61,6 +61,11 @@ peripleo_server_ip = config.get('server', 'peripleo_server_ip')
 peripleo_port = config.getint('server', 'peripleo_port')
 peripleo_path = config.get('server', 'peripleo_path')
 
+# flower
+flower_server = config.get('server', 'flower_server')
+flower_port = config.getint('server', 'flower_port')
+flower_path = config.get('server', 'flower_path')
+
 # siard target db and util
 siard_dbptk = config.get('server', 'siard_dbptk')
 siard_db_type = config.get('server','siard_db_type')

@@ -40,6 +40,10 @@
 
     <p>Run SIP creation for selected SIPs. </p>
 
+    <p>For the selected open SIP creation processes, the batch process will create a packages including basic metadata and store the resulting SIP directly in the reception area so
+        that the SIP can be ingested. After starting the SIP batch creation process, progress can be monitored using <a href="{{ flower_url }}">flower</a> and, if SIP creation was
+        successful, the packages will become available in the <a href="{% url 'sip2aip:batch' %}">SIP reception area</a> for ingest.</p>
+
     <button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch SIP creation!</button></p>
 
     <table id="receptiontable" class="table table-striped table-bordered table-condensed">
@@ -101,7 +105,7 @@
                 data: { },
                 success: function(json_result) {
                     var proc_pack_status_id = '#st'+json_result.uuid;
-                    changeLabel(proc_pack_status_id, "Submitted", "Processing", "Processing");
+                    changeLabel(proc_pack_status_id, "Submitted", "Accepted", "Accepted");
                 },
                 });
               }
