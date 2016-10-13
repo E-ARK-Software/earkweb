@@ -394,8 +394,14 @@ def apply_task(request):
 def batch(request):
     template = loader.get_template('sip2aip/batch.html')
     from config.configuration import config_path_reception
+    from config.configuration import max_submissions_web_client
+    from config.configuration import flower_server
+    from config.configuration import flower_port
+    from config.configuration import flower_path
     context = RequestContext(request, {
-        'config_path_reception': config_path_reception
+        'config_path_reception': config_path_reception,
+        'max_submissions_web_client': max_submissions_web_client,
+        'flower_url': "http://%s:%s%s" % (flower_server, flower_port, flower_path),
     })
     return HttpResponse(template.render(context))
 

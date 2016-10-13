@@ -19,17 +19,24 @@ span.applicationxtar {
     background-color: DarkGray;
 }
 
+.incoming {
+    background-color: DarkGray;
+}
 
 .running {
     background-color: DarkOrange;
 }
 
 
-.processed {
-    background-color: DarkGreen;
+.queued {
+    background-color: DarkOrange;
 }
 
 .accepted {
+    background-color: DarkGreen;
+}
+
+.processed {
     background-color: DarkGreen;
 }
 

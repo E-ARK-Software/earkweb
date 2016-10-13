@@ -90,6 +90,9 @@ metadata_file_pattern_ead =  config.get('metadata', 'metadata_file_pattern_ead')
 # location of METS Template
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
 
+# maximum number of submissions by web client
+max_submissions_web_client = 50
+
 server_repo_record_content_query = "http://%s:%d/repository/table/%s/record/{0}/field/n$content/data?ns.n=org.eu.eark" % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
 
 server_hdfs_aip_query = "http://%s:%d/hsink/fileresource/retrieve_newest?file={0}" % (hdfs_upload_service_ip, hdfs_upload_service_port)
