@@ -72,7 +72,7 @@ class InformationPackageTable(tables.Table):
     area = "sipcreator"
 
     last_task = tables.Column(verbose_name='Last task')
-    statusprocess = tables.Column(verbose_name='Process status' )
+    statusprocess = tables.Column(verbose_name='Outcome' )
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
     uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
     packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name= 'Package name')

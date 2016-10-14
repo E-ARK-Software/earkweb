@@ -110,7 +110,7 @@ class InformationPackageTable(tables.Table):
     uuid = tables.LinkColumn('search:working_area', kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
     last_task = tables.Column(verbose_name='Last task')
-    statusprocess = tables.Column(verbose_name='Process status' )
+    statusprocess = tables.Column(verbose_name='Outcome' )
 
     class Meta:
         model = InformationPackage

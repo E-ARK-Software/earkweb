@@ -52,8 +52,8 @@
 		<th class="filecol">Package file</th>
 		<th class="daticol">Date/time</th>
         <th class="statcol">Last task</th>
-        <th class="statcol">Status</th>
-          <th class="statcol">Processing</th>
+        <th class="statcol">Outcome</th>
+          <th class="statcol">Status</th>
         <th class="statcol">Selected</th>
       </tr>
     </thead>
@@ -72,7 +72,7 @@
                 <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>
                 {% endif %}
 			</td>
-            <td><span id="st{{ ip.uuid }}" class="label label-default incoming">Incoming</span></td>
+            <td><span id="st{{ ip.uuid }}" class="label label-default open">Open</span></td>
             <td><input id="ip{{ ip.uuid }}" name="ipselect" value="{{ ip.uuid }}" type="checkbox" checked="checked"/></td>
             </tr>
         {% endfor %}
@@ -96,7 +96,7 @@
                 window.console.log(selected[i].val());
                 var uuid = selected[i].val();
                 uuid_label_id = '#st'+uuid;
-                changeLabel(uuid_label_id, "Incoming", "Queued", "Queued");
+                changeLabel(uuid_label_id, "Open", "Queued", "Queued");
                 $('#ip'+uuid).attr("disabled", "disabled");
                 $.ajax({
                 url: "/earkweb/sipcreator/submit_sipcreation_batch/" +  uuid + "/",
@@ -105,7 +105,7 @@
                 data: { },
                 success: function(json_result) {
                     var proc_pack_status_id = '#st'+json_result.uuid;
-                    changeLabel(proc_pack_status_id, "Queued", "Accepted", "Accepted");
+                    changeLabel(proc_pack_status_id, "Queued", "Processing", "Processing");
                     $('#nextnote').togglevisible();
                 },
                 });

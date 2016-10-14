@@ -94,7 +94,7 @@ The "SIP creation task/workflow execution" overview table shows information enti
 * The "Last task" shows the last task which was executed, e.g. "SIPValidation". The last task also determines the following task which can be executed because each task defines
 a list of accepted input tasks.
 * Last change is the date/time of the last modification (by a task)
-* Process status shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
+* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
 package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
 
 Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
@@ -169,7 +169,7 @@ after a specific task ("IdentifierAssignment") in this case, was executed.
 * The "Last task" shows the last task which was executed, e.g. "AIPValidation". The last task also determines the following task which can be executed because each task defines
 a list of accepted input tasks.
 * Last change is the date/time of the last modification (by a task)
-* Process status shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
+* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
 package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
 
 Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
@@ -241,7 +241,7 @@ The "DIP task/workflow execution" overview table shows information entities of t
 * The "Last task" shows the last task which was executed, e.g. "DIPAcquireAIPs". The last task also determines the following task which can be executed because each task defines
 a list of accepted input tasks.
 * Last change is the date/time of the last modification (by a task)
-* Process status shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
+* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
 package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
 
 Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
