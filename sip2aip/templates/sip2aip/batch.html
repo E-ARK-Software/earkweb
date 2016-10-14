@@ -19,6 +19,9 @@
 
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+
     <script language="JavaScript">
     function enable_predef_idmap_def_div() {
         $('#predef_idmap_def').togglevisible();
@@ -43,8 +46,12 @@
 
     <p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch ingest!</button></p>
 
-    <p id="nextnote" style="display:none">Progress
-        can be monitored using <a href="{{ flower_url }}">flower</a> and the packages will become available in the <a href="{% url 'sip2aip:reception' %}">SIP to AIP conversion processes overview</a>.</p>
+
+    <div id="nextnote" style="display:none">
+         <p>Montitor batch execution progress: <a href="{{ flower_url }}">Flower</a></p>
+         <p>Batch execution result: <a href="{% url 'sip2aip:reception' %}">SIP to AIP conversion processes overview</a></p>
+        <p>The final task of the batch processing is 'AIPStore'.</p>
+    </div>
 
     <p><a class="div_enabler" href="#" onclick="enable_predef_idmap_def_div()">Edit SIP package name to AIP identifier mapping</a> </p>
 
@@ -58,7 +65,7 @@
 		<th class="filecol">Package file</th>
 		<th class="daticol">Date/time</th>
 		<th class="mimecol">Mime-type</th>
-        <th class="statcol">Outcome</th>
+        <th class="statcol">Status</th>
       </tr>
     </thead>
     <tbody id="iplist">
@@ -78,7 +85,9 @@
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
                 $('#loading').nodisplay();
-                var predef_text = "";
+                var predef_text = "";$('.top-right').notify({
+                        message: { text: 'Available packages loaded from SIP reception area!'}
+              }).show();
                 for(var i in json_result.children) {
                     var mime = json_result.children[i].data.mimetype;
                     var filename = json_result.children[i].text;
@@ -124,10 +133,16 @@
                 async: true,
                 data: { },
                 success: function(json_result) {
-                    $('#nextnote').togglevisible();
+                    $('#nextnote').css("display", "block");
+                    $('#predef_idmap_def').css("display", "none");
+
                 },
                 });
               }
+            $('.top-right').notify({
+                        message: { text: 'SIP to AIP conversion process started!'}
+              }).show();
+
         }
         $('#batch-apply-task').click(run_all);
     </script>

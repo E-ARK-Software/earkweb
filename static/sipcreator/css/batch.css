@@ -44,6 +44,11 @@ span.applicationxtar {
     background-color: DarkGreen;
 }
 
+.processing {
+    background-color: DarkGreen;
+}
+
+
 .error {
     background-color: DarkRed;
 }
@@ -74,4 +79,9 @@ span.applicationxtar {
 a[disabled]
 {
     color: grey;
+}
+
+#nextnote {
+    padding:10px;
+  border:1px solid #AD2624;
 }

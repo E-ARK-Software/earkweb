@@ -71,3 +71,9 @@ a[disabled]
 {
     color: grey;
 }
+
+
+#nextnote {
+    padding:10px;
+  border:1px solid #AD2624;
+}

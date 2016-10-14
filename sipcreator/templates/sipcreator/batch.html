@@ -19,6 +19,9 @@
 
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+
     <script language="JavaScript">
     function enable_predef_idmap_def_div() {
         $('#predef_idmap_def').togglevisible();
@@ -43,8 +46,12 @@
 
     <p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch SIP creation!</button></p>
 
-    <p id="nextnote" style="display:none">Progress can be monitored using <a href="{{ flower_url }}">flower</a> and, if SIP creation was
-        successful, the packages will become available in the <a href="{% url 'sip2aip:batch' %}">SIP reception area</a> for ingest.</p>
+    <div id="nextnote" style="display:none">
+         <p>Montitor batch execution progress: <a href="{{ flower_url }}">Flower</a></p>
+         <p>Batch execution result: <a href="{% url 'sip2aip:batch' %}">SIP reception area</a></p>
+        <p>The SIP creation processes will remain open to allow recreating the SIP.</p>
+    </div>
+
 
     <table id="receptiontable" class="table table-striped table-bordered table-condensed">
     <thead>
@@ -82,6 +89,7 @@
     <script language="JavaScript">
         var selected = Array();
         //$('#batch-apply-task').attr("disabled", "disabled");
+
         function changeLabel(labelid, oldlabel, newlabel, newlabeltext) {
             $(labelid).removeClass(oldlabel.toLowerCase());
             $(labelid).addClass(newlabel.toLowerCase());
@@ -106,10 +114,13 @@
                 success: function(json_result) {
                     var proc_pack_status_id = '#st'+json_result.uuid;
                     changeLabel(proc_pack_status_id, "Queued", "Processing", "Processing");
-                    $('#nextnote').togglevisible();
+                    $('#nextnote').css("display", "block");
                 },
                 });
               }
+              $('.top-right').notify({
+                        message: { text: 'SIP creation process started!'}
+              }).show();
         }
         $('#batch-apply-task').click(run_all);
     </script>
