@@ -261,5 +261,10 @@ LOGGING = {
         'datamining': {
                  'handlers': ['default', 'console'],
          },
+        'pika': {
+                 'handlers': ['default', 'console'],
+                 'level': 'INFO',
+         },
+
     }
 }

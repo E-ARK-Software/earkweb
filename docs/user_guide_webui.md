@@ -272,3 +272,12 @@ interface where trusted users can manage content.
 
 *Flower* is a real-time monitor and web admin for Celery distributed task queue. It is recommended to install and set-up this application in a productive environment to be able
 to monitor the execution of large numbers of tasks.
+
+In the development environment, flower can be started using the following command:
+
+    celery flower -A earkweb --address=127.0.0.1 --port=5555
+    
+If the flower service is available in a sub-path (e.g. http://127.0.0.1/flower), then a URL prefix needs to be defined:
+
+    celery flower -A earkweb --address=127.0.0.1 --url_prefix=flower --port=5555
+

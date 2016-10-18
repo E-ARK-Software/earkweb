@@ -453,7 +453,7 @@ class SipCreationBatchView(ListView):
     template_name = 'sipcreator/batch.html'
     context_object_name = 'sips'
 
-    queryset=InformationPackage.objects.extra(where=["uuid!='' and last_task_id='%s'" % SIPReset.__name__]).order_by('last_change')
+    queryset=InformationPackage.objects.extra(where=["last_task_id='%s'" % SIPReset.__name__]).order_by('last_change')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -464,15 +464,6 @@ class SipCreationBatchView(ListView):
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
         context['flower_url'] = "http://%s:%s%s" % (flower_server, flower_port, flower_path)
         return context
-
-@login_required
-def batch(request):
-    template = loader.get_template('sipcreator/batch.html')
-    from config.configuration import config_path_reception
-    context = RequestContext(request, {
-        'config_path_reception': config_path_reception
-    })
-    return HttpResponse(template.render(context))
 
 
 @login_required
@@ -509,7 +500,7 @@ def submit_sipcreation_batch(request, uuid):
         if request.is_ajax():
             try:
                 ip = InformationPackage.objects.get(uuid=uuid)
-                job = run_sipcreation_batch.delay(uuid=uuid, packagename=ip.packagename)
+                job = run_sipcreation_batch.delay(uuid=uuid, packagename=ip.packagename, path=ip.path)
                 data = {"success": True, "id": job.id, "uuid": uuid}
             except Exception, err:
                 tb = traceback.format_exc()

@@ -243,7 +243,18 @@ def set_process_state(self, uuid, valid):
         ip_state_xml = IpState.from_path(ip_state_doc_path)
         ip_state_xml.set_state(0 if valid else 1)
         ip_state_xml.write_doc(ip_state_doc_path)
-    return { 'status': '0', "success": True}
+    return {'status': '0', "success": True}
+
+
+@app.task(bind=True)
+def create_ip_folder(self, *args, **kwargs):
+    new_uuid = kwargs['uuid']
+    from config.configuration import config_path_work
+    target_folder = os.path.join(config_path_work, new_uuid)
+    mkdir_p(target_folder)
+    mkdir_p(os.path.join(target_folder, "representations"))
+    mkdir_p(os.path.join(target_folder, "metadata"))
+    logger.info("IP directory created: %s" % target_folder)
 
 
 @app.task(bind=True)
@@ -316,6 +327,19 @@ def run_package_ingest(self, *args, **kwargs):
 def run_sipcreation_batch(self, *args, **kwargs):
     uuid = kwargs['uuid']
     packagename = kwargs['packagename']
+    path = kwargs['path']
+    if not uuid or not packagename or not path:
+        raise ValueError("Required parameters: uuid, packagename, path")
+    from config.configuration import config_path_reception
+    from earkcore.utils.fileutils import secure_copy_tree
+    if path.startswith(config_path_reception) and path.endswith(packagename):
+        if secure_copy_tree(path, os.path.join(config_path_work, uuid)):
+            shutil.rmtree(path)
+        else:
+            err_msg = "Error while copying IP '%s' data from the reception area." % packagename
+            logger.error(err_msg)
+            current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+            return {'uuid': uuid, 'status': "1", "success": False, "errmsg": err_msg}
     current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': "SIPReset"})
     from earkcore.batch.create_sip import create_sip
     try:

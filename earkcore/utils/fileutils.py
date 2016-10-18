@@ -60,6 +60,59 @@ def copy_tree_content(source_dir, target_dir):
         source_item = os.path.join(source_dir, fs_child)
         copytree(source_item, os.path.join(target_dir, fs_child))
 
+
+def move_folder_content(source_dir, target_dir):
+    fs_childs = os.listdir(source_dir)
+    for fs_child in fs_childs:
+        source_item = os.path.join(source_dir, fs_child)
+        shutil.move(source_item, target_dir)
+
+
+def force_merge_flat_dir(srcDir, dstDir):
+    if not os.path.exists(dstDir):
+        os.makedirs(dstDir)
+    for item in os.listdir(srcDir):
+        srcFile = os.path.join(srcDir, item)
+        dstFile = os.path.join(dstDir, item)
+        secure_force_copy_file(srcFile, dstFile)
+
+
+def secure_force_copy_file(sfile, dfile):
+    if os.path.isfile(sfile):
+        shutil.copy2(sfile, dfile)
+        from earkcore.fixity.ChecksumFile import get_sha256_hash
+        if not os.path.exists(dfile) or not get_sha256_hash(sfile) == get_sha256_hash(dfile):
+            raise IOError("File copy operation failed  (checksums are not equal comparing %s and %s)." % (sfile, dfile))
+
+
+def is_flat_dir(sDir):
+    for item in os.listdir(sDir):
+        sItem = os.path.join(sDir, item)
+        if os.path.isdir(sItem):
+            return False
+    return True
+
+
+def secure_copy_tree(src, dst):
+    try:
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dst, item)
+            if os.path.isfile(s):
+                if not os.path.exists(dst):
+                    os.makedirs(dst)
+                secure_force_copy_file(s,d)
+            if os.path.isdir(s):
+                is_recursive = not is_flat_dir(s)
+                if is_recursive:
+                    secure_copy_tree(s, d)
+                else:
+                    force_merge_flat_dir(s, d)
+        return True
+    except IOError, err:
+        print err
+        return False
+
 def delete_directory_content(root_dir):
     fs_childs = os.listdir(root_dir)
     for fs_child in fs_childs:
