@@ -81,6 +81,8 @@ from config.configuration import stanford_ner_models, stanford_jar, text_categor
 from workers.dmhelpers.createarchive import CreateNLPArchive
 import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
+from earkcore.metadata.ead.parsedead import field_namevalue_pairs_per_file
+
 from earkcore.utils.solrutils import SolrUtility
 import re
 import json
@@ -1978,27 +1980,29 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                 if os.path.exists(overruling_md_file):
                     tl.addinfo("Overruling version of descriptive metadata file found: %s" % strip_prefixes(overruling_md_file, task_context.path))
                     validation_md_path = overruling_metadata_dir
-
                 else:
                     tl.addinfo("No overruling version of descriptive metadata file in AIP metadata folder found.")
-
                 tl.addinfo("Using EAD metadata file: %s" % filename)
 
-                eadparser = ParsedEad(validation_md_path, filename)
-
-                def update_solr_records_for_element(element_name, solr_record_field, text_val_sub_path=None, is_attr_text_accessor=False):
-                    tl.addinfo("Updating field '%s' of all documents solr records for element '%s'" % (solr_record_field, element_name))
-                    for element in eadparser.dao_path_mdval_tuples(element_name, text_val_sub_path, is_attr_text_accessor):
-                        update_solr_doc(task_context, element, solr_record_field)
-
-                update_solr_records_for_element('unittitle', 'eadtitle_s')
-                update_solr_records_for_element('unitdate', 'eaddate_dt')
-                update_solr_records_for_element('unitdatestructured', 'eaddatestructured_dt', 'ead:datesingle')
-                update_solr_records_for_element('origination', 'eadorigination_s', 'ead:corpname/ead:part')
-                update_solr_records_for_element('abstract', 'eadabstract_t')
-                update_solr_records_for_element('accessrestrict', 'eadaccessrestrict_s', 'ead:head')
-                update_solr_records_for_element('[Cc][0,1][0-9]', 'eadclevel_s', 'level', True)
-
+                extract_defs = [
+                    {'ead_element': 'unittitle', 'solr_field': 'eadtitle_s'},
+                    {'ead_element': 'unitdate', 'solr_field': 'eaddate_s'},
+                    {'ead_element': 'unitid', 'solr_field': 'eadid_s'},
+                    {'ead_element': 'unitdatestructured', 'solr_field': 'eaddatestructuredfrom_dt', 'text_access_path': 'ead:datesingle'},
+                    {'ead_element': 'unitdatestructured', 'solr_field': 'eaddatestructuredto_dt', 'text_access_path': 'ead:datesingle'},
+                    {'ead_element': 'origination', 'solr_field': 'eadorigination_s', 'text_access_path': 'ead:corpname/ead:part'},
+                    {'ead_element': 'abstract', 'solr_field': 'eadabstract_t', 'text_access_path': None},
+                    {'ead_element': 'accessrestrict', 'solr_field': 'eadaccessrestrict_s', 'text_access_path': 'ead:head'},
+                    {'ead_element': '[Cc][0,1][0-9]', 'solr_field': 'eadclevel_s', 'text_access_path': 'level', 'is_attribute': True},
+                ]
+                result = field_namevalue_pairs_per_file(extract_defs, validation_md_path, filename)
+                solr = SolrUtility()
+                for k in result.keys():
+                    safe_urn_identifier = (task_context.additional_data['identifier']).replace(":", "\\:")
+                    entry_path = k.replace(task_context.path, '')
+                    identifier = solr.get_doc_id_from_path(safe_urn_identifier, entry_path)
+                    status_code = solr.update_document(identifier, result[k])
+                    tl.addinfo("Solr document %s updated for file item: %s (return code: %s)" % (identifier, entry_path, status_code))
                 md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
             if len(md_files_valid) == 0:
                 tl.addinfo("No descriptive metadata files found.")

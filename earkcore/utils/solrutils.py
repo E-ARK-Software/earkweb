@@ -82,6 +82,46 @@ class SolrUtility(object):
         update = requests.post(update_url, data=update_doc, headers=update_headers)
         return update.text
 
+    def update_document(self, record_identifier, kv_pairs):
+        """
+        Update a solr document given a list of fieldname/value pairs
+        example: update_document("bd74c030-3161-4962-9f98-47f6d00c89cc", [{"field_value": "value1", "field_name": "field1_s"}, {"field_value": "value2", "field_name": "field2_s"}])
+        @param record_identifier: record identifier (solr identifier)
+        @param kv_pairs: list of fieldname/value pairs
+        @return: status code
+        """
+        url_suffix = 'update'
+        update_url = self.solr_instance + url_suffix
+        update_headers = {'Content-Type': 'application/json'}
+        update_data = dict()
+        update_data[self.solr_unique_key] = record_identifier
+        for kv_pair in kv_pairs:
+            update_data[kv_pair['field_name']] = {'set': kv_pair['field_value']}
+        update_doc = json.dumps([update_data])
+        update = requests.post(update_url, data=update_doc, headers=update_headers)
+
+        print update_url
+        print json.dumps([update_data], indent=4)
+        return update.status_code
+
+    def get_doc_id_from_path(self, safe_urn_identifier, entry_path):
+        """
+        Get identifier from solr document
+        @param safe_urn_identifier: safe identifier, e.g. urn\:uuid\:0426f626-d51d-449c-84fa-d5c32d728509
+        @param entry_path: entry path, e.g. /submission/representations/rep1/data/Example1.docx
+        @return: document identifier, e.g. "d66c0d7b-0b9d-4a4f-a1d5-7d829f109018"
+        """
+        query_result = self.send_query('path:%s%s' % (safe_urn_identifier, entry_path))
+        if query_result is False:
+            raise RuntimeError("No query result")
+        identifier = None
+        if "lily.key" in query_result[0]:
+            identifier = query_result[0]['lily.key']
+        else:
+            identifier = query_result[0]['id']
+        if not identifier:
+            raise RuntimeError("Unable to get document identifier")
+        return identifier
 
     # def add_to_field(self, record_identifier, field, content):
     #     """
