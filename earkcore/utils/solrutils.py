@@ -58,18 +58,29 @@ class SolrUtility(object):
         update_url = self.solr_instance + url_suffix
         update_headers = {'Content-Type': 'application/json'}
         update_data = json.dumps([{field: {'set': content}, self.solr_unique_key: record_identifier}])
+        print update_data
         update = requests.post(update_url, data=update_data, headers=update_headers)
         print update.text
         return update.status_code
 
-    # def set_multiple_fields(self, record_identifier, field_list):
-    #     url_suffix = 'update'
-    #     update_url = self.solr_instance + url_suffix
-    #     update_headers = {'Content-Type': 'application/json'}
-    #     for item in field_list:
-    #         update_data = json.dumps([{field: {'set': content}, self.solr_unique_key: record_identifier}])
-    #     update = requests.post(update_url, data=update_data, headers=update_headers)
-    #     return update.status_code
+    def set_multiple_fields(self, record_identifier, kv_tuple_list):
+        """
+        Update a solr document given a list of fieldname/value pairs
+        example: set_multiple_fields("bd74c030-3161-4962-9f98-47f6d00c89cc", [("field1_s", "value1"), ("field2_b", "true")])
+        @param record_identifier: record identifier (solr identifier)
+        @param kv_tuple_list: list of fieldname/value pairs
+        @return: status code
+        """
+        url_suffix = 'update'
+        update_url = self.solr_instance + url_suffix
+        update_headers = {'Content-Type': 'application/json'}
+        update_data = dict()
+        update_data[self.solr_unique_key] = record_identifier
+        for kv_tuple in kv_tuple_list:
+            update_data[kv_tuple[0]] = {'set': kv_tuple[1]}
+        update_doc = json.dumps([update_data])
+        update = requests.post(update_url, data=update_doc, headers=update_headers)
+        return update.text
 
 
     # def add_to_field(self, record_identifier, field, content):
