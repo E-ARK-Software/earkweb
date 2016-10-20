@@ -108,10 +108,13 @@ class ParsedEad(object):
 
     def dao_path_mdval_tuples(self, md_tag, text_val_sub_path=None, is_attr_text_accessor=False):
         dao_elements = self.get_dao_elements()
-        return [{
-            "path": package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href']),
-            "mdvalue": self._first_md_val_ancpath(dao_elm, md_tag, text_val_sub_path, is_attr_text_accessor)
-        } for dao_elm in dao_elements]
+        result = []
+        for dao_elm in dao_elements:
+            path = package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href'])
+            mdval = self._first_md_val_ancpath(dao_elm, md_tag, text_val_sub_path, is_attr_text_accessor)
+            if mdval:
+                result.append({"path": path, "mdvalue": mdval})
+        return result
 
 
 class TestParsedEad(unittest.TestCase):
@@ -160,6 +163,15 @@ class TestParsedEad(unittest.TestCase):
         dao_elements = pead.get_dao_elements()
         for dao_elm in dao_elements:
             self.assertEqual("Test Agency", pead._first_md_val_ancpath(dao_elm, "origination", "ead:corpname/ead:part"))
+
+    def test_first_metadata_value_in_ancestry_path_origination_xpath(self):
+        """
+        Test get closest unittitle element value (text access xpath)
+        """
+        pead = ParsedEad(TestParsedEad.test_dir, TestParsedEad.test_dir + 'metadata/descriptive/EAD-example5.xml')
+        dao_elements = pead.get_dao_elements()
+        for dao_elm in dao_elements:
+            self.assertEqual("Test Agency", pead._first_md_val_ancpath(dao_elm, "origination", text_accessor="*/ead:part"))
 
     def test_first_metadata_value_in_ancestry_path_c03(self):
         """
@@ -232,6 +244,16 @@ class TestParsedEad(unittest.TestCase):
         md_tag = "[Cc][0,1][0-9]"
         res = pead.dao_path_mdval_tuples(md_tag, "level", True)
         self.assertEqual("item", res[0]['mdvalue'])
+
+    def test_dao_clevel_attribute_value(self):
+        """
+        Element does not exist
+        """
+        root_dir = TestParsedEad.test_dir
+        ead_file_path = TestParsedEad.test_dir + 'metadata/descriptive/EAD-example1.xml'
+        pead = ParsedEad(root_dir, ead_file_path)
+        res = pead.dao_path_mdval_tuples("unitdatestructured", "ead:daterange/ead:fromdate", False)
+        self.assertEqual([], res)
 
 
 if __name__ == '__main__':
