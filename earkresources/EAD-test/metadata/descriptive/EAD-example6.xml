@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ead xmlns="http://ead3.archivists.org/schema/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ead3.archivists.org/schema/ ../../ead3.xsd">
+	<!--A required child element of <ead> for recording bibliographic and administrative information about an EAD instance.-->
+	<control>
+	<!--Record Identifier. A required child element of <control> that designates a unique identifier for the EAD instance.-->
+		<recordid>text</recordid>
+		<filedesc>
+			<!--Title Statement. A required child element of <filedesc> that binds together information about the name of an encoded finding aid and those responsible for its content.-->
+			<titlestmt>
+				<titleproper>Title Proper of the Finding Aid</titleproper>
+			</titlestmt>
+			<!--Note Statement. A child element of notestmt, used to provide a general note related to the EAD instance.-->
+			<notestmt>
+				<controlnote>
+					<p>Note Statement</p>
+				</controlnote>
+			</notestmt>
+		</filedesc>
+		<!--A required child element of <control> that records the current version status of the EAD instance.-->
+		<maintenancestatus value="new">text</maintenancestatus>
+		<maintenanceagency>
+			<agencyname>text</agencyname>
+		</maintenanceagency>
+		<maintenancehistory>
+			<maintenanceevent>
+				<eventtype value="created">text</eventtype>
+				<eventdatetime>text</eventdatetime>
+				<agenttype value="human">text</agenttype>
+				<agent>text</agent>
+			</maintenanceevent>
+		</maintenancehistory>
+	</control>
+
+	<!--Archival Description. A required child element of <ead> that binds together all of the archival descriptive information in an EAD instance.-->
+	<archdesc level="collection">
+		<did>
+			<abstract>This is a short description of the collection.</abstract>
+		</did>
+		<accessrestrict id="accessrestrict"><head>Access</head><p>Access is granted to qualified people and by appointment.</p></accessrestrict>
+		<controlaccess>
+			  <subject><part>Testsubject1</part></subject>
+			  <subject><part>Testsubject2</part></subject>
+		</controlaccess>
+		<dsc dsctype="combined">
+			<!-- An aggregation level - series -->
+			<c01 level="series" >
+				<did>
+					<unitid>Series 1</unitid>
+					<unittitle>Correspondence</unittitle>
+				</did>
+				<!-- If the file plan is related to an aggregation (series) -->
+				<fileplan>
+					<head>File List</head>
+					<fileplan>
+						<head>Business Services (BS)</head>
+						<list listtype="ordered" numeration="upper-roman">
+							<item>Marketing</item>
+						</list>
+					</fileplan>
+				</fileplan>
+				<!-- An aggregation level - sub-series -->
+				<c02 level="subseries">
+					<did>
+						<unitid>Subseries 1.2</unitid>
+						<unittitle>Incoming Correspondence</unittitle>
+					</did>
+					<c03 level="file">
+						<did>
+							<unittitle>Adams-Ayers</unittitle>
+						</did>
+						 <controlaccess>
+						 	<geogname>
+								<part>Test-Geogname</part>
+							</geogname>
+						 </controlaccess>
+						<!-- An aggregation level - item -->
+						<c04 level="item">
+							<did>
+								<!--Universally unique identifier for an entity that is generated automatically by the system and stays with the entity forever-->
+								<unitid localtype="system_id">f4d3d161-e48e-4ec4-84df-73606f6c35e1</unitid>
+								<!--The identifying name or title of the entity-->
+								<unittitle>Record - Adams-Ayers</unittitle>
+								<!--System set date and time when the entity was created. Can be represented as unitdatestructured as well.-->
+								<unitdate datechar="created">22.04.2016</unitdate>
+								<!--Date and time of origin of a record or other entity which may vary from the creation date of the entity in the system. Can be represented as unitdate as well.-->
+								<origination>
+									<corpname>
+										<part>Test Agency</part>
+									</corpname>
+								</origination>
+								<unitdatestructured datechar="originated">
+									<daterange>
+										<fromdate>22.04.2016</fromdate>
+										<todate>28.04.2016</todate>
+									</daterange>
+								</unitdatestructured>
+								<abstract>This is a more detailed description of the Adams-Ayers entity.</abstract>
+								<!--The unit used to describe the extent of the record (e.g MB, pages, num of files/components)-->
+								<physdescstructured coverage="whole" physdescstructuredtype="spaceoccupied">
+									<quantity>1</quantity>
+									<unittype>page</unittype>
+								</physdescstructured>
+								<daoset label="Digital Objects" coverage="whole">
+									<dao id="ddf3d161-e48e-4ec4-84df-73606f6c35e1" daotype="borndigital"
+											linktitle="rep1" localtype="fullsize"
+											href="file:../../representations/rep1/data/Example1.docx"/>
+									<dao id="daf6d161-e48e-4ec4-84df-73606f6c35e1" daotype="derived"
+											linktitle="rep2" localtype="fullsize"
+											href="file:../../representations/rep2/data/Example1.pdf"/>
+								</daoset>
+							</did>
+							<!--Related Material-->
+							<relatedmaterial>
+								<p>For identifying archival materials that have an association to the materials being described.</p>
+							</relatedmaterial>
+							<!--Other Descriptive Data-->
+							<odd localtype="OwnElementDescription">
+								<p>For recording additional information about the described materials that is not easily incorporated into one of the other named elements within archdesc and c.</p>
+							</odd>
+							<!-- If the file plan is related to an item (a record). The classification of the entity, used by child aggregations and records. -->
+							<!-- Contains an ID as an attribute.-->
+							<fileplan id="d8d4d161-e48e-4ec4-84df-73606f6c35e1">
+								<head>File List</head>
+								<fileplan>
+									<head>Business Services (BS)</head>
+									<list listtype="ordered" numeration="upper-roman">
+										<item>Marketing</item>
+									</list>
+								</fileplan>
+							</fileplan>
+						</c04>
+					</c03>
+				</c02>
+			</c01>
+		</dsc>
+	</archdesc>
+</ead>

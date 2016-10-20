@@ -155,6 +155,16 @@ class TestParsedEad(unittest.TestCase):
         for dao_elm in dao_elements:
             self.assertEqual("22.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:datesingle"))
 
+    def test_first_metadata_value_in_ancestry_path_unitdatestructured_range(self):
+        """
+        Test get closest unittitle element value (c04)
+        """
+        pead = ParsedEad(TestParsedEad.test_dir, TestParsedEad.test_dir + 'metadata/descriptive/EAD-example6.xml')
+        dao_elements = pead.get_dao_elements()
+        for dao_elm in dao_elements:
+            self.assertEqual("22.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:daterange/ead:fromdate"))
+            self.assertEqual("28.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:daterange/ead:todate"))
+
     def test_first_metadata_value_in_ancestry_path_origination(self):
         """
         Test get closest unittitle element value (c04)
