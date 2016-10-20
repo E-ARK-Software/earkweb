@@ -1900,46 +1900,6 @@ class AIPIndexing(DefaultTask):
         return task_context.additional_data
 
 
-def update_solr_doc(task_context, element, solr_field_name):
-    tl = task_context.task_logger
-    # instantiate Solr communication class
-    solr = SolrUtility()
-    index_path = element['path']
-    index_md_value = element['mdvalue']
-    # need a solr query to retrieve identifier: solr.solr_unique_key
-    identifier_query_param = (task_context.additional_data['identifier']).replace(":", "\\:")
-    query_result = solr.send_query('path:%s%s' % (identifier_query_param, index_path.replace(task_context.path, '')))
-    if query_result is not False:
-        try:
-            identifier = None
-            if "lily.key" in query_result[0]:
-                identifier = query_result[0]['lily.key']
-            else:
-                identifier = query_result[0]['id']
-        except Exception, e:
-            tl.adderr('Retrieving unique identifier failed: %s' % e.message)
-
-        tl.addinfo("Updating field '%s' of solr record '%s' with value '%s'" %(solr_field_name, identifier, index_md_value))
-
-        if solr_field_name.endswith("_dt"):
-            lbdf = LengthBasedDateFormat(index_md_value)
-            index_md_value = lbdf.reformat()
-
-        # update 'eadtitle' field afterwards; '_t' marks it as text_general
-        update = solr.set_field(record_identifier=identifier,
-                                field=solr_field_name,
-                                content=index_md_value)
-
-        if update == 200:
-            tl.addinfo('%s updated with status code 200.' % index_path)
-            task_context.task_status = 0
-        else:
-            tl.adderr('%s failed with status code %d.' % (index_path, update))
-            task_context.task_status = 1
-    else:
-        tl.adderr('Query status code: %s' % query_result)
-
-
 class SolrUpdateCurrentMetadata(DefaultTask):
 
     accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, "SolrUpdateCurrentMetadata"]
