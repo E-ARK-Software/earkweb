@@ -76,7 +76,7 @@ from earkcore.utils.datetimeutils import ts_date
 from earkcore.utils.pathutils import strip_prefixes
 from earkcore.utils.pathutils import backup_file_path
 from nltk.tag import StanfordNERTagger
-from nltk import word_tokenize
+from nltk import word_tokenize, internals
 from config.configuration import stanford_ner_models, stanford_jar, text_category_models, config_path_nlp, nlp_storage_path
 from workers.dmhelpers.createarchive import CreateNLPArchive
 import tarfile
@@ -3082,13 +3082,19 @@ class DMNERecogniser(ConcurrentTask):
         identifier = kwargs['identifier']
         model = kwargs['model']
 
-        # initialise tagger
+        # initialise tagger and java 8 for this task
+        # os.environ['JAVAHOME'] = '/usr/local/java/jre1.8.0_73/bin/java'     # TODO: check if exists
+        os.environ['JAVAHOME'] = '/usr/lib/java/jdk1.8.0_101/bin/java'     # NAH cluster
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
         model = os.path.join(stanford_ner_models, model)
+        # nltk config: java 1.8 path
+        # internals.config_java(bin='/usr/local/java/jre1.8.0_73/bin/java', options='-mx8000m')   # earkdev path - TODO: settings.cfg
         tagger = StanfordNERTagger(model, jar, encoding='utf-8', java_options='-mx8000m')
 
         print 'initialised with model: %s' % model
         print 'now tagging: %s' % identifier
+
+        logger.debug('Now tokenizing the file.')
 
         tokenized = []
         content = content.strip().decode('utf-8')
@@ -3096,23 +3102,37 @@ class DMNERecogniser(ConcurrentTask):
         for token in tokens:
             tokenized.append(token + '\n')
 
+        logger.debug('Finished tokenization.')
+
         # position = 0
         # TODO: make dynamic for more categories!
         organisations_list = []
         persons_list = []
         locations_list = []
+        logger.debug('Now calling tagger.tag().')
         for result in tagger.tag(tokenized):
             if result[1] != 'O':
                 if 'LOC' in result[1]:
-                    organisations_list.append(result[0])
+                    locations_list.append(result[0])
                 elif 'PER' in result[1]:
                     persons_list.append(result[0])
                 elif 'ORG' in result[1]:
-                    locations_list.append(result[0])
+                    organisations_list.append(result[0])
 
+        logger.debug('Next: updating Solr with tagged results.')
+        with open('/var/data/earkweb/nlp/tarfiles/nlp_results', 'a') as nlp_output:
+            nlp_output.write(identifier + '\n')
+            nlp_output.write('----locations----\n')
+            nlp_output.write(str(locations_list) + '\n')
+            nlp_output.write('----organisations----\n')
+            nlp_output.write(str(organisations_list) + '\n')
+            nlp_output.write('----persons----\n')
+            nlp_output.write(str(persons_list) + '\n')
+            nlp_output.write('#############################\n')
         # update Solr with results
         solr = SolrUtility()
-        document_id = solr.send_query('path:"%s"' % identifier)[0]['id']
+        # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']
+        document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']
         loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
         time.sleep(1)
         per_status = solr.set_field(document_id, 'persons_ss', persons_list)
