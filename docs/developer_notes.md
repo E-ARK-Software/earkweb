@@ -88,3 +88,59 @@ Run all tests:
 
     py.test tasks earkcore
     
+## Adding fields to the Lily-Solr schema (Solr 4.10)
+
+    cd /srv/lily-2.4/bin
+
+Set environment variable:
+
+    LILY_CONFIG=/srv/dm/dm-file-ingest/src/main/config/lily
+    
+Three files have to be updated:
+
+1) schema.json: `$LILY_CONFIG/schema.json` - add to `fieldTypes`...
+
+    {
+      name: "eark$eadclevel_s",
+      valueType: "STRING",
+      scope: "non_versioned"
+    }
+    
+and to `recordTypes`:
+
+    {name: "eark$eadclevel_s", mandatory: false}
+
+2) indexerconf.xml: `$LILY_CONFIG/indexerconf.xml`
+
+    <field name="eadclevel_s" value="eark:eadclevel_s"/>
+
+3) Edit `/srv/apache-solr-4.0.0/example/solr/eark1/conf/schema.xml`:
+
+If you want to add a new field type according to the [Solr 4.10 field types](http://archive.apache.org/dist/lucene/solr/ref-guide/apache-solr-ref-guide-4.10.pdf) 
+("Field Types Included with Solr"), add an entry like this to `<types>...</types>`:
+
+    <fieldType name="date" class="solr.TrieDateField" precisionStep="8" positionIncrementGap="0"/>
+    
+For all other fields, add an entry to `<fields>...</fields>`:
+
+    <field name="eadclevel_s" type="string" indexed="true" stored="true" required="false"/>
+    
+Now, load the updated schema files:
+
+    ./lily-import -s $LILY_CONFIG/schema.json
+    
+Delete the old index:
+
+    ./lily-update-index -n eark1 --state DELETE_REQUESTED
+
+Add the index again:
+
+    ./lily-add-index -n eark1 -c $LILY_CONFIG/indexerconf.xml -sm classic -s shard1:http://localhost:8983/solr/eark1 -dt eark1
+    
+Clear index:
+
+    curl http://localhost:8983/solr/eark1/update/?commit=true -d "<delete><query>*:*</query></delete>" -H "Content-Type: text/xml"
+    
+Rebuild:
+
+    ./lily-update-index -n eark1 --build-state BUILD_REQUESTED   
