@@ -12,6 +12,29 @@ import unittest
 import lxml
 from lxml.etree import XMLSyntaxError
 from config.configuration import root_dir
+from earkcore.utils.datetimeutils import current_timestamp, LengthBasedDateFormat
+
+
+def field_namevalue_pairs_per_file(extract_defs, ead_root_path, ead_file_path):
+    eadparser = ParsedEad(ead_root_path, ead_file_path)
+    file_elmvalpairs = dict()
+    for ed in extract_defs:
+        text_access_path = ed['text_access_path'] if 'text_access_path' in ed else None
+        is_attribute = ed['is_attribute'] if 'is_attribute' in ed else None
+        file_elmvalpairs[ed['solr_field']] = eadparser.dao_path_mdval_tuples(ed['ead_element'], text_access_path, is_attribute)
+    result = dict()
+    for element_name, file_value_pair_list in file_elmvalpairs.items():
+        for file_value_pair in file_value_pair_list:
+            if not file_value_pair['path'] in result.keys():
+                result[file_value_pair['path']] = []
+
+            reformatted_md_value = file_value_pair['mdvalue']
+            if element_name.endswith("_dt"):
+                lbdf = LengthBasedDateFormat(file_value_pair['mdvalue'])
+                print "DATE: %s" % file_value_pair['mdvalue']
+                reformatted_md_value = lbdf.reformat()
+            result[file_value_pair['path']].append({'field_name': element_name, 'field_value': reformatted_md_value})
+    return result
 
 
 class ParsedEad(object):
@@ -85,10 +108,13 @@ class ParsedEad(object):
 
     def dao_path_mdval_tuples(self, md_tag, text_val_sub_path=None, is_attr_text_accessor=False):
         dao_elements = self.get_dao_elements()
-        return [{
-            "path": package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href']),
-            "mdvalue": self._first_md_val_ancpath(dao_elm, md_tag, text_val_sub_path, is_attr_text_accessor)
-        } for dao_elm in dao_elements]
+        result = []
+        for dao_elm in dao_elements:
+            path = package_sub_path_from_relative_path(self.root_dir, self.ead_file_path, dao_elm.attrib['href'])
+            mdval = self._first_md_val_ancpath(dao_elm, md_tag, text_val_sub_path, is_attr_text_accessor)
+            if mdval:
+                result.append({"path": path, "mdvalue": mdval})
+        return result
 
 
 class TestParsedEad(unittest.TestCase):
@@ -129,6 +155,16 @@ class TestParsedEad(unittest.TestCase):
         for dao_elm in dao_elements:
             self.assertEqual("22.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:datesingle"))
 
+    def test_first_metadata_value_in_ancestry_path_unitdatestructured_range(self):
+        """
+        Test get closest unittitle element value (c04)
+        """
+        pead = ParsedEad(TestParsedEad.test_dir, TestParsedEad.test_dir + 'metadata/descriptive/EAD-example6.xml')
+        dao_elements = pead.get_dao_elements()
+        for dao_elm in dao_elements:
+            self.assertEqual("22.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:daterange/ead:fromdate"))
+            self.assertEqual("28.04.2016", pead._first_md_val_ancpath(dao_elm, "unitdatestructured", "ead:daterange/ead:todate"))
+
     def test_first_metadata_value_in_ancestry_path_origination(self):
         """
         Test get closest unittitle element value (c04)
@@ -137,6 +173,15 @@ class TestParsedEad(unittest.TestCase):
         dao_elements = pead.get_dao_elements()
         for dao_elm in dao_elements:
             self.assertEqual("Test Agency", pead._first_md_val_ancpath(dao_elm, "origination", "ead:corpname/ead:part"))
+
+    def test_first_metadata_value_in_ancestry_path_origination_xpath(self):
+        """
+        Test get closest unittitle element value (text access xpath)
+        """
+        pead = ParsedEad(TestParsedEad.test_dir, TestParsedEad.test_dir + 'metadata/descriptive/EAD-example5.xml')
+        dao_elements = pead.get_dao_elements()
+        for dao_elm in dao_elements:
+            self.assertEqual("Test Agency", pead._first_md_val_ancpath(dao_elm, "origination", text_accessor="*/ead:part"))
 
     def test_first_metadata_value_in_ancestry_path_c03(self):
         """
@@ -209,6 +254,16 @@ class TestParsedEad(unittest.TestCase):
         md_tag = "[Cc][0,1][0-9]"
         res = pead.dao_path_mdval_tuples(md_tag, "level", True)
         self.assertEqual("item", res[0]['mdvalue'])
+
+    def test_dao_clevel_attribute_value(self):
+        """
+        Element does not exist
+        """
+        root_dir = TestParsedEad.test_dir
+        ead_file_path = TestParsedEad.test_dir + 'metadata/descriptive/EAD-example1.xml'
+        pead = ParsedEad(root_dir, ead_file_path)
+        res = pead.dao_path_mdval_tuples("unitdatestructured", "ead:daterange/ead:fromdate", False)
+        self.assertEqual([], res)
 
 
 if __name__ == '__main__':

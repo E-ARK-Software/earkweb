@@ -53,17 +53,19 @@ This will have the effect that Celery tasks are executed in the same process wic
 
 ## Monitoring tasks
 
-Install `flower` using pip (`pip install flower`) and start the tool using the following command: 
+Install `flower` using pip (`pip install flower`). 
  
+In the development environment, flower can be started using the following command:
+
     celery flower -A earkweb --address=127.0.0.1 --port=5555
     
-With prefix:
-
-    celery flower -A earkweb --address==127.0.0.1 --url_prefix=flower --port=5555
-    
-Open web browser at:
+Access flower service in your web browser at the following URL:
 
   http://127.0.0.1:5555
+    
+If the flower service is available in a sub-path (e.g. http://127.0.0.1/flower), then a URL prefix needs to be defined when starting the service:
+
+    celery flower -A earkweb --address=127.0.0.1 --url_prefix=flower --port=5555
 
 ## Unit tests 
 

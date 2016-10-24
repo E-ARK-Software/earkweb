@@ -6,8 +6,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
-earkweb_version = '0.9.1'
-earkweb_version_date = "12.08.2016"
+earkweb_version = '0.9.2'
+earkweb_version_date = "12.10.2016"
 
 config = ConfigParser.RawConfigParser()
 config.read(os.path.join(root_dir, 'config/settings.cfg'))
@@ -61,6 +61,11 @@ peripleo_server_ip = config.get('server', 'peripleo_server_ip')
 peripleo_port = config.getint('server', 'peripleo_port')
 peripleo_path = config.get('server', 'peripleo_path')
 
+# flower
+flower_server = config.get('server', 'flower_server')
+flower_port = config.getint('server', 'flower_port')
+flower_path = config.get('server', 'flower_path')
+
 # siard target db and util
 siard_dbptk = config.get('server', 'siard_dbptk')
 siard_db_type = config.get('server','siard_db_type')
@@ -84,6 +89,9 @@ metadata_file_pattern_ead =  config.get('metadata', 'metadata_file_pattern_ead')
 
 # location of METS Template
 template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
+
+# maximum number of submissions by web client
+max_submissions_web_client = 50
 
 server_repo_record_content_query = "http://%s:%d/repository/table/%s/record/{0}/field/n$content/data?ns.n=org.eu.eark" % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
 

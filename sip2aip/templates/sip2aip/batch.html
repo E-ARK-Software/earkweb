@@ -19,6 +19,9 @@
 
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+
     <script language="JavaScript">
     function enable_predef_idmap_def_div() {
         $('#predef_idmap_def').togglevisible();
@@ -38,11 +41,20 @@
 
     <h2 class="main">Batch SIP ingest</h2>
 
-    <p>Run SIP to AIP conversion for all SIP files in the reception directory. </p>
+    <p>Run SIP to AIP conversion for all SIP files in the reception directory. For a maximum number of {{ max_submissions_web_client }} SIPs available, the batch process will start
+        the ingest to convert the SIPs to AIPs.</p>
 
-    <p></p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch ingest!</button></p>
+    <p><button id="batch-apply-task" type="submit" class="btn btn-primary" onclick="return false" >Run batch ingest!</button></p>
+
+
+    <div id="nextnote" style="display:none">
+         <p>Montitor batch execution progress: <a href="{{ flower_url }}">Flower</a></p>
+         <p>Batch execution result: <a href="{% url 'sip2aip:reception' %}">SIP to AIP conversion processes overview</a></p>
+        <p>The final task of the batch processing is 'AIPStore'.</p>
+    </div>
 
     <p><a class="div_enabler" href="#" onclick="enable_predef_idmap_def_div()">Edit SIP package name to AIP identifier mapping</a> </p>
+
     <div id="predef_idmap_def">
         <textarea id="predef_idmap_def_text"></textarea>
     </div>
@@ -73,16 +85,20 @@
             poll_request_url: "/earkweb/earkcore/poll_state/",
             success_func: function(json_result) {
                 $('#loading').nodisplay();
-                var predef_text = "";
+                var predef_text = "";$('.top-right').notify({
+                        message: { text: 'Available packages loaded from SIP reception area!'}
+              }).show();
                 for(var i in json_result.children) {
                     var mime = json_result.children[i].data.mimetype;
                     var filename = json_result.children[i].text;
                     var datetime = json_result.children[i].data.datetime;
                     if(filename.endsWith(".tar") || filename.endsWith(".zip")) {
                         reception_packages.push(filename);
-                        $('#iplist').append('<tr><td class="filename"><span id="'+name_to_id(filename)+'" class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+datetime+'</td><td>'+mime+'</td><td><span id="st'+name_to_id(filename)+'" class="label label-default received">Received</span></td></tr>');
+                        $('#iplist').append('<tr><td class="filename"><span id="'+name_to_id(filename)+'" class="'+name_to_id(mime)+'">'+filename+'</span></td><td>'+datetime+'</td><td>'+mime+'</td><td><span id="st'+name_to_id(filename)+'" class="label label-default incoming">Incoming</span></td></tr>');
                         predef_text += filename.slice(0, -4) + "    urn:uuid:" + guid() + "\n";
                     }
+                    // maximum number of packages to be submitted by this client
+                    if(i > {{ max_submissions_web_client }}) break;
                 }
                 $('#predef_idmap_def_text').text(predef_text);
                 $('#batch-apply-task').prop('disabled', false);
@@ -106,46 +122,28 @@
 
         function run_all() {
             $('#batch-apply-task').prop('disabled', true);
-            window.console.log("Total number of ingest processes: " + reception_packages.length);
-            for(var i=0; i<reception_packages.length; i++) {
+              window.console.log("Total number of ingest processes: " + reception_packages.length);
+              for(var i=0; i<reception_packages.length; i++) {
                 rec_pack = reception_packages[i];
                 rec_pack_id = '#st'+name_to_id(rec_pack);
-                changeLabel(rec_pack_id, "Received", "Running", "Running");
+                changeLabel(rec_pack_id, "Incoming", "Accepted", "Accepted");
+                $.ajax({
+                url: "/earkweb/sip2aip/submit_package_ingest/" +  rec_pack + "/",
+                method: "POST",
+                async: true,
+                data: { },
+                success: function(json_result) {
+                    $('#nextnote').css("display", "block");
+                    $('#predef_idmap_def').css("display", "none");
 
+                },
+                });
+              }
+            $('.top-right').notify({
+                        message: { text: 'SIP to AIP conversion process started!'}
+              }).show();
 
-                // module defining the context of the get directory information request
-                var submit_batch_ingest_module = {
-                    request_url: "/earkweb/sip2aip/submit_package_ingest/" +  rec_pack + "/",
-                    poll_request_url: "/earkweb/earkcore/poll_state/",
-                    success_func: function(json_result) {
-                        var proc_pack_status_id = '#st'+name_to_id(json_result.package_file);
-                        var state_msg = json_result.success ? "Processed" : "Error";
-                        changeLabel(proc_pack_status_id, "Running", state_msg, state_msg);
-                    },
-                    update_func: function(info) {
-                        if("errmsg" in info) {
-                            changeLabel(proc_pack_status_id, "Running", "Error", "Error");
-                        } else {
-                            var proc_pack_status_id = '#st'+name_to_id(info.package_file);
-                            window.console.log("package file: " + info.package_file);
-                            window.console.log("last task: " + info.last_task);
-                            changeLabel(proc_pack_status_id, "Running", "Running", "Running: " + info.last_task);
-                         }
-                    },
-
-                    reception_packages: reception_packages,
-                    request_params: { "predef_id_mapping": $('#predef_idmap_def_text').text()  },
-                    poll_func: pollstate,
-                    poll_interval: 20000,
-                }
-                // bind module to function
-                var submit_batch_ingest_func = $.proxy( request_func, submit_batch_ingest_module );
-
-                // submit request
-                submit_batch_ingest_func();
-            }
         }
-        // execute on load
         $('#batch-apply-task').click(run_all);
     </script>
 {% endblock %}

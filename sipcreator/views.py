@@ -10,6 +10,9 @@ from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedire
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from config.configuration import root_dir
+from config.configuration import flower_server
+from config.configuration import flower_port
+from config.configuration import flower_path
 from earkcore.packaging.untar import Untar
 from forms import TinyUploadFileForm
 from forms import UploadFileForm
@@ -69,7 +72,7 @@ class InformationPackageTable(tables.Table):
     area = "sipcreator"
 
     last_task = tables.Column(verbose_name='Last task')
-    statusprocess = tables.Column(verbose_name='Process status' )
+    statusprocess = tables.Column(verbose_name='Outcome' )
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
     uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
     packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name= 'Package name')
@@ -450,8 +453,7 @@ class SipCreationBatchView(ListView):
     template_name = 'sipcreator/batch.html'
     context_object_name = 'sips'
 
-    queryset=InformationPackage.objects.extra(where=["uuid!='' and last_task_id='%s'" % SIPReset.__name__]).order_by('last_change')
-    logger.info("How many? %d" % len(queryset))
+    queryset=InformationPackage.objects.extra(where=["last_task_id='%s'" % SIPReset.__name__]).order_by('last_change')
 
     @method_decorator(login_required)
     def dispatch(self, *args, **kwargs):
@@ -460,16 +462,8 @@ class SipCreationBatchView(ListView):
     def get_context_data(self, **kwargs):
         context = super(SipCreationBatchView, self).get_context_data(**kwargs)
         context['StatusProcess_CHOICES'] = dict(StatusProcess_CHOICES)
+        context['flower_url'] = "http://%s:%s%s" % (flower_server, flower_port, flower_path)
         return context
-
-@login_required
-def batch(request):
-    template = loader.get_template('sipcreator/batch.html')
-    from config.configuration import config_path_reception
-    context = RequestContext(request, {
-        'config_path_reception': config_path_reception
-    })
-    return HttpResponse(template.render(context))
 
 
 @login_required
@@ -506,7 +500,7 @@ def submit_sipcreation_batch(request, uuid):
         if request.is_ajax():
             try:
                 ip = InformationPackage.objects.get(uuid=uuid)
-                job = run_sipcreation_batch.delay(uuid=uuid, packagename=ip.packagename)
+                job = run_sipcreation_batch.delay(uuid=uuid, packagename=ip.packagename, path=ip.path)
                 data = {"success": True, "id": job.id, "uuid": uuid}
             except Exception, err:
                 tb = traceback.format_exc()

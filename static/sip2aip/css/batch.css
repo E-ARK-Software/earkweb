@@ -19,11 +19,22 @@ span.applicationxtar {
     background-color: DarkGray;
 }
 
+.incoming {
+    background-color: DarkGray;
+}
 
 .running {
     background-color: DarkOrange;
 }
 
+
+.queued {
+    background-color: DarkOrange;
+}
+
+.accepted {
+    background-color: DarkGreen;
+}
 
 .processed {
     background-color: DarkGreen;
@@ -59,4 +70,10 @@ span.applicationxtar {
 a[disabled]
 {
     color: grey;
+}
+
+
+#nextnote {
+    padding:10px;
+  border:1px solid #AD2624;
 }

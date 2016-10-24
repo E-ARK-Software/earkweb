@@ -75,7 +75,7 @@ class InformationPackageTable(tables.Table):
 
     identifier = tables.Column(verbose_name='Identifier' )
     last_task = tables.Column(verbose_name='Last task')
-    statusprocess = tables.Column(verbose_name='Process status' )
+    statusprocess = tables.Column(verbose_name='Outcome' )
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name= 'Last change')
     uuid = tables.LinkColumn('%s:working_area' % area, kwargs={'section': area, 'uuid': A('uuid')}, verbose_name= 'Process ID')
     packagename = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name= 'Package name')
@@ -394,8 +394,14 @@ def apply_task(request):
 def batch(request):
     template = loader.get_template('sip2aip/batch.html')
     from config.configuration import config_path_reception
+    from config.configuration import max_submissions_web_client
+    from config.configuration import flower_server
+    from config.configuration import flower_port
+    from config.configuration import flower_path
     context = RequestContext(request, {
-        'config_path_reception': config_path_reception
+        'config_path_reception': config_path_reception,
+        'max_submissions_web_client': max_submissions_web_client,
+        'flower_url': "http://%s:%s%s" % (flower_server, flower_port, flower_path),
     })
     return HttpResponse(template.render(context))
 
