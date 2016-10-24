@@ -21,7 +21,11 @@ default_config = [
     ("server", "siard_db_host", "localhost"),
     ("server", "siard_db_user", "root"),
     ("server", "siard_db_passwd", "password"),
+    ("server", "flower_server", "127.0.0.1"),
+    ("server", "flower_port", "5555"),
+    ("server", "flower_path", "/"),
 ]
+
 set_default_config_if_not_exists('config/settings.cfg', default_config)
 
 from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes

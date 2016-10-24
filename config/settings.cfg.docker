@@ -42,6 +42,10 @@ peripleo_server_ip = 127.0.0.1
 peripleo_port = 9000
 peripleo_path = peripleo
 
+flower_server = 127.0.0.1
+flower_port = 5555
+flower_path = /
+
 siard_dbptk = /usr/local/bin/dbptk-app-2.0.0-beta3.2.5.jar
 siard_db_type = mysql
 siard_db_host = localhost
