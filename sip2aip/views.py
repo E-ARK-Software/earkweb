@@ -32,11 +32,11 @@ from earkcore.utils.fileutils import mkdir_p
 from django.core.urlresolvers import reverse
 from workers.tasks import LilyHDFSUpload
 from workers.tasks import SolrUpdateCurrentMetadata
-from config.configuration import local_solr_server_ip
+from config.configuration import storage_solr_server_ip
 from config.configuration import django_service_port
 from config.configuration import django_service_ip
-from config.configuration import local_solr_core
-from config.configuration import local_solr_port
+from config.configuration import storage_solr_core
+from config.configuration import storage_solr_port
 from workers.tasks import reception_dir_status
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
@@ -162,7 +162,7 @@ def indexingstatus(request):
     """
     Indexing Status Table view
     """
-    local_solr = 'http://%s:%s/solr/%s/admin/ping' % (local_solr_server_ip, local_solr_port, local_solr_core)
+    local_solr = 'http://%s:%s/solr/%s/admin/ping' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
     if not service_available(local_solr):
         return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % local_solr})
     list_tasks = [
@@ -254,10 +254,10 @@ def upload_file(upload_path, f):
 def aipsearch_package(request):
     template = loader.get_template('sip2aip/aipsearch_package.html')
     context = RequestContext(request, {
-        'local_solr_server_ip': local_solr_server_ip,
+        'local_solr_server_ip': storage_solr_server_ip,
         'django_service_ip': django_service_ip,
         'django_service_port': django_service_port,
-        'local_solr_port': local_solr_port,
+        'local_solr_port': storage_solr_port,
     })
     return HttpResponse(template.render(context))
 

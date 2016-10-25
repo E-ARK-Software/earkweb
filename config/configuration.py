@@ -41,9 +41,9 @@ access_solr_port = config.getint('server', 'access_solr_port')
 access_solr_core = config.get('server', 'access_solr_core')
 
 # storage solr server
-local_solr_server_ip = config.get('server', 'storage_solr_server_ip')
-local_solr_port = config.getint('server', 'storage_solr_port')
-local_solr_core = config.get('server', 'storage_solr_core')
+storage_solr_server_ip = config.get('server', 'storage_solr_server_ip')
+storage_solr_port = config.getint('server', 'storage_solr_port')
+storage_solr_core = config.get('server', 'storage_solr_core')
 
 # lily content access
 lily_content_access_ip = config.get('server', 'lily_content_access_ip')

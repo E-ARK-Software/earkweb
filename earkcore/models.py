@@ -6,9 +6,9 @@ from config.configuration import access_solr_server_ip
 from config.configuration import access_solr_port
 from config.configuration import access_solr_core
 
-from config.configuration import local_solr_server_ip
-from config.configuration import local_solr_port
-from config.configuration import local_solr_core
+from config.configuration import storage_solr_server_ip
+from config.configuration import storage_solr_port
+from config.configuration import storage_solr_core
 
 from django.db import models
 from workflow.models import WorkflowModules
@@ -63,8 +63,8 @@ class InformationPackage(models.Model):
         else:
             try:
                 query_part = "package%3A%22"+self.identifier+"%22"
-                sq = SolrQuery(SolrServer(local_solr_server_ip, local_solr_port))
-                query_url = sq.get_select_pattern(local_solr_core)
+                sq = SolrQuery(SolrServer(storage_solr_server_ip, storage_solr_port))
+                query_url = sq.get_select_pattern(storage_solr_core)
                 query_string = query_url.format(query_part)
                 logging.debug("Solr query: %s" % query_string)
                 data = json.load(urllib2.urlopen(query_string))

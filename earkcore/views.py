@@ -54,9 +54,9 @@ from django.shortcuts import render
 from django_tables2 import RequestConfig
 from django.shortcuts import render_to_response
 import pprint
-from config.configuration import local_solr_server_ip
-from config.configuration import local_solr_core
-from config.configuration import local_solr_port
+from config.configuration import storage_solr_server_ip
+from config.configuration import storage_solr_core
+from config.configuration import storage_solr_port
 from collections import Counter
 
 import logging
@@ -377,10 +377,10 @@ def reindex_aip_storage(request):
 @login_required
 @csrf_exempt
 def solrinterface(request, query):
-    from config.configuration import local_solr_server_ip
-    from config.configuration import local_solr_port
-    from config.configuration import local_solr_core
-    query_url = "http://%s:%s/solr/%s/select?%s" % (local_solr_server_ip, local_solr_port, local_solr_core, query)
+    from config.configuration import storage_solr_server_ip
+    from config.configuration import storage_solr_port
+    from config.configuration import storage_solr_core
+    query_url = "http://%s:%s/solr/%s/select?%s" % (storage_solr_server_ip, storage_solr_port, storage_solr_core, query)
     logger.debug("SolR query URL: %s" % query_url)
     try:
         response = requests.get(query_url)
@@ -407,11 +407,11 @@ def solrif(request, core, operation):
     logger.debug("Field list: %s" % field_list)
     q = urllib.urlencode({'q': request.GET.get('q', ''), "fl": field_list, "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
 
-    from config.configuration import local_solr_server_ip
-    from config.configuration import local_solr_port
+    from config.configuration import storage_solr_server_ip
+    from config.configuration import storage_solr_port
 
-    from config.configuration import local_solr_core
-    query_url = "http://%s:%s/solr/%s/%s?%s" % (local_solr_server_ip, local_solr_port, local_solr_core, operation, q)
+    from config.configuration import storage_solr_core
+    query_url = "http://%s:%s/solr/%s/%s?%s" % (storage_solr_server_ip, storage_solr_port, storage_solr_core, operation, q)
     logger.debug(query_url)
     data = ""
     try:

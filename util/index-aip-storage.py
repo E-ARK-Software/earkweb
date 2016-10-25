@@ -18,12 +18,12 @@ from earkcore.search.solrclient import SolrClient
 from earkcore.search.solrserver import SolrServer
 from earkcore.search.solrquery import SolrQuery
 
-from config.configuration import local_solr_server_ip
-from config.configuration import local_solr_port
+from config.configuration import storage_solr_server_ip
+from config.configuration import storage_solr_port
 from config.configuration import config_path_storage
 
 def index_aip_storage():
-    solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+    solr_server = SolrServer(storage_solr_server_ip, storage_solr_port)
     print "Solr server base url: %s" % solr_server.get_base_url()
     sq = SolrQuery(solr_server)
     r = requests.get(sq.get_base_url())

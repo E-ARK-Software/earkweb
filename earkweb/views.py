@@ -6,7 +6,7 @@ from django.views.generic.list import ListView
 from earkcore.models import InformationPackage
 from django.utils.decorators import method_decorator
 from workers.tasks import LilyHDFSUpload
-from config.configuration import local_solr_server_ip
+from config.configuration import storage_solr_server_ip
 from config.configuration import access_solr_port
 from config.configuration import lily_content_access_ip
 from config.configuration import lily_content_access_port
