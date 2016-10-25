@@ -1,8 +1,6 @@
 import requests
 import sys
 import json
-from config.configuration import access_solr_core, access_solr_port, access_solr_server_ip
-from config.configuration import local_solr_core, local_solr_port, local_solr_server_ip
 
 
 class SolrUtility(object):
@@ -10,27 +8,23 @@ class SolrUtility(object):
     SolrUtility offers functions to access a Solr instance.
     """
 
-    def __init__(self):
+    def __init__(self, solr_base_url, solr_unique_key):
         """
-        Initialise class, check Solr availability.
+        Initialise class; check if Solr instance is reachable.
+        @param solr_base_url: base URL of solr instance to be used: http://<ip>:<port>/solr/<core>/
+        @param solr_unique_key: key that is used as unique identifier within the Solr index (e.g. 'id', 'lily.key')
         @return:
         """
-        local_solr = 'http://%s:%s/solr/%s/' % (local_solr_server_ip, local_solr_port, local_solr_core)
-        access_solr = 'http://%s:%s/solr/%s/' % (access_solr_server_ip, access_solr_port, access_solr_core)
-
         # field used as unique identifier
-        self.solr_unique_key = 'id'
+        self.solr_unique_key = solr_unique_key
+        self.solr_instance = solr_base_url
 
         # add 'admin/ping' to URL to check if Solr is reachable
-        if requests.get(local_solr + 'admin/ping').status_code == 200:
-            self.solr_instance = local_solr
-            print 'Using local Solr instance.'
-        elif requests.get(access_solr + 'adming/ping').status_code == 200:
-            self.solr_instance = access_solr
-            self.solr_unique_key = 'lily.key'
-            print 'Using distributed Solr instance.'
+        solr_status = requests.get(self.solr_instance + '/admin/ping/').status_code
+        if solr_status == 200:
+            print 'Solr instance reachable.'
         else:
-            sys.exit('No Solr instance reachable.')
+            sys.exit('GET request to <solr>/admin/ping returned HTML status: %d.' % solr_status)
 
     def send_query(self, query_string):
         """
@@ -58,7 +52,6 @@ class SolrUtility(object):
         update_url = self.solr_instance + url_suffix
         update_headers = {'Content-Type': 'application/json'}
         update_data = json.dumps([{field: {'set': content}, self.solr_unique_key: record_identifier}])
-        print update_data
         update = requests.post(update_url, data=update_data, headers=update_headers)
         print update.text
         return update.status_code
@@ -80,7 +73,8 @@ class SolrUtility(object):
             update_data[kv_tuple[0]] = {'set': kv_tuple[1]}
         update_doc = json.dumps([update_data])
         update = requests.post(update_url, data=update_doc, headers=update_headers)
-        return update.text
+        print update.text
+        return update.status_code
 
     def update_document(self, record_identifier, kv_pairs):
         """
@@ -115,12 +109,18 @@ class SolrUtility(object):
         if query_result is False:
             raise RuntimeError("No query result")
         identifier = None
-        if "lily.key" in query_result[0]:
-            identifier = query_result[0]['lily.key']
-        else:
-            identifier = query_result[0]['id']
-        if not identifier:
-            raise RuntimeError("Unable to get document identifier")
+
+        try:
+            identifier = query_result[0][self.solr_unique_key]
+        except KeyError, e:
+            raise RuntimeError("Unable to get document identifier: %s" % e.message)
+
+        # if "lily.key" in query_result[0]:
+        #     identifier = query_result[0]['lily.key']
+        # else:
+        #     identifier = query_result[0]['id']
+        # if not identifier:
+        #     raise RuntimeError("Unable to get document identifier")
         return identifier
 
     # def add_to_field(self, record_identifier, field, content):
