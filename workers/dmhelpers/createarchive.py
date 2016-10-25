@@ -2,6 +2,7 @@ import requests
 import tarfile
 import tempfile
 import os
+import urllib
 
 
 class CreateNLPArchive(object):
@@ -73,13 +74,14 @@ class CreateNLPArchive(object):
         @return:            
         """
         path = document['path'].encode('utf-8')
-        content = document['content'][0].encode('utf-8')
+        # content = document['content'][0].encode('utf-8')  # Solr 6?
+        content = document['content'].encode('utf-8')       # Solr 4
 
         tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         tmpfile.write(content)
         tmpfile.close()
         try:
-            archive.add(tmpfile.name, arcname=path)#.replace('/', '.'))
+            archive.add(tmpfile.name, arcname=urllib.quote_plus(path))
         except tarfile.TarError, e:
             raise e
         os.remove(tmpfile.name)

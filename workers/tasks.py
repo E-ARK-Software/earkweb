@@ -82,10 +82,12 @@ from workers.dmhelpers.createarchive import CreateNLPArchive
 import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
 from earkcore.metadata.ead.parsedead import field_namevalue_pairs_per_file
+from config.configuration import storage_solr_core, storage_solr_port, storage_solr_server_ip
 
 from earkcore.utils.solrutils import SolrUtility
 import re
 import json
+import urllib
 
 def custom_progress_reporter(task, percent):
     task.update_state(state='PROGRESS', meta={'process_percent': percent})
@@ -262,10 +264,10 @@ def create_ip_folder(self, *args, **kwargs):
 @app.task(bind=True)
 def index_aip_storage(self, *args, **kwargs):
     # TODO: only index latest package version
-    from config.configuration import local_solr_server_ip
-    from config.configuration import local_solr_port
+    from config.configuration import storage_solr_server_ip
+    from config.configuration import storage_solr_port
     from config.configuration import config_path_storage
-    solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+    solr_server = SolrServer(storage_solr_server_ip, storage_solr_port)
     logger.info("Solr server base url: %s" % solr_server.get_base_url())
     sq = SolrQuery(solr_server)
     r = requests.get(sq.get_base_url())
@@ -1858,9 +1860,9 @@ class AIPIndexing(DefaultTask):
             return task_context.report_parameter_errors(parameters)
 
         # check solr server availability
-        from config.configuration import local_solr_server_ip
-        from config.configuration import local_solr_port
-        solr_server = SolrServer(local_solr_server_ip, local_solr_port)
+        from config.configuration import storage_solr_server_ip
+        from config.configuration import storage_solr_port
+        solr_server = SolrServer(storage_solr_server_ip, storage_solr_port)
         tl.addinfo("Solr server base url: %s" % solr_server.get_base_url())
         sq = SolrQuery(solr_server)
         r = requests.get(sq.get_base_url())
@@ -1958,7 +1960,11 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                     {'ead_element': '[Cc][0,1][0-9]', 'solr_field': 'eadclevel_s', 'text_access_path': 'level', 'is_attribute': True},
                 ]
                 result = field_namevalue_pairs_per_file(extract_defs, validation_md_path, filename)
-                solr = SolrUtility()
+
+                # solr interface configuration
+                solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+                solr = SolrUtility(solr_base_url=solr_base_url, solr_unique_key='lily.key')
+
                 for k in result.keys():
                     safe_urn_identifier = (task_context.additional_data['identifier']).replace(":", "\\:")
                     entry_path = k.replace(task_context.path, '')
@@ -3045,7 +3051,7 @@ class DMMainTask(ConcurrentTask):
                 content = tar.extractfile(filename).read()
                 if ner_model is not 'None':
                     details = {'model': ner_model,
-                               'identifier': filename.name}
+                               'identifier': urllib.unquote_plus(filename.name)}
                     taskid = uuid.uuid4().__str__()
                     t_context = DefaultTaskContext('', '', 'workers.tasks.DMNERecogniser', None, '', None)
                     t_context.file_content = content
@@ -3073,18 +3079,13 @@ class DMNERecogniser(ConcurrentTask):
         model = kwargs['model']
 
         # initialise tagger and java 8 for this task
-        # os.environ['JAVAHOME'] = '/usr/local/java/jre1.8.0_73/bin/java'     # TODO: check if exists
-        os.environ['JAVAHOME'] = '/usr/lib/java/jdk1.8.0_101/bin/java'     # NAH cluster
+        os.environ['JAVAHOME'] = '/usr/local/java/jre1.8.0_73/bin/java'       # earkdev
+        # os.environ['JAVAHOME'] = '/usr/lib/java/jdk1.8.0_101/bin/java'          # NAH cluster
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
         model = os.path.join(stanford_ner_models, model)
-        # nltk config: java 1.8 path
-        # internals.config_java(bin='/usr/local/java/jre1.8.0_73/bin/java', options='-mx8000m')   # earkdev path - TODO: settings.cfg
         tagger = StanfordNERTagger(model, jar, encoding='utf-8', java_options='-mx8000m')
 
-        print 'initialised with model: %s' % model
-        print 'now tagging: %s' % identifier
-
-        logger.debug('Now tokenizing the file.')
+        logger.debug('Now tokenizing the file %s.' % identifier)
 
         tokenized = []
         content = content.strip().decode('utf-8')
@@ -3092,14 +3093,13 @@ class DMNERecogniser(ConcurrentTask):
         for token in tokens:
             tokenized.append(token + '\n')
 
-        logger.debug('Finished tokenization.')
+        # logger.debug('Finished tokenization.')
 
         # position = 0
-        # TODO: make dynamic for more categories!
         organisations_list = []
         persons_list = []
         locations_list = []
-        logger.debug('Now calling tagger.tag().')
+        # logger.debug('Now calling tagger.tag().')
         for result in tagger.tag(tokenized):
             if result[1] != 'O':
                 if 'LOC' in result[1]:
@@ -3109,29 +3109,34 @@ class DMNERecogniser(ConcurrentTask):
                 elif 'ORG' in result[1]:
                     organisations_list.append(result[0])
 
-        logger.debug('Next: updating Solr with tagged results.')
-        with open('/var/data/earkweb/nlp/tarfiles/nlp_results', 'a') as nlp_output:
-            nlp_output.write(identifier + '\n')
-            nlp_output.write('----locations----\n')
-            nlp_output.write(str(locations_list) + '\n')
-            nlp_output.write('----organisations----\n')
-            nlp_output.write(str(organisations_list) + '\n')
-            nlp_output.write('----persons----\n')
-            nlp_output.write(str(persons_list) + '\n')
-            nlp_output.write('#############################\n')
-        # update Solr with results
-        solr = SolrUtility()
-        # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']
-        document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']
-        loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
-        time.sleep(1)
-        per_status = solr.set_field(document_id, 'persons_ss', persons_list)
-        time.sleep(1)
-        org_status = solr.set_field(document_id, 'organisations_ss', organisations_list)
+        # logger.debug('Next: updating Solr with tagged results.')
 
-        print 'status for %s' % identifier
-        print 'solr identifier: %s' % document_id
-        print loc_status, per_status, org_status
+        # with open('/var/data/earkweb/nlp/tarfiles/nlp_results', 'a') as nlp_output:
+        #     nlp_output.write(identifier + '\n')
+        #     nlp_output.write('----locations----\n')
+        #     nlp_output.write(str(locations_list) + '\n')
+        #     nlp_output.write('----organisations----\n')
+        #     nlp_output.write(str(organisations_list) + '\n')
+        #     nlp_output.write('----persons----\n')
+        #     nlp_output.write(str(persons_list) + '\n')
+        #     nlp_output.write('#############################\n')
+
+        # update Solr with results
+        solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+        solr = SolrUtility(solr_base_url=solr_base_url, solr_unique_key='lily.key')
+        # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
+        document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
+        update_status = solr.set_multiple_fields(document_id, [('locations_ss', locations_list),
+                                                               ('persons_ss', persons_list),
+                                                               ('organisations_ss', organisations_list)])
+        # loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
+        # time.sleep(1)
+        # per_status = solr.set_field(document_id, 'persons_ss', persons_list)
+        # time.sleep(1)
+        # org_status = solr.set_field(document_id, 'organisations_ss', organisations_list)
+
+        print 'Solr update status for %s: HTTP status code %d.' % (document_id, update_status)
+        logger.debug('Solr update status for %s: HTTP status code %d.' % (identifier, update_status))
 
         return task_context.additional_data
 
