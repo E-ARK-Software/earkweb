@@ -93,12 +93,12 @@ function askSolr(start) {
   }
   var eadtitle = $('#eadtitle').val();
   if (typeof eadtitle !== 'undefined' && eadtitle !== null && eadtitle != '') {
-    packageQuery += " AND eadtitle_t:*" + eadtitle + "*";
+    packageQuery += " AND eadtitle_s:*" + eadtitle + "*";
   }
 
   var eadtitle = $('#eadtitle').val();
   if (typeof eadtitle !== 'undefined' && eadtitle !== null && eadtitle != '') {
-    packageQuery += " AND eadtitle_t:*" + eadtitle + "*";
+    packageQuery += " AND eadtitle_s:*" + eadtitle + "*";
   }
 
   var eaddate_from = $('#eaddate_from').val();
