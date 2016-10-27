@@ -8,23 +8,32 @@ class SolrUtility(object):
     SolrUtility offers functions to access a Solr instance.
     """
 
-    def __init__(self, solr_base_url, solr_unique_key):
+    def __init__(self):
         """
-        Initialise class; check if Solr instance is reachable.
+        Initialise class.
+        @return:
+        """
+        self.solr_unique_key = None
+        self.solr_instance = None
+
+    def availability(self, solr_base_url, solr_unique_key):
+        """
+        Call this method with a Solr url and the unique key as arguments. If the Solr instance is reachable, they are
+        set as class variables and 200 is returned. If not, variables remain 'None' and the status code is returned.
         @param solr_base_url: base URL of solr instance to be used: http://<ip>:<port>/solr/<core>/
         @param solr_unique_key: key that is used as unique identifier within the Solr index (e.g. 'id', 'lily.key')
         @return:
         """
-        # field used as unique identifier
-        self.solr_unique_key = solr_unique_key
-        self.solr_instance = solr_base_url
-
         # add 'admin/ping' to URL to check if Solr is reachable
-        solr_status = requests.get(self.solr_instance + '/admin/ping/').status_code
+        solr_status = requests.get(solr_base_url + '/admin/ping/').status_code
         if solr_status == 200:
-            print 'Solr instance reachable.'
+            self.solr_unique_key = solr_unique_key
+            self.solr_instance = solr_base_url
+            print 'Solr instance %s reachable.' % solr_base_url
+            return solr_status
         else:
-            sys.exit('GET request to <solr>/admin/ping returned HTML status: %d.' % solr_status)
+            print 'GET request to %s/admin/ping returned HTML status: %d.' % (solr_base_url, solr_status)
+            return solr_status
 
     def send_query(self, query_string):
         """

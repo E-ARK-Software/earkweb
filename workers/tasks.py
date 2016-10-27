@@ -1963,15 +1963,17 @@ class SolrUpdateCurrentMetadata(DefaultTask):
 
                 # solr interface configuration
                 solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
-                solr = SolrUtility(solr_base_url=solr_base_url, solr_unique_key='lily.key')
-
-                for k in result.keys():
-                    safe_urn_identifier = (task_context.additional_data['identifier']).replace(":", "\\:")
-                    entry_path = k.replace(task_context.path, '')
-                    identifier = solr.get_doc_id_from_path(safe_urn_identifier, entry_path)
-                    status_code = solr.update_document(identifier, result[k])
-                    tl.addinfo("Solr document %s updated for file item: %s (return code: %s)" % (identifier, entry_path, status_code))
-                md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
+                solr = SolrUtility()
+                if solr.availability(solr_base_url=solr_base_url, solr_unique_key='lily.key') is 200:
+                    for k in result.keys():
+                        safe_urn_identifier = (task_context.additional_data['identifier']).replace(":", "\\:")
+                        entry_path = k.replace(task_context.path, '')
+                        identifier = solr.get_doc_id_from_path(safe_urn_identifier, entry_path)
+                        status_code = solr.update_document(identifier, result[k])
+                        tl.addinfo("Solr document %s updated for file item: %s (return code: %s)" % (identifier, entry_path, status_code))
+                    md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None, tl))
+                else:
+                    tl.adderr('Solr %s is not reachable, file was not updated!' % solr_base_url)
             if len(md_files_valid) == 0:
                 tl.addinfo("No descriptive metadata files found.")
             valid = False not in md_files_valid
@@ -3123,20 +3125,17 @@ class DMNERecogniser(ConcurrentTask):
 
         # update Solr with results
         solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
-        solr = SolrUtility(solr_base_url=solr_base_url, solr_unique_key='lily.key')
-        # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
-        document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
-        update_status = solr.set_multiple_fields(document_id, [('locations_ss', locations_list),
-                                                               ('persons_ss', persons_list),
-                                                               ('organisations_ss', organisations_list)])
-        # loc_status = solr.set_field(document_id, 'locations_ss', locations_list)
-        # time.sleep(1)
-        # per_status = solr.set_field(document_id, 'persons_ss', persons_list)
-        # time.sleep(1)
-        # org_status = solr.set_field(document_id, 'organisations_ss', organisations_list)
-
-        print 'Solr update status for %s: HTTP status code %d.' % (document_id, update_status)
-        logger.debug('Solr update status for %s: HTTP status code %d.' % (identifier, update_status))
+        solr = SolrUtility()
+        if solr.availability(solr_base_url=solr_base_url, solr_unique_key='lily.key') is 200:
+            # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
+            document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
+            update_status = solr.set_multiple_fields(document_id, [('locations_ss', locations_list),
+                                                                   ('persons_ss', persons_list),
+                                                                   ('organisations_ss', organisations_list)])
+            print 'Solr update status for %s: HTTP status code %d.' % (document_id, update_status)
+            logger.debug('Solr update status for %s: HTTP status code %d.' % (identifier, update_status))
+        else:
+            logger.error('Solr instance %s not reachable!' % solr_base_url)
 
         return task_context.additional_data
 
