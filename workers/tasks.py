@@ -1962,9 +1962,9 @@ class SolrUpdateCurrentMetadata(DefaultTask):
                 result = field_namevalue_pairs_per_file(extract_defs, validation_md_path, filename)
 
                 # solr interface configuration
-                solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+                solr_base_url = 'http://%s:%s/solr/%s/' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
                 solr = SolrUtility()
-                if solr.availability(solr_base_url=solr_base_url, solr_unique_key='lily.key') is 200:
+                if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') is 200:
                     for k in result.keys():
                         safe_urn_identifier = (task_context.additional_data['identifier']).replace(":", "\\:")
                         entry_path = k.replace(task_context.path, '')
@@ -3124,11 +3124,11 @@ class DMNERecogniser(ConcurrentTask):
         #     nlp_output.write('#############################\n')
 
         # update Solr with results
-        solr_base_url = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+        solr_base_url = 'http://%s:%s/solr/%s/' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
         solr = SolrUtility()
-        if solr.availability(solr_base_url=solr_base_url, solr_unique_key='lily.key') is 200:
-            # document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
-            document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
+        if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') is 200:
+            document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
+            # document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
             update_status = solr.set_multiple_fields(document_id, [('locations_ss', locations_list),
                                                                    ('persons_ss', persons_list),
                                                                    ('organisations_ss', organisations_list)])

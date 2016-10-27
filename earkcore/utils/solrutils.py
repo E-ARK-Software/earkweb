@@ -1,6 +1,7 @@
 import requests
 import sys
 import json
+import os
 
 
 class SolrUtility(object):
@@ -25,7 +26,8 @@ class SolrUtility(object):
         @return:
         """
         # add 'admin/ping' to URL to check if Solr is reachable
-        solr_status = requests.get(solr_base_url + '/admin/ping/').status_code
+        url = os.path.join(solr_base_url, 'admin/ping/')
+        solr_status = requests.get(url).status_code
         if solr_status == 200:
             self.solr_unique_key = solr_unique_key
             self.solr_instance = solr_base_url
@@ -41,7 +43,7 @@ class SolrUtility(object):
         @return:
         """
         url_suffix = 'select?wt=json&q='   # q=*:*
-        query_url = self.solr_instance + url_suffix
+        query_url = os.path.join(self.solr_instance, url_suffix)
         query = requests.get(query_url + query_string)
         if query.status_code == 200:
             return query.json()['response']['docs']
@@ -58,7 +60,7 @@ class SolrUtility(object):
         @return:
         """
         url_suffix = 'update'
-        update_url = self.solr_instance + url_suffix
+        update_url = os.path.join(self.solr_instance, url_suffix)
         update_headers = {'Content-Type': 'application/json'}
         update_data = json.dumps([{field: {'set': content}, self.solr_unique_key: record_identifier}])
         update = requests.post(update_url, data=update_data, headers=update_headers)
@@ -74,7 +76,7 @@ class SolrUtility(object):
         @return: status code
         """
         url_suffix = 'update'
-        update_url = self.solr_instance + url_suffix
+        update_url = os.path.join(self.solr_instance, url_suffix)
         update_headers = {'Content-Type': 'application/json'}
         update_data = dict()
         update_data[self.solr_unique_key] = record_identifier
@@ -94,7 +96,7 @@ class SolrUtility(object):
         @return: status code
         """
         url_suffix = 'update'
-        update_url = self.solr_instance + url_suffix
+        update_url = os.path.join(self.solr_instance, url_suffix)
         update_headers = {'Content-Type': 'application/json'}
         update_data = dict()
         update_data[self.solr_unique_key] = record_identifier
