@@ -1979,12 +1979,19 @@ class SolrUpdateCurrentMetadata(DefaultTask):
             valid = False not in md_files_valid
             if valid:
                 tl.addinfo("Descriptive metadata validation completed successfully.")
+
+            # reload the Solr core, because the index was changed by adding new fields
+            r = requests.get('http://localhost:8983/solr/admin/cores?action=RELOAD&core=%s' % storage_solr_core)
+            # print r.status_code
+
             task_context.task_status = 0 if valid else 2
         except Exception, err:
             tb = traceback.format_exc()
             tl.adderr("An error occurred: %s" % err)
             tl.adderr(str(tb))
             task_context.task_status = 2
+
+
 
 
 class LilyHDFSUpload(DefaultTask):
