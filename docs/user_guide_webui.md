@@ -74,11 +74,16 @@ Click on the "Proceed" button to continue with the next step.
 
 The SIP creation process interface allows executing SIP creation tasks:
 
-* SIPReset
-* SIPDescriptiveMetadataValidation
-* SIPPackageMetadataCreation
+* SIPReset - Rollback to initial state (structure and package metadata are removed)
+* SIPDescriptiveMetadataValidation - Validate descriptive metadata (EAD) which must be available as metadata/descriptive/ead-*.xml
+* SIPPackageMetadataCreation - Create structural and preservation metadata
 * SIPPackaging
 * SIPClose
+* SIPTransferToReception
+
+If SIPClose is used as the last task, then the SIP will become available in the SIP to AIP conversion overview area "Active SIP creation processes overview" allowing to continue
+the processing of the SIP. Alternatively, the SIPTransferToReception task can be used to move the package to the SIP reception area which allows the SIP to AIP conversion to be 
+performed as a batch process.
 
 #### Task execution
 
