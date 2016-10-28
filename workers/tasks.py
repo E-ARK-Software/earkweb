@@ -3036,11 +3036,16 @@ class DMMainTask(ConcurrentTask):
         logger.debug('Creating/using tar at following path: %s' % tar_path)
 
         if 'solr_query' in kwargs:
-            print kwargs['solr_query']
             query = kwargs['solr_query']
 
-            archive_creator = CreateNLPArchive()
-            archive_creator.get_data_from_solr(solr_query=query, archive_name=tar_path)
+            nlp_solr = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+            if requests.get(os.path.join(nlp_solr, 'admin/ping')).status_code == 200:
+                solr_query = nlp_solr + '/select?q=package:%s' % query  # Solr 6
+                # solr_query = nlp_solr + '/select?q=path:%s' % query  # Lily-Solr
+
+                print 'Solr query to gather NLP files: %s' % solr_query
+                archive_creator = CreateNLPArchive()
+                archive_creator.get_data_from_solr(solr_query=solr_query, archive_name=tar_path)
         else:
             pass
 

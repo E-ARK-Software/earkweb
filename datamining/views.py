@@ -44,33 +44,13 @@ def build_query(package_id, content_type):
     @return:                A Solr query
     """
 
-    # solr_lily = 'http://%s:%s/solr/%s/admin/ping' % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
-    # solr_local = 'http://%s:%s/solr/%s/admin/ping' % (access_solr_server_ip, access_solr_port, access_solr_core)
-    # if requests.get(solr_lily).status_code == 200:
-    #     solr_prefix = 'http://%s:%s/solr/%s/select?q=' % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
-    # elif requests.get(solr_local).status_code == 200:
-    #     solr_prefix = 'http://%s:%s/solr/%s/select?q=' % (access_solr_server_ip, access_solr_port, access_solr_core)
-
-    solr_storage = 'http://%s:%s/solr/%s/admin/ping' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
-    if requests.get(solr_storage).status_code == 200:
-        solr_prefix = 'http://%s:%s/solr/%s/select?q=' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
-    else:
-        logger.error('No Solr instance is reachable.')
-        solr_prefix = ''
-
     q_and = ' AND '
     # q_or = ' OR '
     # q_not = 'NOT '
 
-    # Lily-Solr
-    q_package_id = 'path:%s' % package_id
-    q_content_type = 'contentType:\"%s\"' % content_type
-
-    # Solr 6
-    # q_package_id = 'package:%s' % package_id
-    # q_content_type = 'content_type:\"%s\"' % content_type
-
-    solr_query = solr_prefix + q_package_id + q_and + q_content_type + '&wt=json'
+    q_package_id = '\"%s\"' % package_id
+    q_content_type = '\"%s\"' % content_type
+    solr_query = q_package_id + q_and + q_content_type + '&wt=json'
 
     return solr_query
 
