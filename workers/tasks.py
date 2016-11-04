@@ -1713,7 +1713,7 @@ class AIPPackaging(DefaultTask):
             tl.addinfo("Packaging working directory: %s" % task_context.path)
             # append generation number to tar file; if tar file exists, the generation number is incremented
             new_id = task_context.additional_data["identifier"]
-            #storage_path = task_context.additional_data["storage_path"]
+
             storage_file = os.path.join(task_context.path, "%s.tar" % new_id)
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
@@ -1770,7 +1770,9 @@ class AIPPackaging(DefaultTask):
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception, err:
-            task_context.task_status = 0
+            tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
         return task_context.additional_data
 
 
@@ -2916,8 +2918,6 @@ class DIPPackaging(DefaultTask):
 
         tl = task_context.task_logger
 
-        dip_identifier = task_context.additional_data['identifier']
-
         try:
             # identifier (not uuid of the working directory) is used as first part of the tar file
             import sys
@@ -2925,6 +2925,8 @@ class DIPPackaging(DefaultTask):
             sys.setdefaultencoding('utf8')
 
             tl.addinfo("Packaging working directory: %s" % task_context.path)
+
+            dip_identifier = task_context.additional_data['identifier']
 
             storage_file = os.path.join(task_context.path, "%s.tar" % dip_identifier)
             tar = tarfile.open(storage_file, "w:")
@@ -2934,42 +2936,46 @@ class DIPPackaging(DefaultTask):
             total = 0
             for item in item_list:
                 pack_item = os.path.join(task_context.path, item)
-                if os.path.isdir(pack_item):
-                    total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
-                else:
-                    total += 1
+                if os.path.exists(pack_item):
+                    if os.path.isdir(pack_item):
+                        total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
+                    else:
+                        total += 1
             tl.addinfo("Total number of files in working directory %d" % total)
             # log file is closed at this point because it will be included in the package,
             # subsequent log messages can only be shown in the gui
-
+            #tl.log.close()
             i = 0
             for item in item_list:
                 pack_item = os.path.join(task_context.path, item)
-                if os.path.isdir(pack_item):
-                    for subdir, dirs, files in os.walk(pack_item):
-                        for file in files:
-                            if os.path.join(subdir, file):
-                                entry = os.path.join(subdir, file)
-                                arcname = dip_identifier + "/" + os.path.relpath(entry, task_context.path)
-                                tar.add(entry, arcname = arcname)
-                                if i % 10 == 0:
-                                    perc = (i * 100) / total
-                                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                            i += 1
-                else:
-                    arcname = dip_identifier + "/" + os.path.relpath(pack_item, task_context.path)
-                    tar.add(pack_item, arcname = arcname)
-                    if i % 10 == 0:
-                            perc = (i * 100) / total
-                            self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                    i += 1
+                if os.path.exists(pack_item):
+                    if os.path.isdir(pack_item):
+                        for subdir, dirs, files in os.walk(pack_item):
+                            for file in files:
+                                if os.path.join(subdir, file):
+                                    entry = os.path.join(subdir, file)
+                                    arcname = dip_identifier + "/" + os.path.relpath(entry, task_context.path)
+                                    tar.add(entry, arcname = arcname)
+                                    if i % 10 == 0:
+                                        perc = (i * 100) / total
+                                        self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                                i += 1
+                    else:
+                        arcname = dip_identifier + "/" + os.path.relpath(pack_item, task_context.path)
+                        tar.add(pack_item, arcname = arcname)
+                        if i % 10 == 0:
+                                perc = (i * 100) / total
+                                self.update_state(state='PROGRESS', meta={'process_percent': perc})
+                        i += 1
             tar.close()
             tl.log.append("Package created: %s" % storage_file)
 
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception, err:
-            task_context.task_status = 0
+            tl.adderr("Task failed: %s" % err.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
         return task_context.additional_data
 
 
