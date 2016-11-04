@@ -2738,12 +2738,11 @@ class DIPPeripleoDeployment(DefaultTask):
                     _, ttl_file_name = os.path.split(ttl_file_path)
                     peripleo_client = RestClient(rest_endpoint)
                     ttl_file_path_without_ext, _ = os.path.splitext(ttl_file_path)
-                    logger.info("Deployment of file: '%s'" % ttl_file_name)
                     if not any(gazetteer['name'] == ttl_file_path_without_ext for gazetteer in gazetteers_json):
                         if peripleo_client.post_file("admin/gazetteers", "rdf", ttl_file_path):
-                            logger.info("Peripleo deployment request sent successfully")
+                            tl.addinfo("TTL file successfully deployed to Peripleo: %s" % ttl_file_name)
                         else:
-                            logger.error("Error sending Peripleo deployment request")
+                            tl.adderr("An error occurred while trying to deploy file '%s' to Peripleo" % ttl_file_name)
                         # one request per second
                         time.sleep(1)
                     else:

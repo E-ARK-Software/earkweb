@@ -13,6 +13,7 @@ from earkcore.utils.configutils import set_default_config_if_not_exists
 
 # check for missing configuration options
 default_config = [
+    ("nlp", "tar_path", "/var/data/earkweb/nlp/tarfiles"),
     ("server", "peripleo_server_ip", "127.0.0.1"),
     ("server", "peripleo_port", 9000),
     ("server", "peripleo_path", "peripleo"),

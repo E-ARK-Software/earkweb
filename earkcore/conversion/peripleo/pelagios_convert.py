@@ -54,7 +54,7 @@ class PeripleoGmlProcessing(Processor):
                         distr_name = format_location_name(district_name_elm.text)
                         break
                 if district_name_elm is None:
-                    self.err.append("Feature has no valid district name" % distr_name)
+                    self.err.append("Feature has no valid district name")
                     return False
         return True
 
