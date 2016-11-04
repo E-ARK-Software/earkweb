@@ -6,7 +6,7 @@
 - [Installation](#installation)
 - [User guide](#user-guide)
 
-## Instroduction
+## Introduction
 
 [E-ARK Web](https://github.com/eark-project/earkweb) is an open source archiving and digital preservation system. It is 
 [OAIS](http://public.ccsds.org/publications/archive/650x0m2.pdf)-oriented which means that data ingest, archiving and dissemination functions operate on information packages 
