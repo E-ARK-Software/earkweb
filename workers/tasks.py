@@ -3093,8 +3093,10 @@ class DMNERecogniser(ConcurrentTask):
         model = kwargs['model']
 
         # initialise tagger and java 8 for this task
-        os.environ['JAVAHOME'] = '/usr/local/java/jre1.8.0_73/bin/java'       # earkdev
+        # os.environ['JAVAHOME'] = '/usr/local/java/jre1.8.0_73/bin/java'       # earkdev
         # os.environ['JAVAHOME'] = '/usr/lib/java/jdk1.8.0_101/bin/java'          # NAH cluster
+        os.environ['JAVAHOME'] = '/usr/local/java/jdk1.8.0_92/bin/java'		# VM
+
         jar = os.path.join(stanford_jar, 'stanford-ner.jar')
         model = os.path.join(stanford_ner_models, model)
         tagger = StanfordNERTagger(model, jar, encoding='utf-8', java_options='-mx8000m')
@@ -3124,16 +3126,6 @@ class DMNERecogniser(ConcurrentTask):
                     organisations_list.append(result[0])
 
         # logger.debug('Next: updating Solr with tagged results.')
-
-        # with open('/var/data/earkweb/nlp/tarfiles/nlp_results', 'a') as nlp_output:
-        #     nlp_output.write(identifier + '\n')
-        #     nlp_output.write('----locations----\n')
-        #     nlp_output.write(str(locations_list) + '\n')
-        #     nlp_output.write('----organisations----\n')
-        #     nlp_output.write(str(organisations_list) + '\n')
-        #     nlp_output.write('----persons----\n')
-        #     nlp_output.write(str(persons_list) + '\n')
-        #     nlp_output.write('#############################\n')
 
         # update Solr with results
         solr_base_url = 'http://%s:%s/solr/%s/' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
