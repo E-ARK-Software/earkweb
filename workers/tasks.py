@@ -359,6 +359,28 @@ def run_sipcreation_batch(self, *args, **kwargs):
         current_task.update_state(state='FAILURE', meta={'uuid': uuid})
         return { 'uuid': uuid, 'status': "1", "success": False, "errmsg": err.message}
 
+@app.task(bind=True)
+def run_dippreparation(self, *args, **kwargs):
+    uuid = kwargs['uuid']
+    selected_aips = kwargs['selected_aips']
+    logger.info("selected_aips: %s" % selected_aips)
+    if not uuid or not selected_aips:
+        raise ValueError("Required parameter: uuid, selected_aips")
+    current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': "AIPtoDIPReset"})
+    from earkcore.batch.prepare_dip import prepare_dip
+    try:
+        task_context = prepare_dip(current_task, uuid, selected_aips)
+        if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            return { 'uuid': uuid, 'status': task_context.task_status, "success": True, 'message': 'DIP preparation finished.'}
+        else:
+            current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+            return { 'uuid': uuid, 'status': "1", "success": False, "message": "DIP preparation failed."}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+        return {'uuid': uuid, 'status': "1", "success": False, "message": err.message}
+
 class SIPReset(DefaultTask):
 
     accept_input_from = ['All']
@@ -2145,7 +2167,7 @@ class DIPAcquireAIPs(DefaultTask):
                 else:
                     aip_total_size+=fsize(aip_source)
 
-            task_context.additional_data["selected_aips"] = selected_aips.keys()
+            #task_context.additional_data["selected_aips"] = selected_aips.keys()
 
             tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, aip_total_size))
             #for aip in dip.aips.all():

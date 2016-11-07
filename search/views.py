@@ -10,7 +10,7 @@ from threading import Thread
 import requests
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, HttpResponseServerError, JsonResponse
 from django.template import RequestContext, loader
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -35,7 +35,7 @@ from workflow.models import WorkflowModules
 logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
-from workers.tasks import AIPtoDIPReset
+from workers.tasks import AIPtoDIPReset, run_dippreparation
 
 from earkcore.xml.xmlvalidation import XmlValidation
 from config.configuration import server_hdfs_aip_query
@@ -679,3 +679,41 @@ def order_status(request):
     else:
         response = {'process_id' : None, 'error' : "Unsupported POST request."}
         return HttpResponse(json.dumps(response))
+
+
+@csrf_exempt
+def prepareDIPWorkingArea(request):
+    data = {"success": False, "message": "Unknown error"}
+    request_data = json.loads(request.body)
+    try:
+        if request.method == 'POST':
+            if 'process_id' in request_data:
+                uuid = request_data['process_id']
+
+                ip = InformationPackage.objects.get(uuid=uuid)
+                packagename = ip.packagename
+                dip = DIP.objects.get(name=packagename)
+
+                selected_aips = {aip.identifier:aip.source for aip in dip.aips.all()}
+
+                logger.info("selected_aips: %s" % selected_aips)
+                try:
+                    job = run_dippreparation.delay(uuid=uuid, selected_aips=selected_aips)
+                    ip = InformationPackage.objects.get(uuid=uuid)
+                    ip.statusprocess = 0
+                    ip.save()
+                    data = {"success": True, "jobid": job.id, "process_id": uuid, "message": "DIP preparation job submitted successfully."}
+                except Exception, err:
+                    tb = traceback.format_exc()
+                    logging.error(str(tb))
+                    data = {"success": False, "message": str(tb), "process_id": uuid}
+            else:
+                data = {"success": False, "message": "Required POST parameter 'process_id' missing."}
+        else:
+            data = {"success": False, "message": "Only POST request allowed"}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        data = {"success": False, "message": str(tb)}
+        return JsonResponse(data)
+    return JsonResponse(data)
