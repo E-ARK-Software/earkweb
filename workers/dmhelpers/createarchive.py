@@ -74,8 +74,8 @@ class CreateNLPArchive(object):
         @return:            
         """
         path = document['path'].encode('utf-8')
-        # content = document['content'][0].encode('utf-8')  # Solr 6?
-        content = document['content'].encode('utf-8')       # Solr 4
+        content = document['content'][0].encode('utf-8')  # Solr 6
+        # content = document['content'].encode('utf-8')       # Solr 4
 
         tmpfile = tempfile.NamedTemporaryFile(mode='w', delete=False)
         tmpfile.write(content)
