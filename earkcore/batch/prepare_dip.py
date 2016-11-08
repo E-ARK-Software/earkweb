@@ -14,7 +14,7 @@ from workers.tasks import *
 from config.configuration import config_path_work
 
 
-def prepare_dip(current_task, uuid, selected_aips):
+def prepare_dip(curr_task, uuid, selected_aips):
 
     logger.info("=================================================================================")
     logger.info("Prepare DIP %s" % uuid)
@@ -35,8 +35,8 @@ def prepare_dip(current_task, uuid, selected_aips):
         logger.info( result.status )
         logger.info( result.result.additional_data )
         logger.info( result.result.task_name )
-        if current_task is not None:
-            current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
+        if curr_task is not None:
+            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))
@@ -51,7 +51,7 @@ def prepare_dip(current_task, uuid, selected_aips):
     return task_context
 
 
-def create_dip(current_task, uuid, selected_aips):
+def create_dip(curr_task, uuid, selected_aips):
 
     logger.info("=================================================================================")
     logger.info("Create DIP %s" % uuid)
@@ -72,8 +72,8 @@ def create_dip(current_task, uuid, selected_aips):
         logger.info( result.status )
         logger.info( result.result.additional_data )
         logger.info( result.result.task_name )
-        if current_task is not None:
-            current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
+        if curr_task is not None:
+            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))

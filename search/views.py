@@ -740,11 +740,13 @@ def job_status(request, jobid):
         if request.method == 'GET':
             from celery.result import AsyncResult
             job = AsyncResult(jobid)
-            print "LAST_TASK: %s" % job._get_task_meta()
             if job.state == "SUCCESS":
                 return JsonResponse(job.result)
             else:
-                return JsonResponse({"status": str(job.state).lower()})
+                res = {"status": str(job.state).lower()}
+                if 'last_task' in job.info.keys():
+                    res.update({"last_task": job.info['last_task']})
+                return JsonResponse(res)
         else:
             # 400 Bad Request
             return JsonResponse({"success": False, "message": "Only GET request allowed"}, status=400)
