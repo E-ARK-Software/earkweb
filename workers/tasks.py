@@ -3138,7 +3138,29 @@ class DIPCreateAccessCopy(DefaultTask):
                 access_dir = os.path.join(dip_download_path, random_token)
                 mkdir_p(access_dir)
                 access_file = os.path.join(access_dir, package_file_name)
-                safe_copy_from_to(package_object_path, access_file, tl)
+
+                total_bytes_read = 0
+                aip_total_size = 0
+
+                dip_total_size = fsize(package_object_path)
+
+                tl.addinfo("DIP: %s, total size: %d" % (task_context.task_name, dip_total_size))
+
+                aip_source_size = fsize(package_object_path)
+                partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+                tl.addinfo("Source: %s (%d)" % (package_object_path, aip_source_size))
+                tl.addinfo("Target: %s" % (access_file))
+                with open(access_file, 'wb') as target_file:
+                    for chunk in FileBinaryDataChunks(package_object_path, 65536, partial_custom_progress_reporter).chunks(total_bytes_read, dip_total_size):
+                        target_file.write(chunk)
+                    total_bytes_read += aip_source_size
+                    target_file.close()
+                check_transfer(package_object_path, access_file, tl)
+
+                self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+                # safe_copy_from_to(package_object_path, access_file, tl)
+
                 random_url_part = os.path.join(random_token, package_file_name)
                 if not dip_download_base_url.endswith('/'):
                     dip_download_base_url += '/'
