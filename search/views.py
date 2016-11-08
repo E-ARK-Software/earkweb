@@ -6,6 +6,7 @@ import tarfile
 import traceback
 import urllib
 from threading import Thread
+from django.core.exceptions import ObjectDoesNotExist
 
 import requests
 from django.contrib.auth.decorators import login_required
@@ -35,7 +36,7 @@ from workflow.models import WorkflowModules
 logger = logging.getLogger(__name__)
 from django.shortcuts import render_to_response
 from earkcore.models import StatusProcess_CHOICES
-from workers.tasks import AIPtoDIPReset, run_dippreparation
+from workers.tasks import AIPtoDIPReset, run_dippreparation, run_dipcreation
 
 from earkcore.xml.xmlvalidation import XmlValidation
 from config.configuration import server_hdfs_aip_query
@@ -681,39 +682,74 @@ def order_status(request):
         return HttpResponse(json.dumps(response))
 
 
-@csrf_exempt
-def prepareDIPWorkingArea(request):
-    data = {"success": False, "message": "Unknown error"}
-    request_data = json.loads(request.body)
+def get_selected_aips(uuid):
+    ip = InformationPackage.objects.get(uuid=uuid)
+    packagename = ip.packagename
+    dip = DIP.objects.get(name=packagename)
+    return {aip.identifier:aip.source for aip in dip.aips.all()}
+
+def api_run_dip_workflow(request, wf_func, wf_type):
     try:
+        request_data = json.loads(request.body)
         if request.method == 'POST':
             if 'process_id' in request_data:
                 uuid = request_data['process_id']
-
                 ip = InformationPackage.objects.get(uuid=uuid)
-                packagename = ip.packagename
-                dip = DIP.objects.get(name=packagename)
+                selected_aips = get_selected_aips(uuid)
+                if len(selected_aips) == 0:
+                    # 412 Precondition Failed
+                    return JsonResponse({"success": False, "message": "No AIPs selected"}, status=412)
+                job = wf_func.delay(uuid=uuid, selected_aips=selected_aips)
 
-                selected_aips = {aip.identifier:aip.source for aip in dip.aips.all()}
-
-                logger.info("selected_aips: %s" % selected_aips)
-                try:
-                    job = run_dippreparation.delay(uuid=uuid, selected_aips=selected_aips)
-                    ip = InformationPackage.objects.get(uuid=uuid)
-                    ip.statusprocess = 0
-                    ip.save()
-                    data = {"success": True, "jobid": job.id, "process_id": uuid, "message": "DIP preparation job submitted successfully."}
-                except Exception, err:
-                    tb = traceback.format_exc()
-                    logging.error(str(tb))
-                    data = {"success": False, "message": str(tb), "process_id": uuid}
+                ip.statusprocess = 0
+                ip.save()
+                # 201 Created
+                return JsonResponse({"success": True, "jobid": job.id, "process_id": uuid, "message": "%s job submitted successfully." % wf_type}, status=201)
             else:
-                data = {"success": False, "message": "Required POST parameter 'process_id' missing."}
+                # 400 Bad Request
+                return JsonResponse({"success": False, "message": "Required POST parameter 'process_id' missing."}, status=400)
         else:
-            data = {"success": False, "message": "Only POST request allowed"}
+            # 400 Bad Request
+            return JsonResponse({"success": False, "message": "Only POST request allowed"}, status=400)
+    except ObjectDoesNotExist:
+        # 404 Not Found
+        return JsonResponse({"success": False, "message": "The process ID cannot be found"}, status=404)
+    except ValueError:
+        # 400 Bad Request
+        return JsonResponse({"success": False, "message": "Bad request: error parsing request body data."}, status=400)
     except Exception, err:
         tb = traceback.format_exc()
         logging.error(str(tb))
-        data = {"success": False, "message": str(tb)}
-        return JsonResponse(data)
-    return JsonResponse(data)
+        # 500 Internal Server Error
+        return JsonResponse({"success": False, "message": "An error occurred: %s" % err.message}, status=500)
+
+
+@csrf_exempt
+def prepareDIPWorkingArea(request):
+    return api_run_dip_workflow(request, run_dippreparation, "DIP preparation")
+
+
+@csrf_exempt
+def createDIP(request):
+    return api_run_dip_workflow(request, run_dipcreation, "DIP creation")
+
+
+@csrf_exempt
+def job_status(request, jobid):
+    try:
+        if request.method == 'GET':
+            from celery.result import AsyncResult
+            job = AsyncResult(jobid)
+            print "LAST_TASK: %s" % job._get_task_meta()
+            if job.state == "SUCCESS":
+                return JsonResponse(job.result)
+            else:
+                return JsonResponse({"status": str(job.state).lower()})
+        else:
+            # 400 Bad Request
+            return JsonResponse({"success": False, "message": "Only GET request allowed"}, status=400)
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        # 500 Internal Server Error
+        return JsonResponse({"success": False, "message": "An error occurred: %s" % err.message}, status=500)

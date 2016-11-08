@@ -36,4 +36,6 @@ urlpatterns= patterns('',
     url(r'^submit_order/', views.submit_order, name='submit_order'),
     url(r'^order_status', views.order_status, name='order_status'),
     url(r'^prepareDIPWorkingArea$', views.prepareDIPWorkingArea, name='prepareDIPWorkingArea'),
+    url(r'^createDIP$', views.createDIP, name='createDIP'),
+    url(r'^jobstatus/(?P<jobid>[a-z0-9-]{36,36})$', views.job_status, name='jobstatus'),
 )

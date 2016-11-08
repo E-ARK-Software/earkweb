@@ -25,6 +25,9 @@ default_config = [
     ("server", "flower_server", "127.0.0.1"),
     ("server", "flower_port", "5555"),
     ("server", "flower_path", "/"),
+    ("access", "dip_download_base_url", "http://127.0.0.1:8000/static/earkweb/download"),
+    ("access", "dip_download_path", "/opt/python_wsgi_apps/earkweb/static/download"),
+
 ]
 
 set_default_config_if_not_exists('config/settings.cfg', default_config)

@@ -371,15 +371,42 @@ def run_dippreparation(self, *args, **kwargs):
     try:
         task_context = prepare_dip(current_task, uuid, selected_aips)
         if hasattr(task_context, 'task_status') and task_context.task_status == 0:
-            return { 'uuid': uuid, 'status': task_context.task_status, "success": True, 'message': 'DIP preparation finished.'}
+            return {'process_id': uuid, 'status': "finished", "success": True, 'message': 'DIP preparation finished.'}
         else:
             current_task.update_state(state='FAILURE', meta={'uuid': uuid})
-            return { 'uuid': uuid, 'status': "1", "success": False, "message": "DIP preparation failed."}
+            return {'process_id': uuid, 'status': "failure", "success": False, "message": "DIP preparation failed."}
     except Exception, err:
         tb = traceback.format_exc()
         logging.error(str(tb))
         current_task.update_state(state='FAILURE', meta={'uuid': uuid})
-        return {'uuid': uuid, 'status': "1", "success": False, "message": err.message}
+        return {'process_id': uuid, 'status': "failure", "success": False, "message": err.message}
+
+
+@app.task(bind=True)
+def run_dipcreation(self, *args, **kwargs):
+    uuid = kwargs['uuid']
+    selected_aips = kwargs['selected_aips']
+    logger.info("selected_aips: %s" % selected_aips)
+    if not uuid or not selected_aips:
+        raise ValueError("Required parameter: uuid, selected_aips")
+    current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': "DIPMetadataCreation"})
+    try:
+        from earkcore.batch.prepare_dip import create_dip
+        task_context = create_dip(current_task, uuid, selected_aips)
+        if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            result = { 'process_id': uuid, 'status': "finished", "success": True, 'message': 'DIP creation finished successfully.'}
+            #if hasattr(task_context, 'storage_loc') and task_context.task_status != '':
+            result['download_url'] = task_context.additional_data['download_url']
+            return result
+        else:
+            current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+            return { 'process_id': uuid, 'status': "failure", "success": False, "message": "DIP creation failed."}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+        return {'process_id': uuid, 'status': "failure", "success": False, "message": err.message}
+
 
 class SIPReset(DefaultTask):
 
@@ -1792,7 +1819,7 @@ class AIPPackaging(DefaultTask):
             self.update_state(state='PROGRESS', meta={'process_percent': 100})
             task_context.task_status = 0
         except Exception, err:
-            tl.adderr("Task failed: %s" % e.message)
+            tl.adderr("Task failed: %s" % err.message)
             tl.adderr(traceback.format_exc())
             task_context.task_status = 1
         return task_context.additional_data
@@ -2280,6 +2307,21 @@ def get_package_from_storage(task_context_path, package_uuid, package_extension,
          total_bytes_read += package_source_size
          target_file.close()
     check_transfer(parent_object_path, package_in_dip_work_dir, tl)
+
+
+def safe_copy_from_to(copy_from, copy_to, tl):
+
+    package_source_size = fsize(copy_from)
+    tl.addinfo("Source: %s (%d)" % (copy_from, package_source_size))
+    tl.addinfo("Target: %s" % copy_to)
+    total_bytes_read = 0
+    with open(copy_to, 'wb') as target_file:
+         for chunk in FileBinaryDataChunks(copy_from, 65536).chunks(total_bytes_read):
+             target_file.write(chunk)
+         total_bytes_read += package_source_size
+         target_file.close()
+    check_transfer(copy_from, copy_to, tl)
+
 
 def get_children_from_storage(task_context_path, package_uuid, package_extension, tl):
     get_package_from_storage(task_context_path, package_uuid, package_extension, tl)
@@ -3045,6 +3087,64 @@ class DIPStore(DefaultTask):
                     task_context.additional_data["storage_loc"] = package_object_path
                 else:
                     tl.adderr("Checksum verification failed, an error occurred while trying to transmit the package.")
+            task_context.task_status = 1 if (len(tl.err) > 0) else 0
+        except Exception as e:
+            tl.adderr("Task failed: %s" % e.message)
+            tl.adderr(traceback.format_exc())
+            task_context.task_status = 1
+        return task_context.additional_data
+
+class DIPCreateAccessCopy(DefaultTask):
+
+    accept_input_from = [DIPStore.__name__, "DIPCreateAccessCopy"]
+
+    def run_task(self, task_context):
+        """
+        DIP Create Access Copy
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:1121,type:4,stage:4
+        """
+
+        # no premis event
+        #task_context.event_type = 'N/A'
+
+        tl = task_context.task_logger
+
+        from config.configuration import config_path_storage
+        from config.configuration import dip_download_base_url
+        from config.configuration import dip_download_path
+
+        if not os.path.exists(os.path.join(config_path_storage, "pairtree_version0_1")):
+            tl.adderr("Storage path is not a pairtree storage directory.")
+            task_context.task_status = 2
+            return task_context.additional_data
+        if not ("identifier" in task_context.additional_data.keys() and task_context.additional_data["identifier"] != ""):
+            tl.adderr("DIP identifier is not defined.")
+            task_context.task_status = 2
+            return task_context.additional_data
+        package_identifier = task_context.additional_data["identifier"]
+        package_file_name = "%s.tar" % task_context.additional_data["identifier"]
+        package_file_path = os.path.join(task_context.path, package_file_name)
+        if not os.path.exists(package_file_path):
+            tl.adderr("DIP TAR package does not exist: %s" % package_file_path)
+            task_context.task_status = 2
+            return task_context.additional_data
+        try:
+            pts = PairtreeStorage(config_path_storage)
+            package_object_path = pts.get_object_path(package_identifier)
+            if os.path.exists(package_object_path):
+                tl.addinfo('Storage path: %s' % (package_object_path))
+                random_token = randomword(8)
+                access_dir = os.path.join(dip_download_path, random_token)
+                mkdir_p(access_dir)
+                access_file = os.path.join(access_dir, package_file_name)
+                safe_copy_from_to(package_object_path, access_file, tl)
+                random_url_part = os.path.join(random_token, package_file_name)
+                if not dip_download_base_url.endswith('/'):
+                    dip_download_base_url += '/'
+                download_url = "%s%s" % (dip_download_base_url, random_url_part)
+                task_context.additional_data["download_url"] = download_url
+
             task_context.task_status = 1 if (len(tl.err) > 0) else 0
         except Exception as e:
             tl.adderr("Task failed: %s" % e.message)

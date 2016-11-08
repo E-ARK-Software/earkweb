@@ -63,3 +63,5 @@ migrations/
 config/settings_*
 config/settings.cfg
 Dockerfile_*
+
+static/download/*

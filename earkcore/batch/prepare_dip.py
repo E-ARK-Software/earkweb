@@ -20,10 +20,6 @@ def prepare_dip(current_task, uuid, selected_aips):
     logger.info("Prepare DIP %s" % uuid)
     logger.info("=================================================================================")
 
-    logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx")
-    logger.info("selected_aips: %s" % selected_aips)
-    logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx")
-
     logger.info( "Acquiring and extracting AIPs for DIP creation process: %s " % uuid )
     work_dir = "%s/%s" % (config_path_work, uuid)
 
@@ -53,6 +49,45 @@ def prepare_dip(current_task, uuid, selected_aips):
         task_context.additional_data = result.result.additional_data
     logger.info("Finished acquiring and extracting AIPs for DIP creation process %s" % uuid)
     return task_context
+
+
+def create_dip(current_task, uuid, selected_aips):
+
+    logger.info("=================================================================================")
+    logger.info("Create DIP %s" % uuid)
+    logger.info("=================================================================================")
+
+    logger.info( "Initiating DIP creation process: %s " % uuid )
+    work_dir = "%s/%s" % (config_path_work, uuid)
+
+    chain_classes = [DIPMetadataCreation, DIPIdentifierAssignment, DIPPackaging, DIPStore, DIPCreateAccessCopy]
+
+    task_context = DefaultTaskContext(uuid, work_dir, 'AIPtoDIPReset', None, {'selected_aips': selected_aips}, None)
+    result = None
+    for task in chain_classes:
+        logger.info("\n------------------------------------------------")
+        task_context.task_logger = None
+        result = task().apply((task_context,task_context.additional_data), queue='default')
+
+        logger.info( result.status )
+        logger.info( result.result.additional_data )
+        logger.info( result.result.task_name )
+        if current_task is not None:
+            current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
+        if result.result.task_logger.log:
+            logger.info("Execution log ---------------------")
+            logger.info("\n".join(result.result.task_logger.log))
+        if result.result.task_logger.err:
+            logger.info("Execution err ---------------------")
+            logger.info("\n".join(result.result.task_logger.err))
+        if result.result.task_status != 0:
+            logger.info("Stopping chain due to %s task error" % task )
+            return
+        task_context.additional_data = result.result.additional_data
+
+    logger.info("Finished DIP creation process %s" % uuid)
+    return task_context
+
 
 if __name__ == "__main__":
     setup_django()
