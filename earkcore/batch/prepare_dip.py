@@ -36,7 +36,7 @@ def prepare_dip(curr_task, uuid, selected_aips):
         logger.info( result.result.additional_data )
         logger.info( result.result.task_name )
         if curr_task is not None:
-            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
+            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name, 'last_task_jobid': result.id})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))
@@ -73,7 +73,7 @@ def create_dip(curr_task, uuid, selected_aips):
         logger.info( result.result.additional_data )
         logger.info( result.result.task_name )
         if curr_task is not None:
-            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name})
+            curr_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': result.result.task_name, 'last_task_jobid': result.id})
         if result.result.task_logger.log:
             logger.info("Execution log ---------------------")
             logger.info("\n".join(result.result.task_logger.log))
