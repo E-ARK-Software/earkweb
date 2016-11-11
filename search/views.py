@@ -737,6 +737,7 @@ def createDIP(request):
 @csrf_exempt
 def job_status(request, jobid):
     try:
+
         if request.method == 'GET':
             from celery.result import AsyncResult
             job = AsyncResult(jobid)
@@ -746,6 +747,13 @@ def job_status(request, jobid):
                 res = {"status": str(job.state).lower()}
                 if 'last_task' in job.info.keys():
                     res.update({"last_task": job.info['last_task']})
+                if 'last_task_jobid' in job.info.keys():
+                    last_job_id = job.info['last_task_jobid']
+                    last_job = AsyncResult(last_job_id)
+                    if 'process_percent' in last_job.info.keys():
+                        last_job_progress = last_job.info['process_percent']
+                        res.update({"last_job_progress": last_job_progress})
+                    res.update({"last_task_jobid": last_job_id})
                 return JsonResponse(res)
         else:
             # 400 Bad Request
