@@ -7,6 +7,7 @@ Created on April 30, 2016
 import logging
 
 from earkcore.filesystem.chunkedtarentryreader import ChunkedTarEntryReader
+from earkcore.utils.pathutils import uri_to_safe_filename
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +183,7 @@ class PairtreeStorage(object):
             raise ValueError("Repository object '%s' has no version %d." % (identifier, version_num))
         version = '%05d' % version_num
         repo_obj = self.repo_storage_client.get_object(identifier, False)
-        repo_obj_path = os.path.join(repo_obj.id_to_dirpath(), "data/%s" % version)
+        repo_obj_path = uri_to_safe_filename( os.path.join(repo_obj.id_to_dirpath(), "data/%s" % version))
         try:
             return next(os.path.join(repo_obj_path, f) for f in os.listdir(repo_obj_path) if os.path.isfile(os.path.join(repo_obj_path, f)))
         except StopIteration:

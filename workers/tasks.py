@@ -83,6 +83,7 @@ import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
 from earkcore.metadata.ead.parsedead import field_namevalue_pairs_per_file
 from config.configuration import storage_solr_core, storage_solr_port, storage_solr_server_ip
+from earkcore.utils.pathutils import uri_to_safe_filename
 
 from earkcore.utils.solrutils import SolrUtility
 import re
@@ -1763,7 +1764,7 @@ class AIPPackaging(DefaultTask):
             # append generation number to tar file; if tar file exists, the generation number is incremented
             new_id = task_context.additional_data["identifier"]
 
-            storage_file = os.path.join(task_context.path, "%s.tar" % new_id)
+            storage_file = uri_to_safe_filename(os.path.join(task_context.path, "%s.tar" % new_id))
             tar = tarfile.open(storage_file, "w:")
             tl.addinfo("Creating archive: %s" % storage_file)
 
@@ -1856,12 +1857,12 @@ class AIPStore(DefaultTask):
 
         try:
             package_id = task_context.additional_data["identifier"]
-            storePath = task_context.additional_data["storage_dest"]
+            storePath = uri_to_safe_filename(task_context.additional_data["storage_dest"])
             if not task_context.additional_data['storage_dest']:
                 tl.adderr("Storage root must be defined to execute this task.")
             else:
                 # copy the package
-                tarfile_path = "%s/%s.tar" % (task_context.path, package_id)
+                tarfile_path = uri_to_safe_filename("%s/%s.tar" % (task_context.path, package_id))
                 if not os.path.exists(tarfile_path):
                     tl.adderr("Unable to store package. The package container file does not exist: %s." % tarfile_path)
                 else:
@@ -2047,7 +2048,7 @@ class SolrUpdateCurrentMetadata(DefaultTask):
 
 class LilyHDFSUpload(DefaultTask):
 
-    accept_input_from = [AIPStore.__name__, AIPIndexing.__name__, "LilyHDFSUpload"]
+    accept_input_from = [SolrUpdateCurrentMetadata.__name__, AIPStore.__name__, AIPIndexing.__name__, "LilyHDFSUpload"]
 
     def run_task(self, task_context):
         """

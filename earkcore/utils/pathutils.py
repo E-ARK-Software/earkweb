@@ -24,6 +24,10 @@ def package_sub_path_from_relative_path(root, containing_file_path, relative_pat
     return strip_prefixes(os.path.abspath(os.path.join(containing_path, remove_protocol(relative_path))), root)
 
 
+def uri_to_safe_filename(uri):
+    return uri.replace(":", "+")
+
+
 class TestPathFunctions(unittest.TestCase):
 
     def test_strip_prefixes_from_path_singlefile(self):
