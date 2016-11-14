@@ -83,3 +83,8 @@ stanford_models_path = /var/data/earkweb/nlp/stanford/classifiers
 category_models_path = /var/data/earkweb/nlp/textcategories/models
 config_path_nlp = /var/data/earkweb/nlp
 tar_path = /var/data/earkweb/nlp/storage
+
+[access]
+
+dip_download_base_url = http://localhost/eark/download
+dip_download_path = /var/www/eark/download
