@@ -281,7 +281,7 @@ def poll_state(request):
                             ip.additional_data = additional_data_str
                             if 'identifier' in task.result.additional_data.keys() and task.result.additional_data['identifier'] != '':
                                 ip.identifier = task.result.additional_data['identifier']
-                            if (not ip.storage_loc or ip.storage_loc == '') and 'storage_loc' in task.result.additional_data.keys() and task.result.additional_data['storage_loc'] != '':
+                            if 'storage_loc' in task.result.additional_data.keys():
                                 ip.storage_loc = task.result.additional_data['storage_loc']
                         if task.result.task_name:
                             try:

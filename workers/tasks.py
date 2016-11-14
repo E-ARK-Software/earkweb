@@ -743,6 +743,7 @@ class SIPtoAIPReset(DefaultTask):
         # success status
         task_context.task_status = 0
         task_context.additional_data['identifier'] = ""
+        task_context.additional_data['storage_loc'] = ""
         return task_context.additional_data
 
 
