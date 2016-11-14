@@ -83,6 +83,7 @@ import tarfile
 from earkcore.metadata.ead.parsedead import ParsedEad
 from earkcore.metadata.ead.parsedead import field_namevalue_pairs_per_file
 from config.configuration import storage_solr_core, storage_solr_port, storage_solr_server_ip
+from config.configuration import access_solr_core, access_solr_port, access_solr_server_ip
 from earkcore.utils.pathutils import uri_to_safe_filename
 
 from earkcore.utils.solrutils import SolrUtility
@@ -3193,13 +3194,16 @@ class DMMainTask(ConcurrentTask):
         tar_path = '%s.tar' % os.path.join(nlp_storage_path, kwargs['tar_path'])
         logger.debug('Creating/using tar at following path: %s' % tar_path)
 
-        if 'solr_query' in kwargs:
-            query = kwargs['solr_query']
+        nlp_solr = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)  # Solr 6 local
+        # nlp_solr = 'http://%s:%s/solr/%s' % (access_solr_server_ip, access_solr_port, access_solr_core)  # Lily-Solr
 
-            nlp_solr = 'http://%s:%s/solr/%s' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+        if 'solr_query_package_id' in kwargs:
+            query_package_id = kwargs['solr_query_package_id']
+            query_content_type = kwargs['solr_query_content_type']
+
             if requests.get(os.path.join(nlp_solr, 'admin/ping')).status_code == 200:
-                solr_query = nlp_solr + '/select?q=package:%s' % query  # Solr 6
-                # solr_query = nlp_solr + '/select?q=path:%s' % query  # Lily-Solr
+                solr_query = nlp_solr + '/select?q=package:%s+AND+contentType:%s&wt=json' % (query_package_id, query_content_type)  # Solr 6
+                # solr_query = nlp_solr + '/select?q=path:%s+AND+contentType:%s&wt=json' % (query_package_id, query_content_type)  # Lily-Solr
 
                 print 'Solr query to gather NLP files: %s' % solr_query
                 archive_creator = CreateNLPArchive()
@@ -3216,7 +3220,8 @@ class DMMainTask(ConcurrentTask):
                 content = tar.extractfile(filename).read()
                 if ner_model is not 'None':
                     details = {'model': ner_model,
-                               'identifier': urllib.unquote_plus(filename.name)}
+                               'identifier': urllib.unquote_plus(filename.name)
+                               'solr': nlp_solr}
                     taskid = uuid.uuid4().__str__()
                     t_context = DefaultTaskContext('', '', 'workers.tasks.DMNERecogniser', None, '', None)
                     t_context.file_content = content
@@ -3279,7 +3284,8 @@ class DMNERecogniser(ConcurrentTask):
         # logger.debug('Next: updating Solr with tagged results.')
 
         # update Solr with results
-        solr_base_url = 'http://%s:%s/solr/%s/' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+        # solr_base_url = 'http://%s:%s/solr/%s/' % (storage_solr_server_ip, storage_solr_port, storage_solr_core)
+        solr_base_url = kwargs['solr']
         solr = SolrUtility()
         if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') is 200:
             document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6

@@ -35,24 +35,24 @@ def start(request):
 
 
 # def build_query(package_id, content_type, add_and, add_and_not):
-def build_query(package_id, content_type):
-    """
-    Takes the package id and content type from the web interface and constructs a Solr query from it.
-
-    @param package_id:      Package id
-    @param content_type:    Content type (Solr specific)
-    @return:                A Solr query
-    """
-
-    q_and = ' AND '
-    # q_or = ' OR '
-    # q_not = 'NOT '
-
-    q_package_id = '\"%s\"' % package_id
-    q_content_type = '\"%s\"' % content_type
-    solr_query = q_package_id + q_and + q_content_type + '&wt=json'
-
-    return solr_query
+# def build_query(package_id, content_type):
+#     """
+#     Takes the package id and content type from the web interface and constructs a Solr query from it.
+#
+#     @param package_id:      Package id
+#     @param content_type:    Content type (Solr specific)
+#     @return:                A Solr query
+#     """
+#
+#     q_and = ' AND '
+#     # q_or = ' OR '
+#     # q_not = 'NOT '
+#
+#     q_package_id = '\"%s\"' % package_id
+#     q_content_type = '\"%s\"' % content_type
+#     solr_query = q_package_id + q_and + q_content_type + '&wt=json'
+#
+#     return solr_query
 
 
 @login_required
@@ -74,22 +74,15 @@ def celery_nlp_new_collection(request):
             # print request.POST
             package_id = request.POST['package_id']
             content_type = request.POST['content_type']
-            # additional_and = request.POST['additional_and']
-            # additional_and_not = request.POST['additional_and_not']
             tar_path = request.POST['tar_path']
-
-            # build the query
-            # solr_query = build_query(package_id, content_type, additional_and, additional_and_not)
-            solr_query = build_query(package_id, content_type)
-            # print solr_query
-            logger.debug('Solr query: %s' % solr_query)
 
             ner_model = request.POST['ner_model']
             # category_model = request.POST['category_model']
 
             datamining_main = DMMainTask()
             taskid = uuid.uuid4().__str__()
-            details = {'solr_query': solr_query,
+            details = {'solr_query_package_id': '\"%s\"' % package_id,
+                       'solr_query_content_type': '\"%s\"' % content_type,
                        'ner_model': ner_model,
                        # 'category_model': category_model,
                        'tar_path': tar_path}
