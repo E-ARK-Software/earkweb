@@ -3220,7 +3220,7 @@ class DMMainTask(ConcurrentTask):
                 content = tar.extractfile(filename).read()
                 if ner_model is not 'None':
                     details = {'model': ner_model,
-                               'identifier': urllib.unquote_plus(filename.name)
+                               'identifier': urllib.unquote_plus(filename.name),
                                'solr': nlp_solr}
                     taskid = uuid.uuid4().__str__()
                     t_context = DefaultTaskContext('', '', 'workers.tasks.DMNERecogniser', None, '', None)
