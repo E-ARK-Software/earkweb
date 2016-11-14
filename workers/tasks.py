@@ -3288,6 +3288,7 @@ class DMNERecogniser(ConcurrentTask):
         solr_base_url = kwargs['solr']
         solr = SolrUtility()
         if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') is 200:
+        # if solr.availability(solr_base_url=solr_base_url, solr_unique_key='lily.key') is 200:
             document_id = solr.send_query('path:"%s"' % identifier)[0]['id']          # Solr 6
             # document_id = solr.send_query('path:"%s"' % identifier)[0]['lily.key']      # Lily-Solr (4)
             update_status = solr.set_multiple_fields(document_id, [('locations_ss', locations_list),
