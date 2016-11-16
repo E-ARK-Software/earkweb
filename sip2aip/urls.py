@@ -44,4 +44,5 @@ urlpatterns= patterns('',
 
     url(r'^submit_package_ingest/(?P<package_file>[0-9a-zA-Z_\-\./ ]{3,500})/$', views.submit_package_ingest, name='submit_package_ingest'),
 
+    url(r'^hdfs_batch_upload', views.hdfs_batch_upload, name='hdfs_batch_upload'),
 )
