@@ -193,10 +193,11 @@ class StoredIPTable(tables.Table):
     # packagename = tables.LinkColumn('sip2aip:ip_detail', kwargs={'pk': A('pk')}, verbose_name= 'Package name')
     # num_indexed_docs_storage = tables.Column(verbose_name= 'Number of indexed documents' )
     storage_loc = tables.Column(verbose_name='Storage Location')
+    num_indexed_docs_storage = tables.Column(verbose_name= 'Number of indexed documents' )
 
     class Meta:
         model = InformationPackage
-        fields = ('identifier', 'last_change', 'storage_loc')
+        fields = ('identifier', 'last_change', 'storage_loc', 'num_indexed_docs_storage')
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed' }
         row_attrs = {'data-id': lambda record: record.pk}
 

@@ -23,7 +23,8 @@
     <p><button id="hdfsuploadbtn" class="btn btn-default">Start uploading packages from local storage</button></p>
 
     <p>The following table gives an overview about the packages in the local repository. Those that have been stored
-        in the local storage can be uploaded to HDFS.</p>
+        in the local storage can be uploaded to HDFS. Packages that are not indexed will not be uploaded even if they
+        are present in the local storage.</p>
 
     {% render_table storedip %}
 

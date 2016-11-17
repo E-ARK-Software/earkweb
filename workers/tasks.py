@@ -305,16 +305,49 @@ def index_aip_storage(self, *args, **kwargs):
 def hdfs_batch_upload(self, *args, **kwargs):
     from config.configuration import config_path_storage
 
+    # Solr
+    solr = SolrUtility()
+    status = solr.availability('http://%s:%s/solr/%s' % (access_solr_server_ip, access_solr_port, access_solr_core),
+                               'lily.key')
+    if status is not 200:
+        logger.error('Lily Solr returned HTTP: %d' % status)
+        raise 'Lily Solr returned HTTP: %d' % status
+
+    indexed_packages = []
+
     for dirpath, _, filenames in os.walk(config_path_storage):
         for f in filenames:
             package_abs_path = os.path.abspath(os.path.join(dirpath, f))
             if package_abs_path.endswith(".tar"):
+                _, file_name = os.path.split(package_abs_path)
+                identifier_without_prefix = file_name[9:-4]
 
-                concurrent_upload = ConcurrentLilyHDFSUpload()
-                details = {'package_path': package_abs_path}
-                taskid = uuid.uuid4().__str__()
-                t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
-                concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+                # check if the package is already in the Solr index
+                index_check = solr.send_query('path:*%s*' % identifier_without_prefix)
+                if len(index_check) > 0:
+                    indexed_packages.append(package_abs_path)
+
+    logger.info('Found %d indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
+
+    # sequential uploading
+    for package in indexed_packages:
+        concurrent_upload = ConcurrentLilyHDFSUpload()
+        details = {'package_path': package}
+        taskid = uuid.uuid4().__str__()
+        t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
+        logger.info("=================== Uploading to HDFS ===================")
+        logger.info(package)
+        logger.info("=========================================================")
+        c = concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+        c.get()
+
+    # parallel uploading
+    # for package in indexed_packages:
+    #     concurrent_upload = ConcurrentLilyHDFSUpload()
+    #     details = {'package_path': package}
+    #     taskid = uuid.uuid4().__str__()
+    #     t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
+    #     concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
 
 
 class ConcurrentLilyHDFSUpload(ConcurrentTask):
@@ -334,7 +367,8 @@ class ConcurrentLilyHDFSUpload(ConcurrentTask):
             _, file_name = os.path.split(package_abs_path)
             identifier = file_name[0:-4]
 
-            # check if theres a colon ':' in the filename - if yes, rename and change db entry
+            # check if theres a colon ':' in the filename - if yes, rename
+            # note: this is a workaround for the older packages
             if ':' in file_name:
                 try:
                     safe_name = uri_to_safe_filename(package_abs_path)
