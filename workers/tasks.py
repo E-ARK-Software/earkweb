@@ -323,7 +323,8 @@ def hdfs_batch_upload(self, *args, **kwargs):
                 identifier_without_prefix = file_name[9:-4]
 
                 # check if the package is already in the Solr index
-                index_check = solr.send_query('path:*%s*' % identifier_without_prefix)
+                # index_check = solr.send_query('path:*%s*' % identifier_without_prefix)    # Solr 6
+                index_check = solr.send_query('path:%s' % identifier_without_prefix)        # Solr 4
                 if len(index_check) > 0:
                     indexed_packages.append(package_abs_path)
 
