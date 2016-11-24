@@ -302,6 +302,116 @@ def index_aip_storage(self, *args, **kwargs):
 
 
 @app.task(bind=True)
+def hdfs_batch_upload(self, *args, **kwargs):
+    from config.configuration import config_path_storage
+
+    # Solr
+    solr = SolrUtility()
+    status = solr.availability('http://%s:%s/solr/%s' % (access_solr_server_ip, access_solr_port, access_solr_core),
+                               'lily.key')
+    if status is not 200:
+        logger.error('Lily Solr returned HTTP: %d' % status)
+        raise 'Lily Solr returned HTTP: %d' % status
+
+    indexed_packages = []
+
+    for dirpath, _, filenames in os.walk(config_path_storage):
+        for f in filenames:
+            package_abs_path = os.path.abspath(os.path.join(dirpath, f))
+            if package_abs_path.endswith(".tar"):
+                _, file_name = os.path.split(package_abs_path)
+                identifier_without_prefix = file_name[9:-4]
+
+                # check if the package is already in the Solr index
+                # index_check = solr.send_query('path:*%s*' % identifier_without_prefix)    # Solr 6
+                index_check = solr.send_query('path:%s' % identifier_without_prefix)        # Solr 4
+                if len(index_check) > 0:
+                    indexed_packages.append(package_abs_path)
+
+    logger.info('Found %d indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
+
+    # sequential uploading
+    for package in indexed_packages:
+        concurrent_upload = ConcurrentLilyHDFSUpload()
+        details = {'package_path': package}
+        taskid = uuid.uuid4().__str__()
+        t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
+        logger.info("=================== Uploading to HDFS ===================")
+        logger.info(package)
+        logger.info("=========================================================")
+        c = concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+        c.get()
+
+    # parallel uploading
+    # for package in indexed_packages:
+    #     concurrent_upload = ConcurrentLilyHDFSUpload()
+    #     details = {'package_path': package}
+    #     taskid = uuid.uuid4().__str__()
+    #     t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
+    #     concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+
+
+class ConcurrentLilyHDFSUpload(ConcurrentTask):
+
+    accept_input_from = ['All']
+
+    def run_task(self, task_context, *args, **kwargs):
+        """
+        Concurrent LilyHDFSUpload
+        @type       tc: task configuration line (used to insert read task properties in database table)
+        @param      tc: order:0,type:0,stage:0
+        """
+        renamed = False
+        # upload it to HDFS
+        try:
+            package_abs_path = kwargs['package_path']
+            _, file_name = os.path.split(package_abs_path)
+            identifier = file_name[0:-4]
+
+            # check if theres a colon ':' in the filename - if yes, rename
+            # note: this is a workaround for the older packages
+            if ':' in file_name:
+                try:
+                    safe_name = uri_to_safe_filename(package_abs_path)
+                    os.rename(package_abs_path, safe_name)
+                    package_abs_path = safe_name
+                    # logger.info('Successfully \'safe-named\' the .tar file.')
+                    renamed = True
+                except Exception, e:
+                    logger.info('Renaming of %s failed: %s' % (package_abs_path, e))
+
+            # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
+            # method where the actual reporting about the upload progress occurs.
+            rest_endpoint = RestEndpoint("http://%s:%s" % (hdfs_upload_service_ip, hdfs_upload_service_port), hdfs_upload_service_endpoint_path)
+            # logger.info("Using REST endpoint: %s" % (rest_endpoint.to_string()))
+
+            # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
+            # method where the actual reporting about the upload progress occurs.
+            partial_custom_progress_reporter = partial(custom_progress_reporter, self)
+            hdfs_rest_client = HDFSRestClient(rest_endpoint, partial_custom_progress_reporter)
+            rest_resource_path_pattern = "%s{0}" % hdfs_upload_service_resource_path
+            upload_result = hdfs_rest_client.upload_to_hdfs(package_abs_path, rest_resource_path_pattern)
+            checksum_resource_uri = "%s%s/digest/sha-256" % (hdfs_upload_service_resource_path, upload_result.hdfs_path_id)
+            hdfs_sha256_checksum = hdfs_rest_client.get_string(checksum_resource_uri)
+            if ChecksumFile(package_abs_path).get(ChecksumAlgorithm.SHA256) == hdfs_sha256_checksum:
+                logger.info('Upload status: %d for package stored at %s (HDFS path: %s).' % (upload_result.status_code,
+                                                                                             package_abs_path,
+                                                                                             upload_result.hdfs_path_id))
+            else:
+                logger.error("Checksum verification after upload of package %s failed." % package_abs_path)
+        except Exception, e:
+            logger.debug(e.message)
+            logger.error('HDFS upload failed: %s' % e)
+
+        if renamed is True:
+            safe_path, safe_name = package_abs_path.rsplit('/', 1)
+            unsafe_name = safe_name.replace('+', ':')
+            os.rename(package_abs_path, os.path.join(safe_path, unsafe_name))
+
+        return task_context.additional_data
+
+
+@app.task(bind=True)
 def run_package_ingest(self, *args, **kwargs):
     package_file = kwargs['package_file']
     predef_id_mapping = kwargs['predef_id_mapping']

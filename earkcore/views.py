@@ -58,6 +58,7 @@ from config.configuration import storage_solr_server_ip
 from config.configuration import storage_solr_core
 from config.configuration import storage_solr_port
 from collections import Counter
+from workers.tasks import hdfs_batch_upload
 
 import logging
 logger = logging.getLogger(__name__)
@@ -366,6 +367,26 @@ def reindex_aip_storage(request):
     try:
         if request.is_ajax():
             job = index_aip_storage.delay(dir)
+            data = {"success": True, "id": job.id}
+    except Exception, err:
+        data = {"success": False, "errmsg": err.message}
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+    return JsonResponse(data)
+
+
+@login_required
+def start_hdfs_batch_upload(request):
+    """
+    @type request: django.core.handlers.wsgi.WSGIRequest
+    @param request: Request
+    @rtype: django.http.JsonResponse
+    @return: JSON response (task state metadata)
+    """
+    data = {"success": False, "errmsg": "undefined"}
+    try:
+        if request.is_ajax():
+            job = hdfs_batch_upload.delay(dir)
             data = {"success": True, "id": job.id}
     except Exception, err:
         data = {"success": False, "errmsg": err.message}

@@ -1,0 +1,47 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load staticfiles %}
+
+{% block extra_head %}
+
+    <!-- SIP to AIP javascript -->
+    <script type="text/javascript" src="{% static 'search/js/pubsearch.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkcore/js/csrfajax.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="main">HDFS Upload</h1>
+
+    <h2 class="main">Batch upload of locally stored packages to HDFS.</h2>
+
+    <p><button id="hdfsuploadbtn" class="btn btn-default">Start uploading packages from local storage</button></p>
+
+    <p>The following table gives an overview about the packages in the local repository. Those that have been stored
+        in the local storage can be uploaded to HDFS. Packages that are not indexed will not be uploaded even if they
+        are present in the local storage.</p>
+
+    {% render_table storedip %}
+
+    <script>
+        $( "#hdfsuploadbtn" ).click(function() {
+            $.ajax({
+                url: "/earkweb/earkcore/start_hdfs_batch_upload",
+                context: document.body,
+            }).success(function(data) {
+                $('#hdfsuploadbtn').attr("disabled", "disabled");
+                $('.top-right').notify({
+                    message: { text: 'Uploads from AIP storage started!' }
+                  }).show();
+            }).error(function(err, message, status_text) {
+                alert("Error!");
+            });
+        });
+	</script>
+
+{% endblock %}

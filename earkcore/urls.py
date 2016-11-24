@@ -21,5 +21,6 @@ urlpatterns= patterns('',
     url(r'^set_proc_state_valid/(?P<uuid>[0-9a-zA-Z-]{3,200})/$', views.set_proc_state_valid, name='setprocvalid'),
     url(r'^solrif/(?P<core>[0-9a-zA-Z-]{3,200})/(?P<operation>[0-9a-zA-Z-]{3,200})/$', views.solrif, name='solrif'),
     url(r'^solrinterface/(?P<query>.*)/$', views.solrinterface, name='solrinterface'),
+    url(r'^start_hdfs_batch_upload/$', views.start_hdfs_batch_upload, name='start_hdfs_batch_upload'),
 
 )
