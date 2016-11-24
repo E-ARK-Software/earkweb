@@ -662,6 +662,7 @@ def order_status(request):
 
         response = {'process_id' : process_id, 'process_status' : "Progress", 'dip_storage' : ""}
 
+
         #if staus is ok try finding ip in storage and return
         if ip.statusprocess == 0:
             try:
@@ -670,6 +671,7 @@ def order_status(request):
                 if os.path.exists(package_object_path):
                     print 'Storage path: %s' % package_object_path
                     response['dip_storage'] = package_object_path
+                    response['dip_id'] = ip.identifier
 
             except Exception as e:
                 print "Storage path not found"
