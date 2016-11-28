@@ -117,7 +117,7 @@ def hdfs_batch_upload(request):
     ]
     task_cond = " or ".join(list_tasks)
     # where=["(%s)" % task_cond]
-    queryset = IndexingStatusTable.objects.extra(where=["storage_loc != ''"]).order_by('-last_change')
+    queryset = InformationPackage.objects.extra(where=["storage_loc != ''"]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
     return render(request, 'sip2aip/hdfs_batch_upload.html', {'storedip': table})
