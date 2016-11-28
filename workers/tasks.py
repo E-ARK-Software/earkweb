@@ -325,7 +325,7 @@ def hdfs_batch_upload(self, *args, **kwargs):
                 # check if the package is already in the Solr index
                 # index_check = solr.send_query('path:*%s*' % identifier_without_prefix)    # Solr 6
                 index_check = solr.send_query('path:%s' % identifier_without_prefix)        # Solr 4
-                if len(index_check) > 0:
+                if len(index_check) is 0:
                     indexed_packages.append(package_abs_path)
 
     logger.info('Found %d indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
