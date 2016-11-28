@@ -5,7 +5,6 @@ import socket
 from django.contrib import admin
 
 from earkweb import views
-from sip2aip.views import hdfs_batch_upload
 
 from django.conf import settings
 
@@ -28,7 +27,7 @@ urlpatterns = patterns('',
     url(r'^datamining/', include('datamining.urls', namespace="datamining")),
 #    url(r'^accounts/login/$', 'django_cas.views.login'),
 #    url(r'^accounts/logout/$', 'django_cas.views.logout'),
-    url(r'^hdfs_batch', hdfs_batch_upload, name='hdfs_batch'),
+    url(r'^hdfs_batch', views.hdfs_batch_upload, name='hdfs_batch'),
 )
 
 # Development server starts at http://127.0.0.1:8888/ so this rule is adds

@@ -99,6 +99,30 @@ class IndexingStatusTable(tables.Table):
         else:
             return value
 
+
+def hdfs_batch_upload(request):
+    """
+    Indexing Status Table view
+    """
+    lily_solr = 'http://%s:%s/solr/%s/admin/ping' % (access_solr_server_ip, access_solr_port, access_solr_core)
+    if not service_available(lily_solr):
+        return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % lily_solr})
+    list_tasks = [
+        "last_task_id='%s'" % AIPIndexing.__name__,
+        "last_task_id='%s'" % SolrUpdateCurrentMetadata.__name__,
+        "last_task_id='%s'" % AIPStore.__name__,
+        "last_task_id='%s'" % DIPStore.__name__,
+        "last_task_id='%s'" % IPClose.__name__,
+        "last_task_id='%s'" % IPDelete.__name__,
+    ]
+    task_cond = " or ".join(list_tasks)
+    # where=["(%s)" % task_cond]
+    queryset = IndexingStatusTable.objects.extra(where=["storage_loc != ''"]).order_by('-last_change')
+    table = IndexingStatusTable(queryset)
+    RequestConfig(request, paginate={'per_page': 10}).configure(table)
+    return render(request, 'sip2aip/hdfs_batch_upload.html', {'storedip': table})
+
+
 # class IndexingStatusList(ListView):
 #     """
 #     Processing status
