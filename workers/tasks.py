@@ -324,23 +324,27 @@ def hdfs_batch_upload(self, *args, **kwargs):
 
                 # check if the package is already in the Solr index
                 # index_check = solr.send_query('path:*%s*' % identifier_without_prefix)    # Solr 6
-                index_check = solr.send_query('path:%s' % identifier_without_prefix)        # Solr 4
-                if len(index_check) is 0:
-                    indexed_packages.append(package_abs_path)
+                index_check = solr.send_query('path:\"%s\"' % identifier_without_prefix)        # Solr 4
+                if index_check is not False:
+                    if len(index_check) is 0:
+                        indexed_packages.append(package_abs_path)
 
-    logger.info('Found %d indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
+    logger.info('Found %d not indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
 
     # sequential uploading
     for package in indexed_packages:
-        concurrent_upload = ConcurrentLilyHDFSUpload()
-        details = {'package_path': package}
-        taskid = uuid.uuid4().__str__()
-        t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
-        logger.info("=================== Uploading to HDFS ===================")
-        logger.info(package)
-        logger.info("=========================================================")
-        c = concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
-        c.get()
+        if os.path.isfile(package):
+            concurrent_upload = ConcurrentLilyHDFSUpload()
+            details = {'package_path': package}
+            taskid = uuid.uuid4().__str__()
+            t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
+            logger.info("=================== Uploading to HDFS ===================")
+            logger.info(package)
+            logger.info("=========================================================")
+            c = concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
+            c.get()
+        else:
+            pass
 
     # parallel uploading
     # for package in indexed_packages:
