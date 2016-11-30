@@ -331,7 +331,9 @@ def hdfs_batch_upload(self, *args, **kwargs):
 
     logger.info('Found %d not indexed packages in storage area; now queueing for upload to HDFS.' % len(indexed_packages))
 
-    # sequential uploading
+    # sequential uploading:
+    # celery queue 'upload' is only being handled by 1 worker - increase this in /etc/init.d/earkweb/celeryd for
+    # parallel uploads
     for package in indexed_packages:
         if os.path.isfile(package):
             concurrent_upload = ConcurrentLilyHDFSUpload()
@@ -341,18 +343,9 @@ def hdfs_batch_upload(self, *args, **kwargs):
             logger.info("=================== Uploading to HDFS ===================")
             logger.info(package)
             logger.info("=========================================================")
-            c = concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
-            c.get()
+            concurrent_upload.apply_async((t_context,), kwargs=details, queue='upload', task_id=taskid)
         else:
             pass
-
-    # parallel uploading
-    # for package in indexed_packages:
-    #     concurrent_upload = ConcurrentLilyHDFSUpload()
-    #     details = {'package_path': package}
-    #     taskid = uuid.uuid4().__str__()
-    #     t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
-    #     concurrent_upload.apply_async((t_context,), kwargs=details, queue='default', task_id=taskid)
 
 
 class ConcurrentLilyHDFSUpload(ConcurrentTask):
