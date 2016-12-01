@@ -1,6 +1,7 @@
 import logging
 import urllib
 import urllib2
+from django.core.exceptions import ObjectDoesNotExist
 import requests
 from earkcore.search.solrclient import SolrClient
 from earkcore.search.solrserver import SolrServer
@@ -35,7 +36,7 @@ from earkcore.process.cli.CliCommand import CliCommand
 from subprocess import check_output
 
 from earkcore.xml.xmlvalidation import XmlValidation
-from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state, index_aip_storage, repo_working_dir_exists
+from workers.tasks import reception_dir_status, ip_save_metadata_file, set_process_state, index_aip_storage, repo_working_dir_exists, index_local_storage_ip_func
 from workers.tasks import run_package_ingest
 
 import traceback
@@ -450,3 +451,33 @@ def solrif(request, core, operation):
         data = ""
         return HttpResponse(response.text, content_type='text/plain')
     return data
+
+
+@csrf_exempt
+def index_local_storage_ip(request):
+    try:
+        request_data = json.loads(request.body)
+        if request.method == 'POST':
+            if 'identifier' in request_data:
+                identifier = request_data['identifier']
+                job = index_local_storage_ip_func.delay(identifier=identifier)
+
+                # 201 Created
+                return JsonResponse({"success": True, "jobid": job.id, "identifier": identifier, "message": "Indexing job submitted successfully."}, status=201)
+            else:
+                # 400 Bad Request
+                return JsonResponse({"success": False, "message": "Required POST parameter 'identifier' missing."}, status=400)
+        else:
+            # 400 Bad Request
+            return JsonResponse({"success": False, "message": "Only POST request allowed"}, status=400)
+    except ObjectDoesNotExist:
+        # 404 Not Found
+        return JsonResponse({"success": False, "message": "The process ID cannot be found"}, status=404)
+    except ValueError:
+        # 400 Bad Request
+        return JsonResponse({"success": False, "message": "Bad request: error parsing request body data."}, status=400)
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        # 500 Internal Server Error
+        return JsonResponse({"success": False, "message": "An error occurred: %s" % err.message}, status=500)

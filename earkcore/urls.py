@@ -22,5 +22,6 @@ urlpatterns= patterns('',
     url(r'^solrif/(?P<core>[0-9a-zA-Z-]{3,200})/(?P<operation>[0-9a-zA-Z-]{3,200})/$', views.solrif, name='solrif'),
     url(r'^solrinterface/(?P<query>.*)/$', views.solrinterface, name='solrinterface'),
     url(r'^start_hdfs_batch_upload/$', views.start_hdfs_batch_upload, name='start_hdfs_batch_upload'),
+    url(r'^index_local_storage_ip$', views.index_local_storage_ip, name='index_local_storage_ip'),
 
 )

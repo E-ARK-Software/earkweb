@@ -264,6 +264,44 @@ def create_ip_folder(self, *args, **kwargs):
 
 
 @app.task(bind=True)
+def index_local_storage_ip_func(self, *args, **kwargs):
+
+    from config.configuration import storage_solr_server_ip
+    from config.configuration import storage_solr_port
+    from config.configuration import config_path_storage
+    identifier = kwargs['identifier']
+    if not identifier:
+        raise ValueError("Required parameter: identifier")
+
+    pts = PairtreeStorage(config_path_storage)
+    if not pts.identifier_object_exists(identifier):
+        raise ValueError("Package file for identifier '%s' does not exist" % (identifier))
+    else:
+        package_abs_path = pts.get_object_path(identifier)
+        solr_server = SolrServer(storage_solr_server_ip, storage_solr_port)
+        logger.info("Solr server base url: %s" % solr_server.get_base_url())
+        sq = SolrQuery(solr_server)
+        r = requests.get(sq.get_base_url())
+        if not r.status_code == 200:
+            logger.error("Solr server is not available at: %s" % sq.get_base_url())
+            return
+        else:
+            logger.info("Using Solr server at: %s" % sq.get_base_url())
+        r = requests.get(sq.get_base_url() + "earkstorage%2Fupdate%3Fstream.body%3D%3Cdelete%3E%3Cquery%3Epackage%3A%22"+identifier+"%22%3C%2Fquery%3E%3C%2Fdelete%3E%26commit%3Dtrue")
+        solr_client = SolrClient(solr_server, "earkstorage")
+        logger.info("=========================================================")
+        logger.info(package_abs_path)
+        logger.info("=========================================================")
+        results = solr_client.post_tar_file(package_abs_path, identifier)
+        logger.info("Total number of files posted: %d" % len(results))
+        num_ok = sum(1 for result in results if result['status'] == 200)
+        logger.info("Number of files posted successfully: %d" % num_ok)
+        num_failed = sum(1 for result in results if result['status'] != 200)
+        logger.info( "Number of plain documents: %d" % num_failed)
+        logger.info("Indexing of package finished")
+
+
+@app.task(bind=True)
 def index_aip_storage(self, *args, **kwargs):
     # TODO: only index latest package version
     from config.configuration import storage_solr_server_ip
