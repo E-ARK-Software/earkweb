@@ -275,7 +275,7 @@ def index_local_storage_ip_func(self, *args, **kwargs):
 
     pts = PairtreeStorage(config_path_storage)
     if not pts.identifier_object_exists(identifier):
-        raise ValueError("Package file for identifier '%s' does not exist" % (identifier))
+        return {'identifier': identifier, 'status': "failure", "success": False, "message": "Package file for identifier '%s' does not exist" % (identifier)}
     else:
         package_abs_path = pts.get_object_path(identifier)
         solr_server = SolrServer(storage_solr_server_ip, storage_solr_port)
@@ -283,8 +283,9 @@ def index_local_storage_ip_func(self, *args, **kwargs):
         sq = SolrQuery(solr_server)
         r = requests.get(sq.get_base_url())
         if not r.status_code == 200:
-            logger.error("Solr server is not available at: %s" % sq.get_base_url())
-            return
+            msg = "Solr server is not available at: %s" % sq.get_base_url()
+            logger.error(msg)
+            return {'identifier': identifier, 'status': "failure", "success": False, "message": msg}
         else:
             logger.info("Using Solr server at: %s" % sq.get_base_url())
         r = requests.get(sq.get_base_url() + "earkstorage%2Fupdate%3Fstream.body%3D%3Cdelete%3E%3Cquery%3Epackage%3A%22"+identifier+"%22%3C%2Fquery%3E%3C%2Fdelete%3E%26commit%3Dtrue")
@@ -299,6 +300,35 @@ def index_local_storage_ip_func(self, *args, **kwargs):
         num_failed = sum(1 for result in results if result['status'] != 200)
         logger.info( "Number of plain documents: %d" % num_failed)
         logger.info("Indexing of package finished")
+
+        return { 'identifier': identifier, 'status': "finished", "success": True, 'message': 'IP indexing finished successfully.'}
+
+
+
+@app.task(bind=True)
+def run_dipcreation(self, *args, **kwargs):
+    uuid = kwargs['uuid']
+    selected_aips = kwargs['selected_aips']
+    logger.info("selected_aips: %s" % selected_aips)
+    if not uuid or not selected_aips:
+        raise ValueError("Required parameter: uuid, selected_aips")
+    current_task.update_state(state='PENDING', meta={'uuid': uuid, 'last_task': "DIPMetadataCreation"})
+    try:
+        from earkcore.batch.prepare_dip import create_dip
+        task_context = create_dip(current_task, uuid, selected_aips)
+        if hasattr(task_context, 'task_status') and task_context.task_status == 0:
+            result = { 'process_id': uuid, 'status': "finished", "success": True, 'message': 'DIP creation finished successfully.'}
+            #if hasattr(task_context, 'storage_loc') and task_context.task_status != '':
+            result['download_url'] = task_context.additional_data['download_url']
+            return result
+        else:
+            current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+            return { 'process_id': uuid, 'status': "failure", "success": False, "message": "DIP creation failed."}
+    except Exception, err:
+        tb = traceback.format_exc()
+        logging.error(str(tb))
+        current_task.update_state(state='FAILURE', meta={'uuid': uuid})
+        return {'process_id': uuid, 'status': "failure", "success": False, "message": err.message}
 
 
 @app.task(bind=True)
