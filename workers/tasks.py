@@ -340,9 +340,6 @@ def hdfs_batch_upload(self, *args, **kwargs):
             details = {'package_path': package}
             taskid = uuid.uuid4().__str__()
             t_context = DefaultTaskContext('', '', 'workers.tasks.ConcurrentLilyHDFSUpload', None, '', None)
-            logger.info("=================== Uploading to HDFS ===================")
-            logger.info(package)
-            logger.info("=========================================================")
             concurrent_upload.apply_async((t_context,), kwargs=details, queue='upload', task_id=taskid)
         else:
             pass
@@ -361,7 +358,9 @@ class ConcurrentLilyHDFSUpload(ConcurrentTask):
         renamed = False
         # upload it to HDFS
         try:
+            logger.info("=================== Uploading to HDFS ===================")
             package_abs_path = kwargs['package_path']
+            logger.info(package_abs_path)
             _, file_name = os.path.split(package_abs_path)
             identifier = file_name[0:-4]
 
@@ -375,7 +374,7 @@ class ConcurrentLilyHDFSUpload(ConcurrentTask):
                     # logger.info('Successfully \'safe-named\' the .tar file.')
                     renamed = True
                 except Exception, e:
-                    logger.info('Renaming of %s failed: %s' % (package_abs_path, e))
+                    logger.error('Renaming of %s failed: %s' % (package_abs_path, e))
 
             # Reporter function which will be passed via the HDFSRestClient to the FileBinaryDataChunks.chunks()
             # method where the actual reporting about the upload progress occurs.
@@ -404,6 +403,8 @@ class ConcurrentLilyHDFSUpload(ConcurrentTask):
             safe_path, safe_name = package_abs_path.rsplit('/', 1)
             unsafe_name = safe_name.replace('+', ':')
             os.rename(package_abs_path, os.path.join(safe_path, unsafe_name))
+
+        logger.info("=========================================================")
 
         return task_context.additional_data
 
