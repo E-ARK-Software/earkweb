@@ -55,6 +55,18 @@ change them, but remember to create the folder structure accordingly!
     category_models_path = /var/data/earkweb/nlp/textcategories/models 
     config_path_nlp = /var/data/earkweb/nlp                                 # general folder
     tar_path = /var/data/earkweb/nlp/storage                                # here .tar containers are stored that can be used as source for NLP tasks
+    
+Additionally, a few lines of code need to be changed (see the commented lines). They are needed to cover the differences
+between Solr 4 and Solr 6, regarding the query result structures etc.
+
+In `workers/tasks.py`:
+
+    class DMMainTask()
+    class DNMERecogniser()
+    
+In `workers/dmhelpers/createarchive.py`:
+
+    def add_to_archive()
 
 ## Usage
 
