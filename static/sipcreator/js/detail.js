@@ -13,7 +13,7 @@ $( document ).ready(function() {
             $('#proceedbtn').attr("disabled","disabled");
             return false;
         } else {
-            var regex = new RegExp('^[a-zA-Z0-9_\.\-]*$');
+            var regex = new RegExp('^[a-zA-Z0-9_\.\:\-]*$');
             if(!regex.test(idelm.val())) {
                 $('#parent').css({color:'red'});
                 $('#proceedbtn').attr("disabled","disabled");
