@@ -128,7 +128,7 @@ class MetsGenerator(object):
             pointer = M.mptr({"LOCTYPE": "OTHER",
                               "OTHERLOCTYPE": "UUID",
                               q(XLINK_NS, "title"): ("Referencing a parent %s." % packagetype),
-                              q(XLINK_NS, "href"): "urn:uuid:" + identifier,
+                              q(XLINK_NS, "href"): identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
             parent.append(pointer)
 
@@ -160,7 +160,7 @@ class MetsGenerator(object):
             pointer = M.mptr({"LOCTYPE": "OTHER",
                               "OTHERLOCTYPE": "UUID",
                               q(XLINK_NS, "title"): ("Referencing a child %s." % packagetype),
-                              q(XLINK_NS, "href"): "urn:uuid:" + identifier,
+                              q(XLINK_NS, "href"): identifier,
                               "ID": "ID" + uuid.uuid4().__str__()})
             child.append(pointer)
 
@@ -194,7 +194,7 @@ class MetsGenerator(object):
         ###########################
 
         # create Mets root
-        METS_ATTRIBUTES = {"OBJID": "urn:uuid:" + packageid,
+        METS_ATTRIBUTES = {"OBJID": packageid,
                            "LABEL": "METS file describing the %s matching the OBJID." % packagetype,
                            "PROFILE": "http://www.ra.ee/METS/v01/IP.xml",
                            "TYPE": packagetype}
@@ -273,8 +273,8 @@ class MetsGenerator(object):
             mets_structmap_relation.append(mets_div_rel)
             parent_pointer = M.mptr({"LOCTYPE": "OTHER",
                                      "OTHERLOCTYPE": "UUID",
-                                     q(XLINK_NS, "title"): ("Referencing the parent %s of this (urn:uuid:%s) %s." % (packagetype, packageid, packagetype)),
-                                     q(XLINK_NS, "href"): "urn:uuid:" + parent,
+                                     q(XLINK_NS, "title"): ("Referencing the parent %s of this (%s) %s." % (packagetype, packageid, packagetype)),
+                                     q(XLINK_NS, "href"): parent,
                                      "ID": "ID" + uuid.uuid4().__str__()})
             mets_div_rel.append(parent_pointer)
 
