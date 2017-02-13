@@ -116,7 +116,8 @@ class SolrUtility(object):
         @param entry_path: entry path, e.g. /submission/representations/rep1/data/Example1.docx
         @return: document identifier, e.g. "d66c0d7b-0b9d-4a4f-a1d5-7d829f109018"
         """
-        query_result = self.send_query('path:%s%s' % (safe_urn_identifier, entry_path))
+        solr_query = 'path:"%s%s"' % (safe_urn_identifier, entry_path)
+        query_result = self.send_query(solr_query)
         if query_result is False:
             raise RuntimeError("No query result")
         identifier = None
