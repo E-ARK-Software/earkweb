@@ -30,10 +30,9 @@ default_config = [
 
 ]
 
-set_default_config_if_not_exists('config/settings.cfg', default_config)
+from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes, root_dir
 
-from config.configuration import solr_field_list, solr_copy_fields, solr_config_changes
-
+set_default_config_if_not_exists(os.path.join(root_dir,'config/settings.cfg'), default_config)
 
 # colour codes
 HEADER = '\033[95m'

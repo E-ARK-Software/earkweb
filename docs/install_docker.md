@@ -21,21 +21,24 @@ Alternatively, the images can be created using docker individually and configure
 
 ### Install Docker and Docker Compose on the host system
 
-On a linux system, follow the instruction to install docker available at:
+Follow the instruction to install docker available at:
 
-  https://docs.docker.com/linux/
+  https://docs.docker.com/engine/installation
     
 Install docker compose which allows running multi-container Docker applications as described here:
 
   https://docs.docker.com/compose/
     
-In the following it is assumed that docker commands can be executed without "sudo" (see section "Create a docker group"
-at https://docs.docker.com/v1.5/installation/ubuntulinux/).
+In the following it is assumed that docker commands can be executed without "sudo" (see section "Manage Docker as a non-root user"
+at https://docs.docker.com/engine/installation/linux/linux-postinstall/#manage-docker-as-a-non-root-user).
 
-### Build and run using docker compose
+### Execute using docker compose
 
 The script `docker-compose-run.sh` available in the earkweb root directory can be used to build and initialise the images and to run the multi-container application for the first 
-time:
+time. The script will create a temporary container to initialise the MySQL database, pull the container images from docker hub, start the services, and finally perform some basic
+configuration operations.
+
+Execute the following bash script:
 
     ./docker-compose-run.sh
         
@@ -53,9 +56,21 @@ The second time, to start the earkweb services again it suffices to execute:
     
 Stopping the database container can lead to MySQL tables being "marked as crashed", see section [MySQL Data tables crashed](#mysql-data-tables-crashed).
 
-#### Execute docker-compose commands indiviually 
+#### Build container images
 
-Alternatively, the steps in the docker-compose shell script can be executed individually as described below.
+Alternatively, it is possible to build the docker containers from source. Change
+
+    docker-compose build
+    
+to
+
+    docker-compose pull
+
+in the `./docker-compose-run.sh` script to build the images instead of pulling them from the repository.
+
+#### Execute docker-compose commands indiviually 
+ 
+the steps in the docker-compose shell script can be executed individually as described below.
 
 1. Change to the earkweb directory:
 
@@ -139,6 +154,7 @@ between the containers is specified in the `docker-compose.yml` file.
 
 The earkweb deployment is based on the following images:
 
+* [ubuntu:14.04.5](https://hub.docker.com/_/ubuntu/)
 * [tutum/mysql](https://hub.docker.com/r/tutum/rabbitmq/)
 * [tutum/rabbitmq](https://hub.docker.com/r/tutum/rabbitmq/)
 * [tutum/redis](https://hub.docker.com/r/tutum/redis/)

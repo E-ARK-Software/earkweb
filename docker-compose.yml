@@ -1,9 +1,16 @@
-version: '2'
+version: "2.1"
 services:
   db:
-    image: earkdbimg
+    image: shsdev/earkdb:latest
     container_name: earkdb_1
     build: ./docker/earkdb
+    environment:
+      MYSQL_ROOT_PASSWORD: arkiv
+    healthcheck:
+      test: mysqladmin -uroot -parkiv ping
+      interval: 2s
+      timeout: 5s
+      retries: 30
     volumes:
       - /tmp/earkweb-mysql-data:/var/lib/mysql
     ports:
@@ -29,7 +36,7 @@ services:
     ports:
       - "6379:6379"
   earkweb:
-    image: earkwebimg
+    image: shsdev/earkweb:latest
     build: .
     container_name: earkweb_1
     command: /earkweb/run_web.sh
@@ -43,7 +50,11 @@ services:
       - solr
       - rabbitmq
       - redis
+    depends_on:
+      db:
+        condition: service_healthy
   celery:
+    image: shsdev/earkweb:latest
     build: .
     container_name: celery_1
     command: /earkweb/run_celery.sh
@@ -54,7 +65,11 @@ services:
       - /tmp/earkwebdata:/var/data/earkweb
     links:
       - solr
+    depends_on:
+      db:
+        condition: service_healthy
   flower:
+    image: shsdev/earkweb:latest
     build: .
     environment:
       - C_FORCE_ROOT=true

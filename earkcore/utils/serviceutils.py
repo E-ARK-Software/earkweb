@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding=UTF-8
-from django.shortcuts import render
 import requests
-from requests.packages.urllib3.exceptions import ConnectionError
 
 __author__ = "Sven Schlarb"
 __copyright__ = "Copyright 2016, The E-ARK Project"

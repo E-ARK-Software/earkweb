@@ -37,6 +37,17 @@ function get_config_val()
     local  config_val=`cat $file | grep "$1" | sed "s/"$1"\s\{0,\}=\s\{0,\}//g"`
     echo "$config_val"
 }
+
+function exit_if_service_running()
+{
+    echo_highlight $HEADER "Check if $1 service is running on port $2"
+    CHECK_MYSQL=`lsof -u $1 -i :$2`
+    if [ -n "$CHECK_MYSQL" ]; then
+        echo_highlight $FAIL "A $1 service is running on port $2. Please stop this service first and then re-execute the script."
+        exit 1
+    fi
+}
+
 chmod +x docker/wait-for-it/wait-for-it.sh
 
 INITIALIZE=true
@@ -75,7 +86,12 @@ fi
 
 echo_highlight_header $HEADER "Building Docker images"
 
-docker-compose build
+# change to docker-compose build to build images from source instead of pulling them from the repository
+docker-compose pull
+
+exit_if_service_running "rabbitmq" 5672
+exit_if_service_running "mysql" 3306
+exit_if_service_running "redis" 6379
 
 echo_highlight $HEADER "Creating MySQL image"
 
@@ -88,7 +104,8 @@ if [ ! -e "$MYSQL_DATA_DIRECTORY" ];
           then
             echo_highlight $OKGREEN "MySQL data directory created: $MYSQL_DATA_DIRECTORY"
         fi
-        docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql earkdbimg &
+        echo "Starting intermediate database container to initialize data directory ..."
+        docker run --name tmpdb -d -p 3306:3306 -v /tmp/earkweb-mysql-data:/var/lib/mysql shsdev/earkdb &
 
         DB_PAUSE=60 # the lazy way - could check port 3306 until service becomes available
         echo "Pause $DB_PAUSE seconds ..."
@@ -96,7 +113,7 @@ if [ ! -e "$MYSQL_DATA_DIRECTORY" ];
         echo "Waiting for MySQL service to become available"
         ./docker/wait-for-it/wait-for-it.sh $(get_config_val "mysql_server_ip_external"):3306
 
-        echo "Starting intermediate database container to initialize data directory ..."
+        echo "Initializing database container ..."
         docker exec tmpdb /init.sh
 
         echo "Stopping and removing intermediate database container ..."

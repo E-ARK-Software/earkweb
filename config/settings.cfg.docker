@@ -87,5 +87,8 @@ tar_path = /var/data/earkweb/nlp/storage
 [docker]
 
 docker_mysql_data_directory=/tmp/earkweb-mysql-data
-
 docker_repo_data_directory=/tmp/earkwebdata
+
+[access]
+dip_download_base_url = http://127.0.0.1:8000/static/earkweb/download
+dip_download_path = /earkweb/static/download

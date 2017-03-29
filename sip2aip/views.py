@@ -5,8 +5,6 @@ from django.views.generic.detail import DetailView
 from django.utils.decorators import method_decorator
 from django.views.generic.list import ListView
 from django.contrib.auth.decorators import login_required
-import requests
-from requests.packages.urllib3.exceptions import ConnectionError
 from earkcore.models import StatusProcess_CHOICES
 from earkcore.models import InformationPackage
 from django.shortcuts import render_to_response
