@@ -144,3 +144,63 @@ Clear index:
 Rebuild:
 
     ./lily-update-index -n eark1 --build-state BUILD_REQUESTED   
+    
+## Special API functions
+
+### Add PREMIS event
+
+This API function allows adding a PREMIS event. An IP must exist for the given "uuid" parameter. If the PREMIS file does not exist, it will create one. The example below
+will add the following event to the PREMIS file in the `metadata/preservation/` folder:
+
+    <event>
+        <eventIdentifier>
+            <eventIdentifierType>local</eventIdentifierType>
+            <eventIdentifierValue>ID54ed6c49-788f-41ca-a25e-70a30ca5b7f1</eventIdentifierValue>
+        </eventIdentifier>
+        <eventType>Some special event</eventType>
+        <eventDateTime>2017-03-29T14:22:31</eventDateTime>
+        <eventOutcomeInformation>
+            <eventOutcome>SUCCESS</eventOutcome>
+        </eventOutcomeInformation>
+        <linkingAgentIdentifier>
+            <linkingAgentIdentifierType>software</linkingAgentIdentifierType>
+            <linkingAgentIdentifierValue>E-ARK Web 0.9.4 (task: MyTask)</linkingAgentIdentifierValue>
+        </linkingAgentIdentifier><linkingObjectIdentifier>
+            <linkingObjectIdentifierType>repository</linkingObjectIdentifierType>
+            <linkingObjectIdentifierValue>linked object</linkingObjectIdentifierValue>
+        </linkingObjectIdentifier>
+    </event>
+    
+Note that the API function does not check referential consistency.
+
+#### New event POST request
+
+POST Request
+
+    http://localhost:8000/earkweb/earkcore/add_premis_event_ip
+    
+Request Body
+
+    {"uuid": "0255565c-51d5-4a07-b717-7df228e714b7", "outcome": "SUCCESS", "task_name": "MyTask", "event_type": "Some special event", "linked_object": "linked object"}
+    
+Response Messages
+
+    201 : Created - The job was submitted successfully (does not mean successfully finished tough!)
+    400: Bad Request - JSON body malformed or wrong request type
+    404: Not Found - The Process-ID does not exist
+    500: Internal Server Error - Some error occurred (see message)
+    
+Response Body (success)
+        
+    {"message": "Adding PREMIS event operation submitted successfully.", "uuid": "0255565c-51d5-4a07-b717-7df228e714b7", "success": true, "jobid": "bd8cfbf8-fd88-48b1-b6a9-18beb0708c97"}
+
+#### Polling job status
+
+    http://localhost:8000/earkweb/search/jobstatus/bd8cfbf8-fd88-48b1-b6a9-18beb0708c97
+    
+    {
+        "status": "finished",
+        "message": "PREMIS event added successfully.",
+        "uuid": "0255565c-51d5-4a07-b717-7df228e714b7",
+        "success": true
+    }

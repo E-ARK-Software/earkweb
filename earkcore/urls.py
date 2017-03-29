@@ -23,5 +23,6 @@ urlpatterns= patterns('',
     url(r'^solrinterface/(?P<query>.*)/$', views.solrinterface, name='solrinterface'),
     url(r'^start_hdfs_batch_upload/$', views.start_hdfs_batch_upload, name='start_hdfs_batch_upload'),
     url(r'^index_local_storage_ip$', views.index_local_storage_ip, name='index_local_storage_ip'),
+    url(r'^add_premis_event_ip$', views.add_premis_event_ip, name='add_premis_event_ip'),
 
 )

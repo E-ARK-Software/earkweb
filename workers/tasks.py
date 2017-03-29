@@ -304,6 +304,28 @@ def index_local_storage_ip_func(self, *args, **kwargs):
         return { 'identifier': identifier, 'status': "finished", "success": True, 'message': 'IP indexing finished successfully.'}
 
 
+@app.task(bind=True)
+def add_premis_event_ip_func(self, *args, **kwargs):
+    uuid = kwargs['uuid']
+    ip_dir = os.path.join(config_path_work, uuid)
+    if os.path.exists(ip_dir):
+        metadata_dir = os.path.join(ip_dir, 'metadata')
+        if not os.path.exists(metadata_dir):
+            os.mkdir(metadata_dir)
+        path_premis = os.path.join(metadata_dir, 'preservation/premis.xml')
+        premisgen = PremisGenerator(ip_dir)
+        if not os.path.isfile(path_premis):
+            premisgen.createPremis()
+        outcome = kwargs['outcome']
+        task_name = kwargs['task_name']
+        event_type = kwargs['event_type']
+        linked_object = kwargs['linked_object']
+        info = {"outcome": outcome, "task_name": task_name, "event_type": event_type, "linked_object": linked_object}
+        premisgen.addEvent(path_premis, info)
+        return {'uuid': uuid, 'status': "finished", "success": True, 'message': 'PREMIS event added successfully.'}
+    else:
+        return {'uuid': uuid, 'status': "finished", "success": False, 'message': 'No IP found for the given UUID' % ip_dir}
+
 
 @app.task(bind=True)
 def run_dipcreation(self, *args, **kwargs):
