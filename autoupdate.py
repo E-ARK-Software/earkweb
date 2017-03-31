@@ -54,15 +54,16 @@ UNDERLINE = '\033[4m'
 #     print update_err
 
 # migrations - prepare
+cwd = "/earkweb" if os.path.exists("/earkweb") else root_dir
 print HEADER + '----------------\nNow preparing database migrations.\n----------------' + ENDC
 migrations_update_args = ['python', 'manage.py', 'makemigrations', 'earkcore']
-migrations_process = subprocess32.Popen(migrations_update_args)
+migrations_process = subprocess32.Popen(migrations_update_args, cwd=cwd)
 migrations_out, migrations_err = migrations_process.communicate()
 if migrations_err is not None:
     print WARNING + 'There have been errors when performing "earkcore" migrations:\n' + ENDC
     print migrations_err
 migrations_update_args = ['python', 'manage.py', 'makemigrations']
-migrations_process = subprocess32.Popen(migrations_update_args)
+migrations_process = subprocess32.Popen(migrations_update_args, cwd=cwd)
 migrations_out, migrations_err = migrations_process.communicate()
 if migrations_err is not None:
     print WARNING + 'There have been errors when performing migrations:\n' + ENDC
@@ -71,7 +72,7 @@ if migrations_err is not None:
 # migrations - apply
 print HEADER + '----------------\nNow applying database migrations.\n----------------' + ENDC
 migrations_update_args = ['python', 'manage.py', 'migrate']
-migrations_process = subprocess32.Popen(migrations_update_args)
+migrations_process = subprocess32.Popen(migrations_update_args, cwd=cwd)
 migrations_out, migrations_err = migrations_process.communicate()
 if migrations_err is not None:
     print WARNING + 'There have been errors when performing migrations:\n' + ENDC
@@ -80,7 +81,7 @@ if migrations_err is not None:
 # scan for new/updated Celery tasks
 print HEADER + '----------------\nNow scanning for new/updated Celery tasks.\n----------------' + ENDC
 taskscan_args = ['python', 'workers/scantasks.py']
-taskscan_process = subprocess32.Popen(taskscan_args)
+taskscan_process = subprocess32.Popen(taskscan_args, cwd=cwd)
 taskscan_out, taskscan_err = taskscan_process.communicate()
 if taskscan_err is not None:
     print WARNING + + 'There have been errors when updating Celery tasks:\n' + ENDC
