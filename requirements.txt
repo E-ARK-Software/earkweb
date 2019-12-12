@@ -19,7 +19,7 @@ jobtastic==0.3.1
 kombu==3.0.35
 lxml==3.4.4
 MySQL-python==1.2.5
-nltk==3.2.1
+nltk==3.4.5
 numpy==1.11.1
 oauthlib==1.1.2
 Pairtree==0.5.8
