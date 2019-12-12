@@ -1,5 +1,7 @@
 # earkweb
 
+Note: the earkweb software is planned to be updated in the first half of 2020. 
+
 ## Table of Contents
 
 - [Instroduction](#instroduction)
