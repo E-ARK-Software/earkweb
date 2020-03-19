@@ -1,0 +1,30 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <!-- Management area javascript -->
+    <script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "management/about_module.html" %}
+
+    <h2 class="main">{% trans 'Archived information packages' %}</h2>
+
+    <p><input type="text" id="filterchars" placeholder="{% trans 'SearchInternalLabelProcessIdOrIdentifier' %}" style="width: 31em">
+    <!--<button onclick="window.location='?refresh=table';" id="refreshtable" style="float:right" class="btn">-->
+        <!--<span class="glyphicon glyphicon-refresh"></span> Refresh-->
+    <!--</button>-->
+    </p>
+
+    <div id="ips-table">
+        {% render_table informationpackage %}
+    </div>
+
+{% endblock %}

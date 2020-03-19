@@ -1,0 +1,8 @@
+<html>
+<h1>Test MQ</h1>
+<ul>
+    <li><a href="{% url 'health:testmq_publish' %}">Publish</a> </li>
+    <li><a href="{% url 'health:testmq_consume' %}">Consume</a> </li>
+</ul>
+<hr>
+{% if message %}<p>{{ message }}</p>{% endif %}

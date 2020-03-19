@@ -1,84 +1,58 @@
 version: "2.1"
 services:
   db:
-    image: shsdev/earkdb:latest
-    container_name: earkdb_1
-    build: ./docker/earkdb
+    image: mysqldb
+    build: ./docker/mysqldb
+    container_name: mysql1
+    ports:
+        - "53306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: arkiv
-    healthcheck:
-      test: mysqladmin -uroot -parkiv ping
-      interval: 2s
-      timeout: 5s
-      retries: 30
-    volumes:
-      - /tmp/earkweb-mysql-data:/var/lib/mysql
-    ports:
-      - '3306:3306'
-  solr:
-    image: solr
-    container_name: solr_1
-    ports:
-      - '8983:8983'
-  rabbitmq:
-    image: tutum/rabbitmq
-    environment:
-      - RABBITMQ_PASS=mypass
-    container_name: rabbitmq_1
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+        MYSQL_ROOT_USER: root
+        MYSQL_ROOT_PASSWORD: eark
+        MYSQL_DATABASE: earkdb
+        MYSQL_USER: eark
+        MYSQL_PASSWORD: eark
   redis:
     image: tutum/redis
+    hostname: "redis"
     environment:
       - REDIS_PASS=**None**
-    container_name: redis_1
+    container_name: redis1
     ports:
-      - "6379:6379"
+      - "56379:6379"
+  rabbitmq:
+    image: "bitnami/rabbitmq"
+    container_name: rabbitmq1
+    environment:
+      RABBITMQ_ERL_COOKIE: "ABQOKOFSQALCPCLNLEQG"
+      RABBITMQ_USERNAME: "admin"
+      RABBITMQ_PASSWORD: "earkrmq"
+      RABBITMQ_VHOST: "/"
+    ports:
+      - "55673:15672"
+      - "55672:5672"
+    labels:
+      NAME: "rabbitmq"
+  solr:
+    image: solris:latest
+    build: ./docker/solris
+    hostname: "solr"
+    container_name: solris1
+    ports:
+      - "8983:8983"
   earkweb:
-    image: shsdev/earkweb:latest
+    image: earkweb:latest
     build: .
-    container_name: earkweb_1
-    command: /earkweb/run_web.sh
-    volumes:
-      - .:/earkweb
-      - /tmp/earkwebdata:/var/data/earkweb
+    container_name: earkweb1
+    command: /earkweb/run_all.sh
     ports:
       - "8000:8000"
+      - "5555:5555"
     links:
       - db
-      - solr
-      - rabbitmq
       - redis
-    depends_on:
-      db:
-        condition: service_healthy
-  celery:
-    image: shsdev/earkweb:latest
-    build: .
-    container_name: celery_1
-    command: /earkweb/run_celery.sh
-    environment:
-      - C_FORCE_ROOT=1
-    volumes:
-      - .:/earkweb
-      - /tmp/earkwebdata:/var/data/earkweb
-    links:
+      - rabbitmq
       - solr
-    depends_on:
-      db:
-        condition: service_healthy
-  flower:
-    image: shsdev/earkweb:latest
-    build: .
-    environment:
-      - C_FORCE_ROOT=true
-      - DATABASE_HOST=db
-      - BROKER_URL="amqp://admin:mypass@rabbitmq:5672/"
-    working_dir: /earkweb
-    command: bash -c "sleep 3 && celery flower -A earkweb --port=5555"
-    volumes:
-      - .:/earkweb
-      - /tmp/earkwebdata:/var/data/earkweb
-    ports:
-      - "5555:5555"
+networks:
+  backend:
+    external: true

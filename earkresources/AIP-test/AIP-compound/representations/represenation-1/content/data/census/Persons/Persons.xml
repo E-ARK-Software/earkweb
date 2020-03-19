@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<table 
-xsi:schemaLocation="http://www.admin.ch/xmlns/siard/1.0/census/Persons.xsd Persons.xsd"
-xmlns="http://www.admin.ch/xmlns/siard/1.0/census/Persons.xsd"
-xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-<row><c1>1</c1><c2>Foo</c2><c3>Bar</c3><c4>Foobar</c4><c5>Barfoo</c5></row>
-</table>

@@ -1,7 +1,8 @@
 {% extends "earkweb/base.html" %}
 {% load dictionary_extras %}
 
-{% load staticfiles %}
+{% load static %}
+{% load i18n %}
 
 {% block extra_head %}
 
@@ -15,29 +16,8 @@
 
 {% block content %}
 
-    <h1 class="title">earkweb</h1>
+<h1 class="title">earkweb</h1>
 
-    <p><i>earkweb</i> is the E-ARK Integrated Prototype implementation of the <a href="http://eark-project.com/" target="_blank">E-ARK project</a>.</p>
-
-    {% include "sipcreator/about_module.html" %}
-
-    <p>The SIP creator allows uploading files in the corresponding IP container sections.</p>
-
-    <p><a href="{% url 'sipcreator:start' %}">Create SIP</a></p>
-
-    {% include "sip2aip/about_module.html" %}
-
-    <p><a href="{% url 'sip2aip:upload_sip' %}">Convert SIP to AIP</a></p>
-
-    {% include "search/about_module.html" %}
-
-    <p><a href="{% url 'search:start' %}">Convert AIP to DIP</a></p>
-    <!--
-    {% include "datamining/about_module.html" %}
-
-    <p><a href="{% url 'datamining:start' %}">Start a NLP task</a></p>
-    -->
-
-    <p style="margin-top: 30px"><a href="{% url 'version' %}"><span style="color: black; background-color: #fac0ba" class="label label-default running">Version {{ earkweb_version }} ({{ earkweb_version_date }})</span></a></p>
+    {% trans 'earkwebWelcomeText' %}
 
 {% endblock %}

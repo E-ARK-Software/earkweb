@@ -1,14 +1,13 @@
-# Headless task execution (without gui)
+# Remote task execution using Django (without gui)
 
-## Table of Contents
+Backend Celery tasks can be executed without using the web frontend. 
 
-- [Remote task execution](#remote-task-execution)
-- [Check registered tasks](#check-registered-tasks)
-- [Task registration](#task-registration)
+Before invoking the Django shell, make sure that earkweb's python virtual environment is activated. In the following
+command it is assumed that the environment was created in a folder named `venv`:
 
-### Remote task execution using Django
-
-It is possible to execute tasks remotely using the Django shell:
+    source ./venv/bin/activate
+    
+Then invoke the Django shell in earkweb's code directory:
 
     cd /path/to/earkweb/
     python manage.py shell
@@ -17,78 +16,32 @@ It is possible to execute tasks remotely using the Django shell:
     Type "help", "copyright", "credits" or "license" for more information.
     (InteractiveConsole)
     >>> 
+    
+In order to execute a tasks it needs to be imported first and then executed using the `delay` function. Depending on 
+the task, additional parameters need to be provided in form of a JSON formatted string. Most of the tasks require the 
+process ID to identify the working directory. For example, assuming the process ID is 
+`a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d`, the task for validating the content of a working directory can be invoked as 
+follows:
 
-In the Django shell, it is necessary to import the `DefaultTaskContext` class to be able to define parameters for the desired task execution:
-    
-    >>> from workers.default_task_context import DefaultTaskContext
-    >>> dtc = DefaultTaskContext("fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2", "/var/data/earkweb/work/fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2", "SomeTaskImplementation", None, {}, None)
-    
-In this case, the DefaultTaskContext object was configured to apply a task on the object identified by the process id "fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2" available in the
-working directory "/var/data/earkweb/work/fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2". The name of the task is "SomeTaskImplementation", and no log file (default location will be used), 
-no additional parameters, and no specific PREMIS file is used.
+    from taskbackend.tasks import validate_working_directory
+    result = validate_working_directory.delay('{"process_id": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}')
 
-Then the task module, here `SomeTaskImplementation`, is imported and executed asynchronously:
-    
-    >>> from workers.tasks import SomeTaskImplementation
-    >>> result = SomeTaskImplementation().apply_async((dtc,), queue='default')
-    
 Using `result.status`, the current status is printed out ('SUCCESS' in case it finished successfully):
 
-    >>> result.status
-    'SUCCESS'
+    result.status
+    SUCCESS
     
-Note that this 'SUCCESS' message only means that the Celery task was executed successfully, it does not mean that the actual task action was performed successfully. To check the 
-result of the task action, it is required to check the actual `task_status` (0 means 'success') and the information or error log messages (empty list [] means that no error 
-occurred) respectively:
+In case of an error, the task status returns "FAILURE" which in this case would mean, for example, that the task was 
+not executed successfully: 
 
-    >>> result.result.task_status
-    0
-    >>> result.result.task_logger.log
-    ['SomeTaskImplementation task e184fb78-6423-4a7a-997e-8a0d1ed55c67', 'Processing package fd6ab39e-8355-42ec-a2dc-bc4b1d9c1fd2', ...]
-    >>> result.result.task_logger.err
-    []
-    
-### Check registered tasks
+    print result.status
+    FAILURE
+
+Each task returns a JSON formatted string which can be passed as input to another task. In this case, the 
+
+    print result.result
+    {"process_id": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}
 
 A list of registered tasks can be retrieved by issuing the following command: 
 
-    (earkweb)shs@pluto:/opt/python_wsgi_apps/earkweb$ celery -A earkweb.celeryapp:app inspect registered
-    -> celery@<machine>: OK
-        * earkweb.celeryapp.debug_task
-        * workers.default_task.DefaultTask
-        * workers.tasks.AIPCheckMigrationProgress
-        * workers.tasks.AIPIndexing
-        * workers.tasks.AIPMigrations
-        * workers.tasks.AIPPackageMetsCreation
-        * workers.tasks.AIPPackaging
-        * workers.tasks.AIPRepresentationMetsCreation
-        * workers.tasks.AIPStore
-        * workers.tasks.AIPValidation
-        * workers.tasks.AIPtoDIPReset
-        * workers.tasks.CreatePremisAfterMigration
-        * workers.tasks.DIPAcquireAIPs
-        * workers.tasks.DIPExtractAIPs
-        * workers.tasks.DIPImportSIARD
-        * workers.tasks.IdentifierAssignment
-        * workers.tasks.LilyHDFSUpload
-        * workers.tasks.MigrationProcess
-        * workers.tasks.SIPClose
-        * workers.tasks.SIPDeliveryValidation
-        * workers.tasks.SIPDescriptiveMetadataValidation
-        * workers.tasks.SIPExtraction
-        * workers.tasks.SIPPackageMetadataCreation
-        * workers.tasks.SIPPackaging
-        * workers.tasks.SIPReset
-        * workers.tasks.SIPResetF
-        * workers.tasks.SIPRestructuring
-        * workers.tasks.SIPValidation
-        * workers.tasks.SIPtoAIPReset
-        * workers.tasks.extract_and_remove_package
-
-
-### Task registration
-
-Tasks need to be registered in the database. To do so run the following script:
-
-    python ./workers/scantasks.py
-    
+    celery inspect registered

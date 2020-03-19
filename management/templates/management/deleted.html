@@ -1,0 +1,31 @@
+{% extends "earkweb/base.html" %}
+
+{% load dictionary_extras %}
+
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% if process_id %}
+
+
+    {% include "management/about_module.html" %}
+
+    <h2 class="main">{% trans 'Deletion confirmation' %}</h2>
+
+    <p>{% trans 'Working copy deleted: ' %} {{ process_id }}</p>
+
+    <p><a href="{% url 'management:overview' %}" title='Back to overview'>{% trans 'Back to overview' %}</a></p>
+
+    {% endif %}
+
+
+{% endblock %}

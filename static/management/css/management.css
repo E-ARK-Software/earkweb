@@ -1,0 +1,22 @@
+#headtable tr td {
+    padding-top:3px;
+    padding-bottom: 3px;
+    padding-right: 3px;
+}
+
+#headtable tr td {
+    vertical-align: middle;
+}
+
+#headtable tr td.fn {
+    width: 160px;
+    text-align: right;
+}
+
+#headtable tr td.fv {
+    text-align: left;
+}
+
+#tblsc .dirtreeheadline {
+    font-style: italic;
+}

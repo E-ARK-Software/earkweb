@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{% load tz %}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 https://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"
+        xmlns:rs="http://www.openarchives.org/rs/terms/">
+  <rs:ln rel="up" href="http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/capabilitylist.xml"/>
+  <rs:ln rel="index" href="http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/changelist.xml"/>
+  <rs:md capability="changelist" from="2017-01-01T00:00:00Z" until="{{ currdate }}"/>
+    {% for resource in resources %}
+    <url>
+        <loc>http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/resources/{{ resource.identifier }}</loc>
+        <rs:md change="{{ resource.change_type }}" datetime="{{ resource.last_change }}"/>
+    </url>
+  {% endfor %}
+</urlset>

@@ -1,15 +1,15 @@
 {% extends "earkweb/base.html" %}
 {% load dictionary_extras %}
 
-{% load staticfiles %}
-
+{% load static %}
+{% load i18n %}
 {% block extra_head %}
 
 {% endblock %}
 
 {% block content %}
 
-<h1>Error</h1>
+<h1>{% trans 'Error' %}</h1>
 
 <h2>{{ header }}</h2>
 

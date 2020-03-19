@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:rs="http://www.openarchives.org/rs/terms/">
+  <rs:md capability="capabilitylist"/>
+  <url>
+      <loc>http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/changelist.xml</loc>
+      <rs:md capability="changelist"/>
+  </url>
+
+</urlset>

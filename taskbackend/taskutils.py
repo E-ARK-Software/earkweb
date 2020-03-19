@@ -1,0 +1,458 @@
+import json
+import os
+import tarfile
+from celery.result import AsyncResult
+from eatb.metadata.XmlHelper import q
+from eatb.packaging.packaged_container import TarContainer
+from eatb.storage.checksum import check_transfer
+from eatb.storage.directorypairtreestorage import make_storage_directory_path
+from eatb.storage.pairtreestorage import PairtreeStorage
+from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs
+from eatb.xml.xmlvalidation import XmlValidation
+from lxml import etree
+
+from earkweb.models import InternalIdentifier, InformationPackage
+from taskbackend.ip_state import IpState
+from taskbackend.tasklogger import TaskLogger
+from config.configuration import config_path_work, flower_service_url, \
+    verify_certificate
+from subprocess import Popen, PIPE
+from config.configuration import django_backend_service_host, django_backend_service_port
+import logging
+import requests
+from util.djangoutils import get_user_api_token
+from util.flowerapiclient import get_task_info
+
+logger = logging.getLogger(__name__)
+
+
+def update_state_from_backend_api(request, process_id):
+    """updating frontend database table based on information persisted in the backend"""
+    ip_state_url = "http://%s:%s/earkweb/api/informationpackages/%s/status/" % (django_backend_service_host, django_backend_service_port, process_id)
+    user_api_token = get_user_api_token(request.user)
+    response = requests.get(ip_state_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+    ip_state_json = json.loads(response.content)
+    identifier = ip_state_json["identifier"]
+    if identifier != "" and identifier != 'None':
+        ip = InformationPackage.objects.get(process_id=process_id)
+        ip.identifier = ip_state_json["identifier"]
+        version = ip_state_json["version"]
+        ip.version = int(version)
+        ip.storage_dir = make_storage_directory_path(identifier, version)
+        ip.save()
+
+
+def update_states_from_backend_api(request):
+    """updating frontend database table based on status information in the backend"""
+    ip_states_url = "http://%s:%s/earkweb/api/informationpackages/status/" % (django_backend_service_host, django_backend_service_port)
+    logger.info("Submissions update states request URL: %s" % ip_states_url)
+    user_api_token = get_user_api_token(request.user)
+    response = requests.get(ip_states_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+    if response.status_code != 200:
+        try:
+            resp = json.loads(response.text)
+            if "message" in resp:
+                raise ValueError(resp["message"])
+        except:
+            raise ValueError("An error occurred")
+    logger.info(response.text)
+    ip_states_json = json.loads(response.text)
+    if ip_states_json != "{}":
+        for process_id in ip_states_json.keys():
+            states = ip_states_json[process_id]
+            identifier = states["identifier"]
+            if identifier != "" and identifier != 'None':
+                ip = InformationPackage.objects.get(process_id=process_id)
+                ip.identifier = states["identifier"]
+                version = states["version"]
+                ip.version = int(version)
+                ip.storage_dir = make_storage_directory_path(identifier, version)
+                ip.save()
+
+
+def get_ip_state_info(process_id):
+    result = {}
+    working_dir = os.path.join(config_path_work, process_id)
+    if os.path.exists(working_dir):
+        ip_state_xml_file_path = os.path.join(working_dir, "state.xml")
+        if os.path.exists(ip_state_xml_file_path):
+            ip_state = IpState.from_path(ip_state_xml_file_path)
+            result['state'] = ip_state.get_state()
+            if ip_state.get_identifier() != '':
+                result['identifier'] = ip_state.get_identifier()
+            result['version'] = ip_state.get_version()
+    return result
+
+
+def get_ip_state(process_id):
+    """Get ip state object from XML document if it exists or create it from parameters otherwise"""
+    working_dir = get_working_dir(process_id)
+    ip_state_xml = os.path.join(working_dir, "state.xml")
+    ip_state = IpState.from_path(ip_state_xml) if os.path.exists(ip_state_xml) else IpState.from_parameters(0, False, last_task_value="initial")
+    return ip_state
+
+
+def get_working_dir(process_id):
+    """Get working directory for given process id"""
+    working_dir = os.path.join(config_path_work, process_id)
+    if not os.path.exists(working_dir):
+        raise RuntimeError("Working directory does not exist for the given process ID")
+    return working_dir
+
+
+def extract_and_remove_package(self, package_file_path, target_directory, proc_logfile):
+    tl = TaskLogger(proc_logfile)
+
+    tar_container = TarContainer(package_file_path)
+    success = tar_container.extract(target_directory)
+
+    if success:
+        tl.addinfo("Package %s extracted to %s" % (package_file_path, target_directory))
+    else:
+        tl.adderr("An error occurred while trying to extract package %s to %s" % (package_file_path, target_directory))
+    # delete file after extraction
+    os.remove(package_file_path)
+    return success
+
+
+def extract_and_remove(package_file_path, target_directory):
+    tar_container = TarContainer(package_file_path)
+    success = tar_container.extract(target_directory)
+    os.remove(package_file_path)
+    return success
+
+
+def run_command(args, stdin=PIPE, stdout=PIPE, stderr=PIPE):
+    result, res_stdout, res_stderr = None, None, None
+    try:
+        # quote the executable otherwise we run into troubles
+        # when the path contains spaces and additional arguments
+        # are presented as well.
+        # special: invoking bash as login shell here with
+        # an unquoted command does not execute /etc/profile
+
+        print('Launching: %s' % args)
+        process = Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, shell=False)
+
+        res_stdout, res_stderr = process.communicate()
+        result = process.returncode
+        print('Finished: %s' % args)
+
+    except Exception as ex:
+        res_stderr = ''.join(str(ex.args))
+        result = 1
+
+    if result != 0:
+        print('Command failed:' + ''.join(res_stderr))
+        raise Exception('Command failed:' + ''.join(res_stderr))
+
+    return result, res_stdout, res_stderr
+
+
+def safe_copy_from_to(copy_from, copy_to, tl):
+    package_source_size = fsize(copy_from)
+    logger.info("Source: %s (%d)" % (copy_from, package_source_size))
+    logger.info("Target: %s" % copy_to)
+    total_bytes_read = 0
+    with open(copy_to, 'wb') as target_file:
+        for chunk in FileBinaryDataChunks(copy_from, 65536).chunks(total_bytes_read):
+            target_file.write(chunk)
+        total_bytes_read += package_source_size
+        target_file.close()
+    check_transfer(copy_from, copy_to, tl)
+
+
+def get_identifier(org_nsid):
+    """Get internal identifier"""
+    intid_result_set = InternalIdentifier.objects.filter(used=False, org_nsid=org_nsid)[:1]
+    if len(intid_result_set) == 0:
+        raise ValueError("No identifier available for the namespace '%s'" % org_nsid)
+    intid = intid_result_set[0]
+    intid.used = True
+    intid.save()
+    return "%s:%s" % (org_nsid, intid.identifier)
+
+
+def get_celery_worker_status():
+    ERROR_KEY = "ERROR"
+    try:
+        from celery.task.control import inspect
+        insp = inspect()
+        d = insp.stats()
+        if not d:
+            d = { ERROR_KEY: 'No Celery workers running.' }
+    except IOError as e:
+        from errno import errorcode
+        msg = "Error connecting to the backend: " + str(e)
+        if len(e.args) > 0 and errorcode.get(e.args[0]) == 'ECONNREFUSED':
+            msg += ' Check that the RabbitMQ server is running.'
+        d = { ERROR_KEY: msg }
+    except ImportError as e:
+        d = { ERROR_KEY: str(e)}
+
+    return d
+
+
+def flower_is_running():
+    try:
+        response = requests.get(flower_service_url, verify=verify_certificate)
+        if response.status_code == 200:
+            return True
+        else:
+            return False
+    except:
+        return False
+
+
+def get_task_info_from_child_tasks(current_task_result):
+    """Get child ids for a given task result"""
+    child_task_ids = []
+    task_status_from_result = {}
+
+    def get_child_task_id(current_task_result):
+        if current_task_result.children:
+            c = current_task_result.children[0]
+            curr_child_task = {"taskid": c.id, "status": c.status}
+            curr_child_task.update(get_task_info(c.id))
+            child_task_result = AsyncResult(c.id)
+            result = child_task_result.result
+            if result and isinstance(result, str):
+                result_obj = json.loads(result)
+                if "identifier" in result_obj:
+                    task_status_from_result['identifier'] = result_obj['identifier']
+                if "version" in result_obj:
+                    task_status_from_result['version'] = result_obj['version']
+                if "storage_dir" in result_obj:
+                    task_status_from_result['storage_dir'] = result_obj['storage_dir']
+            child_task_ids.append(curr_child_task)
+            if child_task_result and child_task_result.children and len(child_task_result.children) > 0:
+                return get_child_task_id(child_task_result)
+    try:
+        get_child_task_id(current_task_result)
+    except Exception as e:
+        logger.error(e)
+
+    return child_task_ids, task_status_from_result
+
+
+def validate_ead_metadata(root_path, pattern, schema_file, custom_logger=None):
+    """
+    This function validates the XML meta data file against the XML schema and performs additional consistency checks.
+    If the schema_file is None, the EAD metadata file is validated against the XML schema files provided.
+    @type       root_path: string
+    @param      root_path: Root directory
+    @type       pattern:  string
+    @param      pattern:  pattern to search metadata
+    @type       tl:  workers.TaskLogger
+    @param      tl:  workers.TaskLogger
+    @rtype:     bool
+    @return:    Validity of EAD metadata
+    """
+    # ead 2002: ns = {'ead': 'http://ead3.archivists.org/schema/', 'xlink': 'http://www.w3.org/1999/xlink',
+    #     'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    ns = {'ead': 'http://ead3.archivists.org/schema/', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    xmlval = XmlValidation()
+    ead_md_files = [x for x in locate(pattern, root_path)]
+    log = custom_logger if custom_logger else logger
+    for ead in ead_md_files:
+        log.debug("Validating EAD metadata file: %s" % strip_prefixes(ead, root_path))
+        # validate against xml schema
+        result = xmlval.validate_XML_by_path(ead, schema_file)
+        if result.err and len(result.err) >  0:
+            for e in result.err:
+                log.error(e)
+        if schema_file is None:
+            schema_file = xmlval.get_schema_from_instance(ead)
+            log.info("Using schema files specified by the 'schemaLocation' attribute")
+        else:
+            log.info("Using schema: " % schema_file)
+        if result.valid:
+            log.debug("Metadata file '%s' successfully validated." % ead)
+        else:
+            if schema_file is None:
+                log.error("Error validating against schemas using schema files specified by the 'schemaLocation' attribute:")
+            else:
+                log.error("Error validating against schema '%s': %s" % (schema_file, result.err))
+
+            for err in result.err:
+                log.error("- %s" % str(err))
+            return False
+        ead_tree = etree.parse(ead)
+        # check dao hrefs
+        res = ead_tree.getroot().xpath('//ead:dao', namespaces=ns)
+        if len(res) == 0:
+            log.info("The EAD file does not contain any file references.")
+        ead_dir, tail = os.path.split(ead)
+        references_valid = True
+        for dao in res:
+            # ead 2002: dao_ref_file = os.path.join(ead_dir,
+            #     remove_protocol(dao.attrib['{http://www.w3.org/1999/xlink}href']))
+            dao_ref_file = os.path.join(ead_dir, remove_protocol(dao.attrib['href']))
+            if not os.path.exists(dao_ref_file):
+                references_valid = False
+                log.error("DAO file reference error - File does not exist: %s" % dao_ref_file)
+        if not references_valid:
+            log.error( "DAO file reference errors. Please consult the log file for details.")
+            return False
+    return True
+
+
+def validate_gml_data(root_path, pattern, schema_file):
+    """
+    This function validates the XML meta data file against the XML schema and performs additional consistency checks.
+    If the schema_file is None, the GML data file is validated against the XML schema files provided.
+    @type       root_path: string
+    @param      root_path: Root directory
+    @type       pattern:  string
+    @param      pattern:  pattern to search metadata
+    @type       tl:  workers.TaskLogger
+    @param      tl:  workers.TaskLogger
+    @rtype:     bool
+    @return:    Validity of GML data
+    """
+    ns = {'ogr': 'http://ogr.maptools.org/', 'gml': 'http://www.opengis.net/gml', 'xsi': 'http://www.w3.org/2001/XMLSchema-instance'}
+    xmlval = XmlValidation()
+    gml_data_files = [x for x in locate(pattern, root_path)]
+    for ead in gml_data_files:
+        logger.debug("Validating GML data file: %s" % strip_prefixes(ead, root_path))
+        # validate against xml schema
+        result = xmlval.validate_XML_by_path(ead, schema_file)
+        if schema_file is None:
+            logger.info("Using schema files specified by the 'schemaLocation' attribute")
+        else:
+            logger.info("Using schema: " % schema_file)
+        if result.valid:
+            logger.debug("GML data file '%s' successfully validated." % ead)
+        else:
+            if schema_file is None:
+                logger.error("Error validating against schemas using schema files specified by the 'schemaLocation' attribute:")
+            else:
+                logger.error("Error validating against schema '%s': %s" % (schema_file, result.err))
+
+            for err in result.err:
+                logger.error("- %s" % str(err))
+            return False
+        ead_tree = etree.parse(ead)
+    return True
+
+
+def get_last_submission_path(ip_root_path):
+    submiss_dir = 'submission'
+    submiss_path = os.path.join(ip_root_path, submiss_dir)
+    if os.path.exists(os.path.join(submiss_path, "METS.xml")):
+        return submiss_path
+    else:
+        submiss_subdirs = sub_dirs(submiss_path)
+        if submiss_subdirs and len(submiss_subdirs) > 0:
+            # get last folder (possible submission update folders - sorted!)
+            submiss_path = os.path.join(submiss_path, submiss_subdirs[-1])
+            if os.path.exists(os.path.join(submiss_path, "METS.xml")):
+                return submiss_path
+    return None
+
+
+def get_aip_children(task_context_path, aip_identifier, package_extension):
+    aip_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (aip_identifier, package_extension)))
+
+    children_uuids = []
+    # get parent and children from existing AIP tar (aip_in_dip_work_dir)
+    METS_NS = 'http://www.loc.gov/METS/'
+    XLINK_NS = "http://www.w3.org/1999/xlink"
+    print("reading METS of selected aip %s" % aip_in_dip_work_dir)
+    with tarfile.open(aip_in_dip_work_dir) as tar:
+        mets_file = aip_identifier+'/METS.xml'
+        member = tar.getmember(mets_file)
+        fp = tar.extractfile(member)
+        mets_content = fp.read()
+
+        # parse AIP mets
+        parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+        aip_parse = etree.parse(mets_content.decode("utf-8"), parser)
+        aip_root = aip_parse.getroot()
+
+        # find AIP structmap and child identifiers
+        children_map = aip_root.find("%s[@LABEL='child %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+        if children_map is not None:
+            children_div = children_map.find("%s[@LABEL='child %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+            if children_div is not None:
+                children = children_div.findall("%s[@LABEL='child %s']" % (q(METS_NS, 'div'), 'AIP'))
+                for child in children:
+                    mptr = child.find("%s" % q(METS_NS, 'mptr'))
+                    urn = mptr.get(q(XLINK_NS, 'href'))
+                    print("found child urn %s" % urn)
+                    uuid = urn.split('urn:uuid:',1)[1]
+                    print("found child uuid %s" % uuid)
+                    children_uuids.append(uuid)
+    return children_uuids
+
+
+def get_first_ip_path(wd_root_path):
+    if os.path.exists(os.path.join(wd_root_path, "METS.xml")):
+        return wd_root_path
+    else:
+        wd_sub_dirs = sub_dirs(wd_root_path)
+        if wd_sub_dirs and len(wd_sub_dirs) > 0:
+            # get last folder (possible submission update folders - sorted!)
+            for wd_sub_dir in wd_sub_dirs:
+                mets_abs_path = os.path.join(wd_root_path, wd_sub_dir, "METS.xml")
+                if os.path.exists(mets_abs_path):
+                    return os.path.join(wd_root_path, wd_sub_dir)
+
+
+def get_package_from_storage(task_context_path, package_uuid, package_extension):
+    from config.configuration import config_path_storage
+    pts = PairtreeStorage(config_path_storage)
+    parent_object_path = pts.get_object_path(package_uuid)
+
+    package_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (package_uuid, package_extension)))
+    package_source_size = fsize(parent_object_path)
+    total_bytes_read = 0
+    with open(package_in_dip_work_dir, 'wb') as target_file:
+         for chunk in FileBinaryDataChunks(parent_object_path, 65536).chunks(total_bytes_read):
+             target_file.write(chunk)
+         total_bytes_read += package_source_size
+         target_file.close()
+    check_transfer(parent_object_path, package_in_dip_work_dir)
+
+
+def get_children_from_storage(task_context_path, package_uuid, package_extension):
+    get_package_from_storage(task_context_path, package_uuid, package_extension)
+    child_uuids = get_aip_children(task_context_path, package_uuid, package_extension)
+    for child_uuid in child_uuids:
+        get_children_from_storage(task_context_path, child_uuid, package_extension)
+
+
+def get_aip_parent(task_context_path, aip_identifier, package_extension):
+    aip_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (aip_identifier, package_extension)))
+
+    # get parent and children from existing AIP tar (aip_in_dip_work_dir)
+    METS_NS = 'http://www.loc.gov/METS/'
+    XLINK_NS = "http://www.w3.org/1999/xlink"
+    print("reading METS of selected aip %s" % aip_in_dip_work_dir)
+    with tarfile.open(aip_in_dip_work_dir) as tar:
+        mets_file = aip_identifier+'/METS.xml'
+        member = tar.getmember(mets_file)
+        fp = tar.extractfile(member)
+        mets_content = fp.read()
+
+        # parse AIP mets
+        parser = etree.XMLParser(resolve_entities=False, remove_blank_text=True, strip_cdata=False)
+        aip_parse = etree.parse(mets_content.decode("utf-8"), parser)
+        aip_root = aip_parse.getroot()
+
+        # find AIP structmap and parent identifiers
+        parents_map = aip_root.find("%s[@LABEL='parent %s']" % (q(METS_NS, 'structMap'), 'AIP'))
+        if parents_map is not None:
+            parents_div = parents_map.find("%s[@LABEL='parent %s identifiers']" % (q(METS_NS, 'div'), 'AIP'))
+            if parents_div is not None:
+                parents = parents_div.findall("%s[@LABEL='parent %s']" % (q(METS_NS, 'div'), 'AIP'))
+                for parent in parents:
+                    mptr = parent.find("%s" % q(METS_NS, 'mptr'))
+                    urn = mptr.get(q(XLINK_NS,'href'))
+                    uuid = urn.split('urn:uuid:',1)[1]
+                    print("found parent uuid %s" % uuid)
+                    return uuid
+
+    return None
+
+

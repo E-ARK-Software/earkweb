@@ -1,0 +1,70 @@
+#docker-config
+
+[repo]
+repo_identifier = urn:uuid:2baa45fb-145e-44f4-895f-54ead5ab5eb7
+repo_title = E-ARK Repository
+repo_description = E-ARK Repository
+repo_catalogue_issued = 2020-01-01T12:00:00Z
+repo_catalogue_modified = 2020-02-01T12:00:00Z
+representations_directory = representations
+metadata_directory = metadata
+sw_version = 0.9
+sw_version_date = 28.02.2020
+node_namespace_id = eark
+is_test_instance = true
+
+[logs]
+logfile_earkweb = /data/earkweb.log
+logfile_request = /data/request.log
+logfile_celery =  /data/celery.log
+logfile_celery_proc =  /data/logfile_celery_proc.log
+
+[server]
+django_secret_key = #3z0vf5)p_jd##o-y_&g-5yop(fx19f+-egw+2_@44w-kftfqw
+django_service_protocol = http
+django_service_host = localhost
+django_service_port = 8000
+django_backend_service_protocol = http
+django_backend_service_host = localhost
+django_backend_service_port = 8000
+rabbitmq_host = rabbitmq
+rabbitmq_port = 5672
+rabbitmq_user = admin
+rabbitmq_password = earkrmq
+redis_host = redis
+redis_port = 6379
+redis_password =
+mysql_host = db
+mysql_host_external = localhost
+mysql_port = 3306
+mysql_user = eark
+mysql_password = eark
+mysql_db = earkdb
+solr_protocol = http
+solr_host = solr
+solr_port = 8983
+solr_core = storagecore1
+flower_protocol = http
+flower_server = localhost
+flower_port = 5555
+flower_path = /
+
+[limits]
+config_max_filesize_viewer = 4194304
+config_max_http_download = 2147484000
+
+[paths]
+config_path_reception = /data/reception
+config_path_work = /data/work
+config_path_storage = /data/storage
+config_path_access = /data/access
+
+[metadata]
+metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
+
+[access]
+dip_download_base_url = http://localhost/eark/download
+dip_download_path = /var/www/eark/download
+
+[system]
+backend_api_key = sBafmMkE.6Mwuj6q8eRfpN9LHBd5NU7vNcIJjVikQ

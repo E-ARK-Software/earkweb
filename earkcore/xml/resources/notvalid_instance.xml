@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<note>
-  <notinschema>this element is not defined in the schema</notinschema>
-  <to>Foo</to>
-  <from>Bar</from>
-  <heading>Foo Bar</heading>
-  <body>Bar foo</body>
-</note>

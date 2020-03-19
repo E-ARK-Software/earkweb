@@ -1,87 +1,112 @@
+#!/usr/bin/env python
+# coding=UTF-8
+import sys
 import os
+
+from util import build_url
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))  # noqa: E402
 import string
-import ConfigParser
+import configparser
 
 import logging
 logger = logging.getLogger(__name__)
 
 root_dir = os.path.split(os.path.abspath(os.path.dirname(__file__)))[0]
-earkweb_version = '0.9.4'
-earkweb_version_date = "02.12.2016"
 
-config = ConfigParser.RawConfigParser()
-config.read(os.path.join(root_dir, 'config/settings.cfg'))
+# ATTENTION: Environment variables overrule config file settings in settings/settings.cfg
+# configuration file
+config = configparser.ConfigParser()
+config['DEFAULT'] = {}
+config.sections()
+config.read(os.path.join(root_dir, 'settings/settings.cfg'))
 
-# earkweb django server
-django_service_ip = config.get('server', 'django_service_ip')
-django_service_port = config.getint('server', 'django_service_port')
+# ignore certificate verification failures
+verify_certificate = False
 
-redis_ip = config.get('server', 'redis_ip')
-redis_port = config.getint('server', 'redis_port')
+fido_enabled = False
 
-# rabbitmq server
-rabbitmq_ip = config.get('server', 'rabbitmq_ip')
-rabbitmq_port = config.getint('server', 'rabbitmq_port')
-rabbitmq_user = config.get('server', 'rabbitmq_user')
-rabbitmq_password = config.get('server', 'rabbitmq_password')
+# version
+sw_version = config.get('repo', 'sw_version')
+sw_version_date = config.get('repo', 'sw_version_date')
+app_label = "earkweb"
+default_org = "eark"
+is_test_instance = config.getboolean('repo', 'is_test_instance')
+
+backend_api_key = config.get('system', "backend_api_key")
+
+# repository
+repo_identifier = config.get('repo', 'repo_identifier')
+repo_title = config.get('repo', 'repo_title')
+repo_description = config.get('repo', 'repo_description')
+repo_catalogue_issued = config.get('repo', 'repo_catalogue_issued')
+repo_catalogue_modified = config.get('repo', 'repo_catalogue_modified')
+
+_conf_repr_dir = config.get('repo', 'representations_directory')
+representations_directory = _conf_repr_dir if _conf_repr_dir else "representations"
+metadata_directory = _conf_repr_dir if _conf_repr_dir else "metadata"
+node_namespace_id = config.get('repo', 'node_namespace_id')
+
+# logfiles
+logfile_earkweb = config.get('logs', 'logfile_earkweb')
+logfile_request = config.get('logs', 'logfile_request')
+logfile_celery = config.get('logs', 'logfile_celery')
+logfile_celery_proc = config.get('logs', 'logfile_celery_proc')
+
+# earkweb
+django_secret_key = config.get('server', 'django_secret_key')
+django_service_protocol = config.get('server', 'django_service_protocol')
+django_service_host = config.get('server', 'django_service_host')
+django_service_port = int(config.get('server', 'django_service_port'))
+package_access_url_pattern = \
+    "%s://%s%s/%s/access/package/$packageid/" % \
+    (django_service_protocol, django_service_host,
+     "" if django_service_port == 80 else ":%s" % django_service_port, app_label)
+package_download_url_pattern = "%s$dataassetid/" % package_access_url_pattern
+
+# backend
+django_backend_service_protocol = config.get('server', 'django_backend_service_protocol')
+django_backend_service_host = config.get('server', 'django_backend_service_host')
+django_backend_service_port = config.get('server', 'django_backend_service_port')
+django_backend_service_url = build_url(django_backend_service_protocol, django_backend_service_host, django_backend_service_port, app_label)
+django_backend_service_api_url = "%s/api" % django_backend_service_url
 
 # mysql server
-mysql_server_ip = config.get('server', 'mysql_server_ip')
+mysql_host = config.get('server', 'mysql_host')
 mysql_port = config.getint('server', 'mysql_port')
 mysql_user = config.get('server', 'mysql_user')
 mysql_password = config.get('server', 'mysql_password')
-mysql_earkweb_db = config.get('server', 'mysql_earkweb_db')
-mysql_celerybackend_db = config.get('server', 'mysql_celerybackend_db')
+mysql_db = default = config.get('server', 'mysql_db')
 
-logger.info("mysql_server_ip: %s" % mysql_server_ip)
+# redis
+redis_host = config.get('server', 'redis_host')
+redis_port = int(config.get('server', 'redis_port'))
+redis_password = config.get('server', 'redis_password')
 
-# access solr server
-access_solr_server_ip = config.get('server', 'access_solr_server_ip')
-access_solr_port = config.getint('server', 'access_solr_port')
-access_solr_core = config.get('server', 'access_solr_core')
+# rabbitmq
+rabbitmq_host = config.get('server', 'rabbitmq_host')
+rabbitmq_port = int(config.get('server', 'rabbitmq_port'))
+rabbitmq_user = config.get('server', 'rabbitmq_user')
+rabbitmq_password = config.get('server', 'rabbitmq_password')
 
-# storage solr server
-storage_solr_server_ip = config.get('server', 'storage_solr_server_ip')
-storage_solr_port = config.getint('server', 'storage_solr_port')
-storage_solr_core = config.get('server', 'storage_solr_core')
-
-# lily content access
-lily_content_access_ip = config.get('server', 'lily_content_access_ip')
-lily_content_access_port = config.getint('server', 'lily_content_access_port')
-lily_content_access_core = config.get('server', 'lily_content_access_core')
-
-# hdfs upload service
-hdfs_upload_service_ip = config.get('server', 'hdfs_upload_service_ip')
-hdfs_upload_service_port = config.getint('server', 'hdfs_upload_service_port')
-hdfs_upload_service_endpoint_path = config.get('server', 'hdfs_upload_service_endpoint_path')
-hdfs_upload_service_resource_path = config.get('server', 'hdfs_upload_service_resource_path')
-
-# peripleo
-peripleo_server_ip = config.get('server', 'peripleo_server_ip')
-peripleo_port = config.getint('server', 'peripleo_port')
-peripleo_path = config.get('server', 'peripleo_path')
+# solr
+solr_protocol = config.get('server', 'solr_protocol')
+solr_host = config.get('server', 'solr_host')
+solr_port = int(config.get('server', 'solr_port'))
+solr_core = config.get('server', 'solr_core')
+solr_service_url = build_url(solr_protocol, solr_host, solr_port, "solr")
+solr_core_url = '%s/%s' % (solr_service_url, solr_core)
+solr_core_ping_url = '%s/admin/ping' % solr_core_url
+solr_core_overview_url = '%s/#/%s/core-overview' % (solr_service_url, solr_core)
 
 # flower
+flower_protocol = config.get('server', 'flower_protocol')
 flower_server = config.get('server', 'flower_server')
-flower_port = config.getint('server', 'flower_port')
+flower_port = int(config.get('server', 'flower_port'))
 flower_path = config.get('server', 'flower_path')
+flower_service_url = '%s://%s:%s%s' % (flower_protocol, flower_server, flower_port, flower_path)
 
-# siard target db and util
-siard_dbptk = config.get('server', 'siard_dbptk')
-siard_db_type = config.get('server','siard_db_type')
-siard_db_host = config.get('server', 'siard_db_host')
-siard_db_user = config.get('server', 'siard_db_user')
-siard_db_passwd = config.get('server', 'siard_db_passwd')
-
-dip_download_base_url = config.get('access', 'dip_download_base_url')
-dip_download_path = config.get('access', 'dip_download_path')
-
-mets_schema_file = os.path.join(root_dir, config.get('schemas', 'mets_schema_file'))
-premis_schema_file = os.path.join(root_dir, config.get('schemas', 'premis_schema_file'))
-
-# size limit for direct file display
-config_max_filesize_viewer = config.getint('limits', 'config_max_filesize_viewer')
-
+# repo data directories
 config_path_reception = config.get('paths', 'config_path_reception')
 config_path_work = config.get('paths', 'config_path_work')
 config_path_storage = config.get('paths', 'config_path_storage')
@@ -90,20 +115,26 @@ config_path_access = config.get('paths', 'config_path_access')
 # EAD metadata file pattern
 metadata_file_pattern_ead =  config.get('metadata', 'metadata_file_pattern_ead')
 
-# location of METS Template
-template_METS_path = root_dir + '/lib/metadata/mets/template_METS.xml'
-
 # maximum number of submissions by web client
 max_submissions_web_client = 50
 
-server_repo_record_content_query = "http://%s:%d/repository/table/%s/record/{0}/field/n$content/data?ns.n=org.eu.eark" % (lily_content_access_ip, lily_content_access_port, lily_content_access_core)
+# size limit for direct file display
+file_size_limit = config.getint('limits', 'config_max_filesize_viewer')
+config_max_http_download = config.getint('limits', 'config_max_http_download')
 
-server_hdfs_aip_query = "http://%s:%d/hsink/fileresource/retrieve_newest?file={0}" % (hdfs_upload_service_ip, hdfs_upload_service_port)
+dip_download_base_url = config.get('access', 'dip_download_base_url')
+dip_download_path = config.get('access', 'dip_download_path')
 
 commands = {
+    'gpg_passphrase_encrypt_file':
+        ["gpg", "--yes", "--batch", "--passphrase", string.Template("$passphrase"), "-c", string.Template("$file")],
+    'gpg_passphrase_decrypt_file':
+        ["gpg", "--yes", "--batch", "--passphrase", string.Template("$passphrase"), "--output", string.Template("$decrypted_file"), "-d", string.Template("$encrypted_file")],
     'summain':
-        ["/usr/bin/summain", "-c", "SHA256", "-c", "MD5", "--exclude=Ino,Dev,Uid,Username,Gid,Group,Nlink,Mode",
+        ["/usr/bin/summain", "-f", "json", "-c", "SHA256", "--exclude=Ino,Dev,Uid,Username,Gid,Group,Nlink,Mode",
          "--output", string.Template("$manifest_file"), string.Template("$package_dir")],
+    'summainstdout':
+        ["/usr/bin/summain", "-f", "json", "-c", "SHA256", "--exclude=Ino,Dev,Uid,Username,Gid,Group,Nlink,Mode", string.Template("$package_dir")],
     'untar':
         ["tar", "-xf", string.Template("$tar_file"), "-C", string.Template("$target_dir")],
     'pdftohtml':
@@ -117,24 +148,13 @@ commands = {
         [string.Template('$command')]
 }
 
-# Test settings
-
-test_rest_endpoint_hdfs_upload = "http://%s" % hdfs_upload_service_ip
-
-# NLP settings
-stanford_jar = config.get('nlp', 'stanford_jar_path')
-stanford_ner_models = config.get('nlp', 'stanford_models_path')
-text_category_models = config.get('nlp', 'category_models_path')
-config_path_nlp = config.get('nlp', 'config_path_nlp')
-nlp_storage_path = config.get('nlp', 'tar_path')
-
 # Solr fields
 # {'name': '', 'type': '', 'stored': ''}
 # {'name': '', 'type': '', 'stored': '', 'indexed': 'true'}
 solr_field_list = [{'name': 'packagetype', 'type': 'string', 'stored': 'true'},
                    {'name': 'package', 'type': 'string', 'stored': 'true'},
                    {'name': 'path', 'type': 'string', 'stored': 'true'},
-                   {'name': 'size', 'type': 'long', 'stored': 'true'},
+                   {'name': 'size', 'type': 'plong', 'stored': 'true'},
                    {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
                    {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'},
@@ -146,3 +166,17 @@ solr_copy_fields = [{'source': 'content_type', 'dest': 'contentType'}]
 # {'type':'', 'path': '', 'class': '', 'field_name':'', 'field_value': ''}
 solr_config_changes = [{'type': 'update-requesthandler', 'path': '/update/extract', 'class': 'solr.extraction.ExtractingRequestHandler',
                         'fields': {'fmap.content': 'content', 'lowernames': 'true', 'fmap.meta': 'ignored'}}]
+
+
+flower_server = config.get('server', 'flower_server')
+flower_port = int(config.get('server', 'flower_port'))
+flower_path = config.get('server', 'flower_path')
+
+def log_current_configuration():
+    logger.info("Web-UI: %s://%s:%s" % (django_service_protocol, django_service_host, django_service_port))
+    logger.info("MySQL: mysql://%s@%s:%d/%s" % (mysql_user, mysql_host, mysql_port, mysql_db))
+    logger.info("Redis: redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port))
+    logger.info("RabbitMQ: amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_host, rabbitmq_port))
+    logger.info("SolR: %s://%s:%d/solr/#/%s" % (solr_protocol, solr_host, solr_port, solr_core))
+    logger.info("Flower: %s" % flower_service_url)
+

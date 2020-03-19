@@ -1,0 +1,40 @@
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        targetNamespace="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        elementFormDefault="qualified"
+        attributeFormDefault="unqualified">
+
+<annotation>
+<documentation>
+Schema to allow inclusion of RDF in OAI-PMH responses. This schema simply
+defines the root element (rdf:RDF) and then says that the contents should
+have 'lax' validation (i.e. no schema required). Use this by including
+the following in the root element:
+
+&lt;rdf:RDF
+  xmlns:rdf=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#&quot;
+  xsi:schemaLocation=&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#  http://www.openarchives.org/OAI/2.0/rdf.xsd&quot;&gt;
+
+Simeon Warner
+$Id: rdf.xsd,v 1.2 2008-12-02 22:40:05 simeon Exp $
+</documentation>
+</annotation>
+
+  <element name="RDF" type="rdf:rdfType"/>
+
+  <complexType name="rdfType">
+    <annotation>
+<documentation>Content may be in any namespace (namespace=##any, see
+http://www.w3.org/TR/xmlschema-1/#declare-openness) and
+the elements are only validated if a schema is available that
+uniquely determines the declaration (processContents=&quot;lax&quot;, see
+http://www.w3.org/TR/xmlschema-1/#declare-openness)
+</documentation>
+    </annotation>
+    <sequence maxOccurs="unbounded">
+      <any namespace="##any" processContents="lax"/>
+    </sequence>
+  </complexType>
+
+</schema>
+

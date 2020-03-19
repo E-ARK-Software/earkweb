@@ -1,82 +1,153 @@
-"""
-Django settings for earkweb project.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/1.7/topics/settings/
-
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.7/ref/settings/
-"""
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+#!/usr/bin/env python
+# coding=UTF-8
+from __future__ import absolute_import
+import sys
 import os
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-TIME_ZONE = 'Europe/Vienna'
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))  # noqa: E402
+from socket import gethostname, gethostbyname
 
-LOGIN_URL='/earkweb/accounts/login/'
+LOGLEVEL = os.environ.get('LOGLEVEL', 'ERROR')
 
-import celeryapp
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter':'standard',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'ERROR'),
+        },
+        'config': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'access': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'earkweb': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'submission': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'management': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'api': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+        'resourcesync': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
+        },
+    },
+}
+
+import logging.config
+logging.config.dictConfig(LOGGING)
+
+from config.configuration import logfile_earkweb, logfile_request, logfile_celery, django_secret_key, logfile_celery_proc
+from config.configuration import rabbitmq_host
+from config.configuration import rabbitmq_port
+from config.configuration import rabbitmq_user
+from config.configuration import rabbitmq_password
+from config.configuration import redis_password
+from config.configuration import mysql_host
+from config.configuration import mysql_port
+from config.configuration import mysql_user
+from config.configuration import mysql_password
+from config.configuration import mysql_db
+from config.configuration import redis_host
+from config.configuration import redis_port
+
+LANGUAGE_CODE = 'en'
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOGIN_URL = '/earkweb/accounts/login/'
+LOGOUT_URL = '/earkweb/accounts/logout/'
+LOGIN_REDIRECT_URL = '/earkweb/home/'
+
+LOGIN_EXEMPT_URLS = (
+    'earkweb/api/',
+    'earkweb/rs/',
+    'earkweb/health/',
+    'earkweb/health/ready',
+)
+
+ADMIN_LOGIN = "test"
+ADMIN_PASSWORD = "test"
+
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# CAS SSO
+# CAS_SERVER_URL = ""
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 's!!9@ii^idp7n+2y=r8%l$y^i#dm-!yx57b+*@aa=$+@3kj=(&'
-
-# SECURITY WARNING: don't run with debug turned on in production!
+SECRET_KEY = django_secret_key
+# SECURITY WARNING: turn off in production!
 DEBUG = True
 
-TEMPLATE_DEBUG = True
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 
-TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    "django.contrib.auth.context_processors.auth",
-    "earkweb.context_processors.django_ip",
-    'django.core.context_processors.request',
- )
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [gethostname(), gethostbyname(gethostname()), 'localhost', '127.0.0.1', 'pluto', '10.128.1.3']
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
-from config.configuration import mysql_server_ip
-import djcelery
-djcelery.setup_loader()
+SESSION_SAVE_EVERY_REQUEST = True
 
-CELERY_IMPORTS = ['workers']
+CELERY_IMPORTS = 'taskbackend.tasks'
+#BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_host, rabbitmq_port)
+#CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_host, mysql_celerybackend_db)
+#CELERY_RESULT_BACKEND = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
 
-BROKER_POOL_LIMIT = 1
+#BROKER_URL = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
+BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_host, rabbitmq_port)
+CELERY_RESULT_BACKEND = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
+
 BROKER_CONNECTION_TIMEOUT = 10
+BROKER_POOL_LIMIT = 100
+CELERY_REDIS_MAX_CONNECTIONS = 20
 
-from config.configuration import rabbitmq_ip
-from config.configuration import rabbitmq_port
-from config.configuration import rabbitmq_user
-from config.configuration import rabbitmq_password
-
-from config.configuration import mysql_server_ip
-from config.configuration import mysql_port
-from config.configuration import mysql_user
-from config.configuration import mysql_password
-from config.configuration import mysql_earkweb_db
-from config.configuration import mysql_celerybackend_db
-
-
-from config.configuration import redis_ip
-from config.configuration import redis_port
-
-BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_ip, rabbitmq_port)
-#CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_server_ip, mysql_celerybackend_db)
-CELERY_RESULT_BACKEND = "redis://%s:%d/0" % (redis_ip, redis_port)
-CELERY_REDIS_MAX_CONNECTIONS = 1
-CELERYBEAT_SCHEDULER='djcelery.schedulers.DatabaseScheduler'
-CELERY_DEFAULT_QUEUE = 'default'
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+CELERY_DEFAULT_QUEUE = 'ingestqueue'
+CELERY_TASK_DEFAULT_QUEUE = 'ingestqueue'
 CELERY_IGNORE_RESULT = False
 TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
 CELERYD_POOL_RESTARTS = True
+
 
 # run celery in same process
 #CELERY_ALWAYS_EAGER = True
@@ -89,20 +160,29 @@ CELERYBEAT_SCHEDULE = {
         "task": "monitoring.tasks.CheckProcFilesTask",
         "schedule": timedelta(seconds=60),
         "kwargs": {
-                'proc_log_path':"/var/log/earkweb/log/proc",
+                'proc_log_path': logfile_celery_proc,
         }
     },
     "CheckStorageMediums-everyday-07:00": {
         "task": "monitoring.tasks.CheckStorageMediumsTask",
-        "schedule": crontab(hour=7,minute=0),
+        "schedule": crontab(hour=7, minute=0),
         "kwargs": {
-                'email':"admin",
+                'email': "admin",
+        }
+    },
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization'
         }
     },
 }
 
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -110,66 +190,100 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'earkcore',
-    'sipcreator',
-    'search',
-    'workers',
-    'workflow',
-    'sip2aip',
-    'config',
-    'datamining',
+    'bootstrapform',
+    'earkweb',
+    'administration',
+    'submission',
+    'access',
+    'taskbackend',
+    'management',
+    'health',
+    'resourcesync',
+    'api',
     'django_tables2',
-    'djcelery',
+    'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_swagger',
+    'rest_framework_api_key',
+    'widget_tweaks',
+    'requests',
+    'drf_yasg',
 )
 
-MIDDLEWARE_CLASSES = (
+
+TEMPLATES[0]['OPTIONS']['context_processors'].append("earkweb.context_processors.environment_variables")
+TEMPLATES[0]['OPTIONS']['context_processors'].append('django.template.context_processors.i18n')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework_api_key.permissions.HasAPIKey',
+    ),
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.JSONParser',
+    ],
+    'DEFAULT_SCHEMA_CLASS':'rest_framework.schemas.coreapi.AutoSchema'
+}
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
+    'django.middleware.locale.LocaleMiddleware',
+]
 
+CORS_ORIGIN_ALLOW_ALL = True
 
+# CAS SSO Authentication
+#AUTHENTICATION_BACKENDS = (
+    #'django_cas_ng.backends.CASBackend',
+#)
+
+# OAuth Authentication
+#AUTHENTICATION_BACKENDS = (
+#    'oauth_backend.auth_backend.AuthenticationBackend',
+#)
+
+# Django Authentication
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
+     'django.contrib.auth.backends.ModelBackend',
 )
 
 ROOT_URLCONF = 'earkweb.urls'
 
 WSGI_APPLICATION = 'earkweb.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        #'STORAGE_ENGINE': 'MyISAM',           # STORAGE_ENGINE for MySQL database tables, 'MyISAM' or 'INNODB'
-        'NAME': mysql_earkweb_db,                    # Or path to database file if using sqlite3.
-        'USER': mysql_user,                      # Not used with sqlite3.
-        'PASSWORD': mysql_password,               # Not used with sqlite3.
-        'HOST': mysql_server_ip,                           # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': str(mysql_port),                           # Set to empty string for default. Not used with sqlite3.
-        # This options for storage_engine have to be set for "south migrate" to work.
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': mysql_db,
+        'USER': mysql_user,
+        'PASSWORD': mysql_password,
+        'HOST': mysql_host,
+        'PORT': str(mysql_port),
         'OPTIONS': {
-           #"init_command": "SET storage_engine=MyISAM",
-           "init_command": "SET default_storage_engine=MyISAM",
+            # "init_command": "SET storage_engine=MyISAM",
+            "init_command": "SET default_storage_engine=MyISAM",
         }
     }
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.7/topics/i18n/
-
-#SHORT_DATETIME_FORMAT = '%d.%m.%y'
-#DATETIME_FORMAT = '%d.%m.%y'
+# https://docs.djangoproject.com/en/1.8/topics/i18n/
 DATETIME_FORMAT = 'Y N jH:i:s.u'
 SHORT_DATETIME_FORMAT = 'Y N jH:i:s.u'
-LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Vienna'
 
@@ -179,92 +293,17 @@ USE_L10N = True
 
 USE_TZ = True
 
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+from django.utils.translation import gettext_lazy as _
+LANGUAGES = [
+    ('en', _('English')),
+    ('de', _('German')),
+]
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.7/howto/static-files/
+# https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-STATIC_URL = '/static/earkweb/'
+STATIC_URL = '/static/'
 STATIC_ROOT = '/var/www/static/earkweb/'
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': {
-        'standard': {
-            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
-        },
-    },
-    'handlers': {
-        'default': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/earkweb/earkweb.log',
-            'maxBytes': 1024*1024*5, # 5 MB
-            'backupCount': 5,
-            'formatter':'standard',
-        },
-        'request_handler': {
-            'level':'DEBUG',
-            'class':'logging.handlers.RotatingFileHandler',
-            'filename': '/var/log/earkweb/request.log',
-            'maxBytes': 1024*1024*5, # 5 MB
-            'backupCount': 5,
-            'formatter':'standard',
-        },
-        'console': {
-            'level':'DEBUG',
-            'class':'logging.StreamHandler',
-            'formatter':'standard',
-        },
-    },
-    'root': {
-        'handlers': ['default', 'console'],
-        'level': 'DEBUG'
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['default', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'config.configuration': {
-                'handlers': ['default', 'console'],
-                'level': 'DEBUG',
-                'propagate': True,
-        },
-        'workers': {
-                'handlers': ['default', 'console'],
-                'level': 'DEBUG',
-                'propagate': False,
-        },
-        'django.request': {
-            'handlers': ['request_handler', 'console'],
-            'level': 'DEBUG',
-            'propagate': False
-        },
-        'earkcore': {
-                 'handlers': ['default', 'console'],
-                 'level': 'DEBUG',
-         },
-        'sip2aip': {
-                 'handlers': ['default', 'console'],
-                 'level': 'DEBUG',
-         },
-        'sipcreator': {
-                 'handlers': ['default', 'console'],
-                 'level': 'DEBUG',
-         },
-        'search': {
-                 'handlers': ['default', 'console'],
-                 'level': 'DEBUG',
-         },
-        'datamining': {
-                 'handlers': ['default', 'console'],
-         },
-        'pika': {
-                 'handlers': ['default', 'console'],
-                 'level': 'INFO',
-         },
-
-    }
-}

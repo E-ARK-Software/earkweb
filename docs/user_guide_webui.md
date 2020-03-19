@@ -1,281 +1,165 @@
-# E-ARK Web - User guide
+# earkweb - User guide
 
-## Table of Contents
+## Introduction
 
-  - [SIP Creator](#sip-creator)
-    - [Initialise SIP package creation](#initialise-sip-package-creation)
-    - [Adding files to the SIP](#adding-files-to-the-sip)
-    - [SIP creation process](#sip-creation-process)
-      - [Start SIP creation process](#start-sip-creation-process)
-      - [Task execution](#task-execution)
-      - [Active SIP creation processes overview](#active-sip-creation-processes-overview)
-  - [SIP to AIP conversion](#sip-to-aip-conversion)
-      - [Start SIP to AIP conversion process](#start-sip-to-aip-conversion-process)
-      - [SIP to AIP conversion tasks](#sip-to-aip-conversion-tasks)
-      - [SIP to AIP conversion task execution](#sip-to-aip-conversion-task-execution)
-      - [Active SIP to AIP conversion processes](#active-sip-to-aip-conversion-processes)
-      - [Indexing and search in AIPs](#indexing-and-search-in-aips)
-  - [AIP to DIP conversion](#aip-to-dip-conversion)
-    - [Initialise AIP to DIP conversion](#initialise-aip-to-dip-conversion)
-      - [Start AIP to DIP conversion process](#start-aip-to-dip-conversion-process)
-      - [AIP to DIP conversion tasks](#aip-to-dip-conversion-tasks)
-      - [AIP to DIP conversion task execution](#aip-to-dip-conversion-task-execution)
-- [Public search](#public-search)
-  - [Administration](#administration)
-    - [Django administration](#django-administration)
-    - [Flower](#flower)
+__Information packages__ are data containers which are packaged as transferable entities and which can be provided 
+via different transfer methods, such as Hypertext Transfer Protocol (HTTP), File Transfer Protocol 
+(FTP) or Torrent. 
 
-## SIP Creator
+The __information package__ consists of the __data__ itself  and the __metadata__ 
+related to it. On the one hand, the __data__ can contain different representations, i.e. the same data 
+in different formats, such as a data table in Comma Separated Values (CSV) and PDF, for example. 
+And, on the other hand, the __metadata__ contains basic information about the information package, 
+such as the title, description, publisher, contact point, topic, keywords, etc. Additionally, there 
+can be other metadata, e.g. regarding the _provenance_, i.e. when was the information package 
+created or changed and by whom, or regarding the _digital preservation_, i.e. what actions have 
+been taken to ensure long-term accessibility.
 
-A Submission Information Package (SIP) – as defined in the OAIS model – is an information package that is delivered by a producer to the OAIS for use in the construction or update 
-of one or more Archival Information Packages (AIPs).
+A simplified example of the structure of the information package package could be presented as follows:
 
-The SIP Creator is a web-based interface allowing the creation of E-ARK Submission Information Packages (SIPs). Files can be uploaded to the corresponding sections (content, 
-documentation and metadata) of the container and a set of tasks allows transforming the SIP into the required format.
+    ,-------------------------------------------------------.
+    | Information Package                                   |
+    |-------------------------------------------------------|
+    | - METS.xml                                            | <--- Structural metadata
+    | - metadata/                                           | 
+    |     - descriptive/EAD.xml                             | <--- Descriptive metadata
+    |     - preservation/PREMIS.xml                         | <--- Preservation metadata
+    |-------------------------------------------------------|
+    | - representations/                                    | <--- Representations
+    |     - pdf_representation/                             |
+    |         - data/                                       |
+    |             - file1.pdf                               |
+    |             - file2.pdf                               |
+    |         - metadata/                                   |
+    |     - csv_representation/                             |
+    |         - data/                                       |
+    |             - file1.csv                               |
+    |             - file2.csv                               |
+    |         - metadata/                                   |
+    `-------------------------------------------------------'
 
-### Initialise SIP package creation
+The purpose of the __earkweb__ environment is to demonstrate the creation and management of these type of information
+packages based on the Common Specification for Information Packages (CSIP)<sup>[csip](#csip)</sup> which is published
+and maintained by the Digital Information LifeCycle Interoperability Standards Board (DILCIS Board)
+(CSIP)<sup>[dilcis](#dilcis)</sup>.
 
-In the  step it is required to provide a package name for the SIP:
+### User interface
 
-![initialise SIP creation](./img/earkweb_sipcreator_init.png)
+__earkweb__ is Python/Django-based web application which uses a MySQL database for storing information about 
+information packages and a Celery/RabbitMQ/Redis backend for asynchronous task processing.
 
-Note that a package name must have at least 3 characters.
+After installing *earkweb*, the application can be accessed using a web browser (`host` and `port` needs to be adapted
+accordingly):
 
-Click on 'Proceed' to continue with the next step.
+    http://<host>:<port>/earkweb 
 
-### Adding files to the SIP
+You will be redirected to the login screen where you can login with your user credentials.
 
-A web formular allows uploading files to the corresponding areas of the SIP.
+![](img/login.png)
 
-In the E-ARK SIP, each representation - as a set of files needed to render an intellectual entity - is stored in a separate directory under the "representations" directory.
+After logging in, the earkweb start page will be shown.
 
-It is required to give a name to the representation which will be used as the name of the directory where the actual data, additional documentation, and schemas can be uploaded to.
+![](img/earkweb.png)
 
-![adding files](./img/earkweb_sipcreator_emptyrep.png)
+Navigate to "Submissions" / "Create new information package" to start a submission information packag creation. Enter a 
+label for the package (only alpha-numeric ASCII characters and numbers, dot ('.') and hypen 
+('-') allowed). Optionally, an external identifier can reference an existing identifier of the package.
 
-To create a new representation, enter the name (at least 4 characters long) in the editable select box and click the "plus" symbol which will enable the upload area of the new 
-representation:
+![](img/create_ip_submission_start.png)
 
-![creating first representation](./img/earkweb_sipcreator_firstrep.png)
+Introduce an _information package title_ and _description_ and click on "Continue" to go to the next step.
 
-To switch between existing representations choose the representation from the select box ('caret' symbol next to the "plus" symbol).
+![](img/create_ip_submission_title_description.png)
 
-If the upload area of the representation is loaded, files can be uploaded by clicking on 'Browse ...' and selecting a file from the local file system.
+Provide a contact point with the corresponding e-mail address, a publisher with the corresponding e-mail address, and 
+the main language of the information package.
 
-Package a set of files using the tar format to upload a collection of files which are automatically extracted in the upload directory.
+Click on "Continue" to go to the next step.
 
-Hover your mouse over the user interface widgets to get more information about the individiual elements.
+![](img/create_ip_submission_contact_lang.png)
 
-Click on the "Proceed" button to continue with the next step.
+The next screen shows the first representation of the information package. An identifier for the representation 
+(Representation ID) has been created automatically. Enter label, access rights and description of the first 
+representation, and start uploading data files. The user interface allow placing files by "Drag & Drop". After selecting 
+data files click on "Upload" to transfer the files to the represenation's data directory within the information package.
 
-### SIP creation process
-
-#### Start SIP creation process
-
-The SIP creation process interface allows executing SIP creation tasks:
-
-* SIPReset - Rollback to initial state (structure and package metadata are removed)
-* SIPDescriptiveMetadataValidation - Validate descriptive metadata (EAD) which must be available as metadata/descriptive/ead-*.xml
-* SIPPackageMetadataCreation - Create structural and preservation metadata
-* SIPPackaging
-* SIPClose
-* SIPTransferToReception
-
-If SIPClose is used as the last task, then the SIP will become available in the SIP to AIP conversion overview area "Active SIP creation processes overview" allowing to continue
-the processing of the SIP. Alternatively, the SIPTransferToReception task can be used to move the package to the SIP reception area which allows the SIP to AIP conversion to be 
-performed as a batch process.
-
-#### Task execution
-
-The tasks in the pull-down menue near the lable "Tasks" appear in the logical order in which they should be executed.
-
-![sip creation task exectuion](./img/earkweb_sipcreator_taskexecution.png)
-
-The "SIP creation task/workflow execution" overview table shows information entities of the package:
-
-* The "Package name" is the name of the SIP which is the outcome of the current SIP creation process.
-* The "Process ID" is a UUID which shows corresponds to the name of the working area directory. 
-* The "Working area path" is a link which allows accessing the working area directory of the corresponding package to see the result of a task execution.
-* The "Last task" shows the last task which was executed, e.g. "SIPValidation". The last task also determines the following task which can be executed because each task defines
-a list of accepted input tasks.
-* Last change is the date/time of the last modification (by a task)
-* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
-package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
-
-Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
-processing log which is available in the package.
-
-Use the "SIPReset" task to roll-back package processing to the initial state in case an error occurred during processing (after applying required modifications).
-
-It is possible to directly continue with the "SIP to AIP conversion" process by executing the "SIP Close" task. Note that in this case the package disappears from the 
-"Active SIP creation processes" overview page as it is handed over to the "SIP to AIP conversion". 
-
-#### Active SIP creation processes overview
-
-By accessing the sub-menu item "Active SIP creation processes", an overview about open SIP creation processes is shown. Each package is identified by the package name 
-(column 'Package name') which was provided in the first step of the SIP creation process and an internal process identifier (column 'Process ID'). The process identifier is also 
-used as the name of the working directory where information package transformations take place (column 'SIP creation working directory').
-
-![active SIP creation processes overview](./img/earkweb_sipcreator_overview.png)
-
-Depending on the last task that was executed, subsequent transformation tasks can be applied.
-
-## SIP to AIP conversion
-
-The AIP – as defined in the OAIS reference model – is an information package used to transmit and/or store archival objects within a digital repository. An AIP contains both, 
-structural and descriptive metadata about the content, as well as the actual content itself.
-
-The SIP to AIP conversion is a set of tasks that can be performed to convert an E-ARK SIP to an E-ARK AIP which both must comply with structural and metadata requirements defined 
-by the E-ARK project.
-
-#### Start SIP to AIP conversion process
-
-The "SIP to AIP conversion" is either started by handing the package over from the "SIP creation" process within *earkweb* by executing the "SIP Close" task or it can be uploaded 
-using the "SIP to AIP conversion" sub-menu item "Upload SIP":
-
-![SIP upload](./img/earkweb_sip2aip_upload.png)
-
-The TAR or ZIP container file of an SIP is uploaded together with the SIP delivery XML document from the local file system to the SIP reception area.
-
-Note that the package must be in TAR or ZIP format and the basenames of the package file and delivery XML (METS format) file must be equal (e.g. PACKAGE.tar and PACKAGE.xml).
-
-#### SIP to AIP conversion tasks
-
-The SIP to AIP conversion process interface allows executing SIP creation tasks:
-
-* SIPtoAIPReset - Rollback to initial state (as after handover from SIP creation or uploading the SIP) 
-* SIPDeliveryValidation - Validate delivery (especially checksum information)
-* IdentifierAssignment - Assign identifier
-* SIPExtraction - Extract SIP
-* SIPRestructuring - Restructure SIP according to AIP format
-* SIPValidation - Validate SIP
-* AIPMigrations - Do migrations according to predefined rules (e.g. PDF to PDF/A)
-* AIPCheckMigrationProgress - Check if migrations are finisehd
-* CreatePremisAfterMigration - Create PREMIS file after migrations completed
-* AIPRepresentationMetsCreation - Create representation METS files
-* AIPPackageMetsCreation - Create AIP METS and PREMIS
-* AIPValidation - Validate package
-* AIPPackaging - Create package container file
-* AIPStore - Store AIP package in file system storage area (pairtree storage)
-* AIPIndexing - Index AIP
-* LilyHDFSUpload - Upload AIP to public search server
-
-#### SIP to AIP conversion task execution
-
-The tasks in the pull-down menue near the lable "Tasks" appear in the logical order in which they should be executed.
-
-The "SIP to AIP task/workflow execution" overview table shows information entities of the package. Note that some information entities, such as "identifier" might appear only 
-after a specific task ("IdentifierAssignment") in this case, was executed.
-
-* The "Process ID" is a UUID which shows corresponds to the name of the working area directory. 
-* The "Package name" is the name of the SIP which is the outcome of the current SIP creation process.
-* The package Identifier is the PUID of the AIP. Although of type UUID in the reference implementation, this could be any other type of identifier, such as a DOI or PURL. 
-* The "Working area path" is a link which allows accessing the working area directory of the corresponding package to see the result of a task execution.
-* The "Last task" shows the last task which was executed, e.g. "AIPValidation". The last task also determines the following task which can be executed because each task defines
-a list of accepted input tasks.
-* Last change is the date/time of the last modification (by a task)
-* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
-package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
-
-Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
-processing log which is available in the package.
-
-Use the "SIPtoAIPReset" task to roll-back package processing to the initial state in case an error occurred during processing (after applying required modifications).
-
-#### Active SIP to AIP conversion processes
-
-By accessing the sub-menu item "Active SIP to AIP conversion processes", an overview about open SIP to AIP conversion processes is shown. Each package is identified by the package name 
-(column 'Package name') which corresponds to the name of the SIP container. The process identifier is also used as the name of the working directory where information package 
-transformations take place (column 'SIP creation working directory').
-
-![active SIP to AIP conversion processes overview](./img/earkweb_siptoaipconversion_overview.png)
-
-Depending on the last task that was executed, subsequent transformation tasks can be applied.
-
-#### Indexing and search in AIPs
-
-The "AIPIndexing" task allows indexing the AIP TAR package created the SIP to AIP conversion process. The AIP is indexed according to the location in the pairtree storage. By that 
-way the search results can offer a link to directly render individual content items.
-
-## AIP to DIP conversion
-
-The Dissemination Information Package (DIP) – as defined in the OAIS reference model – is the information package which is received by the consumer in response to a request for content.
-
-The AIP to DIP conversion is a set of tasks that can be performed to convert one or several E-ARK AIPs to an E-ARK DIP.
-
-### Initialise AIP to DIP conversion
-
-In the  step it is required to provide a package name for the DIP:
-
-![initialise AIP to DIP conversion](./img/earkweb_aiptodip_start.png)
-
-Note that a package name must have at least 3 characters.
-
-Click on 'Proceed' to continue with the next step.
-
-#### Start AIP to DIP conversion process
-
-The "AIP to DIP conversion" is started by selecting AIPs from the AIP repository:
-
-![AIP selection](./img/earkweb_aiptodip_aipselection.png)
+![](img/create_ip_upload_files.png)
  
-Alternatively, AIPs can be directly uploaded using the "File upload" in the task execution interface. 
+Click on "Create another representation" to add a representation of the data in another format. It is possible to
+switch between representations, delete representations, and remove data files from representations.
 
-Note that the AIP package must be in TAR format (ZIP is not supported).
+![](img/create_ip_submission_other_rep.png)
 
-#### AIP to DIP conversion tasks
 
-The AIP to DIP conversion process interface allows executing AIP to DIP conversion tasks:
+Click on "Create information package" to go to the next step.
 
-* AIPtoDIPReset - Rollback to initial state 
-* DIPAcquireAIPs - Acquire selected packages from their corresponding storage locations
-* DIPExtractAIPs - Extract AIPs
-* DIPImportSIARD - Import SIARD files
+![](img/create_ip_submission_package_created.png)
 
-#### AIP to DIP conversion task execution
+Review the information package and click on "Continue with the archiving of the information package" 
+to proceed to the next step or click on "Edit information package" to modify it.
 
-The tasks in the pull-down menue near the lable "Tasks" appear in the logical order in which they should be executed.
+![](img/create_ip_submission_review.png)
 
-![AIP to DIP task execution](./img/earkweb_aiptodip_taskexecution.png)
+You can now start the ingest of the information package, i.e. create the archival information package
+(AIP) by clicking on "Archive information package". Note that the processing and monitoring backend 
+needs to be available. 
 
-The "DIP task/workflow execution" overview table shows information entities of the package. 
+![](img/create_ip_submission_archive.png)
 
-* The "Package name" is the name of the DIP which is the outcome of the current SIP creation process.
-* The "Selected AIPs" is a list of AIPs which is selected to create the DIP.
-* The "Process ID" is a UUID which shows corresponds to the name of the working area directory. 
-* The "Last task" shows the last task which was executed, e.g. "DIPAcquireAIPs". The last task also determines the following task which can be executed because each task defines
-a list of accepted input tasks.
-* Last change is the date/time of the last modification (by a task)
-* Outcome shows the consistency status of a package. If the process status shows the value "Success (0)" together with a green "check mark" symbol, then the status of the 
-package is consistent.If an error occurred during processing,the process status shows the value "Error (1)" together with a green "warning triangle" symbol.
+The ingest process consists of a series of steps for creating the AIP. If any of the steps fails, this
+will be shown by a red symbol next to the corresponding processing step. The following error was 
+provoked by removing the "metsHdr" element from the METS.xml of the submission information package
+so that it becomes invalid. 
 
-Selected information and error log messages appear in the "Process log" and "Error log" areas, more detailed information about the processing might be available in the earkweb
-processing log which is available in the package.
+Click on the link of the processing step to inspect the details of process execution.
 
-Use the "AIPtoDIPReset" task to roll-back package processing to the initial state in case an error occurred during processing (after applying required modifications).
+![](img/aip_creation_pipeline_error.png)
 
-# Public search
+The error message says "Error validating package METS file." and refers to the processing
+log for details. 
 
-The public search interface allows full-text search in the information packages which were released for public search.
+The processing log file named "processing.log" is created in the root of the working directory. It 
+shows details about the validation and reveals the actual error 
 
-![Public search](./img/earkweb_publicsearch_example.png)
+    "Element '{http://www.loc.gov/METS/}dmdSec': This element is not expected. Expected is ( {http://www.loc.gov/METS/}metsHdr ). (<string>, line 0)" 
 
-It allows filtering search results by indicating a search term or values for additional fields, such as "package" or "content type".
+![](img/aip_creation_pipeline_error_details.png)
 
-The result links point directly to the repository so that it is possible to view the file.
+The following screen shows the successful execution of the ingest pipeline. 
+
+![](img/aip_creation_pipeline.png)
+
+After archiving the information package is listed in the "Package management" area.
+
+![](img/aip_pipeline_finished.png)
+
+Once the archival information package (AIP) is created, it receives a __Unique Identifier (UID)__ which is used to 
+identify the information package throughout its life-cycle. The following is an example of such an identifier based on 
+UUID<sup>[uuid](#uuid)</sup>:
+
+    urn:uuid:cmchfbsurejmrfyjevhcsfhxinaijwxnjmpixrzl
+    
+In the last step of the ingest workflow the archival information package (AIP) was indexed.
+The full-text search can be used to find content stored in information packages 
+
+![](img/full-text-search.png)
+
+and directly access them (if the file size does not exceed a configurable limit).
+
+![](img/full-text-search-display.png)
+
 
 ## Administration
 
 ### Django administration
 
-*earkweb* is based on the [[Django framework|https://docs.djangoproject.com]] which provides an admin interface. It reads metadata from the models to provide a quick, model-centric 
-interface where trusted users can manage content. 
-
-![Django admin](./img/earkweb_django_admin.png)
+*earkweb* is based on the [Django framework](https://docs.djangoproject.com) which provides an admin interface. It 
+reads metadata from the models to provide a quick, model-centric interface where administrators can manage content. 
 
 ### Flower
 
-*Flower* is a real-time monitor and web admin for Celery distributed task queue. It is recommended to install and set-up this application in a productive environment to be able
+*Flower* is a real-time monitor and web admin for Celery distributed task queue. It is recommended to install and 
+set-up this application in a productive environment to be able
 to monitor the execution of large numbers of tasks.
 
 In the development environment, flower can be started using the following command:
@@ -286,3 +170,10 @@ If the flower service is available in a sub-path (e.g. http://127.0.0.1/flower),
 
     celery flower -A earkweb --address=127.0.0.1 --url_prefix=flower --port=5555
 
+<hr>
+
+<a name="csip">csip</a> https://dilcis.org/specifications/common-specification
+
+<a name="uuid">uuid</a> https://tools.ietf.org/html/rfc4122
+
+<a name="dilcis">dilcis</a> https://dilcis.org/

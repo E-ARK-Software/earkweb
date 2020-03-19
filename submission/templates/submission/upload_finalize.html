@@ -1,0 +1,65 @@
+{% extends "earkweb/base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% load widget_tweaks %}
+
+{% block extra_head %}
+
+<!-- Section highlighting -->
+    <script type="text/javascript">$(document).ready(function () { $(".nav li").removeClass("active"); $('#{{ section }}').addClass('active'); });</script>
+
+    <!-- working area css -->
+    <link rel="stylesheet" href="{% static 'earkweb/css/workingarea.css' %}" type="text/css" />
+
+    <!-- jstree javascript/css -->
+    <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
+    <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
+
+    <!-- bootbox -->
+    <script type="text/javascript" src="{% static 'earkweb/bootbox-4.4.0/bootbox.js' %}"></script>
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'submission/js/submission.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
+
+    <link rel="stylesheet" href="{% static "submission/css/start.css" %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+    <h2>{% trans 'Information package created' %}</h2>
+
+
+    <p>{% trans 'The information package was created successfully' %}: "{{ ip.package_name }}"</p>
+
+    {% if rep %}
+         / <b>{{ rep }}</b>
+    {% endif %}
+
+    </p>
+
+    <div id="directorytree"></div>
+
+    <!-- working area script -->
+    <script language="javascript">
+
+    var dirasjson=`{{ dirasjson | safe }}`;
+    window.console.log(dirasjson);
+    var process_id='{{ ip. }}';</script>
+    <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
+
+    <p id="event_result"></p>
+
+    <!-- xml display -->
+    <div id="loadingpreview" style="display:none"></div>
+
+    <p><a id="editbtn" class="btn btn-info" type="button" href="{% url 'submission:upload_step1' ip.id %}">{% trans 'Edit information package' %}</a></p>
+
+    <p><a id="proceedbtn" class="btn btn-primary" type="button" href="{% url 'submission:startingest' ip.id %}">{% trans 'Continue with the archiving of the information package' %}</a></p>
+
+
+{% endblock %}

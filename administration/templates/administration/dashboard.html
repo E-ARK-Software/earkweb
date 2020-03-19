@@ -1,0 +1,216 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% load i18n %}
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'administration/js/administration.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'earkweb/chartist-js/chartist.min.css' %}">
+
+    <style>
+      /* Pie charts consist of solid slices where you can use this selector to override the default style. */
+    .ct-series-a .ct-slice-pie {
+          /* fill of the pie slieces */
+          fill: hsl(120, 40%, 60%);
+          /* give your pie slices some outline or separate them visually by using the background color here */
+          stroke: white;
+          /* outline width */
+          stroke-width: 4px;
+    }
+
+    </style>
+
+    <script language="JavaScript">
+    $( document ).ready(function() {
+      var data = {
+        series: [{{ disk_stats.work.free.bytes  }}, {{ disk_stats.work.used.bytes }}]
+      };
+      var data2 = {
+        series: [{{ disk_stats.storage.free.bytes  }}, {{ disk_stats.storage.used.bytes }}]
+      };
+
+      var sum = function(a, b) { return a + b };
+
+      new Chartist.Pie('.ct-chart-work', data, {
+        labelInterpolationFnc: function(value) {
+          return Math.round(value / data.series.reduce(sum) * 100) + '%';
+        }
+      });
+
+      new Chartist.Pie('.ct-chart-storage', data2, {
+        labelInterpolationFnc: function(value) {
+          return Math.round(value / data.series.reduce(sum) * 100) + '%';
+        }
+      });
+    });
+
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "administration/about_module.html" %}
+
+    <h2 class="main">Dashboard</h2>
+
+  <!-- Begin Page Content -->
+        <div class="container-fluid">
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <div class="col-xl-4 col-md-6 mb-4">
+              <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text- {% if 'ERROR' in celery_worker_status %}failure{% else %}success{% endif %} text-uppercase mb-1">Celery</div>
+                          <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <div>
+                            {% if 'ERROR' in celery_worker_status %}
+                                <p  style="color: red">No workers available: {{ celery_worker_status.items.0.1 }}</p>
+                            {% else %}
+                                <p>Available workers:</p>
+                                <ul>
+                                    {% for key, value in celery_worker_status.items %}
+                                    <li style="color: green">{{key}}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% if jobid %}
+                                    <p style="font-weight: bold">Job-ID: {{ jobid }}</p>
+                                    {% if result == 25 %}
+                                    <p style="font-weight: bold">{% trans 'The backend task execution was successful' %}</p>
+                                    {% else %}
+                                    <p style="font-weight: bold">{% trans 'The backend task execution did not deliver the expected result' %}</p>
+                                    {% endif %}
+                                {% endif %}
+                                <form method="POST">
+                                     {% csrf_token %}
+                                     <button id="starting" type="submit" class="btn btn-default">
+                                         Test backend task execution
+                                     </button>
+                                </form>
+                            {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                    <div class="col-auto">
+                        <i class="fas fa-{% if not 'ERROR' in celery_worker_status %}check text-success{% else %}times text-primary{% endif %} fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-{% if flower_status %}success{% else %}primary{% endif %} text-uppercase mb-1">Flower</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <div>
+                                    <p>Flower task execution monitoring</p>
+                                    <p class="{% if flower_status %}text-success{% else %}text-primary{% endif %}">Service is {% if not flower_status %}not{% endif %} available.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-auto">
+                      <i class="fas fa-{% if flower_status %}check text-success{% else %}times text-primary{% endif %} fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+                  <div style="text-align:center">{% if flower_status %}<a href="{{ flower_api_endpoint }}" target="_blank">{{ flower_api_endpoint }}</a>{% endif %}</div>
+              </div>
+            </div>
+
+            <div class="col-xl-4 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-{% if solr_available %}success{% else %}primary{% endif %} text-uppercase mb-1">SolR</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <div>
+                                    <p>SolR indexing and search service.</p>
+                                    <p class="text-{% if solr_available %}success{% else %}primary{% endif %}">SolR service is {% if not solr_available %}not{% endif %} available.</p>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-auto">
+                      <i class="fas fa-{% if solr_available %}check text-success{% else %}times text-primary{% endif %} fa-2x text-gray-300"></i>
+                    </div>
+                  </div>
+                </div>
+                  <div style="text-align:center">{% if solr_available %}<a href="{{ solr_core_overview_url }}" target="_blank">{{ solr_core_overview_url }}</a>{% endif %}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Content Column -->
+            <div class="col-lg-6 mb-4">
+
+              <!-- Working Area Card -->
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Working area</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-lg-6 mb-4">
+                      <div style="width: 300px; height: 300px" class="ct-chart-work ct-perfect-fourth"></div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                          <li>Free: {{ disk_stats.work.free.hr }}</li>
+                          <li>Used: {{ disk_stats.work.used.hr }}</li>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="col-lg-6 mb-4">
+
+              <!-- Storage -->
+              <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Storage</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-lg-6 mb-4">
+                      <div style="width: 300px; height: 300px" class="ct-chart-storage ct-perfect-fourth"></div>
+                    </div>
+                    <div class="col-lg-6 mb-4">
+                      <p>
+                        <ul>
+
+                         <li>Free: {{ disk_stats.storage.free.hr }}</li>
+                          <li>Used: {{ disk_stats.storage.used.hr }}</li>
+
+                        </ul>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+        <!-- /.container-fluid -->
+
+        <script src="{% static 'earkweb/chartist-js/chartist.min.js' %}"></script>
+
+
+
+{% endblock %}

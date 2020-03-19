@@ -1,0 +1,12 @@
+#directorytree{
+    overflow-y: scroll;
+    height: 500px;
+    border: 1px solid gray;
+    background-color: white;
+}
+
+
+
+.glyphicon-folder-open, .glyphicon-folder-close {
+    color: #c9b37b;
+}

@@ -1,0 +1,81 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+
+
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'submission/js/submission.js' %}"></script>
+
+    <!-- current_ip variable used in subsequent scripts (as the IP is selected, the corresponding form field is hidden) -->
+    <script type="text/javascript">
+    var current_ip="{{ ip.id }}";
+    $("#id_ips").val({{ ip.id }});
+    $("#id_ips").parent().nodisplay();
+    var flowerHost = '{{flower_host}}';
+    var flowerPort = '{{flower_port}}';
+    var flowerPath = '{{flower_path}}';
+    </script>
+
+    <script type="text/javascript" src="{% static 'submission/js/startingest.js' %}"></script>
+    <link rel="stylesheet" href="{% static "submission/css/startingest.css" %}" type="text/css" />
+
+    <script language="JavaScript">var ingestProcessStartedMessage="{% trans 'IngestProcessStarted' %}"; var pipeline_ready_msg = "{% trans 'Ingest pipeline terminated!' %}";</script>
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "submission/about_module.html" %}
+
+    <h2 class="main">{% trans 'Archive information package' %}</h2>
+
+    {% include "submission/iptable.html" %}
+
+    {% if 'ERROR' in celery_worker_status %}
+
+        <div>
+        <p  style="color: red">{% trans 'The processing backend is not available' %}: {{ celery_worker_status.items.0.1 }}</p>
+        </div>
+
+    {% else %}
+
+        <div>
+             <p>{% trans 'The processing backend is available' %}:</p>
+            <ul>
+                {% for key, value in celery_worker_status.items %}
+                <li style="color: green">Worker {{key}}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+        {% if not flower_status %}
+        <div>
+        <p style="color: #FF8000">{% trans 'Warning: no task monitoring available because the task monitoring service is not running at' %}: {{ flower_api_endpoint }}</p>
+        </div>
+        {% endif %}
+
+    <button id="starting" type="submit" class="btn btn-primary">
+      <i class="glyphicon glyphicon-save"></i> {% trans 'Archive information package' %}
+    </button>
+
+    <div id="confirmation" style="padding-top: 20px;"></div>
+
+    <div id="ingestjobid" style="padding-top: 20px;"></div>
+
+    <div id="childjobs"></div>
+
+    <div><p style="padding-top: 20px;" id="errordiv"></p>
+    <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
+    </div>
+
+    {% endif %}
+
+{% endblock %}

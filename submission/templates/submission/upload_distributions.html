@@ -1,0 +1,612 @@
+{% extends "earkweb/base_fileupload.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% load widget_tweaks %}
+
+
+{% block extra_head %}
+<style>
+.help-block {
+    font-size: 80%
+}
+</style>
+<script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+<script language="javascript">
+var process_id = '{{ ip.process_id }}';
+var rep = '{{ rep }}';
+var add_rep_url = '{% url 'submission:add_representation' ip.id %}';
+var del_rep_url = '{% url 'submission:del_representation' ip.process_id '0000000000000000000000000000000000000000' %}';
+var sip_detail_url = '/earkweb/submission/upload_step4/{{ pk }}/';
+</script>
+<script language="JavaScript">
+
+var representations = {{ representations | safe  }};
+
+
+function dec2hex (dec) {
+  return ('0' + dec.toString(16)).substr(-2)
+}
+
+function generateId (len) {
+  var arr = new Uint8Array((len || 40) / 2)
+  window.crypto.getRandomValues(arr)
+  return Array.from(arr, dec2hex).join('')
+}
+
+
+function checkValidBlockchainAddress(repr) {
+    $.ajax({
+        type: 'GET',
+        url: '/earkweb/api/is_asset_address/'+repr+'/',
+        data: {
+
+        },
+        success: function(data){
+            console.log("Blockchain address: "+data);
+            if(data)
+                $("#blockchain-symbol").show();
+            else
+                $("#blockchain-symbol").hide();
+        },
+        error: function(data){
+            $("#blockchain-symbol").hide();
+        }
+    });
+}
+
+function loadDataFiles(repr) {
+
+    console.log("Loading: "+repr);
+
+    checkValidBlockchainAddress(repr);
+
+    $.ajax({
+            type: 'GET',
+            url: '/earkweb/api/informationpackages/{{ process_id }}/dir-json',
+            data: {
+
+            },
+            success: function(data){
+                console.log(JSON.stringify(data));
+                var representations = data.data.children.filter(obj => {
+                  return obj.text === '{{representations_directory}}';
+                })
+
+                var datafiles = representations[0]['children'].filter(obj => {
+                  return obj.text === repr
+                })
+                console.log(datafiles.length);
+
+                initPrev = [];
+                initPrevConfig = [];
+
+                if(datafiles.length > 0) {
+
+                    //var datafiles_arr = datafiles[0].children['data'].children;
+
+                    var datafiles_arr = datafiles[0].children.filter(obj => {
+                      return obj.text === 'data'
+                    })[0]['children']
+
+
+                    var mimeTypes = [];
+
+                    //console.log(datafiles_arr);
+                    var pv_file_paths = [];
+                    function appendFilePaths(path, dfarr) {
+                        for (df of dfarr) {
+                            var curr_path = path ? path+"/"+df.text : df.text;
+                            if(!df.children) {
+                                pv_file_paths.push(curr_path);
+                                mimeTypes.push(df.data);
+                            } else {
+
+                                appendFilePaths(curr_path, df.children);
+                            }
+                        }
+                    }
+                    appendFilePaths(null, datafiles_arr);
+                    pv_file_paths.sort();
+                    obj = [];
+
+
+                    for (var key in mimeTypes) {
+
+                        var downloadUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path'];
+                        var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']+'/';
+                        caption = mimeTypes[key]['path'].replace('{{ process_id }}/{{representations_directory}}/'+repr+'/data/', '');
+                        initPrev.push(mimeTypes[key]['mimetype']);
+                        console.log(mimeTypes[key]['path'].replace('{{ process_id }}/{{representations_directory}}/'+repr+'/', ''));
+                        initPrevConfig.push({caption: caption, filetype: mimeTypes[key]['mimetype'], downloadUrl: downloadUrl, key: mimeTypes[key]['path'], previewAsData: false, 'showPreview': false, url: deleteUrl});
+                    }
+
+                }
+
+                $("#kv-explorer").fileinput({
+                    minFileCount: 1,
+                    maxFileCount: 50,
+                    maxFileSize: 10000,
+                    'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
+                    'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'dbf', 'prj', 'shp', 'shx', 'gml', 'xsd'],
+                    'theme': 'explorer-fa',
+                    'uploadUrl': '/earkweb/submission/upload',
+                    overwriteInitial: false,
+                    allowedPreviewTypes: ['image'],
+                    initialPreviewAsData: false,
+                    initialPreview: initPrev,
+                    initialPreviewConfig: initPrevConfig,
+                    preferIconicPreview: true, // this will force thumbnails to display icons for following file extensions
+                    previewFileIconSettings: { // configure your icon file extensions
+                    'doc': '<i class="fas fa-file-word text-primary"></i>',
+                    'xls': '<i class="fas fa-file-excel text-primary"></i>',
+                    'ppt': '<i class="fas fa-file-powerpoint text-primary"></i>',
+                    'pdf': '<i class="fas fa-file-pdf text-primary"></i>',
+                    'zip': '<i class="fas fa-file-archive text-primary"></i>',
+                    'htm': '<i class="fas fa-file-code text-primary"></i>',
+                    'txt': '<i class="fas fa-file-alt text-primary"></i>',
+                    'mov': '<i class="fas fa-file-video text-primary"></i>',
+                    'mp3': '<i class="fas fa-file-audio text-primary"></i>',
+                    'csv': '<i class="fas fa-file-csv text-primary"></i>',
+                    'xml': '<i class="fas fa-file-code text-primary"></i>',
+                    'gml': '<i class="fas fa-atlas text-primary"></i>',
+                    'xsd': '<i class="fas fa-file-code text-primary"></i>',
+                    'shp': '<i class="fas fa-atlas text-primary"></i>',
+                    'shx': '<i class="fas fa-atlas text-primary"></i>',
+                    'sql': '<i class="fas fa-database text-primary"></i>',
+
+                    // note for these file types below no extension determination logic
+                    // has been configured (the keys itself will be used as extensions)
+                    'jpg': '<i class="fas fa-file-image text-danger"></i>',
+                    'gif': '<i class="fas fa-file-image text-muted"></i>',
+                    'png': '<i class="fas fa-file-image text-primary"></i>'
+                },
+                previewFileExtSettings: { // configure the logic for determining icon file extensions
+                    'csv': function(ext) {
+                        return ext.match(/(csv)$/i);
+                    },
+                    'doc': function(ext) {
+                        return ext.match(/(doc|docx)$/i);
+                    },
+                    'xls': function(ext) {
+                        return ext.match(/(xls|xlsx)$/i);
+                    },
+                    'ppt': function(ext) {
+                        return ext.match(/(ppt|pptx)$/i);
+                    },
+                    'zip': function(ext) {
+                        return ext.match(/(zip|rar|tar|gzip|gz|7z)$/i);
+                    },
+                    'htm': function(ext) {
+                        return ext.match(/(htm|html)$/i);
+                    },
+                    'txt': function(ext) {
+                        return ext.match(/(txt|ini|java|php|js|css)$/i);
+                    },
+                    'mov': function(ext) {
+                        return ext.match(/(avi|mpg|mkv|mov|mp4|3gp|webm|wmv)$/i);
+                    },
+                    'mp3': function(ext) {
+                        return ext.match(/(mp3|wav)$/i);
+                    }
+                },
+                    uploadExtraData: function (previewId, index) {
+                    var info = {
+                        "process_id": "{{ process_id }}",
+                        "rep": repr,
+                        "distribution_description": $('#id_distribution_description').val(),
+                        "offer": $('#id_offer').val(),
+                        "access_rights": $('#id_access_rights').val(),
+                    };
+                    return info;
+                    }
+                });
+
+                $('button[title="View Details"]').css("display", "none");
+                $('span[title="Move / Rearrange"]').css("display", "none");
+
+
+            },
+            error: function(data){
+                window.console.log("an error occurred");
+            }
+        });
+}
+
+
+$( document ).ready(function() {
+
+    if(Object.getOwnPropertyNames(representations).length < 2) {
+        $('#representation-switch').hide();
+        $('#delrepbtn').hide();
+    } else {
+        $('#representation-switch').show();
+        $('#delrepbtn').show();
+    }
+
+    if(rep)
+        $('#dditem_'+rep).hide();
+
+
+
+    function setValid(elmid) {
+        $( "#"+elmid ).removeClass("error");
+        $( "#"+elmid ).addClass("ok");
+        $('#finalizebtn').removeAttr("disabled");
+    }
+
+    function setInvalid(elmid) {
+        $( "#"+elmid ).addClass("error");
+        $( "#"+elmid ).removeClass("ok");
+        $('#finalizebtn').attr("disabled", "disabled");
+    }
+
+    function checkLabelName() {
+        var pn = $( "#id_distribution_label" );
+        var elm = $("label[for='id_distribution_label']");
+        elm.val("Representation Label (minimum 3 characters!)");
+        if (pn.val().length < 3) {
+            var msg = 'Representation Label <span style="color: red; font-weight: normal">(minimum 3 characters!)</span>';
+            elm.html(msg);
+            setInvalid('id_distribution_label');
+            return false;
+        } else {
+            var regex = new RegExp('^[a-zA-Z][a-zA-Z0-9_\.\-]{2,200}$');
+            window.console.log(pn.val());
+            if(!regex.test(pn.val())) {
+                var msg = 'Representation Label <span style="color: red; font-weight: normal">(Invalid characters in label!)</span>';
+                elm.html(msg);
+                setInvalid('id_distribution_label');
+                return false;
+            } else {
+                elm.html('Representation Label');
+                setValid('id_distribution_label');
+            }
+        }
+    }
+
+    $( "#id_distribution_label" ).keyup(function() {
+       checkLabelName();
+    });
+
+    function validDistrName(value) {
+        return /^[a-z0-9-_.]{3,500}$/i.test(value);
+    }
+    $( "#repval" ).keyup(function() {
+        var isValidURI = validDistrName($(this).val());
+        if($(this).val() == '' || isValidURI) {
+            setValid("repval");
+        } else {
+            setInvalid("repval");
+        }
+    });
+
+    /**
+     * Disable data upload areas if no distribution exists.
+     */
+    if(rep == '') {
+        $('#upload-area').hide();
+        $('#reprnote').html(
+            '<span style=color:red>For uploading data files it is required to create a representation first.'+
+            '<br>Otherwise, the submission can be finalized as a metadata-only submission.</span>').show();
+    }
+
+    $("#form1").submit();
+
+
+    function update_field_db(param_name, param_value) {
+
+        window.console.log("Changing db field '"+param_name+"' to '"+param_value+"'");
+
+        if ( representations[$('#repval').val()] == undefined) {
+            var reprObj = {'description': '', 'accessRights': '', 'label': ''};
+            representations[$('#repval').val()] = reprObj;
+        }
+        if(param_name == 'distribution_description')
+            representations[$('#repval').val()].description = param_value;
+        if(param_name == 'access_rights') {
+            representations[$('#repval').val()].accessRights = param_value;
+        }
+        if(param_name == 'distribution_label')
+            representations[$('#repval').val()].label = param_value;
+
+        $.ajax({
+            type: 'POST',
+            url: '/earkweb/submission/updatedistrmd',
+            data: {
+                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+                'pk': '{{ pk }}',
+                'rep': $('#repval').val(),
+                'param_name': param_name,
+                'param_value': param_value,
+            },
+            success: function(data){
+                if (typeof(data.access_rights) !== 'undefined' && typeof(data.new_asset_id) !== 'undefined') {
+                    removeRepSwitchItem($('#repval').val());
+
+                    representations[data.new_asset_id] = representations[$('#repval').val()];
+
+                    $('#repval').val(data.new_asset_id);
+                    $('#repheader').html(data.new_asset_id);
+                    addRepSwitchItem(data.new_asset_id);
+                    checkValidBlockchainAddress(data.new_asset_id);
+                }
+                if (typeof(data.error) !== 'undefined') {
+                    $('#reprnote').html(
+                    '<span style=color:red>'+data.error+'</span>').show();
+                    $('#reprnote').visible();
+                    $('#repval').val('');
+                    $('#finalizebtn').attr("disabled", "disabled");
+                } else {
+                    $('#finalizebtn').removeAttr("disabled");
+                }
+                window.console.log("Field " + param_name + " updated: " + param_value);
+            },
+            error: function(data){
+                window.console.log("an error occurred");
+            }
+        });
+
+
+    }
+
+    $('#distribution_metadata_form select').on('change', function() {
+        var param_name = $(this)[0].name;
+        var param_value = $(this)[0].value;
+        update_field_db(param_name, param_value);
+    });
+
+    $( "#distribution_metadata_form input" ).focusout(function() {
+        var param_name = $(this)[0].name;
+        var param_value = $(this)[0].value;
+        update_field_db(param_name, param_value);
+    });
+
+    $( "#distribution_metadata_form textarea" ).focusout(function() {
+        var param_name = $(this)[0].name;
+        var param_value = $(this)[0].value;
+        update_field_db(param_name, param_value);
+    });
+
+});
+
+/**
+ * Change representation
+ */
+function changeRep(rep, sip_detail_url) {
+
+    var repr_value = rep;
+    $('#reprnote').invisible();
+
+    $("[id^=dditem_]").show();
+    $('#dditem_'+rep).hide();
+
+    $('#reprnote').hide();
+    $('#repval').val(repr_value);
+    $('#repheader').html(repr_value);
+
+    if ( representations[repr_value] == undefined) {
+        var reprObj = {'description': '', 'accessRights': '', 'label': ''};
+        representations[repr_value] = reprObj;
+    }
+
+    $('#id_access_rights').val(representations[repr_value].accessRights);
+
+    $('#id_distribution_label').val(representations[repr_value].label);
+    $('#id_distribution_description').val(representations[repr_value].description);
+
+    $("#kv-explorer").fileinput('destroy');
+    loadDataFiles(rep);
+
+    console.log("Changed to representation: " +  rep);
+}
+
+function addRepSwitchItem(newRepId) {
+    $( "#repswitchitems" ).append( '<a class="dropdown-item" id="dditem_'+newRepId+'" href="#" onclick="changeRep($(this)[0].text, sip_detail_url)">'+newRepId+'</a>');
+}
+
+function removeRepSwitchItem(repId) {
+    $( "#dditem_"+repId ).remove();
+}
+
+/**
+ * Add representation
+ */
+function addRep(rep, url) {
+    var rep_value = $('#repval').val();
+    var re = new RegExp("^[A-Za-z0-9_-]{30,50}$");
+    if(re.test(rep_value)) {
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: "representation="+$('#repval').val(),
+            success: function(json_response){
+                if(json_response.success == true) {
+                    var newRepId = json_response.representation;
+                    changeRep(newRepId, sip_detail_url);
+                    console.log("Representation added: " +  newRepId);
+                    addRepSwitchItem(newRepId);
+                    $("#id_access_rights").val("free");
+                    var reprObj = {'description': '', 'accessRights': 'free', 'label': ''};
+                    representations[newRepId] = reprObj;
+                } else
+                    $('#reperr').html(json_response.message);
+            }
+        });
+    } else
+        $('#reperr').html("Identifier character length must be between 30 and 50!");
+    $('#reprnote').invisible();
+}
+
+
+/**
+ * Delete representation
+ */
+function delRep(rep, url) {
+    var rep_value = $('#repval').val();
+    var re = new RegExp("^[A-Za-z0-9_-]{30,50}$");
+    window.console.log(url);
+    if(re.test(rep_value)) {
+        $.ajax({
+            url: url,
+            type: "DELETE",
+            data: "representation="+$('#repval').val(),
+            success: function(json_response){
+                if(json_response.success == true) {
+                    var delRepLabel = representations[rep_value]['label'];
+                    delete representations[rep_value];
+                    $("#dditem_"+rep_value).remove();
+                    console.log("Representation deleted: " +  rep_value);
+                    for (var firstRep in representations) break;
+                    var firstRepId = representations[firstRep]['identifier'];
+                    var firstRepLabel = representations[firstRep]['label'];
+                    console.log("First rep identifier: " + firstRepId);
+                    changeRep(firstRepId, sip_detail_url);
+
+                    $("#kv-explorer").fileinput('destroy');
+                    loadDataFiles(firstRepId);
+
+                    $('#reprnote').html(
+                    '<span style=color:green>Representation "'+rep_value+'" deleted (changed to first representation "'+firstRepId+'")</span>').show();
+                    $('#reprnote').visible();
+                } else
+                    $('#reperr').html(json_response.message);
+            }
+        });
+    } else
+        $('#reperr').html("Identifier character length must be between 30 and 50!");
+    $('#reprnote').invisible();
+
+
+
+}
+
+
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+    <h2>{% trans 'Create representations and upload data' %}</h2>
+
+    <p>Information package: <b>{{ ip.package_name }}</b> / <b>{{ ip.process_id }}</b>
+
+    {% if rep %}
+        / <b><span id="repheader">{{ rep }}</span></b>
+    {% endif %}
+
+    </p>
+
+    <div id="reperr"></div>
+    <div id="reprnote"></div>
+
+    <p>
+
+    <div class="form-group">
+        <label for="repval">{% trans 'Representation ID' %}</label>
+        <div class="row" style="padding-left:15px">
+
+            <img id="blockchain-symbol" src="{% static 'img/chain_icon.png' %}" style="padding-left: 5px; padding-top: 10px; height:25px" alt="Blockchain-Identifikator" data-toggle="tooltip" title="Blockchain-Identifikator">
+            <input id="repval" type="text" style="left:5px; width: 500px" value="{{ rep }}"  data-toggle="tooltip" title="Currently selected representation" readonly="readonly">
+
+            <button type="button" id="addrepbtn" class="btn" onclick="addRep($(this), add_rep_url)" title="Add another representation to the data set.">{% trans 'Create another representation' %} <i class="fa fa-plus"></i></button>
+
+             <div class="dropdown">
+
+                <button class="btn dropdown-toggle" type="button" id="representation-switch" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {% trans 'Switch to other representation' %}
+                </button>
+                <div id="repswitchitems" class="dropdown-menu" aria-labelledby="representation-switch">
+                    {% for repr_dir in repr_dirs %}
+                        <a class="dropdown-item" id="dditem_{{ repr_dir }}" href="#" onclick="changeRep($(this)[0].text, sip_detail_url)">{{ repr_dir }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="button" id="delrepbtn" class="btn" onclick="delRep($(this), del_rep_url.replace('0000000000000000000000000000000000000000', $('#repval').val())) " title="Delete distribution.">{% trans 'Delete distribution' %} <i class="fa fa-trash"></i></button>
+
+
+        </div>
+    </div>
+
+    <div id="upload-area">
+
+        <form name="dmdform" id="distribution_metadata_form" method="post" action="/earkweb/submission/upload_finalize/{{pk}}/">
+            <input type="hidden" name="pk" value="{{ pk }}"/>
+            <input type="hidden" name="rep" value="{{ rep }}"/>
+        {% for field in form.visible_fields %}
+              {% if field.name == 'tags' %}
+                  <div class="form-group ui-widget">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% render_field field class="form-control" %}
+                    {% for error in field.errors %}
+                      <span class="help-block">{{ error }}</span>
+                    {% endfor %}
+                  </div>
+              {% else %}
+                  <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% render_field field class="form-control" %}
+                    {% for error in field.errors %}
+                      <span class="help-block">{{ error }}</span>
+                    {% endfor %}
+                  </div>
+              {% endif %}
+        {% endfor %}
+        </form>
+        </p>
+
+        <form id="datauploadform" enctype="multipart/form-data" method="post">
+            <input type="hidden" name="packagename" value="{{ ip.package_name }}"/>
+            <input type="hidden" name="process_id" value="{{ ip.process_id }}"/>
+            <input type="hidden" name="pk" value="{{ pk }}"/>
+            <input type="hidden" name="rep" value="{{ rep }}"/>
+            <div class="file-loading">
+                <input id="kv-explorer" type="file" multiple data-min-file-count="1">
+            </div>
+        </form>
+
+    </div>
+
+    <div id="updateandfinalize">
+        <div class="form-group" style="padding-top:20px">
+            <form method="post" action="/earkweb/submission/ip_creation_process/{{pk}}/">
+                {% csrf_token %}
+              <button id="finalizebtn" type="submit" class="btn btn-primary">
+                <span class="glyphicon glyphicon-ok-circle"></span> {% trans 'Create information package' %}
+              </button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block after_body %}
+<script>
+
+    $(document).ready(function () {
+
+        $('#kv-explorer').on('fileuploaded', function(event, data, previewId, index) {
+            var response = data.response;
+            if(response.ret ) {
+                window.console.log("upload success!"+data.response.data);
+            }else{
+                window.console.log("upload failed!"+response.errmsg)
+            }
+            console.info(response.data);
+        });
+
+
+
+    //$("#kv-explorer").fileinput('destroy');
+    loadDataFiles('{{ rep }}');
+    //$("#kv-explorer").fileinput('reset');
+
+
+
+    });
+</script>
+{% endblock %}
+

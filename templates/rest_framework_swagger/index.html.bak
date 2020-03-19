@@ -1,0 +1,13 @@
+{% extends "rest_framework_swagger/base.html" %}
+{% load static i18n %}
+
+{% block extra_styles %}
+
+
+{% endblock extra_styles %}
+
+
+{% block extra_nav %}
+
+
+{% endblock extra_nav %}

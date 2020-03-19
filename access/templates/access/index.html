@@ -1,0 +1,21 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "access/about_module.html" %}
+
+    <ul>
+        <li class="menu-item"><a href="/earkweb/access/search">{% trans 'Search' %}</a></li>
+        {% if user.is_active and user.is_staff %}
+        <li class="menu-item"><a href="/earkweb/access/indexing-status">{% trans 'Indexing status' %}</a></li>
+        {% endif %}
+    </ul>
+{% endblock %}

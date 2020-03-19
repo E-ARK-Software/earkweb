@@ -1,0 +1,25 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load static %}
+
+{% block extra_head %}
+
+    <!-- override style of h1.main to include the module description in h2 style -->
+    <style type="text/css" media=screen>
+        h1.title { font-size: 2em; }
+       h1.main { font-size: 1.3em; }
+    </style>
+
+{% endblock %}
+
+{% block content %}
+{% if code %}
+<p>Code: {{ code }}</p>
+{% else %}
+<p><a href="#">Get access token</a></p>
+{% endif %}
+{% if access_token %}
+<p>Bearer {{ access_token }}</p>
+{% endif %}
+{% endblock %}

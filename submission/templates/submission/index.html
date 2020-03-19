@@ -1,0 +1,27 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+
+{% load i18n %}
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'submission/js/submission.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+
+
+    {% include "submission/about_module.html" %}
+
+    <ul>
+        <li><a href="/earkweb/submission/start">{% trans 'Create new information package' %}</a></li>
+        <li><a href="/earkweb/submission/overview">{% trans 'Information packages in process' %}</a></li>
+        {% if user.is_active and user.is_staff %}
+        <!--li class="menu-item"><a href="/earkweb/submission/batch">{% trans 'Batch information package submissions' %}</a></li-->
+        {% endif %}
+    </ul>
+
+{% endblock %}

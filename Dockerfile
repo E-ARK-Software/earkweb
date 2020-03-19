@@ -1,46 +1,57 @@
-from ubuntu:14.04.5
+FROM ubuntu:18.04
+LABEL maintainer="E-ARK project, https://eark-project.com"
 
-maintainer E-ARK project, http://www.eark-project.com
+RUN apt-get update --fix-missing
 
-RUN echo "deb http://archive.ubuntu.com/ubuntu/ trusty multiverse" >> /etc/apt/sources.list
-RUN apt-get update
+# Set locale
+RUN apt-get install -y locales && locale-gen de_AT.UTF-8
+ENV LANG='de_AT.UTF-8' \
+    LANGUAGE='de_AT.UTF-8' \
+    LC_ALL='de_AT.UTF-8'
 
-# install python
-RUN apt-get install python  --force-yes -y
-RUN apt-get install python-setuptools --force-yes -y
-RUN apt-get install build-essential --force-yes -y
-RUN apt-get install python-virtualenv --force-yes -y
-RUN apt-get install python-dev --force-yes -y
+# copy python requirements
+COPY ./requirements.txt /tmp
 
-RUN easy_install pip
+# python3
+RUN apt-get install python3 python3-dev python3-virtualenv build-essential libmysqlclient-dev -y
+RUN apt-get upgrade python3 -y
+RUN apt install python3-pip -y
+RUN apt-get install git -y
 
-RUN apt-get install -y summain jhove pdftohtml
+RUN apt-get install wget -y
 
-RUN apt-get install -y graphicsmagick imagemagick
-RUN apt-get install -y libgraphicsmagick++1-dev libboost-python-dev
+# Ghostscript
+RUN wget -P /tmp https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs951/ghostscript-9.51-linux-x86_64.tgz && \
+    cd /tmp && tar -xzf ghostscript-9.51-linux-x86_64.tgz && \
+    cp /tmp/ghostscript-9.51-linux-x86_64/gs-951-linux-x86_64 /usr/local/bin/ghostscript && \
+    chmod +x /usr/local/bin/ghostscript
 
-RUN apt-get install -y tar git curl vim wget dialog net-tools build-essential
+# Fido
+RUN wget -P /tmp https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz && \
+    cd /tmp && tar -xzf 1.3.2-81.tar.gz && \
+    cd fido-1.3.2-81 && \
+    python3 setup.py install
 
-RUN wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
-RUN tar -xzvf 1.3.2-81.tar.gz
-RUN cd fido-1.3.2-81 && python setup.py install
+RUN apt-get remove wget -y
 
-#RUN cd fido-1.3.2-81/fido && echo 'yes' | python update_signatures.py
+# install python requirements
+RUN /usr/bin/pip3 install -r /tmp/requirements.txt
 
-RUN wget http://downloads.ghostscript.com/public/old-gs-releases/ghostscript-9.18.tar.gz
-RUN tar -xzf ghostscript-9.18.tar.gz
-RUN cd ghostscript-9.18 && ./configure && make && make install
+# packages
+RUN apt-get install vim curl redis-server -y
 
-RUN apt-get install -y libgeos-dev libmysqlclient-dev libxml2-dev libxslt1-dev
+RUN mkdir -p /data/storage/pairtree_version0_1
+RUN mkdir /data/work
 
-ADD docker/wait-for-it/wait-for-it.sh /wait-for-it.sh
+COPY ./docker/sample /data/
 
-ADD requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+ADD . /earkweb
 
-RUN pip install redis
+# make sure the docker settings are used in the container
+COPY ./settings/settings.cfg.docker /earkweb/settings/settings.cfg
 
-RUN mkdir -p /var/data/earkweb
+# entry point
+RUN chmod +x /earkweb/run_all.sh
+ENTRYPOINT ["/earkweb/run_all.sh"]
 
-RUN mkdir -p /var/log/earkweb
-
+EXPOSE 8000 5555

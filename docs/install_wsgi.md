@@ -1,17 +1,5 @@
 # Deployment as WSGI app (Apache Webserver frontend)
 
-## Table of Contents
-
-  - [Install and Configure as WSGI app](#install-and-configure-as-wsgi-app)
-  - [Celery service on server](#celery-service-on-server)
-    - [Update server deployment](#update-server-deployment)
-  - [Optional: CAS Single Sign On (SSO) installation](#optional-cas-single-sign-on-sso-installation)
-    - [CAS Installation](#cas-installation)
-      - [Prepare Apache Tomcat (enable SSL)](#prepare-apache-tomcat-enable-ssl)
-      - [CAS Deployment](#cas-deployment)
-      - [CAS Add/Change user](#cas-addchange-user)
-      - [Enable CAS in Django](#enable-cas-in-django)
-
 Django’s primary deployment platform is WSGI, the Python standard for web servers and applications.
 
 ## Install and Configure as WSGI app
@@ -22,9 +10,10 @@ Django’s primary deployment platform is WSGI, the Python standard for web serv
     
 ### Configure apache
 
-Edit Apache web server configuration, e.g. `/etc/apache2/sites-enabled/000-default`, and add the variable `WSGIScriptAlias` which marks the file path to the WSGI script, that 
-should be processed by mod_wsgi's wsgi-script handler, define a daemon process which allows running the wsgi app using a separate virtual environment, and add the earkweb 
-Location statement:
+Edit Apache web server configuration, e.g. `/etc/apache2/sites-enabled/000-default`, and add the variable 
+`WSGIScriptAlias` which marks the file path to the WSGI script, that should be processed by mod_wsgi's wsgi-script 
+handler, define a daemon process which allows running the wsgi app using a separate virtual environment, and add the 
+earkweb Location statement:
 
     WSGIScriptAlias /earkweb /opt/python_wsgi_apps/earkweb/earkweb/wsgi.py
 
@@ -48,7 +37,7 @@ The celery service is configured in the following file:
 Then create a celery config directory:
 
     sudo mkdir -p /etc/earkweb/celery
-    sudo chown -R <user>:<group> /etc/earkweb
+    sudo chown -R $USER:`id -gn` /etc/earkweb
 
 Copy the script to the configuration directory:
 
@@ -67,17 +56,19 @@ This example shows how to run one single worker, multiple workers can be configu
     
 ### Update server deployment
 
-The deployed on a server, the source code is a copy cloned from the Github repository, update is therefore possible by sending a pull request:
+The deployed on a server, the source code is a copy cloned from the Github repository, update is therefore possible by 
+sending a pull request:
 
     sudo -u www-data git pull origin master
     
-If static files have been changed, run Django's 'collectstatic' command which will copy static files (javascript, css, etc.) to the web servers static files directory:
+If static files have been changed, run Django's 'collectstatic' command which will copy static files (javascript, css, 
+etc.) to the web servers static files directory:
 
     python manage.py collectstatic
    
 If tasks have changed, run the update script:
 
-    python ./workers/scantasks.py
+    python ./taskbackend/scantasks.py
     
 The deploy.sh script is an example bash script which allows updating an installation:
 
@@ -97,7 +88,8 @@ Optionally, a CAS server can be used for authentication if Django authentication
 
         keytool -genkey -alias tomcat -keyalg RSA -keystore keystore.jks
         
-    In the following questions set the Common Name (CN) to earkdev.ait.ac.at to avoid SSL errors of type 'hostname mismatch'.
+    In the following questions set the Common Name (CN) to earkwebdev.ait.ac.at to avoid SSL errors of type 
+    'hostname mismatch'.
 
 2. Activate SSL:
 
@@ -126,7 +118,8 @@ Optionally, a CAS server can be used for authentication if Django authentication
 
 #### CAS Add/Change user
 
-Users are managed in the deployerConfigContext.xml which is located at (variable $CATALINA_HOME must point to the installation directory of apache tomcat):
+Users are managed in the deployerConfigContext.xml which is located at (variable $CATALINA_HOME must point to the 
+installation directory of apache tomcat):
 
     $CATALINA_HOME/webapps/cas/WEB-INF/deployerConfigContext.xml
     

@@ -1,0 +1,30 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load bootstrap %}
+
+{% load static %}
+{% load i18n %}
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="main">Login</h1>
+
+    {% if is_test_instance %}
+    <p>{% trans 'The repository is configured as a test instance. Default login data:' %}</p>
+    <ul>
+        <li>User: admin</li>
+        <li>Password: admin</li>
+    </ul>
+    {% endif %}
+
+    <div id="login">
+        <form method="post">
+          {% csrf_token %}
+         {{ form|bootstrap_horizontal:'col-lg-2 col-sm-2' }}
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mets xmlns="http://www.loc.gov/METS/" xmlns:csip="DILCIS" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ext="ExtensionMETS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OBJID="7ad75127-4998-4299-a670-f680642be69e" LABEL="METS file describing the SIP matching the OBJID." PROFILE="http://www.ra.ee/METS/v01/IP.xml" TYPE="SIP" xsi:schemaLocation="http://www.loc.gov/METS/ empty http://www.w3.org/1999/xlink empty">
+  <metsHdr CREATEDATE="2020-03-17T10:38:01" RECORDSTATUS="NEW" csip:OAISPACKAGETYPE="SIP">
+    <agent ROLE="CREATOR" TYPE="OTHER" OTHERTYPE="SOFTWARE">
+      <name>eatb</name>
+      <note>VERSION=1.0</note>
+    </agent>
+    <metsDocumentID>METS.xml</metsDocumentID>
+  </metsHdr>
+  <amdSec ID="IDc817c6c3-5f43-485c-b4a5-7d9230dd3d0e">
+    <digiprovMD ID="ID98c91bd5-63b3-4c43-ad4c-c48929fea4b8">
+      <mdRef LOCTYPE="URL" MIMETYPE="application/xml" CREATED="2020-03-17T10:38:01" xlink:type="simple" xlink:href="file://./metadata/preservation/premis.xml" CHECKSUMTYPE="SHA-256" CHECKSUM="50e9ea3e171d6dd9edf5b0283a40cffc179b87c30aca97616c4e6e4f3c2c9069" ID="IDc12e33ce-8992-4639-8134-84c3e56f1938" SIZE="3586" MDTYPE="PREMIS"/>
+    </digiprovMD>
+  </amdSec>
+  <fileSec ID="ID982a74ec-55f7-4500-bdef-99a56aba2ebf">
+    <fileGrp ID="ID8c0be75c-0704-4a93-b501-c29f66773840" USE="data">
+      <file MIMETYPE="None" CHECKSUMTYPE="SHA-256" CREATED="2020-03-17T10:33:47" CHECKSUM="52a1c5a67e19cb36272dd0e81562898251c1477c94367229885cfa8be0911c7a" USE="Datafile" ID="ID3aa85f50-ede5-49d2-96bb-bd3645f1d0f4" SIZE="3717796">
+        <FLocat xlink:href="file://./data/D46_GML.gml" LOCTYPE="URL" xlink:type="simple"/>
+      </file>
+      <file MIMETYPE="text/csv" CHECKSUMTYPE="SHA-256" CREATED="2020-03-17T10:22:20" CHECKSUM="998a2f4f44d3c1fe24611649673b9ce69a3f8d907163a3e30a010dcad1095cf1" USE="Datafile" ID="IDb3c55b9e-3786-4135-a84d-ac214cbb9fe8" SIZE="5748">
+        <FLocat xlink:href="file://./data/D46_ATR.csv" LOCTYPE="URL" xlink:type="simple"/>
+      </file>
+      <file MIMETYPE="application/xml" CHECKSUMTYPE="SHA-256" CREATED="2020-03-17T10:22:20" CHECKSUM="24a216248caf5a40d5bd4293d0871c872ae385942c220e3e3f1e8df60fc481f2" USE="Datafile" ID="ID92529cb9-1d9d-4cef-8426-b7991f04bc03" SIZE="1585">
+        <FLocat xlink:href="file://./data/D46_GML.xsd" LOCTYPE="URL" xlink:type="simple"/>
+      </file>
+    </fileGrp>
+  </fileSec>
+  <structMap LABEL="CSIP" TYPE="PHYSICAL" ID="ID3a710458-925a-422f-a975-ef73b760be13">
+    <div LABEL="7ad75127-4998-4299-a670-f680642be69e" ID="ID2ab4c93b-a6bd-42e6-a69c-5ece7b067b8c">
+      <div LABEL="data" ID="IDa43ed3dd-7e8f-4377-aa8f-d0638cb840bc">
+        <fptr FILEID="ID3aa85f50-ede5-49d2-96bb-bd3645f1d0f4"/>
+        <fptr FILEID="IDb3c55b9e-3786-4135-a84d-ac214cbb9fe8"/>
+        <fptr FILEID="ID92529cb9-1d9d-4cef-8426-b7991f04bc03"/>
+      </div>
+      <div LABEL="metadata" ID="ID1518c46f-6fcc-4efc-bad9-f110c2f5a322">
+        <fptr FILEID="IDc12e33ce-8992-4639-8134-84c3e56f1938"/>
+      </div>
+    </div>
+  </structMap>
+  <structMap LABEL="Simple SIP structuring" TYPE="logical">
+    <div LABEL="Package structure" ID="ID1f09486c-71c5-4a7b-ac99-a0497e204788">
+      <div LABEL="metadata files" ID="ID6791fe3b-d44f-44c8-870e-054eecf41061">
+        <fptr FILEID="IDc12e33ce-8992-4639-8134-84c3e56f1938"/>
+      </div>
+      <div LABEL="schema files" ID="IDe1adb982-f3ad-4567-9672-24c6e46a5382"/>
+      <div LABEL="content files" ID="IDab2cb399-141e-4ff8-834d-e30f2b436ec4">
+        <fptr FILEID="ID3aa85f50-ede5-49d2-96bb-bd3645f1d0f4"/>
+        <fptr FILEID="IDb3c55b9e-3786-4135-a84d-ac214cbb9fe8"/>
+        <fptr FILEID="ID92529cb9-1d9d-4cef-8426-b7991f04bc03"/>
+      </div>
+    </div>
+  </structMap>
+</mets>

@@ -1,0 +1,47 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static i18n %}
+
+{% block extra_head %}
+
+    <!-- Section highlighting -->
+    <script type="text/javascript">$(document).ready(function () { $(".nav li").removeClass("active"); $('#{{ section }}').addClass('active'); });</script>
+
+    <!-- working area css -->
+    <link rel="stylesheet" href="{% static 'earkweb/css/workingarea.css' %}" type="text/css" />
+
+    <!-- jstree javascript/css -->
+    <link rel="stylesheet" href="{% static 'earkweb/jstree/dist/themes/default/style.min.css' %}" />
+    <script src="{% static 'earkweb/jstree/dist/jstree.min.js' %}"></script>
+
+    <!-- bootbox -->
+    <script type="text/javascript" src="{% static 'earkweb/bootbox-4.4.0/bootbox.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">{{ title }}</h1>
+
+<h2 class="main">{% trans 'WorkingDirectory' %}: {{ process_id }}</h2>
+
+<p>{% trans 'ThisWorkDirShowsContentOf' %}: {{ process_id }}</p>
+
+<div id="directorytree"></div>
+
+<!-- working area script -->
+<script language="javascript">
+
+var dirasjson=`{{ dirasjson | safe }}`;
+window.console.log(dirasjson);
+var process_id='{{ process_id }}';</script>
+<script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
+
+<p id="event_result"></p>
+
+<p><a href="javascript:history.back()" title='Back to overview'>back</a></p>
+
+<!-- xml display -->
+<div id="loadingpreview" style="display:none"></div>
+
+{% endblock %}

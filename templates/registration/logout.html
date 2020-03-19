@@ -1,0 +1,18 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load static %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">Logout</h1>
+
+
+<p>Logged out successfully!</p>
+<p><a href="{% url 'login'  %}">Log in again</a></p>
+
+{% endblock %}

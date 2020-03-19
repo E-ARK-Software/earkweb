@@ -1,8 +1,3 @@
-.progress-bar {
-   width:100%;
-   background:gray;
-}
-
 label {
    float: left;
    width: 150px;
@@ -29,4 +24,36 @@ label {
 
 .helptext {
 
+}
+
+progress.ready{
+  background-color:#169816;
+  color:#169816;
+  }
+progress.ready[value] {color:#169816} /* IE10 */
+progress.ready::-webkit-progress-bar-value {background-color:#169816}
+progress.ready::-webkit-progress-value {background-color:#169816}
+progress.ready::-moz-progress-bar {background-color:#169816}
+
+progress.error{
+  background-color:#C6212C;
+  color:#C6212C;
+  }
+progress.error[value] {color:#169816} /* IE10 */
+progress.error::-webkit-progress-bar-value {background-color:#C6212C}
+progress.error::-webkit-progress-value {background-color:#C6212C}
+progress.error::-moz-progress-bar {background-color:#C6212C}
+
+progress::-moz-progress-bar { background: #999B9B; }
+progress::-webkit-progress-value { background: #999B9B; }
+progress { color: #999B9B; }
+progress {
+  background-color: #eee;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25) inset;
+  width: 500px;
+  -webkit-appearance: none;
+   appearance: none;
+
+  height: 20px;
 }

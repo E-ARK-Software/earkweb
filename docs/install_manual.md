@@ -1,57 +1,205 @@
 # Manual installation
 
-## Table of Contents 
+Step-by-step manual installation.
 
-  - [Installing dependencies](#installing-dependencies)
-    - [Debian packages](#debian-packages)
-    - [Python modules](#python-modules)
-      - [fido](#fido)
-      - [ghostscript](#ghostscript)
-  - [Installing earkweb](#installing-earkweb)
-  - [Create and initialize database](#create-and-initialize-database)  
-  - [Celery distributed task execution](#celery-distributed-task-execution)
+## Install dependencies
 
-## Installing dependencies
+### Debian packages
 
-### Install Debian packages
+    sudo apt-get install python3 python3-dev python3-virtualenv build-essential libmysqlclient-dev summain
+    
+### Message queue and result backend
 
-    sudo apt-get install python python-setuptools build-essential python-virtualenv python-dev  summain jhove pdftohtml graphicsmagick imagemagick libgraphicsmagick++1-dev libboost-python-dev
+Install result backend database:
 
-### Python modules
+    sudo apt-get install redis-server
 
-#### fido
+### SolR
 
-[Fido](https://github.com/openpreserve/fido) is used for file format identification (mime-type and PRONOM Unique Identifier).
+This section only applies if SolR is used as a search module.
+    
+Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](https://www.oracle.com/java/technologies/javase-jdk13-downloads.html)).
 
-1. Install fido:
+1. Install SolR:
 
-        wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
-        tar -xzvf 1.3.2-81.tar.gz
-        cd fido-1.3.2-81
-        sudo python setup.py install
+       SOLR_VERSION="8.4.1"
+       SOLR_INSTALL_DIR="/opt/solr"
+       sudo mkdir $SOLR_INSTALL_DIR
+       sudo chown -R ${USER}:`id -gn` $SOLR_INSTALL_DIR
+       cd ${SOLR_INSTALL_DIR}
+       wget http://archive.apache.org/dist/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz
+       tar -xzvf solr-${SOLR_VERSION}.tgz
+  
+2. Create SOLR_HOME directory:
+    
+       SOLR_HOME = "/var/data/solr"
+       sudo mkdir -p ${SOLR_HOME}
+       sudo chown ${USER}:`id -gn` ${SOLR_HOME}
+    
+3. Copy solr.xml to SOLR_HOME:
+  
+       cp ${SOLR_INSTALL_DIR}/server/solr/solr.xml ${SOLR_HOME}    
+       
+4. Create core `storagecore1`
 
-2. Update filetype signatures (long running):
+        cd ${SOLR_INSTALL_DIR}
+        ./bin/solr create_core -c storagecore1
+        
+5. Enable remote streaming
 
-        cd fido
-        python update_signatures.py
+        curl http://localhost:8983/solr/storagecore1/config -H 'Content-type:application/json' -d '{
+            "set-property": [{
+                "requestDispatcher.requestParsers.enableRemoteStreaming": true
+            },
+            {
+                "requestDispatcher.requestParsers.enableStreamBody": true
+            }
+            ]
+        }'
 
-#### ghostscript
+6. Configuring the ExtractingRequestHandler in `solrconfig.xml`
 
-1. Install ghostscript (PDF to PDF/A conversion):
+    If you have started Solr with one of the supplied example configsets, you already have the ExtractingRequestHandler 
+    configured by default and you only need to customize it for your content.
+    
+    If you are not working with an example configset, the jars required to use Solr Cell will not be loaded automatically. 
+    You will need to configure your `solrconfig.xml` to find the ExtractingRequestHandler and its dependencies: 
+        
+        <lib dir="${solr.install.dir:../../..}/contrib/extraction/lib" regex=".*\.jar" />
+        <lib dir="${solr.install.dir:../../..}/dist/" regex="solr-cell-\d.*\.jar" />
+    
+    You can then configure the ExtractingRequestHandler in `solrconfig.xml` The following is the default configuration 
+    found in Solr’s _default configset, which you can modify as needed:
+    
+        <requestHandler name="/update/extract"
+                        startup="lazy"
+                        class="solr.extraction.ExtractingRequestHandler" >
+          <lst name="defaults">
+            <str name="lowernames">true</str>
+            <str name="fmap.content">_text_</str>
+          </lst>
+        </requestHandler>
+        
+7. Run configuration script
 
-    1.1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
+       python3 ./utils/scripts/init_solr.py
+       
+## earkweb 
+
+1. Checkout project
+
+       git clone https://github.com/E-ARK-Software/earkweb
+        
+    Change to earkweb directory:
+
+       cd earkweb
+    
+2. Create virtual environment (python)
+
+       virtualenv -p python3 venv
+
+4. Install additional python packages:
+
+       pip3 install -r requirements.txt
+        
+5. Manually install additional packages:
+
+    Optional: This step only applies if file format identification should be done during ingest.
+
+    [Fido](https://github.com/openpreserve/fido) is used for file format identification (mime-type and PRONOM Unique Identifier).
+
+   1. Install fido:
+
+          wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
+          tar -xzvf 1.3.2-81.tar.gz
+          cd fido-1.3.2-81
+          python setup.py install
+
+   2. Update filetype signatures (long running):
+
+          cd fido
+          python update_signatures.pymy
+
+    Ghostscript (PDF to PDF/A conversion)
+
+   1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
     
         wget http://downloads.ghostscript.com/public/old-gs-releases/ghostscript-9.18.tar.gz
 
-    1.2. Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm):
+   2. Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm):
 
         tar -xzf ghostscript-9.18.tar.gz
         cd ghostscript-9.18
         ./configure
         make
         sudo make install
+        
+6. Create directories and files making sure the user running earkweb has rights to read and write (you have to replace 
+`$USER` and `$GROUP` or set the variables  accordingly):
 
-## Install message queue and result backend
+        sudo mkdir -p /var/data/earkweb
+        sudo chown -R $USER:$GROUP /var/data/earkweb/
+               
+        mkdir -p /var/data/earkweb/storage/pairtree_root
+        touch /var/data/earkweb/storage/pairtree_version0_1
+       
+        sudo mkdir -p /var/log/earkweb
+        sudo chown $USER:$GROUP /var/log/earkweb
+        mkdir -p /var/log/celery
+        
+        
+7. Rename sample config file `settings/settings.cfg.default` to `settings/settings.cfg` and adapt settings according to your environment.
+
+## Create and initialize database
+
+1. Prepare databases (one main database for the frontend (earkweb) and one for the celery backend (celerydb):
+
+    Install mysql database if not available on your system:
+    
+       sudo apt-get install mysql-server
+    
+    Login to mysql:
+    
+       mysql -u root -p
+        
+    Create user 'eark':
+    
+       CREATE USER 'eark'@'%' IDENTIFIED BY 'eark';
+        
+    Create database 'earkdb in mysql console:
+        
+       create database earkdb;
+        
+    Grant access to user 'eark'  mysql console:
+
+       GRANT ALL ON earkdb.* TO eark@'%' IDENTIFIED BY 'eark';
+
+2. Exit mysql console and create the database tables (first Django tables, then module tables):
+
+    Adapt MySQL database settings in `settings/settings.cfg` and then create the tables:
+    
+       python manage.py makemigrations earkweb
+       python manage.py migrate
+
+4. Create a user (user name, email, password, super user status) using the Django function:
+
+       python manage.py createsuperuser
+        
+5. Create token for admin user 
+
+Open a Django shell using command `python manage.py shell` and execute the following commands (adapt primary key of the user if necessary: `pk`):
+
+    from django.contrib.auth.models import User
+    u = User.objects.get(pk=1)
+    from rest_framework.authtoken.models import Token
+    token = Token.objects.create(user=u)
+    token.save()
+
+Documentation: http://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication
+
+## Celery distributed task execution 
+
+### Install message queue and result backend
 
 Install message queue:
 
@@ -61,245 +209,32 @@ Install result backend database:
 
     sudo apt-get install redis-server
 
-## Install peripleo
-
-### Install postgres
-
-    sudo apt-get install postgresql
-    sudo -i -u postgres
-    psql
-    > psql (9.3.4)
-    Type "help" for help.
-    postgres=# create database peripleo ;
-    CREATE DATABASE
-    postgres=# create user peripleo_user ;
-    CREATE ROLE
-    postgres=# alter user peripleo_user with encrypted password 'arkiv';
-    ALTER ROLE
-    postgres=# alter database peripleo owner to peripleo_user ;
-    ALTER DATABASE
-    postgres=# \q
-    postgres@eark-pilot:~$ 
-
-### Install peripleo
-
-    cd /srv/
-    sudo mkdir pelagios
-    sudo chown ${user}:{group} pelagios
-    cd pelagios/
-    git clone https://github.com/pelagios/peripleo.git
-    cd peripleo/lib
-    wget http://earkdev.ait.ac.at/eark/pilots/scalagios-core_2.10-2.0.0.jar
-    cd /srv/pelagios/peripleo/conf/
-    cp application.conf.template application.conf
-  
-#### Adapt settings in `applicaton.conf`
-
-Comment out the sql driver:
-
-    #db.default.driver="org.sqlite.JDBC"
-    #db.default.url="jdbc:sqlite:db/pelagios-api.db"
-
-Activate the postgres driver and adapt username and password settings:
-
-    # Postgres configuration example
-    db.default.driver="org.postgresql.Driver"
-    db.default.url="jdbc:postgresql://localhost/peripleo"
-    db.default.user="peripleo_user"
-    db.default.password="arkiv"
-
-### Install play
-
-    cd /srv/pelagios
-    wget https://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
-    unzip play-2.2.4.zip
-    cd peripleo/
-    
-### Run peripleo
-
-    /srv/pelagios/play-2.2.4/play start
-
-## Install solr
-    
-  Note: SolR version 6.1.0 requires [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html).
-
-  Install SolR:
-
-    user="user"
-    group="group"
-    solr_version="6.1.0"
-    SOLR_INSTALL_DIR=/path/to/solr/install/dir
-    cd ${SOLR_INSTALL_DIR}
-    
-    sudo wget http://archive.apache.org/dist/lucene/solr/${solr_version}/solr-${solr_version}.tgz
-    sudo tar -xzvf solr-${solr_version}.tgz
-    sudo chown -R ${user}:${user} solr-6.1.0
-  
-  Create SOLR_HOME directory:
-    
-    SOLR_HOME = "/path/to/solrhome"
-    sudo mkdir ${SOLR_HOME}
-    sudo chown ${user}:${user} ${SOLR_HOME}
-    
-  Copy solr.xml to SOLR_HOME:
-  
-    cp ${SOLR_INSTALL_DIR}/server/solr/solr.xml ${SOLR_HOME}    
-    
-  Create core directory in SOLR_HOME:
-  
-    sudo -u ${user} mkdir ${SOLR_HOME}/newcore
-    
-  Copy data driven schema configuration:
-    
-    cp -R ${SOLR_INSTALL_DIR}/server/solr/configsets/data_driven_schema_configs/conf ${SOLR_HOME}/newcore
-    
-  Copy SolR service configuration file and adapt settings:
-    
-    sudo cp ${SOLR_INSTALL_DIR}/bin/solr.in.sh /etc/default/solr.in.sh
-    
-  Define the Java Home directory in`/etc/default/solr.in.sh`:
-  
-    SOLR_JAVA_HOME="/path/to/jdk1.8.x_xxx"  
-    
-  Copy service initialization script and adapt settings:
-    
-    cp ${SOLR_INSTALL_DIR}/bin/init.d/solr /etc/init.d/
-    
-  Activate Solr configuration in `${SOLR_INSTALL_DIR}bin/solr`:
-  
-    SOLR_INCLUDE="/etc/default/solr.in.sh"
-  
-  Create new core:
-    
-    sudo ${SOLR_INSTALL_DIR}/bin/solr create_core -c earkstorage
-
-## Installing earkweb 
-
-1. Checkout project
-
-        git clone https://github.com/eark-project/earkweb
-        
-    Optionally, define the earkweb root directory in the environment variable EARKWEB:
-
-        cd earkweb
-        export EARKWEB=`pwd`
-    
-    If this variable is set, it can be used to execute commands explained further down in this README file.
-
-2. Create virtual environment (python)
-
-    Install virtual environment python packages (requires pip: https://pypi.python.org/pypi/pip):
-
-        sudo pip install virtualenv
-        sudo pip install virtualenvwrapper
-
-    Create a directory for your virtual environments and set the environment variable (e.g. in your ~/.bashrc):
-
-        mkdir ~/Envs
-        export WORKON_HOME=~/Envs
-        source /usr/local/bin/virtualenvwrapper.sh
-
-    Create a virtual environment (e.g. named earkweb) to install additional python packages separately from the default python installation.
-    
-        mkvirtualenv earkweb
-        
-    If the virtual environment is active, this is shown by a prefix in the console (type `workon earkweb` otherwise):
-    
-        (earkweb)user@machine:~$
-
-    The virtual environment can be deactivated again by typing:
-    
-        deactivate
-
-3. Install additional debian packages:
-
-        sudo apt-get install libmysqlclient-dev libffi-dev unixodbc-dev python-lxml libgeos-dev
-        sudo pip install --upgrade pytz
-
-4. Install additional python packages:
-
-        pip install -r ${EARKWEB}/requirements.txt
-        
-5. Create directories and files making sure the user running earkweb has rights to read and write:
-
-        sudo mkdir -p /var/data/earkweb/{reception,storage,work,access}
-        sudo mkdir /var/data/earkweb/storage/pairtree_root
-        sudo touch /var/data/earkweb/storage/pairtree_version0_1
-        sudo chown -R <user>:<group> /var/data/earkweb/
-        sudo mkdir -p /var/log/earkweb
-        sudo chown <user>:<group> /var/log/earkweb
-        
-6. Rename sample config file `config/settings.cfg.sample` to `config/settings.cfg` and adapt settings according to your environment.
-
-## Create and initialize database
-
-1. Prepare databases (one main database for the frontend (eark) and one for the celery backend (celerydb):
-
-    Install mysql database if not available on your system:
-    
-        sudo apt-get install mysql-server
-    
-    A MySQL database is defined in `${EARKWEB}/settings.py`.
-    Create the database first and 
-    
-    Login to mysql:
-    
-        mysql -u root -p<rootpassword>
-        
-    Create user 'arkiv':
-    
-        CREATE USER 'arkiv'@'%' IDENTIFIED BY 'arkiv';
-        
-    Create database 'eark':
-        
-        mysql> create database eark;
-        
-    Grant access to user 'arkiv':
-
-        GRANT ALL ON eark.* TO arkiv@'%' IDENTIFIED BY 'arkiv';
-
-2. Create database schema based on the model and apply initialise the database:
-
-        python manage.py makemigrations
-        python manage.py migrate
-
-    Required software packages for django/celery/mysql support:
-
-        pip install django
-        pip install -U celery
-        pip install django-celery
-        pip install MySQL-python
-        
-3. Once the database is running, tasks need to be registered in the database. To do so run the following script in the `${EARKWEB}` directory:
-
-        python ./workers/scantasks.py
-
-4. Create a user
-
-        python ./util/createuser.py eark user@email eark true
-
-## Run update script
-
-To update EARKweb, the Solr instance and perform database migrations, do the following:
-
-    cd ${EARKWEB}
-    python autoupdate.py
-    
-If you are using the VM version, simply use the `Update E_ARK Web` desktop shortcut (which will do a `git pull` and
-do everything that is needed to apply the updates).
-
-## Celery distributed task execution 
+### Start celery daemon and flower monitoring
 
 1. Start the daemon from command line (development mode):
     
-        cd ${EARKWEB}
-        python manage.py celeryd -E -Ofair
+       celery multi start ingestqueue -A earkweb.celery -Ofair --pidfile=/tmp/default_worker.pid --logfile=/tmp/default_worker.log
         
-    For development it is recommended to enable the CELERY_ALWAYS_EAGER property in earkweb/settings.py:
+    Celery status should give the following info:
+    
+       celery -A earkweb.celery status
+       ingestqueue@N3SIM1412: OK
+        
+       1 node online.
+        
+    The celery worker can be stopped using the following command:
+    
+       celery -A earkweb.celery control shutdown
+        
+2. Start flower monitoring service:
 
-        #CELERY_ALWAYS_EAGER = True
-        
-    By this way the celery tasks run in the same process which allows debugging.
+    In the development environment, flower can be started using the following command (broker redis):
+
+       celery -A earkweb.celery flower --address=127.0.0.1 --port=5555 --broker=redis://localhost
+       
+    or (broker rabbitmq):
+    
+       celery -A earkweb.celery flower --address=127.0.0.1 --port=5555 --broker=amqp://guest:guest@localhost:5672
         
 # Run in development mode
 
@@ -307,20 +242,20 @@ This section explains how to run *earkweb* in development mode.
 
 1. Change to the *earkweb* directory:
 
-        cd <earkweb_install_path>/earkweb
+       cd <earkweb_install_path>/earkweb
         
 2. Start web application
 
     Start the web application from the command line using the command:
 
-        python manage.py runserver
+       python manage.py runserver 0.0.0.0:8000
         
     A message similar to the one below should be shown in case of success
     
-        System check identified no issues (0 silenced).
-        June 18, 2015 - 08:34:56
-        Django version 1.7, using settings 'earkweb.settings'
-        Starting development server at http://127.0.0.1:8000/
-        Quit the server with CONTROL-C.
-        
+       System check identified no issues (0 silenced).
+       June 18, 2015 - 08:34:56
+       Django version 1.7, using settings 'earkweb.settings'
+       Starting development server at http://127.0.0.1:8000/
+       Quit the server with CONTROL-C.
+       
     Open web browser at http://127.0.0.1:8000/

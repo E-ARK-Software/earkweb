@@ -1,0 +1,110 @@
+{% extends "earkweb/base.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <!-- Access javascript -->
+    <script type="text/javascript" src="{% static 'access/js/access.js' %}"></script>
+    <script type="text/javascript" src="{% static 'earkweb/date/dateformat.js' %}"></script>
+
+    <script language="JavaScript">
+        var local_solr_server_ip = '{{ local_solr_server_ip }}';
+        var django_service_host = '{{ django_service_host }}';
+        var django_service_port = '{{ django_service_port }}';
+        var local_solr_port = '{{ local_solr_port }}';
+    </script>
+    <script type="text/javascript" src="{% static 'access/js/search.js' %}">
+    </script>
+    <link rel="stylesheet" href="{% static "access/css/search.css" %}" type="text/css" />
+    <script type="text/javascript" src="{% static 'earkweb/jquery-ui-1.12.0/jquery-ui.js' %}"></script>
+    <link rel="stylesheet" href="{% static "earkweb/jquery-ui-themes-1.12.0/jquery-ui.min.css" %}" type="text/css" />
+
+
+  <script>
+  $( function() {
+    $('#eaddate_from').datepicker({ dateFormat: 'dd.mm.yy' })
+    $('#eaddate_to').datepicker({ dateFormat: 'dd.mm.yy' })
+  } );
+  </script>
+{% endblock %}
+
+{% block content %}
+
+    {% include "access/about_module.html" %}
+
+    <h2>{% trans 'Full-text search' %}</h2>
+
+    <div class="content">
+
+        <div class="left-box">
+        <form name="find" class="form-horizontal" role="form">
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="queryString">{% trans 'Search term' %}</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="queryString" name="queryString" placeholder="Search term">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="package">{% trans 'Information package' %}</label>
+            <div class="col-sm-8">
+              <input type="text" class="form-control" id="package" name="package" placeholder="{% trans 'Identifier of the information package' %}">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="contentTypes">{% trans 'Content type' %}</label>
+            <div class="col-sm-8">
+              <select class="form-control" id="contentTypes" name="contentTypes" size="4" multiple>
+
+                    <option value="application/vnd.oasis.opendocument.text">odt</option>
+                    <option value="application/msword">doc</option>
+                    <option value="text/html">html</option>
+                    <option value="application/pdf">pdf</option>
+                    <option value="text/plain">txt</option>
+                    <option value="text/csv">csv</option>
+                    <option value="application/xhtml+xml">xhtml</option>
+                    <option value="application/vnd.ms-excel">xls</option>
+                    <option value="application/xml">xml</option>
+                    <option value="image/png">png</option>
+                    <option value="image/jpeg">jpeg</option>
+                    <!--<option value="application/dicom">application/dicom</option>-->
+                  </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="control-label col-sm-4" for="sort">{% trans 'Sort' %}</label>
+            <div class="col-sm-8">
+              <select style="font-size:1em" id="sort" name="sort">
+                    <option value="">{% trans 'Relevance' %}</option>
+                    <option value="size asc">{% trans 'size (ascending)' %}</option>
+                    <option value="size desc">{% trans 'size (descending)' %}</option>
+              </select>
+            </div>
+          </div>
+            <div class="form-group">
+            <label data-toggle="tooltip" title="Search for data files available in representatation data folders of an IP" class="control-label col-sm-4" for="sort">{% trans 'Only information packages' %}</label>
+            <div class="col-sm-8">
+                <input type="checkbox" checked="checked" name="submission_data_only" id="submission_data_only"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-8">
+              <button id="startsearch" class="btn btn-default" onClick="return false;">{% trans 'Search' %}</button>
+            </div>
+          </div>
+        </form>
+        </div>
+
+        <div class="right-box">
+          <div id="output" class="output"></div>
+        </div>
+
+    </div>
+    <script language="JavaScript">
+    $( "#startsearch" ).click(function() {
+      askSolr(0);
+    });
+    </script>
+{% endblock %}

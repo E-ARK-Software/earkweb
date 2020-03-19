@@ -1,0 +1,32 @@
+<html>
+<h1>Testpage</h1>
+<p>gethostname: {{ gethostname }}</p>
+<p>gethostbyname: {{ gethostbyname }}</p>
+<form action="addperson" method="post">
+    {% csrf_token %}
+    <p>
+        <label for="firstname">Firstname: </label>
+        <input id="firstname" type="text" name="firstname" value="Firstname">
+    </p>
+    <p>
+    <label for="lastname">Lastname: </label>
+        <input id="lastname" type="text" name="lastname" value="Lastname">
+    </p>
+    <p> <input type="submit" value="Save"></p>
+</form>
+{% if firstname %}<p>New Person added: {{ firstname }} {{ lastname }}</p>{% endif %}
+<table>
+    <tr>
+        <th>firstname</th>
+        <th>lastname</th>
+    </tr>
+    {% for item in query_results %}
+    <tr>
+        <td>{{ item.firstname }}</td>
+        <td>{{ item.lastname }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+</html>

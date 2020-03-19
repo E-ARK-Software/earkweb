@@ -1,0 +1,52 @@
+{% extends "earkweb/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'submission/js/submission.js' %}"></script>
+    <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
+
+    <link rel="stylesheet" href="{% static "submission/css/start.css" %}" type="text/css" />
+
+    <script type="text/javascript">
+    var task_ready_msg = "{% trans 'Package creation task completed!' %}";
+    var task_error_msg = "{% trans 'An error occurred while trying to execute the task!' %}";
+    var flowerHost = '{{flower_host}}'; var flowerPort = '{{flower_port}}'; var flowerPath = '{{flower_path}}';
+    </script>
+    <script type="text/javascript" src="{% static 'workflow/js/pollstate.js' %}"></script>
+    <script type="text/javascript">
+    $( document ).ready(function() {
+        $('#reviewbtn').addClass('disabled');
+        pollstate('{{ jobid }}');
+    });
+    </script>
+    <link rel="stylesheet" href="{% static "workflow/css/execution.css" %}" type="text/css" />
+{% endblock %}
+
+{% block content %}
+
+    {% include "submission/about_module.html" %}
+
+    <h2>{% trans 'Information package creation' %}</h2>
+
+    <p id="confirmation">{% trans 'Submission information package creation process is running.' %}</p>
+
+    {% if not flower_status %}
+    <div>
+    <p style="color: #FF8000">{% trans 'Warning: no task monitoring available because the task monitoring service is not running at' %}: {{ flower_api_endpoint }}</p>
+    </div>
+    {% endif %}
+
+    <p><progress id="progress" max="100" value="0"></progress></p>
+
+    <p id="childjobs"></p>
+
+    <div id="errordiv" style="visibility:hidden; border: 1px solid red">
+        <p  id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
+    </div>
+
+    <p><a id="reviewbtn" class="btn btn-primary" type="button" href="{% url 'submission:upload_finalize' ip.id %}">{% trans 'Review submission information package' %}</a></p>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "earkweb/base_fileupload.html" %}
+
+{% load static %}
+{% load i18n %}
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "submission/about_module.html" %}
+
+    <h2>{% trans 'Upload data' %}</h2>
+
+    <form enctype="multipart/form-data" method="post">
+        <div class="file-loading">
+            <input id="kv-explorer" type="file" multiple data-min-file-count="1">
+        </div>
+    </form>
+
+
+{% endblock %}

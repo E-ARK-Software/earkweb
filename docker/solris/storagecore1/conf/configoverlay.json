@@ -1,0 +1,11 @@
+{
+  "props":{"requestDispatcher":{"requestParsers":{
+        "enableRemoteStreaming":true,
+        "enableStreamBody":true}}},
+  "requestHandler":{"/update/extract":{
+      "name":"/update/extract",
+      "class":"solr.extraction.ExtractingRequestHandler",
+      "defaults":{
+        "fmap.content":"content",
+        "lowernames":"true",
+        "fmap.meta":"ignored"}}}}

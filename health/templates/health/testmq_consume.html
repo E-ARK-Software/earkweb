@@ -1,0 +1,11 @@
+<html>
+<h1>Test MQ consume</h1>
+
+<form action="consume_message_action" method="post">
+    {% csrf_token %}
+    <p> <input type="submit" value="Consume"></p>
+</form>
+</html>
+<p><li><a href="{% url 'health:testmq' %}">Back</a> </li></p>
+<hr>
+{% if message %}<p>{{ message }}</p>{% endif %}

@@ -1,0 +1,108 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
+
+    <!-- Management area javascript -->
+    <script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+
+    <!-- current_ip variable used in subsequent scripts (as the IP is selected, the corresponding form field is hidden) -->
+    <script type="text/javascript">var current_ip="{{ ip.id }}"; $("#id_ips").val({{ ip.id }}); $("#id_ips").parent().nodisplay(); var flowerHost = '{{flower_host}}'; var flowerPort = '{{flower_port}}'; var flowerPath = '{{flower_path}}';</script>
+
+    <script type="text/javascript" src="{% static 'management/js/detail.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'workflow/css/execution.css' %}" type="text/css" />
+
+    <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
+
+    <script src="{% static 'earkweb/popupcenter/popupcenter.js' %}" type="text/javascript"></script>
+    <script>
+    $(document).ready(function() {
+        $(".hash a").click(function() {
+            var link = $(this).attr("href");
+            window.console.log(link);
+            PopupCenter(link,'xtf','900','500');
+            return false;
+        });
+    });
+    </script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "management/about_module.html" %}
+
+    <h2 class="main">{% trans 'Information package' %}</h2>
+
+    <div id="ip-detail-table">
+        {% include "management/iptable.html" %}
+    </div>
+
+    <h2 class="main">{% trans 'Descriptive metadata' %}</h2>
+    <p></p>
+
+    <table  class="table table-striped table-bordered table-condensed">
+
+        <tbody>
+            <tr class="row1">
+                <td>Title</td>
+                <td><b>{{ metadata.title }}</b></td>
+            </tr>
+            <tr class="row2">
+                <td>Description</td>
+                <td><b>{{ metadata.description }}</b></td>
+            </tr>
+            <tr class="row2">
+                <td>Contact point</td>
+                <td><b><a href="mailto:{{ metadata.contact_email }}">{{ metadata.contact_point }}</a></b></td>
+            </tr>
+            <tr class="row2">
+                <td>Publisher</td>
+                <td><b><a href="mailto:{{ metadata.publisher_email }}">{{ metadata.publisher }}</a></b></td>
+            </tr>
+            <tr class="row2">
+                <td>Main language</td>
+                <td><b>{{ metadata.language }}</b></td>
+            </tr>
+
+        </tbody>
+      </table>
+
+    <h2 class="main">{% trans 'Representations' %}</h2>
+
+    <div id="distributions">
+        <table class="table table-striped table-bordered table-condensed">
+            <tr><th>{% trans 'Identifier' %}</th><th>{% trans 'Label' %}</th><th>{% trans 'Description' %}</th><th>{% trans 'Access rights' %}</th>
+            </tr>
+            {% for distribution in distributions %}
+            <tr>
+                <td>{{ distribution.identifier }}</td>
+                <td>{{ distribution.label }}</td>
+                <td>{{ distribution.description }}</td>
+                <td>{{ distribution.accessRights }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <a data-toggle="tooltip" title="Back to the overview" href="{% url 'management:overview'  %}" class="btn btn-default">
+        Back
+    </a>
+
+
+    <div id="confirmation" style="padding-top: 20px;"></div>
+
+    <div id="ingestjobid" style="padding-top: 20px;"></div>
+
+    <div id="childjobs"></div>
+
+    <div><p style="padding-top: 20px;" id="errordiv"></p>
+    <p id="error"></p>
+    </div>
+
+{% endblock %}

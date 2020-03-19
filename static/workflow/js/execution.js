@@ -1,42 +1,7 @@
-function updateProgressInfo(percent) {
-    $( '#pgwrp' ).removeClass( "pgsuccess" );
-    $( '#pg' ).removeClass( "pgsuccess" );
-    window.console.log("Progress: "+percent+"%");
-    window.document.getElementById("pg").style = 'width:' + percent + '%; background-color: #AD2624';
-    $('#st').html("In progress: "+percent+"%");
-}
-function updateStatusInfo(status, result, warning, log, err) {
-    window.console.log(status)
-    window.console.log(result)
-    if(status == 'SUCCESS') {
-        var pg =  window.document.getElementById("pg");
-        pg.style = 'width: 100%';
-        $('#log').html(log)
-        $('#err').html(err)
-        $("#st").visible();
-        if(result) {
-            $( '#pgwrp' ).removeClass( "pgwarning" );
-            $( '#pg' ).removeClass( "pgwarning" );
-            $('#st').html("Finished successfully");
-            $( '#pgwrp' ).addClass( "pgsuccess" );
-            $( '#pg' ).addClass( "pgsuccess" );
-        } else {
-            if(warning) {
-                $( '#pgwrp' ).addClass( "pgwarning" );
-                $( '#pg' ).addClass( "pgwarning" );
-                $( '#st' ).html("Finished with warning");
-            } else {
-                $( '#st' ).html("Finished with error");
-            }
-        }
-    }
-    updateTable();
-}
-
-function reportError(errmsg) {
-    $("#error").visible();
-    $('#errmsg').html(errmsg)
-}
+var ok_sign = ' <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>';
+var err_sign = ' <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:red"/>';
+var pending_sign = ' <span class="glyphicon glyphicon-time" aria-hidden="true" style="color:gray"/>';
+var subitem_sign = '<span class="glyphicon glyphicon-chevron-right" aria-hidden="true" style="color:gray"/> ';
 
 /**
  * Poll task processing state
@@ -45,34 +10,104 @@ function pollstate(in_task_id) {
     var ready = false;
     $(document).ready(function() {
           var PollState = function(task_id) {
-              // poll every second
+              // poll
               setTimeout(function(){
                   window.console.log("Polling state of current task: "+task_id);
                   $.ajax({
-                      url: "/earkweb/workflow/poll_state",
+                      url: "/earkweb/submission/poll_state",
                       type: "POST",
                       data: "task_id=" + task_id,
                   }).success(function(resp_data){
                       if(resp_data.success) {
-                          if(resp_data.state == 'SUCCESS') {
-                              window.console.log(resp_data);
-                              updateStatusInfo(resp_data.state, resp_data.result, resp_data.warning, resp_data.log, resp_data.err);
+                          var atLeastOnePending = false;
+                          var atLeastOneFailure = false;
+                          var allSuccess = true;
+                          $("#childjobs").empty();
+
+                          for (var i = 0; i < resp_data.task_list.length; i++) {
+                            child_task_info = resp_data.task_list[i]
+
+                            child_status = child_task_info["state"]
+                            child_task_id = child_task_info["uuid"]
+                            child_task_name = child_task_info["name"]
+
+                            //child_status = child_task_tuple[child_task_id];
+                            if(child_status=='PENDING')
+                                atLeastOnePending = true;
+                            if(child_status!='SUCCESS')
+                                allSuccess = false;
+                            if(child_status=='FAILURE')
+                                atLeastOneFailure = true;
+
+                            window.console.log("Task: "+child_task_id+", Status: "+child_status);
+                            var link = "http://"+flowerHost+":"+flowerPort+flowerPath+"task/"+child_task_id;
+                            var child_task_item = '<a href="'+link+'" target="new">' + child_task_name + '</a>';
+                            var outcomeSign = (child_status=='SUCCESS') ? ok_sign : (child_status=='FAILURE') ? err_sign : pending_sign;
+
+                            var row = '<div class="row"><div class="col-md-4 col-md-offset-0">'+subitem_sign+child_task_item+'</div><div class="col-md-4">'+outcomeSign+'</div></div>';
+
+                            $("#childjobs").append(row);
+                          }
+                          // All success or at least one failure: stop polling
+                          if(allSuccess || atLeastOneFailure) {
+                              $('#confirmation').text(pipeline_ready_msg)
+                              updateTable();
                               ready = true;
-                          } else if(resp_data.state == 'PENDING') {
+                          } else if(atLeastOnePending) {
                                 // check again if task still pending
                                 setTimeout(function(){ pollstate(task_id) }, 3000);
                           } else {
-                            updateProgressInfo(resp_data.info.process_percent);
+                            window.console.log("Processing ...");
                           }
                       } else {
-                        reportError(resp_data.errmsg)
+                        $( "#error" ).html(resp_data.errmsg);
                          ready = true;
                       }
                       // recursive call
                       if(!ready) { PollState(task_id); }
                   });
-              }, 1000);
+              }, 3000);
           }
           if(!ready) { PollState(in_task_id); }
       });
 }
+
+$( document ).ready(function() {
+       $( "#starting" ).on( "click", function() {
+            $("#error").invisible();
+            $('#starting').attr("disabled", "disabled");
+            $( "#confirmation" ).html(ingestProcessStartedMessage);
+            $.ajax({
+            url: "/earkweb/submission/apply_task/",
+            method: "POST",
+            async: true,
+            data: {'selected_ip': current_ip},
+            success: function(resp_data){
+             if(resp_data.success) {
+                 $("#error").invisible();
+                 window.console.log("Acceptance confirmation, task id: " + resp_data.id);
+                 var link = "http://"+flowerHost+":"+flowerPort+flowerPath+"task/"+resp_data.id;
+                 var task_item = '<a href="'+link+'" target="new">ingest_pipeline</a>';
+                 var row = '<div class="row"><div class="col-md-4 col-md-offset-0">'+task_item+'</div><div class="col-md-4">'+ok_sign+'</div></div>';
+                  $("#ingestjobid").append(row);
+                 pollstate(resp_data.id);
+             } else {
+                $("#error").visible();
+                $("#errmsg").html(resp_data.errmsg)
+                $("#err").html(resp_data.errdetail)
+             }
+            },
+            error: function(resp_data){
+                var errData = resp_data.responseJSON;
+                window.console.log("Error");
+                window.console.log(resp_data.responseJSON);
+                $("#error").visible();
+                $("#errmsg").html(errData.errmsg)
+                $("#errdetail").html(errData.errdetail);
+                $( "#confirmation" ).invisible();
+            }
+            });
+            // only execute ajax request, do not submit form
+            return false;
+    });
+});

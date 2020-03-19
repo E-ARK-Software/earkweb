@@ -1,0 +1,150 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>earkweb - Data Management</title>
+    <script src="/static/earkweb/popper/popper.min.js" type="text/javascript"></script>
+    <link href="/static/earkweb/bootstrap-4.0.0/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/earkweb/bootstrap-fileinput/css/fileinput.css" media="all" rel="stylesheet" type="text/css"/>
+    <link rel="stylesheet" type="text/css" href="{% static '/earkweb/fontawesome-5.12.1/css/all.min.css' %}">
+    <link href="/static/earkweb/bootstrap-fileinput/themes/explorer-fa/theme.css" media="all" rel="stylesheet" type="text/css"/>
+    <script src="/static/earkweb/jquery-3.3.1/jquery-3.3.1.min.js"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/js/plugins/sortable.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/js/fileinput.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/js/locales/fr.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/js/locales/es.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/themes/explorer-fa/theme.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-fileinput/themes/fa/theme.js" type="text/javascript"></script>
+    <script src="/static/earkweb/bootstrap-4.0.0/js/bootstrap.min.js" type="text/javascript"></script>
+
+    <link rel="stylesheet" href="{% static "earkweb/stylesheets/main.css" %}" type="text/css" />
+    <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
+
+    <link rel="stylesheet" media="screen" href="{% static "earkweb/stylesheets/global.css" %}">
+
+
+    {% block stylesheets %}
+    {% endblock %}
+    {% comment %}
+    The 'extra' block allows defining additional header elements, such as
+    additional style sheet or javascript file includes, for example.
+    {% endcomment %}
+    {% block extra_head %}{% endblock %}
+
+</head>
+
+<body>
+
+
+         <header>
+	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary navbar-fixed-top">
+
+              <div class="jh-logo-container float-left">
+                  <a aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler float-right" data-target="#navbarResponsive" data-toggle="collapse" href="javascript:void(0);">
+                      <i class="fa fa-bars"></i> </a> <a class="navbar-brand logo float-left" href="#/">
+                  <span class="navbar-title">
+                      <span><img src="/static/img/logo.png" style="padding-bottom:7px; padding-right:8px"> <i>earkweb</i></span></span>
+                  <span class="navbar-title" style="color:red"></span>
+                  </a>
+              </div>
+
+              <div class="navbar-collapse collapse" id="navbarResponsive">
+                  <ul class="navbar-nav ml-auto">
+
+                   {% for item in menu %}
+
+                      <li class="nav-item {% if item.subItems %} dropdown{% endif %} pointer text-nowrap">
+
+
+                        <a aria-haspopup="true" class="nav-link {% if item.subItems %} dropdown-toggle{% endif %} text-nowrap" href="{{ item.path }}{% if not item.subItems %}#{% endif %}" aria-expanded="false" {% if item.subItems %}role="button" data-toggle="dropdown"{% endif %}>
+                            <span><i aria-hidden="true" class="fa {{ item.icon }}"></i> <span>{{ item.label }}</span></span>
+                        </a>
+                        {% if item.subItems %}
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          {% for subItem in item.subItems %}
+                                <a class="dropdown-item" href="{{ subItem.path }}"><span><i aria-hidden="true" class="fa {{ subItem.icon }}"></i> {{ subItem.label }}</a>
+                          {% endfor %}
+                        </div>
+                        {% endif %}
+                      </li>
+
+                    {% endfor %}
+
+                    {% include "earkweb/navbar.html" %}
+
+                 <li class="nav-item dropdown pointer text-nowrap">
+	              <a style="margin-top: 3px" class="nav-link dropdown-toggle" href="#" id="language" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+	                <i aria-hidden="true" class="fa fa-flag"></i> {% trans 'Language' %}
+	              </a>
+	              <div class="dropdown-menu dropdown-menu-right">
+
+                    {% get_available_languages as languages %}
+                    {% for lang_code, lang_name in languages %}
+
+                    <a href="{% url 'activate_language' lang_code %}" class="dropdown-item">
+                      {% if lang_code == LANGUAGE_CODE %}
+                        <i class="glyphicon glyphicon-check"></i>&nbsp;&nbsp;
+                      {% else %}
+                        <i class="glyphicon glyphicon-unchecked"></i>&nbsp;&nbsp;
+                      {% endif %}
+                      {{ lang_name }} ({{ lang_code }})
+                    </a>
+
+                    {% endfor %}
+                  </div>
+	            </li>
+
+                <li class="nav-item dropdown pointer text-nowrap">
+
+                  {% if user.is_authenticated %}
+
+                  <a style="margin-top: 3px" class="nav-link dropdown-toggle" href="#" id="access1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img alt="Avatar" class="profile-image img-circle" src="{% static 'earkweb/images/user_woman.png' %}" width="30" height="30"></span>
+                    {{ user.get_username }}
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <i aria-hidden="true" class="fa sign-out-alt"></i>
+                        <a href="/earkweb/accounts/logout">{% trans 'log out' %}</a>
+                  </div>
+                  {% else %}
+
+                  <a style="margin-top: 3px" class="nav-link dropdown-toggle" href="#" id="access2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {% trans 'Access' %}
+                  </a>
+                  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <i aria-hidden="true" class="fa fa-fw fa-sign-in"></i>
+                        <a href="/earkweb/accounts/login">{% trans 'log in' %}</a>
+                  </div>
+
+                  {% endif %}
+
+                </li>
+	          </ul>
+
+              </div>
+          </nav>
+      </header>
+
+
+
+    <div class="container-fluid">
+          <div class="card jh-card mb-auto">
+                  <div class="content">
+                      {% block content %}{% endblock %}
+                  </div>
+          </div>
+          <div class="mt-1">
+                  <div class="footer">
+                      <span>
+                          <a href="{% url 'version' %}">Version {{ sw_version }} ({{ sw_version_date }})</a>
+                      </span>
+                  </div>
+          </div>
+      </div>
+
+</body>
+
+
+{% block after_body %}{% endblock %}
+</html>

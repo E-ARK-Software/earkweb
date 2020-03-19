@@ -1,0 +1,37 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+    <link rel="stylesheet" href="{% static "management/css/management.css" %}" type="text/css" />
+
+{% endblock %}
+
+{% block content %}
+
+    <h1 class="main">{% trans 'Checkout working copy' %}</h1>
+
+    <p>{% trans 'There is currently no working copy for the data set' %}: '{{ ip.identifier }}'.</p>
+
+    <p>{% trans 'You can checkout a new working copy now.' %}</p>
+
+    <div id="sctable" style="width: 400px">
+
+    <form method="POST" action="{% url 'management:checkout' ip.identifier %}">
+        {% csrf_token %}
+        <div class="form-check">
+        <input type="checkbox" checked="checked" name="reset_aip" id="reset-aip"/>
+        <label data-toggle="tooltip" title="Reset AIP structure" class="control-label col-sm-8" for="reset-aip">{% trans 'Reset AIP to SIP' %}</label>
+        </div>
+
+    <button id="startsearch" class="btn btn-primary" type="submit">{% trans 'Checkout working copy' %}</button>
+
+    </form>
+
+    </div>
+
+{% endblock %}

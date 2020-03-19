@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 https://www.sitemaps.org/schemas/sitemap/0.9/siteindex.xsd
+http://www.openarchives.org/rs/terms/ http://www.openarchives.org/rs/1.0/resourcesync.xsd"
+        xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:rs="http://www.openarchives.org/rs/terms/">
+    <rs:ln rel="up"
+           href="http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/capabilitylist.xml"/>
+    <rs:md capability="changelist" from="{{ currdate }}"/>
+    <sitemap>
+        <loc>http://{{ django_service_host }}:{{django_service_port}}/earkweb/rs/changelist.xml</loc>
+        <rs:md from="2017-01-01T00:00:00Z" until="{{ currdate }}"/>
+    </sitemap>
+</sitemapindex>

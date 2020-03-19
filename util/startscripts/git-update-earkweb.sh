@@ -5,7 +5,7 @@ export WORKON_HOME=/opt/PyVirtEnvs/
 source /usr/local/bin/virtualenvwrapper.sh 
 workon earkweb
 pip install -r requirements.txt
-python autoupdate.py
+python init_solr.py
 
 echo "Restarting earkweb frontend"
 kill -9 `ps -aux | grep -v "grep" | grep runserver | awk '{print $2}'`

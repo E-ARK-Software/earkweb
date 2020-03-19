@@ -1,0 +1,41 @@
+{% load dictionary_extras %}
+{% load i18n %}
+<table  class="table table-striped table-bordered table-condensed">
+
+    <tbody>
+    	<tr class="row2">
+    		<td>{% trans 'Label' %}</td>
+    		<td><b>{{ ip.package_name }}</b></td>
+    	</tr>
+		<tr class="row1">
+			<td>{% trans 'WorkingCopy' %}</td>
+
+			<td>
+				{% if ip.path != '' %}
+				<a href="{% url 'management:working_area' 'management' ip.process_id %}" title='Path to the directory of this working copy'>{{ config_path_work }}/{{ ip.process_id }}</a>
+				{% else %}
+				--
+				{% endif %}
+			</td>
+		</tr>
+		{% if ip.identifier %}
+    	<tr class="row2">
+    		<td data-toggle="tooltip" title="Data asset">{% trans 'Information package' %}</td>
+    		<td>
+				<a href="{% url 'management:storage_area' 'management' ip.identifier %}" title='Path to the storage area of this asset'>{{ ip.identifier }}</a>
+			</td>
+    	</tr>
+		{% endif %}
+
+    	<tr class="row2">
+    		<td data-toggle="tooltip" title="Öffentlicher Bezeichner">Version</td>
+    		<td>{{ ip.version }}</td>
+    	</tr>
+
+		<tr class="row2">
+    		<td data-toggle="tooltip" title="Öffentlicher Bezeichner">{% trans 'CreationDateTime' %}</td>
+    		<td>{{ ip.last_change|date:"d.m.Y H:i:s" }}</td>
+    	</tr>
+
+    </tbody>
+  </table>

@@ -1,14 +1,16 @@
-{% load staticfiles i18n %}
+{% load static %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="en">
+
+<html lang="de">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
-    <meta name="author" content="E-ARK">
 
-    <title>E-ARK WEB</title>
+    <title>earkweb ({{ LANGUAGE_CODE }})</title>
     
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 
@@ -18,14 +20,14 @@
 
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
-
-    {% block stylesheets %} 
-    <!-- main style sheet -->
-    <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />
-    <!-- bootstrap style sheet -->
-    <link rel="stylesheet" href="{% static "earkweb/bootstrap-3.3.2/css/bootstrap.css" %}" type="text/css" />
+    {% block stylesheets %}
+      <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400i,600,600i,700,700i" rel="stylesheet">
+      <link rel="stylesheet" type="text/css" href="{% static '/earkweb/fontawesome-5.12.1/css/all.min.css' %}">
     <!-- jquery ui style sheet -->
     <link rel="stylesheet" href="{% static "earkweb/jquery-ui-1.12.0/jquery-ui.css" %}" type="text/css" />
+    <!-- main style sheet -->
+    <link rel="stylesheet" href="{% static "earkweb/stylesheets/main.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "earkweb/css/glyphicons.css" %}" type="text/css" />
     {% endblock %}
 
     {% comment %} 
@@ -34,28 +36,122 @@
     {% endcomment %}
     {% block extra_head %}{% endblock %}
 
+    <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />
+
+    <link rel="stylesheet" media="screen" href="{% static "earkweb/stylesheets/global.css" %}">
+
   </head>
 
   <body>
-    
-    {% include "earkweb/navbar.html" %}
 
-    <div class="container">
-      <div style="margin-top: 50px; margin-right: 10px" class='notifications top-right'></div>
-      <div id="content" class="content-wrapper">
-        {% block content %}
-        {% endblock %}
+         <header>
+	      <nav class="navbar navbar-expand-lg navbar-dark bg-primary navbar-fixed-top" style="padding-top:15px">
+
+              <div class="jh-logo-container float-left">
+                  <a aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler float-right" data-target="#navbarResponsive" data-toggle="collapse" href="javascript:void(0);">
+                      <i class="fa fa-bars"></i> </a> <a class="navbar-brand logo float-left" href="#/">
+                  <span class="navbar-title">
+                      <span><img src="/static/img/logo.png" style="padding-bottom:7px; padding-right:8px"> <i>earkweb</i></span></span>
+                  <span class="navbar-title" style="color:red"></span>
+                  </a>
+              </div>
+
+              <div class="navbar-collapse collapse" id="navbarResponsive">
+                  <ul class="navbar-nav ml-auto">
+
+                    {% for item in menu %}
+
+                    <li class="nav-item {% if item.subItems %} dropdown{% endif %} pointer text-nowrap">
+
+
+                    <a aria-haspopup="true" class="nav-link {% if item.subItems %} dropdown-toggle{% endif %} text-nowrap" href="{{ item.path }}{% if not item.subItems %}#{% endif %}" aria-expanded="false" {% if item.subItems %}role="button" data-toggle="dropdown"{% endif %}>
+                        <span><i aria-hidden="true" class="fa {{ item.icon }}"></i> <span>{{ item.label }}</span></span>
+                    </a>
+                    {% if item.subItems %}
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                      {% for subItem in item.subItems %}
+                            <a class="dropdown-item" href="{{ subItem.path }}"><span><i aria-hidden="true" class="fa {{ subItem.icon }}"></i> {{ subItem.label }}</a>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    </li>
+
+                    {% endfor %}
+
+
+                    {% include "earkweb/navbar.html" %}
+
+
+                    <li class="nav-item dropdown pointer text-nowrap">
+                      <a class="nav-link dropdown-toggle" href="#" id="language" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i aria-hidden="true" class="fa fa-flag"></i> {% trans 'Language' %}
+                      </a>
+                      <div class="dropdown-menu dropdown-menu-right">
+
+                        {% get_available_languages as languages %}
+                        {% for lang_code, lang_name in languages %}
+
+                        <a href="{% url 'activate_language' lang_code %}" class="dropdown-item">
+                          {% if lang_code == LANGUAGE_CODE %}
+                            <i class="glyphicon glyphicon-check"></i>&nbsp;&nbsp;
+                          {% else %}
+                            <i class="glyphicon glyphicon-unchecked"></i>&nbsp;&nbsp;
+                          {% endif %}
+                          {{ lang_name }} ({{ lang_code }})
+                        </a>
+
+                        {% endfor %}
+                      </div>
+                    </li>
+
+                    <li class="nav-item dropdown pointer text-nowrap">
+
+                      {% if user.is_authenticated %}
+
+                      <a class="nav-link dropdown-toggle" href="#" id="access1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <img alt="Avatar" class="profile-image img-circle" src="{% static 'earkweb/images/user_woman.png' %}" width="30" height="30"></span>
+                        {{ user.get_username }}
+                      </a>
+                      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <i aria-hidden="true" class="fa fa-fw fa-sign-out"></i>
+                            <a href="/earkweb/accounts/logout">{% trans 'log out' %}</a>
+                      </div>
+                      {% else %}
+
+                      <a class="nav-link dropdown-toggle" href="#" id="access2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% trans 'Access' %}
+                      </a>
+                      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <i aria-hidden="true" class="fa fa-fw fa-sign-in"></i>
+                            <a href="/earkweb/accounts/login">{% trans 'log in' %}</a>
+                      </div>
+
+                      {% endif %}
+
+                    </li>
+                  </ul>
+
+              </div>
+          </nav>
+      </header>
+
+    <div class="container-fluid">
+          <div class="card jh-card mb-auto">
+                  <div class="content">
+                      {% block content %}{% endblock %}
+                  </div>
+          </div>
+          <div class="mt-1">
+                  <div class="footer">
+                      <span>
+                          <a href="{% url 'version' %}">Version {{ sw_version }} ({{ sw_version_date }})</a>
+                      </span>
+                  </div>
+          </div>
       </div>
 
-    </div><!-- /.container -->
-
-
-
-    
-    <script src="{% static "earkweb/bootstrap-3.3.2/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "earkweb/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
     <script src="{% static "earkweb/bootbox-4.4.0/bootbox.js" %}"></script>
-
-
 
 
 

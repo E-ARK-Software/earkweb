@@ -1,0 +1,34 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load render_table from django_tables2 %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+    <!-- Submission area javascript -->
+    <script type="text/javascript" src="{% static 'administration/js/administration.js' %}"></script>
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "administration/about_module.html" %}
+
+    <h2 class="main">{% trans 'BackendAdministration' %}</h2>
+
+    <ul>
+        {% if request.user.is_superuser or request.user.is_staff  %}
+         <li><a href="/earkweb/administration/dashboard">{% trans 'Dashboard' %}</a></li>
+        {% if request.user.is_superuser %}
+        <li><a href="/earkweb/admin">{% trans 'Django Administration' %}</a></li>
+        <li><a href="http://{{flower_host}}:{{flower_port}}{{flower_path}}tasks">{% trans 'Flower process monitoring' %}</a></li>
+        <li><a href="/earkweb/api/">REST API</a></li>
+        {% endif %}
+        <li><a href="/earkweb/rs">{% trans 'ResourceSyncInterface' %}</a></li>
+        {% endif %}
+    </ul>
+
+
+
+{% endblock %}

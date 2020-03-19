@@ -1,0 +1,36 @@
+{% load dictionary_extras %}
+{% load i18n %}
+<div id="sip-detail-table">
+        <table  class="table table-striped table-bordered table-condensed">
+            <tbody>
+                <tr>
+                    <td class="emph">{% trans 'Label' %}</td>
+                    <td class="emph">{{ ip.package_name }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans 'Process ID' %}</td>
+                    <td>{{ ip.process_id }}</td>
+                </tr>
+                <tr class="row1">
+                    <td>{% trans 'Working directory' %}</td>
+                    <td><a href="{% url 'submission:working_area' 'submission' ip.process_id %}" title='Path to the working directory of this submission'>{{ config_path_work }}/{{ ip.process_id }}</a></td>
+                </tr>
+                {% if ip.identifier %}
+                <tr class="row2">
+                    <td data-toggle="tooltip" title="Öffentlicher Bezeichner">{% trans 'Information package identifier' %}</td>
+                    <td>
+                        <a href="{% url 'management:storage_area' 'management' ip.identifier %}" title='Path to the storage area of this asset'>{{ ip.identifier }}</a>
+                    </td>
+                </tr>
+                <tr class="row2" data-toggle="tooltip" title="Current version of the data set. The version number is only incremented if information packages are changed.">
+                    <td>{% trans 'Version' %}</td>
+                    <td>{{ ip.version }}</td>
+                </tr>
+                {% endif %}
+                <tr class="row2">
+                    <td data-toggle="tooltip" title="Öffentlicher Bezeichner">{% trans 'Last change' %}</td>
+                    <td>{{ ip.last_change|date:"d.m.Y H:i:s" }}</td>
+                </tr>
+            </tbody>
+        </table>
+</div>
