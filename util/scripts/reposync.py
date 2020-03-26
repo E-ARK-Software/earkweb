@@ -4,6 +4,7 @@
 Repository file system and frontend database synchronization
 Note: Requires that both, the django frontend and the storage backend can access the storage area. It can therefore not be used in a distributed setup.
 """
+import json
 import logging
 
 from eatb.storage.pairtreestorage import PairtreeStorage
@@ -26,7 +27,6 @@ from earkweb.models import InformationPackage
 from config.configuration import config_path_storage
 from config.configuration import config_path_work
 from django.core.exceptions import ObjectDoesNotExist
-
 
 
 def sync_ip_state(ip_state_info, ip_in):

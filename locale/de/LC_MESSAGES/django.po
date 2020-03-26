@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-19 16:05+0100\n"
+"POT-Creation-Date: 2020-03-25 22:57+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,30 +30,30 @@ msgid "Information package"
 msgstr "Informationspaket"
 
 #: access/templates/access/detail.html:46
-#: management/templates/management/detail.html:46
+#: management/templates/management/detail.html:76
 msgid "Representations"
 msgstr "Repräsentationen"
 
 #: access/templates/access/detail.html:50 access/views.py:61
-#: management/templates/management/detail.html:50
+#: management/templates/management/detail.html:80
 msgid "Identifier"
 msgstr "Bezeichner"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:50
+#: management/templates/management/detail.html:80
 #: management/templates/management/iptable.html:7
 #: submission/templates/submission/iptable.html:7
-#: submission/templates/submission/start.html:32 submission/views.py:538
+#: submission/templates/submission/start.html:32 submission/views.py:557
 msgid "Label"
 msgstr "Bezeichner"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:50
+#: management/templates/management/detail.html:80
 msgid "Description"
 msgstr "Beschreibung"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:50
+#: management/templates/management/detail.html:80
 msgid "Access rights"
 msgstr "Zugriffsrechte"
 
@@ -183,7 +183,7 @@ msgid "Checkout working copy"
 msgstr "Arbeitskopie erstellen"
 
 #: management/templates/management/checkout.html:18
-msgid "There is currently no working copy for the data set"
+msgid "There is currently no working copy for the information package"
 msgstr "Es gibt zur Zeit keine Arbeitskopie für das Informationspaket"
 
 #: management/templates/management/checkout.html:20
@@ -191,7 +191,7 @@ msgid "You can checkout a new working copy now."
 msgstr "Sie können jetzt eine Arbeitskopie erstellen"
 
 #: management/templates/management/checkout.html:28
-msgid "Reset AIP to SIP"
+msgid "Reset logging"
 msgstr ""
 
 #: management/templates/management/checkout_confirm.html:14
@@ -243,6 +243,10 @@ msgstr "Arbeitskopie gelöscht"
 msgid "Back to overview"
 msgstr "Zur&uuml;ck zur Übersicht"
 
+#: management/templates/management/detail.html:46
+msgid "Descriptive metadata"
+msgstr ""
+
 #: management/templates/management/iptable.html:11 management/views.py:155
 msgid "WorkingCopy"
 msgstr "Arbeitsverzeichnis"
@@ -266,7 +270,7 @@ msgid "NavSubmissions"
 msgstr "Informationspaket-Erstellung"
 
 #: management/views.py:151
-msgid "Archival Information Package"
+msgid "Archived Information Package"
 msgstr "Archivinformationspaket"
 
 #: management/views.py:152
@@ -389,7 +393,7 @@ msgstr "Einreichungsinformationspaket überprüfen"
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:15 submission/views.py:536
+#: submission/templates/submission/iptable.html:15 submission/views.py:555
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
 
@@ -425,6 +429,7 @@ msgid "External identifier (optional)"
 msgstr "Externer identifier"
 
 #: submission/templates/submission/start.html:56
+#: submission/templates/submission/upload_mdform.html:80
 msgid "Continue"
 msgstr "Weiter"
 
@@ -438,6 +443,7 @@ msgstr "Der Ingest-Workflow ist abgeschlossen!"
 
 #: submission/templates/submission/start_ingest.html:38
 #: submission/templates/submission/start_ingest.html:66
+#: submission/templates/submission/upload_finalize.html:62
 msgid "Archive information package"
 msgstr "Informationspaket archivieren"
 
@@ -486,37 +492,37 @@ msgstr "Informationspaket erstellt"
 msgid "The information package was created successfully"
 msgstr "Das Informationspaket wurde erfolgreich erstellt"
 
-#: submission/templates/submission/upload_finalize.html:62
-msgid "Continue with the archiving of the information package"
-msgstr "Weiter zur Archivierung des Informationspakets"
-
 #: submission/templates/submission/upload_mdform.html:20
 msgid "Information package metadata"
 msgstr "Informationspaket-Metadaten"
 
-#: submission/views.py:533
+#: submission/templates/submission/upload_mdform.html:82
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: submission/views.py:552
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:537
+#: submission/views.py:556
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:539
+#: submission/views.py:558
 #: venv/lib/python3.6/site-packages/django/forms/widgets.py:397
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:540
+#: submission/views.py:559
 #: venv/lib/python3.6/site-packages/django/forms/formsets.py:391
 msgid "Delete"
 msgstr "Löschen"
 
-#: submission/views.py:585
+#: submission/views.py:604
 msgid "AuthenticationError"
 msgstr "Authentifizierungsfehler"
 
-#: submission/views.py:585
+#: submission/views.py:604
 msgid "PleaseVerifyUserAPIToken"
 msgstr "Bitte API Token überprüfen"
 
@@ -543,23 +549,14 @@ msgstr ""
 #: templates/earkweb/home.html:21
 msgid "earkwebWelcomeText"
 msgstr ""
-"Die Web-Anwendung <i>earkweb</i> demonstriert die Implementierung der <a "
-"href=\"https://dilcis.org/specifications/common-specification\">Common "
-"Specification for Information Packages (CSIP)</a>, die vom <a href=\"https://"
-"dilcis.org/\">Digital Information LifeCycle Interoperability Standards Board "
-"(DILCIS Board)</a> veröffentlicht und verwaltet wird. <p>Die Software bietet "
-"folgende Funktionen:</p> <ul><li>Geführte, formularbasierte oder "
-"programmatische Erstellung von Submission Information Packages (SIPs).</"
-"li><li>Modulare Workflows zur Erstellung von Archivinformationspaketen "
-"(AIPs).</li><li>Skalierbare (parallelisierte) Ausführung der Paketerstellung "
-"und -aufnahme.</li><li>Überwachung der Aufgabenausführung und Mittel zur "
-"Fehleranalyse.</li><li>Volltextindizierung und Suche nach Dateien in "
-"Archivinformationspaketen.</li><li>RESTful API für die Remote-"
-"Paketverwaltung und -integration.</li><li>ResourceSync-Schnittstelle, die "
-"die Änderungsliste des Repositorys für Archivierungsinformationspakete "
-"bereitstellt.</li></ul><p>Der earkweb code ist Open Source und auf Github "
-"verfügbar:</p><pre><code>git clone https://github.com/E-ARK-Software/earkweb."
-"git</code></pre>"
+"Dieses System dient der Verarbeitung und Verwaltung von Datenpaketen. <p>Die "
+"Software bietet folgende Funktionen:</p> <ul><li>Geführte, formularbasierte  "
+"Erstellung von Informationspaketen.</li><li>Modulare Workflows zur "
+"Archivierung von Informationspaketen.</li><li>Überwachung der "
+"Aufgabenausführung.</li><li>Volltextindizierung und Suche nach Dateien in "
+"Informationspaketen.</li><li>RESTful API für die Remote-Paketverwaltung und -"
+"integration.</li><li>ResourceSync-Schnittstelle, die die Änderungsliste des "
+"Repositorys bereitstellt.</li></ul>"
 
 #: templates/earkweb/navbar.html:8
 msgid "Administration"
@@ -1880,6 +1877,9 @@ msgstr ""
 msgctxt "stick"
 msgid "club"
 msgstr ""
+
+#~ msgid "Archiving of the information package"
+#~ msgstr "Informationspakets archivieren"
 
 #~ msgid "BackendAvailability"
 #~ msgstr "Überprüfung des Backends"

@@ -60,3 +60,10 @@ Generate language files for supported languages:
 Compile language files:
 
     django-admin compilemessages
+
+## Install library dependencies
+
+Local library dependencies can be installed using pip with the '-e' parameter. In this case changes in the dependant 
+library take effect immediately:
+
+    pip install -e ../otherproject/otherlib/.

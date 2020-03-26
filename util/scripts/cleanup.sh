@@ -1,7 +1,7 @@
 #!/bin/bash
 
-MYSQL_USERNAME=eark
-MYSQL_PASSWORD=eark
+MYSQL_USERNAME=repo
+MYSQL_PASSWORD=repo
 
 repo_data_directory="/var/data/earkweb"
 

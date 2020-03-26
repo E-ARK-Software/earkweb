@@ -1,4 +1,4 @@
-# earkweb - User guide
+# User guide
 
 ## Introduction
 
@@ -38,17 +38,12 @@ A simplified example of the structure of the information package package could b
     |         - metadata/                                   |
     `-------------------------------------------------------'
 
-The purpose of the __earkweb__ environment is to demonstrate the creation and management of these type of information
-packages based on the Common Specification for Information Packages (CSIP)<sup>[csip](#csip)</sup> which is published
-and maintained by the Digital Information LifeCycle Interoperability Standards Board (DILCIS Board)
-(CSIP)<sup>[dilcis](#dilcis)</sup>.
-
 ### User interface
 
-__earkweb__ is Python/Django-based web application which uses a MySQL database for storing information about 
+The system is Python/Django-based web application which uses a MySQL database for storing information about 
 information packages and a Celery/RabbitMQ/Redis backend for asynchronous task processing.
 
-After installing *earkweb*, the application can be accessed using a web browser (`host` and `port` needs to be adapted
+After installing the software, the application can be accessed using a web browser (`host` and `port` needs to be adapted
 accordingly):
 
     http://<host>:<port>/earkweb 
@@ -95,13 +90,13 @@ Click on "Create information package" to go to the next step.
 
 ![](img/create_ip_submission_package_created.png)
 
-Review the information package and click on "Continue with the archiving of the information package" 
+Review the information package and click on "Archive information package" 
 to proceed to the next step or click on "Edit information package" to modify it.
 
 ![](img/create_ip_submission_review.png)
 
-You can now start the ingest of the information package, i.e. create the archival information package
-(AIP) by clicking on "Archive information package". Note that the processing and monitoring backend 
+You can now start the ingest of the information package, i.e. archiving it by clicking on 
+"Archive information package". Note that the processing and monitoring backend 
 needs to be available. 
 
 ![](img/create_ip_submission_archive.png)
@@ -133,18 +128,18 @@ After archiving the information package is listed in the "Package management" ar
 
 ![](img/aip_pipeline_finished.png)
 
-Once the archival information package (AIP) is created, it receives a __Unique Identifier (UID)__ which is used to 
+Once the information package is archived, it receives a __Unique Identifier (UID)__ which is used to 
 identify the information package throughout its life-cycle. The following is an example of such an identifier based on 
 UUID<sup>[uuid](#uuid)</sup>:
 
     urn:uuid:cmchfbsurejmrfyjevhcsfhxinaijwxnjmpixrzl
     
-In the last step of the ingest workflow the archival information package (AIP) was indexed.
+In the last step of the ingest workflow the information package is indexed.
 The full-text search can be used to find content stored in information packages 
 
 ![](img/full-text-search.png)
 
-and directly access them (if the file size does not exceed a configurable limit).
+and directly access it (if the file size does not exceed a configurable limit).
 
 ![](img/full-text-search-display.png)
 
@@ -153,7 +148,7 @@ and directly access them (if the file size does not exceed a configurable limit)
 
 ### Django administration
 
-*earkweb* is based on the [Django framework](https://docs.djangoproject.com) which provides an admin interface. It 
+The web application is based on the [Django framework](https://docs.djangoproject.com) which provides an admin interface. It 
 reads metadata from the models to provide a quick, model-centric interface where administrators can manage content. 
 
 ### Flower
@@ -172,8 +167,4 @@ If the flower service is available in a sub-path (e.g. http://127.0.0.1/flower),
 
 <hr>
 
-<a name="csip">csip</a> https://dilcis.org/specifications/common-specification
-
 <a name="uuid">uuid</a> https://tools.ietf.org/html/rfc4122
-
-<a name="dilcis">dilcis</a> https://dilcis.org/

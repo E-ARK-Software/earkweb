@@ -8,10 +8,10 @@ services:
         - "53306:3306"
     environment:
         MYSQL_ROOT_USER: root
-        MYSQL_ROOT_PASSWORD: eark
-        MYSQL_DATABASE: earkdb
-        MYSQL_USER: eark
-        MYSQL_PASSWORD: eark
+        MYSQL_ROOT_PASSWORD: repo
+        MYSQL_DATABASE: repodb
+        MYSQL_USER: repo
+        MYSQL_PASSWORD: repo
   redis:
     image: tutum/redis
     hostname: "redis"
@@ -26,7 +26,7 @@ services:
     environment:
       RABBITMQ_ERL_COOKIE: "ABQOKOFSQALCPCLNLEQG"
       RABBITMQ_USERNAME: "admin"
-      RABBITMQ_PASSWORD: "earkrmq"
+      RABBITMQ_PASSWORD: "repormq"
       RABBITMQ_VHOST: "/"
     ports:
       - "55673:15672"

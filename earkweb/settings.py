@@ -63,7 +63,7 @@ LOGGING = {
 import logging.config
 logging.config.dictConfig(LOGGING)
 
-from config.configuration import logfile_earkweb, logfile_request, logfile_celery, django_secret_key, logfile_celery_proc
+from config.configuration import django_secret_key, logfile_celery_proc
 from config.configuration import rabbitmq_host
 from config.configuration import rabbitmq_port
 from config.configuration import rabbitmq_user
@@ -228,7 +228,11 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.JSONParser',
     ],
-    'DEFAULT_SCHEMA_CLASS':'rest_framework.schemas.coreapi.AutoSchema'
+    'DEFAULT_SCHEMA_CLASS':'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
 }
 
 MIDDLEWARE = [

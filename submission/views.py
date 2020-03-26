@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import shutil
@@ -24,7 +25,8 @@ from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
-from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY
+from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
+from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
 from eatb.utils.fileutils import get_immediate_subdirectories, find_files
 
@@ -38,7 +40,6 @@ from earkweb.models import Representation, InternalIdentifier
 from taskbackend.taskexecution import execute_task
 from util.custom_exceptions import ResourceNotAvailable, AuthenticationError
 from util.djangoutils import get_unused_identifier, get_user_api_token
-from taskbackend.ip_state import IpState
 from taskbackend.taskutils import extract_and_remove_package, update_states_from_backend_api, \
     get_celery_worker_status, flower_is_running, get_task_info_from_child_tasks
 
@@ -232,8 +233,11 @@ def upload_step1(request, pk):
         tags = []
         user_generated_tags = []
         # if the file is available, parse it and get metadata properties
-        if ip.basic_metadata:
+        if ip.basic_metadata and ip.basic_metadata != 'null':
             md_properties = json.loads(ip.basic_metadata)
+
+            md_properties = dict_keys_camel_to_underscore(md_properties)
+
             request.session['md_properties'] = md_properties
             # load existing metadata values as initial form values
             form = MetaFormStep1(initial={
@@ -409,7 +413,7 @@ def ip_creation_process(request, pk):
     # get ip
     ip = InformationPackage.objects.get(pk=pk)
 
-    finalization_time = current_timestamp(fmt=DT_ISO_FORMAT)
+    finalization_time = date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT) #  current_timestamp(fmt=DT_ISO_FORMAT)
     # merge posted data from step2 into one dictionary (ip.created,ip.last_change)
 
     if 'step1' not in request.session or not hasattr(request.session['step1'], 'items'):
@@ -419,10 +423,9 @@ def ip_creation_process(request, pk):
         chain(
             request.session['step1'].items(),
             request.session['step2'].items(),
-            {"identifier": ip.process_id}.items(),
+            {"process_id": ip.process_id}.items(),
             {'currdate': ts_date(fmt=DT_ISO_FORMAT), 'date': ts_date(fmt=DATE_DMY), "last_change": finalization_time,
              "created": finalization_time,
-             "django_service_host": django_service_host, "django_service_port": django_service_port,
              'landing_page': string.Template(package_access_url_pattern).substitute(
                  {'packageid': "%s" % ip.process_id})
              }.items()
@@ -439,8 +442,12 @@ def ip_creation_process(request, pk):
                                                         reprecord.identifier, "data"), "*")]
     } for reprecord in reprecords}
 
+
     if reprecords:
         context = dict(chain(context.items(), {'representations': repinfo}.items()))
+
+    basic_metadata = context
+
     context["node_namespace_id"] = node_namespace_id
     context["repo_identifier"] = repo_identifier
     context["repo_title"] = repo_title
@@ -451,24 +458,35 @@ def ip_creation_process(request, pk):
     lang = pycountry.languages.get(name=context['language'])
     context["lang_alpha_3"] = "eng" if not lang else lang.alpha_3
 
-    # generate ead xml (by rendering template) and store metadata file
-    response = render(request=request, template_name='earkweb/ead.xml', context=context)
-    response['Content-Type'] = 'application/xml;'
-    store = response.content.decode('utf-8')
-    ip_work_dir = os.path.join(config_path_work, ip.process_id)
-    os.makedirs(os.path.join(ip_work_dir, "metadata/descriptive"), exist_ok=True)
-    upload_path = os.path.join(ip_work_dir, "metadata/descriptive/ead.xml")
-    with open(os.path.join(upload_path), "w") as output:
-        output.write(store)
-    os.makedirs(os.path.join(ip_work_dir, "schemas"), exist_ok=True)
-    shutil.copy2(os.path.join(root_dir, "static/schemas/ead3.xsd"), os.path.join(ip_work_dir, "schemas/ead3.xsd"))
 
-    ip.basic_metadata = json.dumps(context)
+    basic_metadata_s = json.dumps(basic_metadata)
+
+    ip.basic_metadata = basic_metadata_s
     ip.save()
+
+    if "csrfmiddlewaretoken" in basic_metadata:
+        del basic_metadata["csrfmiddlewaretoken"]
+    if "currdate" in basic_metadata:
+        del basic_metadata["currdate"]
+    if "lang_alpha_3" in basic_metadata:
+        del basic_metadata["lang_alpha_3"]
+    if "landing_page" in basic_metadata:
+        del basic_metadata["landing_page"]
+
+    basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
+    files = {'file': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4))}
+    request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
+    user_api_token = get_user_api_token(request.user)
+    response = requests.post(request_url, files=files, headers={'Authorization': 'Token %s' % user_api_token},
+                             verify=verify_certificate)
+    if response.status_code != 201:
+        return render(request, 'earkweb/error.html', {
+            'header': 'Error uploading metadata (%d)' % response.status_code, 'message': response.text
+        })
 
     from taskbackend.tasks import sip_package
     task_input = {
-        "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "eark"
+        "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "repo"
     }
     job = sip_package.delay(json.dumps(task_input))
 

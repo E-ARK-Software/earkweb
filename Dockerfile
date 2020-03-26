@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-LABEL maintainer="E-ARK project, https://eark-project.com"
+LABEL maintainer="AIT, http://www.ait.ac.at"
 
 RUN apt-get update --fix-missing
 

@@ -68,11 +68,11 @@ class MetaFormStep2(forms.Form):
     contact_point = forms.CharField(label=_('ContactOfPackage'), max_length=255,
                                     widget=forms.TextInput(attrs ={'placeholder': _('ContactOfPackage')}))
     contact_email = forms.EmailField(label=_('ContactEmailOfPackage'),
-                                     widget=forms.EmailInput({'placeholder': 'contact@eark-project.com'}))
+                                     widget=forms.EmailInput({'placeholder': 'contact@email.com'}))
     publisher = forms.CharField(label=_('PublisherOfPackage'), max_length=255,
                                 widget=forms.TextInput(attrs ={'placeholder': _('PublisherOfPackage')}))
     publisher_email = forms.EmailField(label=_('PublisherEmailOfPackage'),
-                                       widget=forms.EmailInput({'placeholder': 'publisher@eark-project.com'}))
+                                       widget=forms.EmailInput({'placeholder': 'publisher@email.com'}))
     language = forms.CharField(label=_('MainLanguageOfPackage'), max_length=255,
                                widget=forms.TextInput(attrs ={'id': 'PP_lang'}), initial=(_('MainInitialLanguage')))
 

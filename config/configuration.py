@@ -29,13 +29,14 @@ fido_enabled = False
 # version
 sw_version = config.get('repo', 'sw_version')
 sw_version_date = config.get('repo', 'sw_version_date')
-app_label = "earkweb"
-default_org = "eark"
+app_label = config.get('repo', 'app_label')
+default_org = config.get('repo', 'default_org')
 is_test_instance = config.getboolean('repo', 'is_test_instance')
 
 backend_api_key = config.get('system', "backend_api_key")
 
 # repository
+logo = config.get('repo', 'logo')
 repo_identifier = config.get('repo', 'repo_identifier')
 repo_title = config.get('repo', 'repo_title')
 repo_description = config.get('repo', 'repo_description')
@@ -48,12 +49,12 @@ metadata_directory = _conf_repr_dir if _conf_repr_dir else "metadata"
 node_namespace_id = config.get('repo', 'node_namespace_id')
 
 # logfiles
-logfile_earkweb = config.get('logs', 'logfile_earkweb')
+logfile_ui = config.get('logs', 'logfile_ui')
 logfile_request = config.get('logs', 'logfile_request')
 logfile_celery = config.get('logs', 'logfile_celery')
 logfile_celery_proc = config.get('logs', 'logfile_celery_proc')
 
-# earkweb
+# repo
 django_secret_key = config.get('server', 'django_secret_key')
 django_service_protocol = config.get('server', 'django_service_protocol')
 django_service_host = config.get('server', 'django_service_host')

@@ -1,13 +1,18 @@
 import json
 import os
 import tarfile
+from datetime import datetime
+from json import JSONDecodeError
+
 from celery.result import AsyncResult
 from eatb.metadata.XmlHelper import q
 from eatb.packaging.packaged_container import TarContainer
 from eatb.storage.checksum import check_transfer
 from eatb.storage.directorypairtreestorage import make_storage_directory_path
 from eatb.storage.pairtreestorage import PairtreeStorage
-from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs
+from eatb.utils.datetime import date_format, DT_ISO_FORMAT
+from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs, \
+    read_file_content
 from eatb.xml.xmlvalidation import XmlValidation
 from lxml import etree
 
@@ -432,6 +437,20 @@ def get_aip_parent(task_context_path, aip_identifier, package_extension):
                     return uuid
 
     return None
+
+
+def log_operation(task_log, response, success_condition, operation_name):
+    try:
+        parsed_response = json.loads(response.text)
+        if success_condition:
+            message = parsed_response['message'] if 'message' in parsed_response else response.text
+            task_log.info("Operation successful: %s (%d): %s " % (operation_name, response.status_code, message))
+        else:
+            message = parsed_response['errdetail'] if 'errdetail' in parsed_response else \
+                parsed_response['detail'] if 'detail' in parsed_response else parsed_response
+            task_log.error("Operation failed: %s (%d): %s " % (operation_name, response.status_code, message))
+    except JSONDecodeError as err:
+        task_log.error("Operation failed: %s (%d): %s " % (operation_name, response.status_code, err))
 
 
 def create_or_update_state_info_file(working_dir, info=None):

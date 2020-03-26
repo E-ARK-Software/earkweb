@@ -1,6 +1,6 @@
 LOGIN_URL=http://localhost:8000/earkweb/admin/login/
-YOUR_USER='eark'
-YOUR_PASS='eark'
+YOUR_USER='repo'
+YOUR_PASS='repo'
 COOKIES=cookies.txt
 CURL_BIN="curl -s -c $COOKIES -b $COOKIES -e $LOGIN_URL"
 

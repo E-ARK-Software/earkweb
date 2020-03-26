@@ -1,4 +1,4 @@
-# earkweb
+# Information Package Repository
 
 ## Introduction
 
@@ -23,7 +23,7 @@ a SIP, archiving an AIP, and creating a DIP from a set of AIPs.
 [Celery](http://www.celeryproject.org) which allows synchronous and asynchronous processing of information packages by 
 means of processing units which are called “tasks”. 
 
-The following diagram illustrates the E-ARK Web components.
+The following diagram illustrates the component architecture.
 
 ![architecture overview lightweight version](./docs/img/architecture_overview_lightweightversion.png)
 
@@ -34,10 +34,7 @@ transformation pipeline, beginning with the creation of the Submission Informati
 to an Archival Information Package (AIP), to the creation of the Dissemination Information Package (DIP) which is 
 used to disseminate digital objects to the requesting user. Tasks can be assigned to Celery workers (green boxes with 
 a "C") which share the same storage area and the result of the package transformation is stored in the information 
-package’s working directory based on files. 
-
-Full-text content included in information packages is indexed by SolR.
-
+package’s working directory based on files. Full-text content included in information packages is indexed by SolR.
 A [ResourceSync](http://www.openarchives.org/rs/toc) interface exposes the changelist of information packages managed 
 by the repository.
 

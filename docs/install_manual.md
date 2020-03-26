@@ -88,7 +88,7 @@ Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](ht
 
 1. Checkout project
 
-       git clone https://github.com/E-ARK-Software/earkweb
+       git clone $repository/earkweb
         
     Change to earkweb directory:
 
@@ -101,6 +101,11 @@ Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](ht
 4. Install additional python packages:
 
        pip3 install -r requirements.txt
+       
+   Note that local library dependencies can be installed using pip with the '-e' parameter. In this case changes in the 
+   dependant library take effect immediately:
+
+       pip install -e ../otherlib/.    
         
 5. Manually install additional packages:
 
@@ -162,17 +167,17 @@ Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](ht
     
        mysql -u root -p
         
-    Create user 'eark':
+    Create user 'repo':
     
-       CREATE USER 'eark'@'%' IDENTIFIED BY 'eark';
+       CREATE USER 'repo'@'%' IDENTIFIED BY 'repo';
         
-    Create database 'earkdb in mysql console:
+    Create database 'repodb in mysql console:
         
-       create database earkdb;
+       create database repodb;
         
-    Grant access to user 'eark'  mysql console:
+    Grant access to user 'repo'  mysql console:
 
-       GRANT ALL ON earkdb.* TO eark@'%' IDENTIFIED BY 'eark';
+       GRANT ALL ON repodb.* TO repo@'%' IDENTIFIED BY 'repo';
 
 2. Exit mysql console and create the database tables (first Django tables, then module tables):
 

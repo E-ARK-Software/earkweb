@@ -41,7 +41,8 @@ from access.search.solrquery import SolrQuery
 from access.search.solrserver import SolrServer
 
 from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
-    get_last_submission_path, get_children_from_storage, get_package_from_storage, get_aip_parent
+    get_last_submission_path, get_children_from_storage, get_package_from_storage, get_aip_parent, \
+    create_or_update_state_info_file
 import tarfile
 from celery import chain, group
 from earkweb.celery import app

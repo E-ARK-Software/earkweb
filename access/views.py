@@ -9,7 +9,7 @@ from django.views.generic import DetailView
 from django_tables2 import RequestConfig
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, StreamingHttpResponse
+from django.http import HttpResponse, StreamingHttpResponse, Http404
 from django.template import loader
 from django.http import JsonResponse
 import django_tables2 as tables
@@ -121,11 +121,24 @@ def get_information_package_item(request, identifier, entry):
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % tar_entry)
 
-    url = "http://%s:%s/earkweb/api/storage/%s/%s/stream" % (django_backend_service_host, django_backend_service_port, identifier, tar_entry)
+    url = "http://%s:%s/earkweb/api/informationpackages/%s/%s/stream" % (django_backend_service_host, django_backend_service_port, identifier, tar_entry)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
-    content_type = response.headers['content-type']
-    return HttpResponse(response.content, content_type=content_type)
+    if response.status_code == 404:
+        response_msg = json.loads(response.text)
+        return render(request, 'earkweb/error.html',
+                      {'header': 'Not available',
+                       'message': response_msg["message"]})
+    elif response.status_code == 200:
+        content_type = response.headers['content-type']
+        if content_type.startswith('text'):
+            content_type = '%s; charset=utf-8' % content_type
+        return HttpResponse(response.content, content_type=content_type)
+    else:
+        return render(request, 'earkweb/error.html',
+                      {'header': 'An error occurred',
+                       'message': "An error occurred when trying to retrieve the entry: %s" % tar_entry})
+
 
 
 @login_required

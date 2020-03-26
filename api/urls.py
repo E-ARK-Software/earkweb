@@ -6,14 +6,15 @@ from drf_yasg import openapi
 
 from config.configuration import representations_directory
 
+
 schema_view = get_schema_view(
    openapi.Info(
-      title="E-ARK Web API",
+      title="Data Repository API",
       default_version='v1',
-      description="E-ARK Web REST API",
+      description="Data Repository API",
       terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets.local"),
-      license=openapi.License(name="BSD License"),
+      contact=openapi.Contact(email="info@ait.ac.at"),
+      license=openapi.License(name="MIT License"),
    ),
    public=True,
    permission_classes=(permissions.AllowAny,),
@@ -30,8 +31,8 @@ urlpatterns = [
 
     # endpoints with database access only
 
-    url(r'^identifiers/$', views.int_id_list),
-    url(r'^identifiers/byextuid/$', views.identifiers_by_extuid),
+    #url(r'^identifiers/$', views.int_id_list),
+    #url(r'^identifiers/byextuid/$', views.identifiers_by_extuid),
 
     url(r'^informationpackages/$', views.InformationPackages.as_view()),
     url(r'^informationpackages/%s/$' % representations_directory, views.representations_list),
@@ -55,11 +56,14 @@ urlpatterns = [
     url(r'^informationpackages/(?P<process_id>[a-z0-9\-]{36,36})/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_working_dir_file_resource),
 
+    url(r'^informationpackages/(?P<identifier>[a-z0-9\-:+]{36,50})/(?P<entry>[0-9a-zA-Z_\-/\. \:]{3,500})/stream/$',
+        views.package_entry_from_backend, name='read_container_package_entry'),
+
     url(r'^informationpackages/status/$', views.get_ip_states),
     url(r'^informationpackages/(?P<process_id>[a-z0-9\-]{36,36})/status/$', views.get_ip_state),
 
     url(r'^informationpackages/(?P<process_id>[a-z0-9\-]{36,36})/'
-        r'(?P<representation>[a-z0-9]{1,20})/(?P<datatype>[a-z0-9]{1,20})/upload/$',
+        r'(?P<representation>[a-z0-9\-]{3,50})/(?P<datatype>[a-z0-9]{3,20})/upload/$',
         views.UploadFile.as_view()),
     url(r'^informationpackages/(?P<process_id>[a-z0-9\-]{36,36})/(?P<datatype>[a-z0-9]{1,20})/upload/$',
         views.UploadFile.as_view()),
@@ -74,8 +78,6 @@ urlpatterns = [
     url(r'^storage/informationpackages/(?P<identifier>[a-z0-9\-:+]{45,45})/dir-json$', views.do_storage_dir_json),
     url(r'^storage/(?P<identifier>[a-z0-9\-:+]{36,50})/%s/$' % representations_directory,
         views.get_ip_representations_info, name='storage_identifier_representations'),
-    url(r'^storage/(?P<identifier>[a-z0-9\-:+]{36,50})/(?P<entry>[0-9a-zA-Z_\-/\. \:]{3,500})/stream/$',
-        views.package_entry_from_backend, name='read_container_package_entry'),
     url(r'^storage/informationpackages/(?P<identifier>[a-z0-9\-:]{36,45})/index/$', views.index_informationpackage),
 
     # endpoints which require direct access to both, working area and storage backend

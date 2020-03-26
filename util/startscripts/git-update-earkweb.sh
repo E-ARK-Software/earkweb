@@ -9,10 +9,10 @@ python init_solr.py
 
 echo "Restarting earkweb frontend"
 kill -9 `ps -aux | grep -v "grep" | grep runserver | awk '{print $2}'`
-echo eark | sudo -S service earkweb start
+echo repo | sudo -S service earkweb start
 
 echo "Restarting celery backend"
-echo eark | sudo -S service celeryd stop
-echo eark | sudo -S service celeryd start
+echo repo | sudo -S service celeryd stop
+echo repo | sudo -S service celeryd start
 
 echo "Update finished. You can close the window."

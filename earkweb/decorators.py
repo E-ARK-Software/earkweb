@@ -51,7 +51,7 @@ def get_task_logger(func, ip_dir):
         formatter = logging.Formatter('%(asctime)s %(task_name)s %(levelname)s %(message)s')
         hdlr.setFormatter(formatter)
         logger.addHandler(hdlr)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
     logger = logging.LoggerAdapter(logger, extra)
     return logger
 
@@ -76,11 +76,11 @@ def task_logger(f):
             task_log.info("Task %s" % task.name)
             input_params = context
             for param, value in input_params.items():
-                task_log.info("Input parameter '%s': %s" % (param, value))
+                task_log.debug("Input parameter '%s': %s" % (param, value))
             result = f(*args, **kwds)
             result_params = json.loads(result)
             for param, value in result_params.items():
-                task_log.info("Output parameter '%s': %s" % (param, value))
+                task_log.debug("Output parameter '%s': %s" % (param, value))
         except Exception as ex:
             task_log.error("Exception {0}".format(ex))
             raise ex

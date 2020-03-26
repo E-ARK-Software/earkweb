@@ -1,0 +1,16 @@
+{
+    "title": "Data set title",
+    "description": "Data set description",
+    "contactPoint": "Contact",
+    "contactEmail": "contact@email.com",
+    "publisher": "Publisher",
+    "publisherEmail": "contact@email.com",
+    "language": "English",
+    "representations": {
+        "60dd2712-10c0-4dde-ba2c-e058413017e7": {
+            "distribution_label": "csv",
+            "distribution_description": "CSV table",
+            "access_rights": "limited"
+        }
+    }
+}

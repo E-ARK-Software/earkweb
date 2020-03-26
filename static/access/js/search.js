@@ -37,7 +37,7 @@ function callback(data) {
 
     var displaytitle = "<span style='font-size:9px'>"+doc[identifier_field]+"</span><br>" + ( (doc[labelField] != null) ? doc[labelField] : doc[titleField] );
 
-    var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '" target="_blank">' + displaytitle + '</a>';
+    var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '" target="_blank" onclick="PopupCenter(this,\'xtf\',\'900\',\'500\'); return false;">' + displaytitle + '</a>';
     var bytes = doc[bytesField];
     var filesize;
     if (bytes < 1024)

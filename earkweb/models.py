@@ -12,9 +12,9 @@ from django.db import models
 import json
 
 
-class EARKUser(models.Model):
+class RepoUser(models.Model):
     class Meta:
-        db_table = 'earkuser'
+        db_table = 'repouser'
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     org_nsid = models.CharField(max_length=100)
     confirmed = models.BooleanField(default=False)

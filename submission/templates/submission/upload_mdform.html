@@ -76,10 +76,10 @@
     {% endif %}
 
     <div class="form-group">
-        <button type="submit" class="btn btn-success">
-            <span class="glyphicon glyphicon-triangle-right"></span> Continue
+        <button type="submit" class="btn btn-primary">
+            <span class="glyphicon glyphicon-triangle-right"></span> {% trans 'Continue' %}
         </button>
-        <a href="{% url 'home' %}" class="btn btn-default">Cancel</a>
+        <a href="{% url 'home' %}" class="btn btn-default">{% trans 'Cancel' %}</a>
     </div>
 </form>
 

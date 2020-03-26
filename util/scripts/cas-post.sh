@@ -2,8 +2,8 @@
 DEST=http://earkwebdev.ait.ac.at/earkweb/search/order_status
 #DEST=http://localhost:8000/earkweb/search/order_status
 CAS_HOSTNAME=https://earkwebdev.ait.ac.at:8443
-USERNAME=eark
-PASSWORD=eark
+USERNAME=repo
+PASSWORD=repo
 COOKIE_JAR=.cookieJar
 HEADER_DUMP_DEST=.headers
 

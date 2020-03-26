@@ -4,31 +4,34 @@ import json
 import re
 import tarfile
 import traceback
+from json import JSONDecodeError
+
 import magic
 from dateutil import parser
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponseForbidden, FileResponse
-from django.utils.datetime_safe import datetime
 from django.views.decorators.csrf import csrf_exempt
 from eatb.packaging.tar_entry_reader import ChunkedTarEntryReader
 from eatb.storage.checksum import ChecksumFile, ChecksumAlgorithm
 from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage, make_storage_data_directory_path
+from eatb.utils.datetime import date_format, DT_ISO_FORMAT
 from eatb.utils.fileutils import fsize, get_mime_type, read_file_content, list_files_in_dir, get_directory_json, \
     to_safe_filename, from_safe_filename
 from eatb.utils.randomutils import randomword
 from pairtree import ObjectNotFoundException
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, renderer_classes
 from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework_api_key.permissions import HasAPIKey
 from api import serializers
 from api.serializers import InformationPackageSerializer, InternalIdentifierSerializer
 from earkweb.models import InformationPackage, InternalIdentifier, Representation
-from earkweb.models import EARKUser
+from earkweb.models import RepoUser
 import os
 import logging
 from taskbackend.taskexecution import execute_task
@@ -140,24 +143,18 @@ def start_ingest(request, procid):
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
+@renderer_classes([JSONRenderer])
 def checkout_working_copy(request, identifier):
     """
     post:
-    Checkout a working copy (database, working area, storage)
+    Checkout a working copy (database, file system)
 
-    The stored data set cannot to be edited or changed directly. It is required to checkout a working copy first.
-    It is possible to checkout the complete data set or metadata only.
+    A stored data set without a working copy cannot to be edited or changed directly. It is required to checkout a
+    working copy first.
 
     To checkout the information package use the following command:
 
-        <code>curl -v -X POST
-        http://localhost:8000/earkweb/api/checkoutworkingcopy/ait:1a51edc908b3c5b90ef7180b92d9d5bcf64b753e/
-
-    And to checkout metadata only use:
-
-        curl -d '{"metadataonly": "true"}' -X POST
-        http://localhost:8000/earkweb/api/checkoutworkingcopy/ait:1a51edc908b3c5b90ef7180b92d9d5bcf64b753e/
-
+        curl -X POST http://localhost:8000/earkweb/api/informationpackages/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
     """
     data = None
     if request.body and request.body != "":
@@ -281,7 +278,7 @@ def identifiers_by_extuid(request):
     To retrieve the id pairs for a list of external unique identifiers use a comma separated list:
 
         curl -v -d
-        'https://github.com/agconti/kaggle-titanic,http://ec.europa.eu/eurostat/web/products-datasets/-/tps00189'
+        'https://github.com/agconti/kaggle-titanic,http://ec.europa.eu/eurostat/web/products-informationpackages/-/tps00189'
         -X POST http://localhost:8000/earkweb/api/identifiers-by-extuid/
 
     The result will be returned as a list of identifier groups ("ids"):
@@ -289,11 +286,11 @@ def identifiers_by_extuid(request):
         <code><pre>{
           "ids": [{
             "external-id": "https://github.com/agconti/kaggle-titanic",
-            "persistent-id": "eark:e369c4ddd9c7f220e13aa7bf4740313bfc879eac",
+            "persistent-id": "urn:uuid:e369c4ddd9c7f220e13aa7bf4740313bfc879eac",
             "process-id": "7513d6b9-583e-4673-8aba-ae1698d3387c"
           }, {
-            "external-id": "http://ec.europa.eu/eurostat/web/products-datasets/-/tps00189",
-            "persistent-id": "eark:c0927d689d76722ba878a664aca47f490a700819",
+            "external-id": "http://ec.europa.eu/eurostat/web/products-informationpackages/-/tps00189",
+            "persistent-id": "urn:uuid:c0927d689d76722ba878a664aca47f490a700819",
             "process-id": "d510acc8-a22b-4a33-98cc-4af18264771b"
           }, {
             "external-id": "doi:xyz/ajs62",
@@ -302,7 +299,7 @@ def identifiers_by_extuid(request):
           }]
         }</pre>
 
-    <code>external-id</code> is an external identifier which was posted with the request, <code>eark-id</code> is a
+    <code>external-id</code> is an external identifier which was posted with the request, <code>persistent-id</code> is a
     unique persistent identifier of the item, and <code>process-id</code> is an existing process which exists for
     creating a new or modifying an existing package. If <code>persistent-id</code> is empty, it means that there is an
     open submission or change process for the corresponding dataset and that it is still not stored in the repository.
@@ -337,7 +334,7 @@ def identifiers_by_extuid(request):
 def index_informationpackage(request, identifier):
     """
     post:
-    Index data set
+    Index data set (file system, indexing service)
 
     Full-text index files contained in packages.
 
@@ -368,9 +365,13 @@ def index_informationpackage(request, identifier):
 @permission_classes((IsAuthenticated,))
 def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
     """
-    get: Retrieve file resource (database, working area)
+    get: Retrieve file resource (database, file system)
 
-    Retrieve file resource
+    Retrieve file resource from the working area's file system.
+    For example, the following is a request to retrieve a metadata file named `metadata.json` from  the metadata folder
+    in the working directory:
+
+        http://localhost:8000/earkweb/api/informationpackages/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
 
     delete: Remove file resource (database, working area)
 
@@ -414,9 +415,25 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
 @permission_classes((IsAuthenticated,))
 def do_storage_file_resource(_, identifier, ip_sub_file_path):
     """
-    get: Retrieve file resource (storage)
+    get: Retrieve file resource (file system)
 
-    Retrieve file resource
+    Retrieve file resource from the storage area's file system.
+    For example, the following is a request to retrieve a packaged data set from the storage area:
+
+        http://localhost:8000/earkweb/api/informationpackages/urn%3Auuid%3A42658bbd-a76f-46f5-85da-f0ad2bed94dc/file-resource/urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar/
+
+    Note that in the filename the colon of the identifier is mapped to '+' so that the identifier:
+
+        urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc
+
+    results in the following filename:
+
+        urn+uuid+42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar
+
+    which in URL encoded form is:
+
+        urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar
+
     """
     dpts = DirectoryPairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
@@ -466,12 +483,13 @@ def package_entry_from_backend(_, identifier, entry):
     entry: data/weather.csv, identifier: ait:faae219bffa999295175ff98e089fa0b07d9647d, mime: application/csv,
     representation: default
     """
-    dpts = DirectoryPairtreeStorage(config_path_storage)
-    object_path = dpts.get_object_path(from_safe_filename(identifier))
-    archive_file_path = os.path.join(object_path, "%s.tar" % identifier)
-    t = tarfile.open(archive_file_path, 'r')
-    tar_entry = os.path.join(identifier, entry)
     try:
+        dpts = DirectoryPairtreeStorage(config_path_storage)
+        object_path = dpts.get_object_path(from_safe_filename(identifier))
+        archive_file_path = os.path.join(object_path, "%s.tar" % identifier)
+        t = tarfile.open(archive_file_path, 'r')
+        tar_entry = os.path.join(identifier, entry)
+
         info = t.getmember(tar_entry)
 
         f = t.extractfile(info)
@@ -482,8 +500,14 @@ def package_entry_from_backend(_, identifier, entry):
         mime = magic_mime_detect.from_buffer(start_bytes)
 
         return HttpResponse(inst.chunks(tar_entry), content_type=mime)
-    except KeyError:
-        return JsonResponse({"message": "Entry does not exist"}, status=404)
+    except ObjectNotFoundException:
+        return JsonResponse(
+            {"message": "The archival package does not exist: %s" % identifier}, status=404
+        )
+    except (KeyError):
+        return JsonResponse(
+            {"message": "Entry %s does not exist in archival package '%s'" % (entry, identifier)}, status=404
+        )
 
 
 @csrf_exempt
@@ -544,7 +568,7 @@ def directory_json(request, area, item):
     For example, to list the directory content of data set 'ait:faae219bffa999295175ff98e089fa0b07d9647d'
     (storage area), use the data set ID as 'item' value, for example:
 
-        item: eark:faae219bffa999295175ff98e089fa0b07d9647d, area: storage
+        item: urn:uuid:faae219bffa999295175ff98e089fa0b07d9647d, area: storage
 
     For a listing of a submission or working copy (work area), use the process ID as 'item' value, for example:
 
@@ -575,6 +599,11 @@ def directory_json(request, area, item):
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "process does not exist"}, status=404)
+    if not os.path.exists(os.path.join(access_path, to_safe_filename(item))):
+        return JsonResponse({
+            "message": "Directory does not exist in file system: %s" %
+                       os.path.join(access_path, to_safe_filename(item))
+        }, status=404)
     return JsonResponse(get_directory_json(access_path, to_safe_filename(item)), status=200)
 
 
@@ -728,7 +757,7 @@ def int_id_list(request):
 
 
     {
-      "org_nsid": "eark",
+      "org_nsid": "repo",
       "identifier": "9795d7581f3cf1d6aad815ca8e35fb1673d99a11",
       "created": "2017-07-14T15:00:45.823277Z"
     }
@@ -767,9 +796,9 @@ def int_id_list(request):
                 return JsonResponse(error, status=400)
             data['org_nsid'] = None
             try:
-                user = EARKUser.objects.get(pk=request.user.pk)
+                user = RepoUser.objects.get(pk=request.user.pk)
                 data['org_nsid'] = user.org_nsid
-            except EARKUser.DoesNotExist:
+            except RepoUser.DoesNotExist:
                 pass
             if not data['org_nsid']:
                 data['org_nsid'] = default_org
@@ -804,7 +833,7 @@ def get_ip_states(request):
 
         Example
 
-            http://localhost:8000/conduit/api/datasets/status/
+            http://localhost:8000/earkweb/api/informationpackages/status/
     """
     results = {}
     if request.method == 'GET':
@@ -851,7 +880,7 @@ def get_ip_state(request, process_id):
 
         Example
 
-            http://localhost:8000/conduit/api/datasets/08c261ce-2aec-412c-b245-7a64be495b03/status/
+            http://localhost:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/status/
     """
     if request.method == 'GET':
         try:
@@ -914,14 +943,14 @@ class UploadFile(APIView):
     The variable ${datatype} is one of "metadata", "data", or "documentation".
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/conduit/api/datasets/${process_id}/${datatype}/upload/
+        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${datatype}/upload/
 
     For example, to upload a metadatafile, and with `DATA_TYPE="metadata"`,
     `PROCESS_ID="08c261ce-2aec-412c-b245-7a64be495b03"`,
     and local file path `LOCAL_FILE_PATH="/home/user/dcat.xml`, the upload command would be as follows:
 
         curl -v -X POST -F "file=@/home/user/dcat.xml"
-        http://127.0.0.1:8000/conduit/api/datasets/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
+        http://127.0.0.1:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
 
     If a data set exists, the metadata file is also added to the last version of it.
 
@@ -930,8 +959,8 @@ class UploadFile(APIView):
     For example, add a data file to an information package, the file can be uploaded using the following curl command:
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/conduit/api/datasets/${process_id}/${representation}/${datatype}/upload
-        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/conduit/api/datasets/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
+        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${representation}/${datatype}/upload
+        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/earkweb/api/informationpackages/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
     """
     throttle_classes = ()
 
@@ -1000,8 +1029,22 @@ class UploadFile(APIView):
         if datatype == "metadata" and str(uploaded_file).endswith("json"):
             try:
                 metadata_file_content = read_file_content(os.path.join(target_directory, str(uploaded_file)))
-                json.loads(metadata_file_content)
+                parsed_md = json.loads(metadata_file_content)
                 ip.basic_metadata = metadata_file_content
+                if "representations" in parsed_md:
+                    for r, v in parsed_md["representations"].items():
+                        try:
+                            reprec = Representation.objects.get(ip=ip, identifier=r)
+                        except Representation.DoesNotExist:
+                            reprec = Representation.objects.create(ip=ip, identifier=r)
+                        if "distribution_label" in v:
+                            reprec.label = v["distribution_label"]
+                        if "distribution_description" in v:
+                            reprec.description = v["distribution_description"]
+                        if "access_rights" in v:
+                            reprec.accessRights = v["access_rights"]
+                        reprec.license = 'undefined'
+                        reprec.save()
             except JSONDecodeError:
                 return JsonResponse({"message": "error decoding JSON metadata file"},
                                     status=status.HTTP_400_BAD_REQUEST)
@@ -1009,9 +1052,10 @@ class UploadFile(APIView):
         ip.last_change = datetime.now()
         ip.save()
         logger.info("Last_change date updated: %s" % ip.last_change)
-
-        return JsonResponse({"message": "File upload successful", "sha256": sha256, 'processId': process_id,
-                             "representationId": representation}, status=201)
+        response_data = {"message": "File upload successful", "sha256": sha256, 'processId': process_id}
+        if representation:
+            response_data["representationId"] = representation
+        return JsonResponse(response_data, status=201)
 
 
 class InformationPackages(generics.ListCreateAPIView):

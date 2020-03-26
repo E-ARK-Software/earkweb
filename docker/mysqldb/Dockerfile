@@ -1,12 +1,12 @@
 FROM mysql:5.7.15
 
-LABEL maintainer="DILCIS, dilcis.org"
+LABEL maintainer="AIT, http://www.ait.ac.at"
 
-ENV MYSQL_DATABASE=earkdb \
-    MYSQL_ROOT_PASSWORD=eark \
-        MYSQL_USER=eark \
-        MYSQL_PASSWORD=eark
+ENV MYSQL_DATABASE=repodb \
+    MYSQL_ROOT_PASSWORD=repo \
+        MYSQL_USER=repo \
+        MYSQL_PASSWORD=repo
 
-ADD earkdb.sql /docker-entrypoint-initdb.d
+ADD db.sql /docker-entrypoint-initdb.d
 
 EXPOSE 3306
