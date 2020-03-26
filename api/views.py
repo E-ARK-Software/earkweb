@@ -631,8 +631,11 @@ def submissions_list(request):
         if not os.path.exists(working_directory):
             os.makedirs(working_directory, exist_ok=True)
 
-        ip_state_xml = IpState.from_parameters(state=0, locked_val=False)
-        ip_state_xml.write_doc(os.path.join(config_path_work, process_id, "state.xml"))
+        state_data = json.dumps(
+            {"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)}
+        )
+        with open(os.path.join(working_directory, "state.json"), 'w') as status_file:
+            status_file.write(state_data)
 
         serializer = InformationPackageSerializer(data=data)
         if serializer.is_valid():
@@ -801,7 +804,7 @@ def get_ip_states(request):
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/status/
+            http://localhost:8000/conduit/api/datasets/status/
     """
     results = {}
     if request.method == 'GET':
@@ -814,14 +817,22 @@ def get_ip_states(request):
                 result = {}
                 working_dir = os.path.join(config_path_work, ip.process_id)
                 if os.path.exists(working_dir):
-                    ip_state_xml_file_path = os.path.join(working_dir, "state.xml")
-                    if os.path.exists(ip_state_xml_file_path):
-                        ip_state = IpState.from_path(ip_state_xml_file_path)
-                        result['state'] = ip_state.get_state()
-                        if ip_state.get_identifier() != '':
-                            result['identifier'] = ip_state.get_identifier()
-                        result['version'] = ip_state.get_version()
-                        results[ip.process_id] = result
+                    ip_state_file_path = os.path.join(working_dir, "state.json")
+                    if os.path.exists(ip_state_file_path):
+                        try:
+                            info_file_content = read_file_content(ip_state_file_path)
+                            result = json.loads(info_file_content)
+                        except JSONDecodeError as err:
+                            result = {"error": {
+                                "title": "Error parsing state file",
+                                "detail": "%s (line: %d, colum: %d)" % (err.msg, err.lineno, err.colno)}
+                            }
+                    else:
+                        result = {"warning": {
+                            "title": "State file not vailable",
+                            "detail": "State file not found at: %s" % ip_state_file_path}
+                        }
+                results[ip.process_id] = result
             return JsonResponse(results, status=200)
         except Exception as err:
             logger.debug("Error", err)
@@ -833,28 +844,36 @@ def get_ip_states(request):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def get_ip_state(request, procid):
+def get_ip_state(request, process_id):
     """
     get:
         Status of selected submission (database, working area)
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/status/
+            http://localhost:8000/conduit/api/datasets/08c261ce-2aec-412c-b245-7a64be495b03/status/
     """
     if request.method == 'GET':
         try:
-            ip = InformationPackage.objects.get(process_id=procid)
+            ip = InformationPackage.objects.get(process_id=process_id)
             result = {}
             working_dir = os.path.join(config_path_work, ip.process_id)
             if os.path.exists(working_dir):
-                ip_state_xml_file_path = os.path.join(working_dir, "state.xml")
-                if os.path.exists(ip_state_xml_file_path):
-                    ip_state = IpState.from_path(ip_state_xml_file_path)
-                    result['state'] = ip_state.get_state()
-                    if ip_state.get_identifier() != '':
-                        result['identifier'] = ip_state.get_identifier()
-                    result['version'] = ip_state.get_version()
+                ip_state_file_path = os.path.join(working_dir, "state.json")
+                if os.path.exists(ip_state_file_path):
+                    try:
+                        info_file_content = read_file_content(ip_state_file_path)
+                        result = json.loads(info_file_content)
+                    except JSONDecodeError as err:
+                        result = {"error": {
+                            "title": "Error parsing state file",
+                            "detail": "%s (line: %d, colum: %d)" % (err.msg, err.lineno, err.colno)}
+                        }
+                else:
+                    result = {"warning": {
+                        "title": "State file not vailable",
+                        "detail": "State file not found at: %s" % ip_state_file_path}
+                    }
             return JsonResponse(result, status=200)
         except InformationPackage.DoesNotExist:
             error = {"message": "An error occurred"}
@@ -890,24 +909,29 @@ class UploadFile(APIView):
     """
     post: Upload file to a submission or working copy (database, working area)
 
+    The variable ${process_id} is the identifier of the process.
+
+    The variable ${datatype} is one of "metadata", "data", or "documentation".
+
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${PROCESS_ID}/${DATA_TYPE}/upload/
+        http://127.0.0.1:8000/conduit/api/datasets/${process_id}/${datatype}/upload/
 
     For example, to upload a metadatafile, and with `DATA_TYPE="metadata"`,
     `PROCESS_ID="08c261ce-2aec-412c-b245-7a64be495b03"`,
     and local file path `LOCAL_FILE_PATH="/home/user/dcat.xml`, the upload command would be as follows:
 
         curl -v -X POST -F "file=@/home/user/dcat.xml"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
+        http://127.0.0.1:8000/conduit/api/datasets/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
 
     If a data set exists, the metadata file is also added to the last version of it.
 
-    Upload file and add it to an information package
+    A data file can be added to a representation which is identified by the variable ${representation}.
 
-    For example, add a file to an information package, the file can be uploaded using the following curl command:
+    For example, add a data file to an information package, the file can be uploaded using the following curl command:
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${PROCESS_ID}/${DATASET_CODE}/${DATA_TYPE}/upload
+        http://127.0.0.1:8000/conduit/api/datasets/${process_id}/${representation}/${datatype}/upload
+        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/conduit/api/datasets/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
     """
     throttle_classes = ()
 
@@ -926,13 +950,18 @@ class UploadFile(APIView):
             error = {"message": "Data type not supported (must be 'metadata', 'data', or 'documentation'). "}
             return JsonResponse(error, status=400)
 
-        ips = InformationPackage.objects.filter(process_id=process_id)
-        if ips.count() == 0:
-            error = {"message": "Submission process '%s' does not exist. "
-                                "Please initiate submission process first before uploading files. " % process_id}
-            return JsonResponse(error, status=400)
+        # get information package object
+        try:
+            ip = InformationPackage.objects.get(process_id=process_id, user=request.user.id)
+        except InformationPackage.DoesNotExist:
+            return JsonResponse({"message": "The information package does not exist: %s" % process_id}, status=400)
 
         target_directory = None
+
+        if datatype == "data" and not representation:
+            representation = str(uuid4())
+            reprec = Representation.objects.create(ip=ip, identifier=representation)
+            reprec.save()
 
         if representation:
             representation_dir = os.path.join(config_path_work, process_id, representations_directory, representation)
@@ -966,12 +995,23 @@ class UploadFile(APIView):
 
         # updating last change date
         ip = InformationPackage.objects.get(process_id=process_id)
+
+        # Add metadata content to database record
+        if datatype == "metadata" and str(uploaded_file).endswith("json"):
+            try:
+                metadata_file_content = read_file_content(os.path.join(target_directory, str(uploaded_file)))
+                json.loads(metadata_file_content)
+                ip.basic_metadata = metadata_file_content
+            except JSONDecodeError:
+                return JsonResponse({"message": "error decoding JSON metadata file"},
+                                    status=status.HTTP_400_BAD_REQUEST)
         # using local time (converted to UTC in DB)
         ip.last_change = datetime.now()
         ip.save()
         logger.info("Last_change date updated: %s" % ip.last_change)
 
-        return JsonResponse({"message": "File upload successful", "sha256": sha256}, status=201)
+        return JsonResponse({"message": "File upload successful", "sha256": sha256, 'processId': process_id,
+                             "representationId": representation}, status=201)
 
 
 class InformationPackages(generics.ListCreateAPIView):

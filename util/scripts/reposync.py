@@ -29,18 +29,15 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 
-def sync_ip_state(ip_state_xml_in, ip_in):
-    last_task_name = ip_state_xml_in.get_last_task()
-    try:
-        if last_task_name != ip_in.last_task_id:
-            print("Syncing last task: %s" % last_task_name)
-    except ObjectDoesNotExist:
-        warning("Unable to sync last task, because the following task does not exist: %s" % last_task_name)
-    state_persisted = ip_state_xml_in.get_state()
-    state_in_db = ip_in.statusprocess
-    if state_persisted != state_in_db:
-        print("Syncing process status: %d" % ip_state_xml_in.get_state())
-        ip_in.statusprocess = state_persisted
+def sync_ip_state(ip_state_info, ip_in):
+    if "storage_dir" in ip_state_info:
+        ip_in.storage_dir = ip_state_info["storage_dir"]
+    if "version" in ip_state_info:
+        ip_in.version = ip_state_info["version"]
+    if "identifier" in ip_state_info:
+        ip_in.identifier = ip_state_info["identifier"]
+    if "last_change" in ip_state_info:
+        ip_in.last_change = ip_state_info["last_change"]
     ip_in.save()
 
 
@@ -103,11 +100,11 @@ Note that the storage location value is also unset if the identifier has changed
                 version=0
             )
         if ip:
-            ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "state.xml")
+            ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "state.json")
             if os.path.exists(ip_state_doc_path):
-                success("State information available (state.xml)")
-                ip_state_xml = IpState.from_path(ip_state_doc_path)
-                sync_ip_state(ip_state_xml, ip)
+                success("State information available (state.json)")
+                ip_state_info = json.loads(ip_state_doc_path)
+                sync_ip_state(ip_state_info, ip)
             else:
                 warning("Process directory has no state information")
     success("Repository synchronization finished.")

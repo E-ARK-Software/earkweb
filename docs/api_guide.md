@@ -24,38 +24,99 @@ Prepare variables:
 
 ### Batch submission
 
-A typical use case for the earkweb API is to ingest a series of submissions. This procedure is as follows:
+The API allows creating data sets, uploading data, and start processing the data.
 
-* Initialise submissions by sending POST requests to the API function “submission” providing
-at least the package name in the body of the request (<code>{"packagename": "package1"}</code>. 
-Optionally, an external unique identifier can be provided: 
-<code>{"packagename": "testpackage16", "extuid": "doi:10.17487/rfc"}</code>):
+Each request must be executed with a user token header which is omitted in the query examples below for the sake of
+readability:
 
-        curl -v -X POST -d '{"packagename": "package1"}' http://$SERVER:$PORT/earkweb/api/informationpackages/
+    -H 'Authorization: Token $usertoken'
 
-* In case of success the HTTP response code is "201 CREATED" and a new process ID is returned which is required for 
-uploading data in a subsequent step.
+The procedure is as follows:
 
-        {"message": "Submission process initiated successfully.",
-        "process_id": "cc3e95de-71d9-4e9e-8de7-128a1c92774f"}
+   1. Initialise a new data package:
+   
+          curl -X POST  -d 'package_name=genesis.harvest.scraped.20191024' http://$server:$port/earkweb/api/datasets/
 
-* Upload data file (in this case a metadata file <code>metadata.xml</code> in DCAT format) to the submission (note that
-the process ID returned by the previous request is used in this request to identify the target submission for the upload):
+      In case of success the HTTP response code is "201 CREATED" and a new process ID (`process_id`) is returned which 
+      is required for uploading data in a subsequent step.
 
-        curl -v -X POST -F "file=@/home/$USER/metadata.xml" http://$SERVER:$PORT/earkweb/api/cc3e95de-71d9-4e9e-8de7-
-        128a1c92774f/metadata/upload
+          {
+              "process_id":"73483984-debd-4d04-a14c-5acb11167719",
+              "work_dir":"/var/data/repo/work/73483984-debd-4d04-a14c-5acb11167719",
+              "package_name":"dataset.001.20191024",
+              "version":0,
+              "last_change":"2020-03-20T15:38:23.026106+01:00"
+          }
+          
+   2. Upload data file (here a CSV file /home/$user/datafile.csv (note that the process ID  (`process_id`) returned by 
+      the previous request is used in this request to identify the target data set where the files are going to be 
+      uploaded).
+      
+      For the first file of a representation only the process ID (`process_id`, here: 
+      `73483984-debd-4d04-a14c-5acb11167719`) needs to be provided and the representation ID can be omitted:
+   
+          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/datasets/73483984-debd-4d04-a14c-5acb11167719/data/upload/
+    
+      This will generate a random UUID identifier (`representationId`) for the representation which is returned as part 
+      of the response message in case of success:
+      
+          {
+              "message": "File upload successful",
+              "sha256": "7c10a5a8e79989b608d5e63ed58c031676f43ee4cc01a00d013400941cf7f2d1",
+              "processId": "73483984-debd-4d04-a14c-5acb11167719",
+              "representationId": "5ed2c8b6-4f4b-46f7-a1f3-192472a76a41"
+          }
+          
+      Additionally, the `sha265` hash sum allows verifying if the file was uploaded correctly.
+      
+      If a file needs to be added to a representation, the representation ID (`representationId`,  here: 
+      `5ed2c8b6-4f4b-46f7-a1f3-192472a76a41`) is given as a parameter after the process ID.
+    
+          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/datasets/73483984-debd-4d04-a14c-5acb11167719/5ed2c8b6-4f4b-46f7-a1f3-192472a76a41/data/upload/
+          
+      To upload metadata, a JSON metadata (`metadata.json`) file can be created:
+      
+          {
+              "title": "Data set title",
+              "description": "Data set description",
+              "contactPoint": "Contact",
+              "contactEmail": "contact@email.com",
+              "publisher": "Publisher",
+              "publisherEmail": "contact@email.com",
+              "language": "English",
+              "representations": {
+                  "5ed2c8b6-4f4b-46f7-a1f3-192472a76a41": {
+                      "distribution_label": "csv",
+                      "distribution_description": "CSV table",
+                      "access_rights": "limited"
+                  }
+              }
+          }
+          
+      Note that if metadata for representations should be added, the representation ID in the metadata file must match the ID of the corresponding representation, e.g. 
+      as in this example, the one created previously: `5ed2c8b6-4f4b-46f7-a1f3-192472a76a41`. 
+      
+      An example for a metadata upload request is the following:
+      
+          curl -F "file=@/home/$USER/metadata.json" http://localhost:8000/earkweb/api/datasets/cb755987-9e83-4e71-b000-dea9324e5dea/metadata/upload/
 
-* In case of success, the response returns the SHA-256 hash sum of the uploaded data file:
+      which returns a similar response as the data file upload:
+   
+          {
+              "message": "File upload successful", 
+              "sha256": "7c10a5a8e79989b608d5e63ed58c031676f43ee4cc01a00d013400941cf7f2d1", 
+              "processId": "73483984-debd-4d04-a14c-5acb11167719"
+          }
 
-        {"message": "File upload successfull", "sha256":
-        "3f51c6557f02b73c23e381c1cae1861ec2d45b38080c24a6e8dd17fb0926f2
-        1d"}
+   3. Store data:
+   
+          curl http://$server:$port/repo/api/datasets/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
 
-If large information packages need to be ingested, it is recommended to initialize a series of submissions first and 
-then transfer the data directly to the storage directories of the corresponding submissions (e.g. copying files using 
-ssh).
+      Once the data package is stored, it is indexed and gets an identifier of the form 
+      "urn:uuid:f90668b9-112b-4723-8344-07449e7b657e".
 
-* Run ingest:
+      The data package can be changed afterwards which increases the version number and the index for the data package 
+      is updated.
 
-        curl -v -X POST http://$SERVER:$PORT/earkweb/api/informationpackages/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
-
+File upload does not have to be done via this API. It is possible to just create the data folders and transfer the data 
+using other means of file transfer (scp, rsync, etc.).

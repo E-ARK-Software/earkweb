@@ -729,14 +729,17 @@ def upload_aip(ip_work_dir, upload_path, f):
 @csrf_exempt
 def initialize(request, package_name, extuid):
     process_id = get_unique_id()
-    sip_struct_work_dir = os.path.join(config_path_work, process_id)
-    os.makedirs(os.path.join(sip_struct_work_dir, representations_directory), exist_ok=True)
-    os.makedirs(os.path.join(sip_struct_work_dir, metadata_directory), exist_ok=True)
+    working_dir = os.path.join(config_path_work, process_id)
+    os.makedirs(os.path.join(working_dir, representations_directory), exist_ok=True)
+    os.makedirs(os.path.join(working_dir, metadata_directory), exist_ok=True)
     InformationPackage.objects.create(work_dir=os.path.join(config_path_work, process_id), process_id=process_id,
                                       package_name=package_name, external_id=extuid, user=request.user, version=0)
     ip = InformationPackage.objects.get(process_id=process_id)
-    ip_state_xml = IpState.from_parameters(state=0, locked_val=False)
-    ip_state_xml.write_doc(os.path.join(config_path_work, process_id, "state.xml"))
+
+    state_data = json.dumps({"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)})
+    with open(os.path.join(working_dir, "state.json"), 'w') as status_file:
+        status_file.write(state_data)
+
     return HttpResponse(str(ip.id))
 
 

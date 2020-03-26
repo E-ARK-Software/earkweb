@@ -70,28 +70,6 @@ def update_states_from_backend_api(request):
                 ip.save()
 
 
-def get_ip_state_info(process_id):
-    result = {}
-    working_dir = os.path.join(config_path_work, process_id)
-    if os.path.exists(working_dir):
-        ip_state_xml_file_path = os.path.join(working_dir, "state.xml")
-        if os.path.exists(ip_state_xml_file_path):
-            ip_state = IpState.from_path(ip_state_xml_file_path)
-            result['state'] = ip_state.get_state()
-            if ip_state.get_identifier() != '':
-                result['identifier'] = ip_state.get_identifier()
-            result['version'] = ip_state.get_version()
-    return result
-
-
-def get_ip_state(process_id):
-    """Get ip state object from XML document if it exists or create it from parameters otherwise"""
-    working_dir = get_working_dir(process_id)
-    ip_state_xml = os.path.join(working_dir, "state.xml")
-    ip_state = IpState.from_path(ip_state_xml) if os.path.exists(ip_state_xml) else IpState.from_parameters(0, False, last_task_value="initial")
-    return ip_state
-
-
 def get_working_dir(process_id):
     """Get working directory for given process id"""
     working_dir = os.path.join(config_path_work, process_id)
@@ -456,3 +434,26 @@ def get_aip_parent(task_context_path, aip_identifier, package_extension):
     return None
 
 
+def create_or_update_state_info_file(working_dir, info=None):
+    if info is None:
+        info = {}
+    assert isinstance(info, dict)
+    result_info = {}
+    state_info_file = os.path.join(working_dir, "state.json")
+    if os.path.exists(state_info_file):
+        file_content = read_file_content(state_info_file)
+        if file_content and file_content != "":
+            existing_info = json.loads(file_content)
+            if info:
+                existing_info.update(info)
+                result_info = existing_info
+            else:
+                result_info = existing_info
+        else:
+            result_info = info
+    else:
+        result_info = info
+    current_date = date_format(datetime.utcnow(), fmt=DT_ISO_FORMAT)
+    result_info["last_change"] = current_date
+    with open(state_info_file, 'w') as status_file:
+        status_file.write(json.dumps(result_info, indent=4))

@@ -1243,14 +1243,14 @@ def initialize_working_directory(context):
     package_name = task_context['package_name']
     username = task_context['username']
     process_id = get_unique_id()
-    sip_struct_work_dir = os.path.join(config_path_work, process_id)
-    os.makedirs(os.path.join(sip_struct_work_dir, 'distributions'), exist_ok=True)
-    os.makedirs(os.path.join(sip_struct_work_dir, 'metadata'), exist_ok=True)
+    working_dir = os.path.join(config_path_work, process_id)
+    os.makedirs(os.path.join(working_dir, 'distributions'), exist_ok=True)
+    os.makedirs(os.path.join(working_dir, 'metadata'), exist_ok=True)
     InformationPackage.objects.create(work_dir=os.path.join(config_path_work, process_id), process_id=process_id,
                                       package_name=package_name, user=username, version=0)
     InformationPackage.objects.get(process_id=process_id)
-    ip_state_xml = IpState.from_parameters(state=0, locked_val=False)
-    ip_state_xml.write_doc(os.path.join(config_path_work, process_id, "state.xml"))
+    task_context["process_id"] = process_id
+    create_or_update_state_info_file(working_dir, task_context)
     return json.dumps(task_context)
 
 
@@ -1313,10 +1313,7 @@ def checkout_working_copy_from_storage(_, context, task_log):
         shutil.move(submission_representations, work_dir)
         shutil.rmtree(submission_dir)
 
-    ip_state_xml = IpState.from_parameters(state=0, locked_val=False)
-    ip_state_xml.set_identifier(identifier)
-    ip_state_xml.set_version(version)
-    ip_state_xml.write_doc(os.path.join(config_path_work, process_id, "state.xml"))
+    create_or_update_state_info_file(work_dir, {"version": version, "identifier": identifier})
     return json.dumps(task_context)
 
 
