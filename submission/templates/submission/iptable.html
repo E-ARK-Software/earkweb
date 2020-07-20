@@ -4,9 +4,15 @@
         <table  class="table table-striped table-bordered table-condensed">
             <tbody>
                 <tr>
-                    <td class="emph">{% trans 'Label' %}</td>
+                    <td class="emph col-md-2">{% trans 'Label' %}</td>
                     <td class="emph">{{ ip.package_name }}</td>
                 </tr>
+                {% if ip.external_id %}
+                <tr>
+                    <td>{% trans 'External identifier' %}</td>
+                    <td>{{ ip.external_id }}</td>
+                </tr>
+                {% endif %}
                 <tr>
                     <td>{% trans 'Process ID' %}</td>
                     <td>{{ ip.process_id }}</td>

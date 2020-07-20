@@ -32,18 +32,23 @@ RUN wget -P /tmp https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz &&
     cd fido-1.3.2-81 && \
     python3 setup.py install
 
+RUN wget -P /tmp https://github.com/E-ARK-Software/eatb/archive/v0.1.5.tar.gz && \
+    cd /tmp && tar -xzf v0.1.5.tar.gz && \
+    cd eatb-0.1.5 && \
+    python3 setup.py install && \
+    rm /tmp/v0.1.5.tar.gz && rm -rf /tmp/eatb-0.1.5
+
 RUN apt-get remove wget -y
 
 # install python requirements
-RUN /usr/bin/pip3 install -r /tmp/requirements.txt
+#RUN /usr/bin/pip3 install -r /tmp/requirements.txt
+RUN python3 -m pip install -r /tmp/requirements.txt
 
 # packages
 RUN apt-get install vim curl redis-server -y
 
 RUN mkdir -p /data/storage/pairtree_version0_1
-RUN mkdir /data/work
-
-COPY ./docker/sample /data/
+COPY ./docker/sample/repo /data/repo
 
 ADD . /earkweb
 

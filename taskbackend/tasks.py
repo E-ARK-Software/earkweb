@@ -11,7 +11,7 @@ import redis
 import datetime
 import requests
 from celery.task import Task
-from eatb.cli.cli import CliCommand, CliExecution
+from eatb.cli.cli import CliCommand, CliExecution, CliCommands
 from eatb.format.formatidentification import FormatIdentification
 from eatb.metadata.mets.MetsValidation import MetsValidation, METS_NS, XLINK_NS
 from eatb.metadata.mets.ParsedMets import ParsedMets
@@ -65,6 +65,7 @@ logger = app.log.get_default_logger()
 
 r = redis.StrictRedis(host=redis_host, port=redis_port, password=redis_password, decode_responses=True)
 
+cli_commands = CliCommands(os.path.join(root_dir, "settings/commands.cfg"))
 
 @app.task(bind=True, name="sip_package", base=Task)
 @requires_parameters("package_name", "process_id", "org_nsid")

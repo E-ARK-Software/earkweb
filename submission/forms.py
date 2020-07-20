@@ -1,8 +1,14 @@
+import re
+from urllib.parse import urlparse
+
 from django import forms
 from django.forms import CharField, FileField, Form, MultipleChoiceField, SelectMultiple, TextInput
 from django.utils.translation import gettext as _
 
 import logging
+
+from taggit.forms import TagField
+
 logger = logging.getLogger(__name__)
 
 
@@ -47,13 +53,41 @@ class TinyUploadFileForm(Form):
 class MetaFormStep1(forms.Form):
 
     # Define the core
-    title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Information package title')}))
-    description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Information package description')}))
+    package_name = forms.CharField(label=_('Data set label'), max_length=100,
+                            widget=forms.TextInput(attrs={'placeholder': _('Data set label')}))
+
+    external_id = forms.CharField(label=_('External identifier'), max_length=100,
+                            widget=forms.TextInput(attrs={'placeholder': _('External identifier')}))
+    title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
+    description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
+    tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
+        'placeholder': _('PleasePressEnterToAddTag'),
+        'id': 'pp',
+    }), required=False)
+    hidden_user_tags = forms.CharField(max_length=10000, widget=forms.HiddenInput(attrs={
+        'id': 'pp_tags_hidden',
+    }), required=False)
 
     #Validation of the input
+    def clean_package_name(self):
+        package_name = self.cleaned_data['package_name']
+        if package_name == _('PleaseAddNameOfPackage'):
+            raise forms.ValidationError(_('ModifyInitialValue'))
+        if re.findall(r"[^A-Za-z0-9.\-_]+", package_name):
+            raise forms.ValidationError(_('Only alphanumeric characters plus hyphen (\'-\'), underscore (\'_\'), and dot  (\'.\') are allowed.'))
+        return package_name
+
+    def clean_external_id(self):
+        external_id = self.cleaned_data['external_id']
+        try:
+            urlparse(external_id)
+        except Exception as e:
+            raise forms.ValidationError(e)
+        return external_id
+
     def clean_title(self):
         title = self.cleaned_data['title']
-        if title == _('PleaseAddNameOfPackage'):
+        if title == _('PleaseAddTitleOfPackage'):
             raise forms.ValidationError(_('ModifyInitialValue'))
         return title
     def clean_change(self):
@@ -65,14 +99,14 @@ class MetaFormStep1(forms.Form):
 
 class MetaFormStep2(forms.Form):
 
-    contact_point = forms.CharField(label=_('ContactOfPackage'), max_length=255,
-                                    widget=forms.TextInput(attrs ={'placeholder': _('ContactOfPackage')}))
-    contact_email = forms.EmailField(label=_('ContactEmailOfPackage'),
+    contact_point = forms.CharField(label=_('Contact'), max_length=255,
+                                    widget=forms.TextInput(attrs ={'placeholder': _('Contact')}))
+    contact_email = forms.EmailField(label=_('Contact email'),
                                      widget=forms.EmailInput({'placeholder': 'contact@email.com'}))
-    publisher = forms.CharField(label=_('PublisherOfPackage'), max_length=255,
-                                widget=forms.TextInput(attrs ={'placeholder': _('PublisherOfPackage')}))
-    publisher_email = forms.EmailField(label=_('PublisherEmailOfPackage'),
-                                       widget=forms.EmailInput({'placeholder': 'publisher@email.com'}))
+    publisher = forms.CharField(label=_('Maintainer'), max_length=255,
+                                widget=forms.TextInput(attrs ={'placeholder': _('Maintainer')}))
+    publisher_email = forms.EmailField(label=_('MaintainerEmail'),
+                                       widget=forms.EmailInput({'placeholder': 'maintainer@email.com'}))
     language = forms.CharField(label=_('MainLanguageOfPackage'), max_length=255,
                                widget=forms.TextInput(attrs ={'id': 'PP_lang'}), initial=(_('MainInitialLanguage')))
 
@@ -87,7 +121,6 @@ class MetaFormStep4(forms.Form):
     )
 
     distribution_description = forms.CharField(label=_('Representation description'), max_length=4096, widget=forms.Textarea(attrs={'rows': '2'}))
-
 
     def __init__(self, *args, **kwargs):
         super(MetaFormStep4, self).__init__(*args, **kwargs)

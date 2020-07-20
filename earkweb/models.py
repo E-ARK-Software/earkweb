@@ -9,6 +9,7 @@ from config.configuration import solr_port
 from config.configuration import solr_core
 from django.contrib.auth.models import User
 from django.db import models
+from taggit.managers import TaggableManager
 import json
 
 
@@ -25,7 +26,7 @@ class InformationPackage(models.Model):
     class Meta:
         db_table = 'informationpackage'
     id = models.AutoField(primary_key=True)
-    process_id = models.CharField(max_length=200)
+    process_id = models.CharField(max_length=200, unique=True)
     package_name = models.CharField(max_length=200)
     identifier = models.CharField(max_length=200)
     external_id = models.CharField(max_length=200)

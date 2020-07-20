@@ -53,6 +53,12 @@ urlpatterns = [
 
     # endpoints which require direct access the working area
 
+    url(r'^informationpackages/(?P<process_id>[a-z0-9\-:+]{36,50})/representations/info/$',
+        views.informationpackage_representations_info),
+
+    url(r'^informationpackages/(?P<process_id>[a-z0-9\-:+]{36,50})/representation/(?P<representation_label>[A-Za-z0-9\-]{3,100})/info/$',
+        views.informationpackage_representation_info_by_label),
+
     url(r'^informationpackages/(?P<process_id>[a-z0-9\-]{36,36})/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_working_dir_file_resource),
 

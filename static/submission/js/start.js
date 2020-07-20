@@ -33,12 +33,12 @@
         var check_folder_url = "/earkweb/check_submission_exists/" + pn.val()
         window.console.log(check_folder_url);
         if (pn.val().length < 3) {
-            $( "#msgpackagename" ).html("Der interne Bezeichner muss mindestens 3 Zeichen haben!");
+            $( "#msgpackagename" ).html("The lable must consist of at least 3 characters!");
             setInvalid("packagename");
             return false;
         } else {
             $( "#msgpackagename" ).html("");
-            var regex = new RegExp('^[a-zA-Z0-9_\.\-]*$');
+            var regex = new RegExp('^[a-zA-Z0-9\.\\-_]*$');
             if(!regex.test(pn.val())) {
                 $( "#msgpackagename" ).html("Invalid characters in submission name!");
                 setInvalid("packagename");
@@ -61,13 +61,13 @@
         }
     }
     /**
-     * Continously check if folder for package name exists
+     * Continously check if folder for data set exists
      */
     $( "#packagename" ).keyup(function() {
        checkPackageName(function() {});
     });
     function validURI(value) {
-        return /^((http|https?|ftp):\/\/|(doi|handle):)[a-z0-9-_./?:]{5,500}$/i.test(value);
+        return /^((http|https?|ftp):\/\/|(doi|handle|info):)[a-z0-9-_./?:~]{5,500}$/i.test(value);
     }
     $( "#extuid" ).keyup(function() {
         var isValidURI = validURI($(this).val());

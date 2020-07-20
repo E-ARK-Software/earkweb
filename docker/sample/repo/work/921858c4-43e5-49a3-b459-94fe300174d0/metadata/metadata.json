@@ -1,0 +1,39 @@
+{
+    "title": "Address table with 6 records",
+    "description": "An example file with 6 records of addresses structured in 6 fields. ",
+    "tags": "[]",
+    "userGeneratedTags": "[]",
+    "contactPoint": "Contact person",
+    "contactEmail": "contact@email.com",
+    "publisher": "Publishing organization",
+    "publisherEmail": "contact@email.com",
+    "language": "English",
+    "processId": "921858c4-43e5-49a3-b459-94fe300174d0",
+    "date": "27.03.2020",
+    "lastChange": "2020-03-27T10:07:36Z",
+    "created": "2020-03-27T10:07:36Z",
+    "representations": {
+        "dd19e390-ae51-4a82-92c9-6e5c4ca381df": {
+            "distribution_label": "spreadsheet",
+            "distribution_description": "ODF spreadsheet",
+            "access_rights": "free",
+            "file_items": [
+                "representations/dd19e390-ae51-4a82-92c9-6e5c4ca381df/data/addresses.ods"
+            ]
+        },
+        "76641c03-eded-479d-94d4-13dbde276f86": {
+            "distribution_label": "csv",
+            "distribution_description": "CSV table",
+            "access_rights": "free",
+            "file_items": [
+                "representations/76641c03-eded-479d-94d4-13dbde276f86/data/addresses.csv"
+            ]
+        }
+    },
+    "nodeNamespaceId": "repo",
+    "repoIdentifier": "urn:uuid:2baa45fb-145e-44f4-895f-54ead5ab5eb7",
+    "repoTitle": "Repository",
+    "repoDescription": "Repository",
+    "repoCatalogueIssued": "2020-01-01T12:00:00Z",
+    "repoCatalogueModified": "2020-02-01T12:00:00Z"
+}

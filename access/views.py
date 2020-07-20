@@ -47,7 +47,7 @@ def indexingstatus(request):
     Indexing Status Table view
     """
     if not service_available(solr_core_ping_url):
-        return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % local_solr})
+        return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % solr_core_ping_url})
     queryset=InformationPackage.objects.extra(where=["storage_dir != ''"]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)

@@ -11,7 +11,7 @@ label {
 }
 
 .pgsuccess {
-   background-color: green;
+   background-color: #169816;
 }
 
 .pgwarning {
@@ -36,13 +36,13 @@ progress.ready::-webkit-progress-value {background-color:#169816}
 progress.ready::-moz-progress-bar {background-color:#169816}
 
 progress.error{
-  background-color:#C6212C;
-  color:#C6212C;
+  background-color:#7D0B1B;
+  color:#7D0B1B;
   }
 progress.error[value] {color:#169816} /* IE10 */
-progress.error::-webkit-progress-bar-value {background-color:#C6212C}
-progress.error::-webkit-progress-value {background-color:#C6212C}
-progress.error::-moz-progress-bar {background-color:#C6212C}
+progress.error::-webkit-progress-bar-value {background-color:#7D0B1B}
+progress.error::-webkit-progress-value {background-color:#7D0B1B}
+progress.error::-moz-progress-bar {background-color:#7D0B1B}
 
 progress::-moz-progress-bar { background: #999B9B; }
 progress::-webkit-progress-value { background: #999B9B; }

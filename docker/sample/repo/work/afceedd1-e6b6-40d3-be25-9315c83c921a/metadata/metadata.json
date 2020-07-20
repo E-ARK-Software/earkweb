@@ -1,0 +1,39 @@
+{
+    "title": "Used Ford Escorts for sale",
+    "description": "Used Ford Escorts for sale. \r\nThere are 23 records of year, mileage and price. \r\nThere is also an initial header line. ",
+    "tags": "[]",
+    "userGeneratedTags": "[]",
+    "contactPoint": "Contact person",
+    "contactEmail": "contact@email.com",
+    "publisher": "Publishing organization",
+    "publisherEmail": "contact@email.com",
+    "language": "English",
+    "processId": "afceedd1-e6b6-40d3-be25-9315c83c921a",
+    "date": "27.03.2020",
+    "lastChange": "2020-03-27T11:29:55Z",
+    "created": "2020-03-27T11:29:55Z",
+    "representations": {
+        "4e9cb94e-533d-4c51-9e4f-656fbd438c21": {
+            "distribution_label": "",
+            "distribution_description": "CSV file",
+            "access_rights": "free",
+            "file_items": [
+                "representations/4e9cb94e-533d-4c51-9e4f-656fbd438c21/data/ford_escort.csv"
+            ]
+        },
+        "2f3504aa-c894-43f0-899a-57a306173427": {
+            "distribution_label": "ods",
+            "distribution_description": "Open document spreadsheet",
+            "access_rights": "free",
+            "file_items": [
+                "representations/2f3504aa-c894-43f0-899a-57a306173427/data/ford_escort.ods"
+            ]
+        }
+    },
+    "nodeNamespaceId": "repo",
+    "repoIdentifier": "urn:uuid:2baa45fb-145e-44f4-895f-54ead5ab5eb7",
+    "repoTitle": "Repository",
+    "repoDescription": "Repository",
+    "repoCatalogueIssued": "2020-01-01T12:00:00Z",
+    "repoCatalogueModified": "2020-02-01T12:00:00Z"
+}

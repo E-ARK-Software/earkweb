@@ -3,7 +3,7 @@
 {% if user.is_authenticated %}
 
 {% if request.user.is_superuser or request.user.is_staff or request.user.is_superuser  %}
-<li class="nav-item dropdown">
+<li id="administration" class="nav-item dropdown">
 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   <i aria-hidden="true" class="fas fa-tools"></i>  {% trans 'Administration' %}
 </a>
@@ -22,7 +22,7 @@
 {% endif %}
 
 
-<li class="nav-item dropdown pointer text-nowrap">
+<li id="submission" class="nav-item dropdown pointer text-nowrap">
   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
    <i aria-hidden="true" class="fas fa-boxes"></i>  {% trans 'Submission' %}
   </a>
@@ -35,7 +35,7 @@
 </li>
 
 
-<li class="nav-item dropdown pointer text-nowrap">
+<li id="management" class="nav-item dropdown pointer text-nowrap">
   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown4" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
    <i aria-hidden="true" class="fas fa-archive"></i>  {% trans 'Package Management' %}
   </a>
@@ -46,9 +46,8 @@
 
 </li>
 
-
-<li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown5" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+<li id="access" class="nav-item dropdown">
+<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown6" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   <i aria-hidden="true" class="fas fa-search"></i>  {% trans 'Search & Access' %}
 </a>
 <div class="dropdown-menu" aria-labelledby="navbarDropdown5">

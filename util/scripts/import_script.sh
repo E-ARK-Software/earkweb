@@ -1,109 +1,102 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# required: libreoffice, jq, highlight.sh
 
-DEST=http://localhost:8000/earkweb/
-CAS_HOSTNAME=earkwebdev.ait.ac.at:8443
-CAS_USERNAME=
-CAS_PASSWORD=
-MYSQL_USERNAME=
-MYSQL_PASSWORD=
 
-# Where headers and cookies should be saved
-COOKIE_JAR=.cookieJar
-HEADER_DUMP_DEST=.headers
+# server
+SERVER=localhost
+PORT=8000
 
-# Start by logging out 
-curl -s -k https://earkwebdev.ait.ac.at:8443/cas/logout -o /dev/null
+# settings
+INPUTFOLDER=/path/to/input/folder
+DATASET_NAME='zillow'
+PACKAGE_NAME="examples.$DATASET_NAME"
+FILE_PATH="$INPUTFOLDER/$DATASET_NAME.csv"
 
-#Cleanup existing coockie and header
-rm $COOKIE_JAR
-rm $HEADER_DUMP_DEST
+# example title and description
+TITLE='Tallahassee Housing Prices as reported by Zillow'
+read -r -d '' DESCRIPTION << EOM
+Tallahassee Housing Prices as reported by Zillow,
+20 records: Index, Square footage, beds, baths, zip code, year, list price.
+There is also an initial header line.
+EOM
 
-#Encode destination
-ENCODED_DEST=`echo "$DEST" | perl -p -e 's/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg' | sed 's/%2E/./g' | sed 's/%0A//g'`
+# contact information
+CONTACT='Contact person'
+PUBLISHER='Publishing organization'
+CONTACT_EMAIL='contact@email.com'
+LANGUAGE='English'
 
-# Get CAS id
-CAS_ID=`curl -s -k -c $COOKIE_JAR https://earkwebdev.ait.ac.at:8443/cas/login?service=$ENCODED_DEST | grep name=.lt | sed 's/.*value..//' | sed 's/\".*//'`
-echo "CAS_ID=$CAS_ID"
+# get filename and filename without extension
+FILENAME=${FILE_PATH/$INPUTFOLDER\//}
+FILENAME_WO_EXT=${FILENAME/.csv/}
+echo "Filename without extension: $FILENAME_WO_EXT"
 
-# Get headers
-curl -s -k --data "username=$CAS_USERNAME&password=$CAS_PASSWORD&lt=$CAS_ID&execution=e1s1&_eventId=submit" -i -b $COOKIE_JAR -c $COOKIE_JAR https://$CAS_HOSTNAME/cas/login?service=$ENCODED_DEST -D $HEADER_DUMP_DEST -o /dev/null
-cat ./.headers
+. highlight.sh
 
-# Get the location from headers
-CURL_DEST=`grep Location $HEADER_DUMP_DEST | sed 's/Location: //'`
-echo "CURL_DEST=$CURL_DEST"
+echo_highlight_header $HEADER 'register data set'
+RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -X POST -d "package_name=$PACKAGE_NAME" http://$SERVER:$PORT/earkweb/api/informationpackages/`
+echo $RESPONSE
+PROCESS_ID=`echo $RESPONSE | jq -r '.process_id'`
+if [ -z "$PROCESS_ID" ]; then echo_highlight $FAIL "No process ID"; fi
+echo_highlight $OKGREEN "Process ID: $PROCESS_ID"
 
-# Get ticket
-TICKET=`echo $CURL_DEST | awk -F ticket= '{ print $2 }'`
-echo "TICKET=$TICKET"
 
-# Encode ticket
-ENCODED_TICKET=`echo "ticket=$TICKET" | perl -p -e 's/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg' | sed 's/%2E/./g' | sed 's/%0A//g'`
-echo "ENCODED_TICKET=$ENCODED_TICKET"
+echo_highlight_header $HEADER 'upload 1st representation'
+if [ ! -f "$FILE_PATH" ]; then echo_highlight $FAIL "File not found at: $FILE_PATH"; exit 1; fi
+RESPONSE=`curl  -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -F "file=@$FILE_PATH" http://$SERVER:$PORT/earkweb/api/informationpackages/$PROCESS_ID/data/upload/`
+echo $RESPONSE
+REPRESENTATION_ID1=`echo $RESPONSE  | jq -r '.representationId'`
+echo_highlight $OKGREEN "Representation ID: $REPRESENTATION_ID1"
 
-# Build URl for a get request
-GET_DEST="$DEST?$ENCODED_TICKET"
-echo "GET_DEST=$GET_DEST"
+echo_highlight_header $HEADER 'convert to ods'
+libreoffice --headless --convert-to ods $FILE_PATH --outdir $INPUTFOLDER
+FILE_CONVERTED="${INPUTFOLDER}/${FILENAME_WO_EXT}.ods"
+if [ ! -f "$FILE_CONVERTED" ]; then echo_highlight $FAIL "Converted file not found at: $FILE_CONVERTED"; exit 1; fi
+echo_highlight $OKGREEN "Converted file: $FILE_CONVERTED"
 
-# Issue a GET first (do not remove is necessary)
-GET_RESULT=`curl -s -k -L -b $COOKIE_JAR -c $COOKIE_JAR $GET_DEST`
-#echo "GET_RESULT=$GET_RESULT"
+echo_highlight_header $HEADER 'upload 2nd representation'
+RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -F "file=@$INPUTFOLDER/${FILENAME_WO_EXT}.ods" http://$SERVER:$PORT/earkweb/api/informationpackages/$PROCESS_ID/data/upload/`
+echo $RESPONSE
+REPRESENTATION_ID2=`echo $RESPONSE | jq -r '.representationId'`
+if [ -z "$REPRESENTATION_ID2" ]; then echo_highlight $FAIL "No representation ID for 1st file"; fi
+echo_highlight $OKGREEN "Representation ID: $REPRESENTATION_ID2"
 
-# Build URL for POST request
-POST_DEST="$DEST/?$ENCODED_TICKET"
-echo "POST_DEST=$POST_DEST"
+echo_highlight_header $HEADER 'create metadata file'
+read -r -d '' METADATA << EOM
+{
+    "title": "$TITLE",
+    "description": "$DESCRIPTION",
+    "contactPoint": "$CONTACT",
+    "contactEmail": "$CONTACT_EMAIL",
+    "publisher": "$PUBLISHER",
+    "publisherEmail": "$CONTACT_EMAIL",
+    "language": "$LANGUAGE",
+    "representations": {
+        "$REPRESENTATION_ID1": {
+            "distribution_label": "csv",
+            "distribution_description": "CSV file",
+            "access_rights": "free"
+        },
+        "$REPRESENTATION_ID2": {
+            "distribution_label": "ods",
+            "distribution_description": "Open Document Spreadsheet file",
+            "access_rights": "free"
+        }
+    }
+}
+EOM
+METADATA_FILE=/tmp/metadata.json
+echo $METADATA
+echo $METADATA > $METADATA_FILE
+if [ -z "$METADATA_FILE" ]; then echo_highlight $FAIL "No metadata file"; fi
+echo_highlight $OKGREEN "Metadata file: $METADATA_FILE"
 
-#POST_RESULT=`curl -s -X POST -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST?$ENCODED_TICKET&pkg_id=28f07c7c-ad73-4113-81c3-59534c4f6f9b"`
-DEST=http://localhost:8000/earkweb/search/order_status
-POST_RESULT=`curl -s -X POST -k -L --data "pkg_uuid=28f07c7c-ad73-4113-81c3-59534c4f6f9b" -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/?$ENCODED_TICKET"`
-echo "$POST_RESULT" > result.html
-cat ./result.html
+echo_highlight_header $HEADER 'upload metadata'
+RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' --write-out %{http_code} --silent --output /dev/null -F "file=@${METADATA_FILE}" http://localhost:8000/earkweb/api/informationpackages/$PROCESS_ID/metadata/upload/`
+if [ -z "$RESPONSE" ]; then echo_highlight $FAIL "No response for metadata upload request"; exit 1; fi
+if [ $RESPONSE == 201 ]; then
+  echo_highlight $OKGREEN "Metadata upload executed successfully with status code: $RESPONSE"
+else
+  echo_highlight $FAIL "Metadata upload failed with status code: $RESPONSE"
+fi
 
-# Build URl for a get request
-DEST=http://localhost:8000/earkweb/submission/initialize/test_pack3
-GET_RESULT=`curl -s -X GET -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST?$ENCODED_TICKET"`
-echo "$GET_RESULT" > result.html
-cat ./result.html
-
-SIP_ID=$GET_RESULT
-
-# Add one representation
-DEST=http://localhost:8000/earkweb/submission/add_representation
-GET_RESULT=`curl -s -X POST -k -L --data "representation=rep_001" -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/$SIP_ID/?$ENCODED_TICKET"`
-echo "$GET_RESULT" > result.html
-cat ./result.html
-
-# Find test_pack3 and get process_id
-DEST=http://localhost:8000/earkweb/submission/process_id
-GET_RESULT=`curl -s -X GET -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/$SIP_ID/?$ENCODED_TICKET"`
-echo "$GET_RESULT" > result.html
-cat ./result.html
-
-SIP_UUID=$GET_RESULT
-
-# Add files to representation
-DEST=http://localhost:8000/earkweb/submission/ins_file
-GET_RESULT=`curl  --form "rep=rep_001" --form "subdir=data" --form "content_file=@./result.html"  -H "Content-Type: multipart/form-data" -k -L -b $COOKIE_JAR -c $COOKIE_JAR "$DEST/$SIP_UUID/representations?$ENCODED_TICKET"`
-#-F file=@./result.html
-echo "$GET_RESULT" > result.html
-cat ./result.html
-
-# Execute celery tasks
-PYSCRIPT=$"from config.configuration import config_path_work
-from taskbackend.tasks import SIPReset
-from taskbackend.tasks import SIPDescriptiveMetadataValidation
-from taskbackend.tasks import SIPPackageMetadataCreation
-from taskbackend.tasks import SIPPackaging
-from taskbackend.tasks import SIPClose
-from taskbackend.default_task_context import DefaultTaskContext
-task_context = DefaultTaskContext('$SIP_UUID', \"%s/$SIP_UUID\" % config_path_work, 'SIPReset', None, {}, None)
-SIPReset().apply((task_context,), queue='default').status
-SIPDescriptiveMetadataValidation().apply((task_context,), queue='default').status
-SIPPackageMetadataCreation().apply((task_context,), queue='default').status
-SIPPackaging().apply((task_context,), queue='default').status
-SIPClose().apply((task_context,), queue='default').status"
-
-echo "$PYSCRIPT" | python manage.py shell
-
-# Update status in DB
-echo "update informationpackage set last_task_id=\"SIPClose\" where process_id=\"$SIP_UUID\";" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD earkweb

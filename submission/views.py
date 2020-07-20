@@ -137,8 +137,8 @@ def upload(request):
 
             ip = InformationPackage.objects.get(process_id=request.POST['process_id'])
             u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({'error': "Unauthorized. Operation is not permitted."}, status=500)
+            # if u != ip.user:
+            #    return JsonResponse({'error': "Unauthorized. Operation is not permitted."}, status=500)
             ip_work_dir = os.path.join(config_path_work, request.POST['process_id'])
             data_path = os.path.join(ip_work_dir, representations_directory, request.POST['rep'], "data")
             os.makedirs(data_path, exist_ok=True)
@@ -174,6 +174,12 @@ def upload(request):
 def upload_step1(request, pk):
 
     ip = InformationPackage.objects.get(pk=pk)
+    if "package_name" in request.POST and request.POST["package_name"] != ip.package_name:
+        ip.package_name = request.POST["package_name"]
+        ip.save()
+    if "external_id" in request.POST and request.POST["external_id"] != ip.external_id:
+        ip.external_id = request.POST["external_id"]
+        ip.save()
     user_api_token = get_user_api_token(request.user)
     dir_info_request_url = "%s/informationpackages/%s/dir-json" % (django_backend_service_api_url, ip.process_id)
     dir_info_resp = requests.get(dir_info_request_url,
@@ -195,22 +201,31 @@ def upload_step1(request, pk):
         realtags = []
         usertags = []
         form = MetaFormStep1(request.POST)
-        data2 = request.POST
+        post_data = request.POST
+        if "package_name" in post_data and post_data["package_name"] != ip.package_name:
+            ip.package_name = post_data["package_name"]
+            ip.save()
         # distinguish between tags and user generated tags
-        if 'hidden_user_tags' in data2:
+        if 'hidden_user_tags' in post_data:
             splittags = None
             try:
-                splittags = simplejson.loads(data2['hidden_user_tags'])
+                splittags = simplejson.loads(post_data['hidden_user_tags'])
             except simplejson.errors.JSONDecodeError:
-                if isinstance(data2['hidden_user_tags'], str):
-                    splittags = [{'custom': True, 'value': x.strip()} for x in data2['hidden_user_tags'].split(',')]
+                if isinstance(post_data['hidden_user_tags'], str):
+                    splittags = [{'custom': True, 'value': x.strip()} for x in post_data['hidden_user_tags'].split(',')]
+            if "tags" in post_data:
+                usertags = post_data["tags"].split(',')
             if splittags:
                 for splittag in splittags:
                     if splittag['custom']:
                         usertags.append(splittag['value'])
                     else:
                         realtags.append(splittag['value'])
-        data3 = dict(data2.items())
+            if realtags:
+                for t in realtags:
+                    ip.tags.add(t)
+                ip.save()
+        data3 = dict(post_data.items())
         data3['tags'] = realtags
         data3['user_generated_tags'] = usertags
         data4 = {key: Literal(val) if isinstance(val, list) else Literal(val) for key, val in data3.items()}
@@ -241,22 +256,29 @@ def upload_step1(request, pk):
             request.session['md_properties'] = md_properties
             # load existing metadata values as initial form values
             form = MetaFormStep1(initial={
+                'package_name': ip.package_name,
+                'external_id': ip.external_id,
                 'title': md_properties["title"],
                 'description': md_properties["description"]
             })
         else:
-            form = MetaFormStep1()
+            form = MetaFormStep1(initial={
+                'package_name': ip.package_name,
+                'external_id': ip.external_id,
+            })
         return render(request, 'submission/upload_mdform.html', {
             'form': form,
             'ip': ip,
-            'tags': tags,
+            'tags': [val.name for val in ip.tags.all()],
             'user_generated_tags': user_generated_tags
         })
 
 
 def upload_step2(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
+
     if request.method == 'POST':
+
         form = MetaFormStep2(request.POST)
         data2 = request.POST
         data3 = dict(data2.items())
@@ -373,7 +395,7 @@ def updatedistrmd(request):
     ip = InformationPackage.objects.get(pk=request.POST['pk'])
     rep = request.POST['rep']
     try:
-        result = Representation.objects.filter(ip=ip, identifier=rep)[0]
+        result = Representation.objects.get(ip=ip, identifier=rep)
     except ObjectDoesNotExist:
         result = Representation.objects.create(ip=ip, identifier=rep)
     param_name = request.POST['param_name']
@@ -385,24 +407,6 @@ def updatedistrmd(request):
         result.description = param_value
     if param_name == "access_rights":
         result.accessRights = param_value
-        try:
-            # the limited distribution requires a Blockchain identifier
-            get_blockchain_id = (param_value == "limited")
-            new_asset_id = get_unused_identifier(request.user.id, get_blockchain_id=get_blockchain_id)
-            current_asset_id = result.identifier
-            request_url = "%s/rename-representation-dir/%s/%s/?new_representation_dir=%s" % (
-                django_backend_service_api_url, ip.process_id, current_asset_id, new_asset_id)
-            user_api_token = get_user_api_token(request.user)
-            response = requests.patch(request_url, headers={'Authorization': 'Token %s' % user_api_token},
-                                      verify=verify_certificate)
-            if response.status_code != 200:
-                logger.error("Backend rename representation directory request failed "
-                             "(process id: %s, old representation id: %s, new  representation id: %s"
-                             % (ip.process_id, current_asset_id, new_asset_id))
-            result.identifier = new_asset_id
-            result_dict["new_asset_id"] = new_asset_id
-        except ResourceNotAvailable:
-            return JsonResponse({"error": "Es sind keine Blockchain-Identifier verfügbar."})
     result.save()
 
     return JsonResponse(result_dict)
@@ -466,6 +470,10 @@ def ip_creation_process(request, pk):
 
     if "csrfmiddlewaretoken" in basic_metadata:
         del basic_metadata["csrfmiddlewaretoken"]
+    if "hidden_user_tags" in basic_metadata:
+        del basic_metadata["hidden_user_tags"]
+    if "user_generated_tags" in basic_metadata:
+        del basic_metadata["user_generated_tags"]
     if "currdate" in basic_metadata:
         del basic_metadata["currdate"]
     if "lang_alpha_3" in basic_metadata:
@@ -473,6 +481,7 @@ def ip_creation_process(request, pk):
     if "landing_page" in basic_metadata:
         del basic_metadata["landing_page"]
 
+    basic_metadata["tags"] = [val.name for val in ip.tags.all()]
     basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
     files = {'file': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4))}
     request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
@@ -484,11 +493,11 @@ def ip_creation_process(request, pk):
             'header': 'Error uploading metadata (%d)' % response.status_code, 'message': response.text
         })
 
-    from taskbackend.tasks import sip_package
+    from taskbackend.tasks import create_dataset
     task_input = {
         "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "repo"
     }
-    job = sip_package.delay(json.dumps(task_input))
+    job = create_dataset.delay(json.dumps(task_input))
 
     # unset session data
     request.session['step1'] = None
@@ -548,12 +557,13 @@ class InformationPackageTable(tables.Table):
 
     from django_tables2.utils import A
     area = "submission"
-    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name=_('Last modified'), orderable=False)
+    last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name=_('Last modified'), orderable=True)
     process_id = tables.LinkColumn('%s:working_area' % area,
                                    kwargs={'section': area, 'process_id': A('process_id')},
                                    verbose_name=_('Working directory'), orderable=False,
                                    attrs={'a': {'data-toggle': 'tooltip', 'title': _('ShowWorkingDirectory')}})
-    package_name = tables.Column(verbose_name=_("Label"), orderable=False)
+    package_name = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name=_('Data Set Label'), orderable=True)
+
     edit = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name=_('Change'), orderable=False)
     delcol = tables.LinkColumn('%s:delete' % area, kwargs={'pk': A('pk')}, verbose_name=_('Delete'), orderable=False)
 
@@ -594,26 +604,21 @@ class InformationPackageTable(tables.Table):
 def informationpackages_overview(request):
     area = "submission"
     areacode = "1"
-    if request.GET.get("refresh"):
-        try:
-            update_states_from_backend_api(request)
-        except AuthenticationError:
-            return render(request,
-                          'earkweb/error.html',
-                          context={"header": _("AuthenticationError"), "message": _("PleaseVerifyUserAPIToken")})
     filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
     sql_query = """
     select ip.id as id, ip.work_dir as path, ip.process_id as process_id, ip.package_name as package_name, 
     ip.identifier as identifier,
-    CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title=_("ChangeSubmission")>
+    CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title="Change">
     <i class="glyphicon glyphicon-edit editcol"></i></a>') as edit,
-    CONCAT('<a href="/earkweb/submission/delete/',ip.id,'/" data-toggle="tooltip" title=_("DeleteCompletely")>
+    CONCAT('<a href="/earkweb/submission/delete/',ip.id,'/" data-toggle="tooltip" title="Delete">
     <i class="glyphicon glyphicon-remove editcol"></i></a>') as delcol 
     from informationpackage as ip
-    where user_id={0} and storage_dir='' and 
+    where storage_dir='' and 
     (ip.process_id like '%%{1}%%' or ip.package_name like '%%{1}%%' or ip.identifier like '%%{1}%%')
+    and deleted != 1
     order by ip.last_change desc;
-    """.format(request.user.pk, filterword, areacode)
+    """.format(filterword, areacode)
+    # user_id={0} and, request.user.pk
     print(sql_query)
     queryset = InformationPackage.objects.raw(sql_query)
     table = InformationPackageTable(queryset)
@@ -649,29 +654,26 @@ def sip_detail_rep(request, pk, rep):
     return HttpResponse(template.render(context=context, request=request))
 
 
-@login_required
-def sip_detail(request, pk):
-    ip = InformationPackage.objects.get(pk=pk)
-    template = loader.get_template('submission/detail.html')
-    upload_file_form = TinyUploadFileForm()
-    repr_dir = os.path.join(ip.work_dir, representations_directory)
+class InformationPackageDetail(DetailView):
+    """
+    Information Package Detail View
+    """
+    model = InformationPackage
+    context_object_name = 'ip'
+    template_name = 'submission/detail.html'
 
-    repr_dirs = [] if not os.path.exists(repr_dir) \
-        else filter(lambda x: os.path.isdir(os.path.join(repr_dir, x)), os.listdir(repr_dir))
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(InformationPackageDetail, self).dispatch(*args, **kwargs)
 
-    rep = "" if len(repr_dirs) == 0 else repr_dirs[0]
-    request.session['rep'] = rep
+    def get_context_data(self, **kwargs):
+        context = super(InformationPackageDetail, self).get_context_data(**kwargs)
+        context['config_path_work'] = config_path_work
+        context['metadata'] = json.loads(self.object.basic_metadata)
 
-    context = {
-        'process_id': ip.process_id,
-        'config_path_work': config_path_work,
-        'uploadFileForm': upload_file_form,
-        'repr_dirs': repr_dirs,
-        'ip': ip,
-        'rep': rep,
-        'pk': pk,
-    }
-    return HttpResponse(template.render(context=context, request=request))
+        distributions = Representation.objects.filter(ip_id=self.object.pk).values()
+        context['distributions'] = distributions
+        return context
 
 
 class StartIngestDetail(DetailView):
@@ -980,3 +982,15 @@ def poll_state(request):
         logger.error(err)
         data = {"success": False, "errmsg": str(err)}
     return JsonResponse(data, status=200)
+
+def get_autocomplete(request):
+    terms = ["weapons1", "drugs", "crime-as-a-service"]
+    if "term" in request.GET and request.GET["term"]:
+        suggested_terms = [term for term in terms if term.startswith(request.GET["term"])]
+    else:
+        suggested_terms = terms
+    return JsonResponse(suggested_terms, safe=False)
+
+
+def get_autocomplete_tags(request):
+    return JsonResponse(["weapons2", "drugs", "crime-as-a-service"], safe=False)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-25 22:57+0100\n"
+"POT-Creation-Date: 2020-07-20 15:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,50 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:52
+#: access/templates/access/about_module.html:2 templates/conduit/navbar.html:67
+#: templates/earkweb/navbar.html:51
 msgid "Search & Access"
 msgstr ""
 
 #: access/templates/access/detail.html:40
-#: access/templates/access/search.html:50
+#: access/templates/access/search.html:52
 #: management/templates/management/detail.html:40
 #: management/templates/management/iptable.html:23
 msgid "Information package"
 msgstr ""
 
 #: access/templates/access/detail.html:46
-#: management/templates/management/detail.html:76
+#: management/templates/management/detail.html:86
+#: submission/templates/submission/detail.html:93
 msgid "Representations"
 msgstr ""
 
 #: access/templates/access/detail.html:50 access/views.py:61
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:97
 msgid "Identifier"
 msgstr ""
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
 #: management/templates/management/iptable.html:7
+#: submission/templates/submission/detail.html:97
 #: submission/templates/submission/iptable.html:7
-#: submission/templates/submission/start.html:32 submission/views.py:557
+#: submission/templates/submission/start.html:32
 msgid "Label"
 msgstr "Label"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:57
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:64
+#: submission/templates/submission/detail.html:97
 msgid "Description"
 msgstr ""
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:97
 msgid "Access rights"
 msgstr ""
 
@@ -61,58 +69,58 @@ msgstr ""
 msgid "Save changes"
 msgstr ""
 
-#: access/templates/access/index.html:16 access/templates/access/search.html:94
-#: templates/earkweb/navbar.html:55
+#: access/templates/access/index.html:16 access/templates/access/search.html:96
+#: templates/conduit/navbar.html:70 templates/earkweb/navbar.html:54
 msgid "Search"
 msgstr ""
 
 #: access/templates/access/index.html:18
 #: access/templates/access/indexing_status.html:22
-#: templates/earkweb/navbar.html:56
+#: templates/conduit/navbar.html:71 templates/earkweb/navbar.html:55
 msgid "Indexing status"
 msgstr ""
 
 #: access/templates/access/indexing_status.html:25
 msgid "Indexing status of archived information packages."
-msgstr ""
+msgstr "Indexing status of archived information packages."
 
-#: access/templates/access/search.html:37
+#: access/templates/access/search.html:39
 msgid "Full-text search"
 msgstr ""
 
-#: access/templates/access/search.html:44
+#: access/templates/access/search.html:46
 msgid "Search term"
 msgstr ""
 
-#: access/templates/access/search.html:52
+#: access/templates/access/search.html:54
 msgid "Identifier of the information package"
 msgstr ""
 
-#: access/templates/access/search.html:57
+#: access/templates/access/search.html:59
 msgid "Content type"
 msgstr ""
 
-#: access/templates/access/search.html:77
+#: access/templates/access/search.html:79
 msgid "Sort"
 msgstr ""
 
-#: access/templates/access/search.html:80
+#: access/templates/access/search.html:82
 msgid "Relevance"
 msgstr ""
 
-#: access/templates/access/search.html:81
+#: access/templates/access/search.html:83
 msgid "size (ascending)"
 msgstr ""
 
-#: access/templates/access/search.html:82
+#: access/templates/access/search.html:84
 msgid "size (descending)"
 msgstr ""
 
-#: access/templates/access/search.html:87
+#: access/templates/access/search.html:89
 msgid "Only information packages"
-msgstr ""
+msgstr "Only data set"
 
-#: access/views.py:63 submission/templates/submission/iptable.html:31
+#: access/views.py:63 submission/templates/submission/iptable.html:37
 msgid "Last change"
 msgstr ""
 
@@ -125,22 +133,22 @@ msgid "BackendAdministration"
 msgstr "Backend administration"
 
 #: administration/templates/administration/backendadmin.html:22
-#: templates/earkweb/navbar.html:12
+#: templates/conduit/navbar.html:12 templates/earkweb/navbar.html:12
 msgid "Dashboard"
 msgstr ""
 
 #: administration/templates/administration/backendadmin.html:24
-#: templates/earkweb/navbar.html:14
+#: templates/conduit/navbar.html:14 templates/earkweb/navbar.html:14
 msgid "Django Administration"
 msgstr ""
 
 #: administration/templates/administration/backendadmin.html:25
-#: templates/earkweb/navbar.html:15
+#: templates/conduit/navbar.html:15 templates/earkweb/navbar.html:15
 msgid "Flower process monitoring"
 msgstr ""
 
 #: administration/templates/administration/backendadmin.html:28
-#: templates/earkweb/navbar.html:18
+#: templates/conduit/navbar.html:18 templates/earkweb/navbar.html:18
 msgid "ResourceSyncInterface"
 msgstr "ResourceSync interface"
 
@@ -152,29 +160,31 @@ msgstr ""
 msgid "The backend task execution did not deliver the expected result"
 msgstr ""
 
-#: earkweb/settings.py:301
+#: earkweb/settings.py:306
 msgid "English"
 msgstr ""
 
-#: earkweb/settings.py:302
+#: earkweb/settings.py:307
 msgid "German"
 msgstr ""
 
+#: earkweb/templates/conduit/workingarea2.html:26
 #: earkweb/templates/earkweb/workingarea2.html:26
 msgid "WorkingDirectory"
 msgstr "Working directory"
 
+#: earkweb/templates/conduit/workingarea2.html:28
 #: earkweb/templates/earkweb/workingarea2.html:28
 msgid "ThisWorkDirShowsContentOf"
-msgstr "This working directory shows the content of process"
+msgstr "Content of process"
 
 #: management/templates/management/about_module.html:2
 msgid "DataManagementTitle"
-msgstr "Information package management"
+msgstr "Data set management"
 
 #: management/templates/management/about_module.html:4
 msgid "DataManagementAbout"
-msgstr "In this area, the archived information packages can be managed."
+msgstr "Overview and management of stored information packages."
 
 #: management/templates/management/checkout.html:16
 #: management/templates/management/checkout.html:31
@@ -182,7 +192,7 @@ msgid "Checkout working copy"
 msgstr ""
 
 #: management/templates/management/checkout.html:18
-msgid "There is currently no working copy for the information package"
+msgid "There is currently no working copy for the data set"
 msgstr ""
 
 #: management/templates/management/checkout.html:20
@@ -220,12 +230,12 @@ msgstr ""
 
 #: management/templates/management/checkout_confirm.html:51
 msgid "Overview of information package"
-msgstr "Information package overview"
+msgstr "Data set overview"
 
 #: management/templates/management/checkout_confirm.html:53
 #: submission/templates/submission/upload_finalize.html:60
 msgid "Edit information package"
-msgstr "Edit information package"
+msgstr "Edit data set"
 
 #: management/templates/management/deleted.html:22
 msgid "Deletion confirmation"
@@ -241,7 +251,38 @@ msgid "Back to overview"
 msgstr ""
 
 #: management/templates/management/detail.html:46
+#: submission/templates/submission/detail.html:53
 msgid "Descriptive metadata"
+msgstr ""
+
+#: management/templates/management/detail.html:53
+#: submission/templates/submission/detail.html:60
+msgid "Title"
+msgstr ""
+
+#: management/templates/management/detail.html:63
+#: submission/templates/submission/detail.html:70
+msgid "Tags"
+msgstr ""
+
+#: management/templates/management/detail.html:71
+#: submission/templates/submission/detail.html:78
+msgid "Contact point"
+msgstr ""
+
+#: management/templates/management/detail.html:75 submission/forms.py:106
+#: submission/forms.py:107 submission/templates/submission/detail.html:82
+msgid "Maintainer"
+msgstr ""
+
+#: management/templates/management/detail.html:79
+#: submission/templates/submission/detail.html:86
+msgid "Main language"
+msgstr "English"
+
+#: management/templates/management/detail.html:104
+#: submission/templates/submission/detail.html:111
+msgid "Back"
 msgstr ""
 
 #: management/templates/management/iptable.html:11 management/views.py:155
@@ -271,7 +312,7 @@ msgstr "Archived information packages"
 
 #: management/views.py:152
 msgid "PackageDirectory"
-msgstr "Information package directory"
+msgstr "Data set directory"
 
 #: management/views.py:156
 msgid "InternalLabel"
@@ -285,69 +326,100 @@ msgstr "Overview of the information packages"
 msgid "ChangeIt"
 msgstr "Change"
 
-#: submission/forms.py:50
-msgid "Information package title"
-msgstr "Data  set title"
+#: submission/forms.py:56 submission/forms.py:57
+msgid "Data set label"
+msgstr "Information package label"
 
-#: submission/forms.py:51
+#: submission/forms.py:59 submission/forms.py:60
+#: submission/templates/submission/iptable.html:12
+msgid "External identifier"
+msgstr "External identifier"
+
+#: submission/forms.py:61
+msgid "Information package title"
+msgstr "Information package title"
+
+#: submission/forms.py:61
+msgid "Data set title"
+msgstr "Information package title"
+
+#: submission/forms.py:62
 msgid "Information package description"
 msgstr "Information package description"
 
-#: submission/forms.py:56
-msgid "PleaseAddNameOfPackage"
-msgstr "Please add the name of the information package"
+#: submission/forms.py:62
+msgid "Data set description"
+msgstr "Information package title"
 
-#: submission/forms.py:57 submission/forms.py:62
+#: submission/forms.py:64
+msgid "PleasePressEnterToAddTag"
+msgstr ""
+
+#: submission/forms.py:74
+msgid "PleaseAddNameOfPackage"
+msgstr "Please add the name of the data set"
+
+#: submission/forms.py:75 submission/forms.py:91 submission/forms.py:96
 msgid "ModifyInitialValue"
 msgstr "Change"
 
-#: submission/forms.py:68 submission/forms.py:69
-msgid "ContactOfPackage"
+#: submission/forms.py:77
+msgid ""
+"Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
+"('.') are allowed."
+msgstr ""
+
+#: submission/forms.py:90
+msgid "PleaseAddTitleOfPackage"
+msgstr "Please add the name of the information package"
+
+#: submission/forms.py:102 submission/forms.py:103
+#, fuzzy
+#| msgid "ContactOfPackage"
+msgid "Contact"
 msgstr "Contact point"
 
-#: submission/forms.py:70
-msgid "ContactEmailOfPackage"
+#: submission/forms.py:104
+#, fuzzy
+#| msgid "ContactEmailOfPackage"
+msgid "Contact email"
 msgstr "Contact point e-mail address"
 
-#: submission/forms.py:72 submission/forms.py:73
-msgid "PublisherOfPackage"
-msgstr "Publisher"
+#: submission/forms.py:108
+msgid "MaintainerEmail"
+msgstr ""
 
-#: submission/forms.py:74
-msgid "PublisherEmailOfPackage"
-msgstr "Publisher e-mail address"
-
-#: submission/forms.py:76
+#: submission/forms.py:110
 msgid "MainLanguageOfPackage"
 msgstr "Main language"
 
-#: submission/forms.py:77
+#: submission/forms.py:111
 msgid "MainInitialLanguage"
 msgstr "English"
 
-#: submission/forms.py:82 submission/forms.py:83
+#: submission/forms.py:116 submission/forms.py:117
 msgid "Representation label"
 msgstr ""
 
-#: submission/forms.py:85
+#: submission/forms.py:119
 msgid "AccessRightsField"
 msgstr "Access rights"
 
-#: submission/forms.py:86
+#: submission/forms.py:120
 msgid "DistributionAccessRightsValueFree"
 msgstr "Free (no contract required)"
 
-#: submission/forms.py:86
+#: submission/forms.py:120
 msgid "DistributionAccessRightsValueLimited"
 msgstr "Limited (contract required)"
 
-#: submission/forms.py:89
+#: submission/forms.py:123
 msgid "Representation description"
 msgstr ""
 
 #: submission/templates/submission/about_module.html:5
 msgid "PackageCreationAndTransfer"
-msgstr "Information package creation and ingest."
+msgstr "Overview of information packages in progress."
 
 #: submission/templates/submission/deleted.html:21
 msgid "Delete confirmation"
@@ -356,6 +428,10 @@ msgstr ""
 #: submission/templates/submission/deleted.html:23
 msgid "Information package working directory deleted"
 msgstr "Information package working directory deleted"
+
+#: submission/templates/submission/detail.html:47
+msgid "Data Set"
+msgstr ""
 
 #: submission/templates/submission/index.html:20
 msgid "Create new information package"
@@ -385,19 +461,19 @@ msgstr "Information package creation process is running."
 msgid "Review submission information package"
 msgstr "Review information package"
 
-#: submission/templates/submission/iptable.html:11
+#: submission/templates/submission/iptable.html:17
 msgid "Process ID"
 msgstr ""
 
-#: submission/templates/submission/iptable.html:15 submission/views.py:555
+#: submission/templates/submission/iptable.html:21 submission/views.py:563
 msgid "Working directory"
 msgstr ""
 
-#: submission/templates/submission/iptable.html:20
+#: submission/templates/submission/iptable.html:26
 msgid "Information package identifier"
 msgstr "Information package identifier"
 
-#: submission/templates/submission/iptable.html:26
+#: submission/templates/submission/iptable.html:32
 msgid "Version"
 msgstr ""
 
@@ -410,7 +486,7 @@ msgid "SearchInternalLabelOrIdentifier"
 msgstr "Search for label or process id"
 
 #: submission/templates/submission/start.html:21
-#: templates/earkweb/navbar.html:31
+#: templates/conduit/navbar.html:31 templates/earkweb/navbar.html:31
 msgid "NavNewSubmission"
 msgstr "Create new information package"
 
@@ -423,7 +499,7 @@ msgid "External identifier (optional)"
 msgstr ""
 
 #: submission/templates/submission/start.html:56
-#: submission/templates/submission/upload_mdform.html:80
+#: submission/templates/submission/upload_mdform.html:182
 msgid "Continue"
 msgstr ""
 
@@ -453,29 +529,29 @@ msgstr ""
 msgid "Upload data"
 msgstr ""
 
-#: submission/templates/submission/upload_distributions.html:492
+#: submission/templates/submission/upload_distributions.html:508
 msgid "Create representations and upload data"
 msgstr ""
 
-#: submission/templates/submission/upload_distributions.html:508
+#: submission/templates/submission/upload_distributions.html:524
 msgid "Representation ID"
 msgstr ""
 
-#: submission/templates/submission/upload_distributions.html:514
+#: submission/templates/submission/upload_distributions.html:530
 msgid "Create another representation"
 msgstr ""
 
-#: submission/templates/submission/upload_distributions.html:519
+#: submission/templates/submission/upload_distributions.html:536
 msgid "Switch to other representation"
 msgstr ""
 
-#: submission/templates/submission/upload_distributions.html:527
+#: submission/templates/submission/upload_distributions.html:546
 msgid "Delete distribution"
 msgstr "Delete representation"
 
-#: submission/templates/submission/upload_distributions.html:577
+#: submission/templates/submission/upload_distributions.html:596
 msgid "Create information package"
-msgstr "Create information package"
+msgstr "Finish data upload"
 
 #: submission/templates/submission/upload_finalize.html:34
 msgid "Information package created"
@@ -485,92 +561,113 @@ msgstr "Information package created"
 msgid "The information package was created successfully"
 msgstr "The information package was created successfully"
 
-#: submission/templates/submission/upload_mdform.html:20
+#: submission/templates/submission/upload_mdform.html:122
 msgid "Information package metadata"
 msgstr "Information package metadata"
 
-#: submission/templates/submission/upload_mdform.html:82
+#: submission/templates/submission/upload_mdform.html:184
 msgid "Cancel"
 msgstr ""
 
-#: submission/views.py:552
+#: submission/views.py:560
 msgid "Last modified"
 msgstr "Last modified"
 
-#: submission/views.py:556
+#: submission/views.py:564
 msgid "ShowWorkingDirectory"
 msgstr "Show working directory"
 
-#: submission/views.py:558
+#: submission/views.py:565
+msgid "Data Set Label"
+msgstr ""
+
+#: submission/views.py:567
 #: venv/lib/python3.6/site-packages/django/forms/widgets.py:397
 msgid "Change"
 msgstr "Change"
 
-#: submission/views.py:559
+#: submission/views.py:568
 #: venv/lib/python3.6/site-packages/django/forms/formsets.py:391
 msgid "Delete"
 msgstr "Delete"
 
-#: submission/views.py:604
-msgid "AuthenticationError"
-msgstr "Authentication error"
-
-#: submission/views.py:604
-msgid "PleaseVerifyUserAPIToken"
-msgstr "Please verify API token"
-
+#: templates/conduit/base.html:88 templates/conduit/base_fileupload.html:79
 #: templates/earkweb/base.html:88 templates/earkweb/base_fileupload.html:79
 msgid "Language"
 msgstr ""
 
+#: templates/conduit/base.html:118 templates/conduit/base_fileupload.html:109
 #: templates/earkweb/base.html:118 templates/earkweb/base_fileupload.html:109
 msgid "log out"
 msgstr ""
 
+#: templates/conduit/base.html:123 templates/conduit/base_fileupload.html:114
 #: templates/earkweb/base.html:123 templates/earkweb/base_fileupload.html:114
 msgid "Access"
 msgstr ""
 
+#: templates/conduit/base.html:127 templates/conduit/base_fileupload.html:118
 #: templates/earkweb/base.html:127 templates/earkweb/base_fileupload.html:118
 msgid "log in"
 msgstr ""
 
-#: templates/earkweb/error.html:12
+#: templates/conduit/error.html:12 templates/earkweb/error.html:12
 msgid "Error"
 msgstr ""
 
-#: templates/earkweb/home.html:21
+#: templates/conduit/home.html:21 templates/earkweb/home.html:21
 msgid "earkwebWelcomeText"
 msgstr ""
 "<p>This data repository system allows creating, archiving, and exploring "
-"information packages.</p><p>The software offers the following functions:</"
-"p><ul><li>Guided, form-based creation of information packages </"
-"li><li>Modular pipelines for data transformation and packaging.</"
-"li><li>Monitoring task execution.</li><li>Full-text indexing and search for "
-"files contained in archived information packages.</li><li>RESTful API for "
-"package creation, management, and access.</li><li><a href=\"http://www."
+"information packages.</p><p>The software offers the following main features:"
+"</p><ul><li>Guided, form-based creation of information packages </"
+"li><li>RESTful API for package creation, management, and access.</"
+"li><li>Modular pipelines for data transformation, packaging, transfer, and "
+"preservation.</li><li>Monitoring task execution.</li><li>Full-text indexing "
+"and search for files contained in archived information packages.</"
+"li><li>Search API based on Apache SolR</li><li><a href=\"http://www."
 "openarchives.org/rs/toc\">ResourceSync interface</a> providing a change list "
 "of archived information packages.</li></ul>"
 
-#: templates/earkweb/navbar.html:8
+#: templates/conduit/navbar.html:8 templates/earkweb/navbar.html:8
 msgid "Administration"
 msgstr ""
 
-#: templates/earkweb/navbar.html:27
+#: templates/conduit/navbar.html:27 templates/earkweb/navbar.html:27
 msgid "Submission"
 msgstr "Information package creation"
 
-#: templates/earkweb/navbar.html:32
+#: templates/conduit/navbar.html:32 templates/earkweb/navbar.html:32
 msgid "NavOpenSubmissions"
 msgstr "Information packages in process"
 
-#: templates/earkweb/navbar.html:40
+#: templates/conduit/navbar.html:40 templates/earkweb/navbar.html:40
 msgid "Package Management"
 msgstr "Information package management"
 
-#: templates/earkweb/navbar.html:44
+#: templates/conduit/navbar.html:44 templates/earkweb/navbar.html:44
 msgid "NavIngestedPackages"
 msgstr "Archived information packages"
+
+#: templates/conduit/navbar.html:53
+msgid "Knowledge Extraction"
+msgstr ""
+
+#: templates/conduit/navbar.html:57
+msgid "Overview"
+msgstr "Overview of the information packages"
+
+#: templates/conduit/navbar.html:58
+msgid "Data processing"
+msgstr "Data processing"
+
+#: templates/conduit/navbar.html:59
+msgid "Audio Analysis"
+msgstr ""
+
+#: templates/conduit/navbar.html:60
+msgid "Text Analysis"
+msgstr ""
 
 #: templates/registration/login.html:16
 msgid "The repository is configured as a test instance. Default login data:"
@@ -1871,8 +1968,5 @@ msgctxt "stick"
 msgid "club"
 msgstr ""
 
-#~ msgid "BackendAvailability"
-#~ msgstr "Backend availability"
-
-#~ msgid "NavFlowerProcessMonitoring"
-#~ msgstr "Flower process monitoring"
+#~ msgid "Overview of information packages"
+#~ msgstr "Overview of information packages"

@@ -11,7 +11,7 @@ from dateutil import parser
 from datetime import date, timedelta, datetime
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, \
-    HttpResponseForbidden, FileResponse
+    HttpResponseForbidden, FileResponse, HttpResponseNotAllowed, Http404, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 from eatb.packaging.tar_entry_reader import ChunkedTarEntryReader
 from eatb.storage.checksum import ChecksumFile, ChecksumAlgorithm
@@ -30,6 +30,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework_api_key.permissions import HasAPIKey
 from api import serializers
 from api.serializers import InformationPackageSerializer, InternalIdentifierSerializer
+from api.util import get_representation_ids_by_label, get_representation_ids, DirectoryInfo
 from earkweb.models import InformationPackage, InternalIdentifier, Representation
 from earkweb.models import RepoUser
 import os
@@ -168,8 +169,8 @@ def checkout_working_copy(request, identifier):
         ip = InformationPackage.objects.get(identifier=identifier)
         try:
             u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+            #if u != ip.user:
+            #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             if ip.process_id != "":
                 return JsonResponse({"message": "A working copy already exists."}, status=400)
             dpts = DirectoryPairtreeStorage(config_path_storage)
@@ -208,8 +209,8 @@ def do_informationpackage_representation(request, process_id, representation_id)
         ip = InformationPackage.objects.get(process_id=process_id)
         try:
             u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+            #if u != ip.user:
+            #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             job = delete_representation_data_from_workdir.delay(
                 ('{"process_id": "%s", "representation_id": "%s"}' % (process_id, representation_id))
             )
@@ -241,8 +242,8 @@ def rename_representation(request, process_id, representation):
             return JsonResponse({"message": "New representation id parameter missing."}, status=400)
         try:
             u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+            #if u != ip.user:
+            #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
 
             job = rename_representation_directory.delay((
                 '{"process_id": "%s", "current_representation_dir": "%s", "new_representation_dir": "%s"}'
@@ -346,8 +347,8 @@ def index_informationpackage(request, identifier):
         ip = InformationPackage.objects.get(identifier=identifier)
         try:
             u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+            #if u != ip.user:
+            #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             dpts = DirectoryPairtreeStorage(config_path_storage)
             if not dpts.identifier_object_exists(identifier):
                 return JsonResponse({"message": "Data asset does not exist in storage."}, status=404)
@@ -357,6 +358,67 @@ def index_informationpackage(request, identifier):
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "object does not exist"}, status=404)
+
+
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
+def informationpackage_representations_info(request, process_id):
+    """
+    get: Get representation ids by label (database, file system)
+
+    Requires the metadata file to look up labels and find the corresponding representation id.
+    """
+    working_directory = os.path.join(config_path_work, process_id)
+    try:
+        representation_ids = get_representation_ids(working_directory)
+        representations_info = {}
+        for representation_id in representation_ids:
+            representation_data_path = os.path.join(working_directory, representations_directory, representation_id,
+                                                    "data")
+            representations_info[representation_id] = DirectoryInfo(representation_data_path).summary()
+        return JsonResponse(representations_info, status=200)
+    except Http404 as e:
+        return HttpResponseNotFound(e.__str__())
+    except ValueError as e:
+        return HttpResponseServerError({"message": e.__str__()})
+
+
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
+def informationpackage_representation_info_by_label(request, process_id, representation_label):
+    """
+    get: Get representation ids by label (database, file system)
+
+    Requires the metadata file to look up labels and find the corresponding representation id.
+    """
+    working_directory = os.path.join(config_path_work, process_id)
+    try:
+        representation_ids = get_representation_ids_by_label(working_directory, representation_label)
+        representations_info = {}
+        for representation_id in representation_ids:
+            representation_data_path = os.path.join(working_directory, representations_directory, representation_id,
+                                                    "data")
+            representations_info[representation_id] = DirectoryInfo(representation_data_path).summary()
+        return JsonResponse(representations_info, status=200)
+    except Http404 as e:
+        return HttpResponseNotFound(e.__str__())
+    except ValueError as e:
+        return HttpResponseServerError({"message": e.__str__()})
+
+
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
+def processing_file_resource(request, processing, resource_path):
+    """
+    get: Read processing log (database, file system)
+    """
+    username = request.user.username
+    file_path = os.path.join(config_path_processing, username, processing, resource_path)
+    return read_file(file_path)
+
 
 
 @csrf_exempt
@@ -385,8 +447,8 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
             ip = InformationPackage.objects.get(process_id=process_id)
             try:
                 u = User.objects.get(username=request.user)
-                if u != ip.user:
-                    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+                #if u != ip.user:
+                #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             except User.DoesNotExist:
                 return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
             try:
@@ -579,32 +641,38 @@ def directory_json(request, area, item):
         curl -X GET 'http://127.0.0.1:8000/earkweb/api/da992e2e-1eb0-4839-8cdd-688559cbbc39/dir-json'
 
     """
-    if area not in ["work", "storage"]:
+    version = 0  # N/A
+    if area not in ["work", "storage", "processing"]:
         return JsonResponse({"message": "Area not defined."}, status=404)
     if area == "work":
         access_path = config_path_work
-        version = 0  # N/A
-    else:
+    elif area == "storage":
         dpts = DirectoryPairtreeStorage(config_path_storage)
         version = dpts.curr_version(item)
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
-    try:
-        ip = InformationPackage.objects.get(process_id=item) if area == "work" else \
-            InformationPackage.objects.get(identifier=item, version=version)
+    else:
+        access_path = os.path.join(config_path_processing, request.user.username)
+    if area in ["work", "storage"]:
         try:
-            u = User.objects.get(username=request.user)
-            if u != ip.user:
-                return JsonResponse({"message": "Unauthorized. Access to this directory is not permitted."}, status=403)
-        except User.DoesNotExist:
-            return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
-    except InformationPackage.DoesNotExist:
-        return JsonResponse({"message": "process does not exist"}, status=404)
-    if not os.path.exists(os.path.join(access_path, to_safe_filename(item))):
+            ip = InformationPackage.objects.get(process_id=item) if area == "work" else \
+                InformationPackage.objects.get(identifier=item, version=version)
+            try:
+                u = User.objects.get(username=request.user)
+                # if u != ip.user:
+                #     return JsonResponse({"message": "Unauthorized. Access to this directory is not permitted."}, status=403)
+            except User.DoesNotExist:
+                return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+        except InformationPackage.DoesNotExist:
+            return JsonResponse({"message": "process does not exist"}, status=404)
+        item_path = to_safe_filename(item)
+    else:
+        item_path = item
+    if not os.path.exists(os.path.join(access_path, item_path)):
         return JsonResponse({
-            "message": "Directory does not exist in file system: %s" %
+            "message": "Access path does not exist: %s" %
                        os.path.join(access_path, to_safe_filename(item))
         }, status=404)
-    return JsonResponse(get_directory_json(access_path, to_safe_filename(item)), status=200)
+    return JsonResponse(get_directory_json(access_path, item_path), status=200)
 
 
 @csrf_exempt
@@ -981,7 +1049,7 @@ class UploadFile(APIView):
 
         # get information package object
         try:
-            ip = InformationPackage.objects.get(process_id=process_id, user=request.user.id)
+            ip = InformationPackage.objects.get(process_id=process_id)
         except InformationPackage.DoesNotExist:
             return JsonResponse({"message": "The information package does not exist: %s" % process_id}, status=400)
 
@@ -1088,7 +1156,8 @@ class InformationPackages(generics.ListCreateAPIView):
         the user as determined by the username portion of the URL.
         """
         if self.request.user.id:
-            return InformationPackage.objects.filter(user=self.request.user.id)
+            #return InformationPackage.objects.filter(user=self.request.user.id)
+            return InformationPackage.objects.filter()
         else:
             return InformationPackage.objects.all()
 
@@ -1116,3 +1185,16 @@ class InfPackDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = InformationPackageSerializer
     authentication_classes = (TokenAuthentication, SessionAuthentication,)
     permission_classes = [HasAPIKey | IsAuthenticated]
+
+
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
+def processing_dir_json(request, processing):
+    """
+    get: List directory content as JSON (working area)
+
+    List directory content as JSON
+    """
+    return directory_json(request, "processing", processing)

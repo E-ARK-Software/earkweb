@@ -1,14 +1,9 @@
 import json
 
-from django.contrib.auth.models import User
-
-from earkweb.models import InformationPackage
 from taskbackend.tasks import ingest_pipeline
 
 import logging
 
-from config.configuration import node_namespace_id
-from util.djangoutils import get_unused_identifier
 
 logger = logging.getLogger(__name__)
 

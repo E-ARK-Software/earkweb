@@ -1,0 +1,39 @@
+{
+    "title": "Tallahassee Housing Prices as reported by Zillow",
+    "description": "Tallahassee Housing Prices as reported by Zillow, 20 records: Index, Square footage, beds, baths, zip code, year, list price. There is also an initial header line.",
+    "tags": "[]",
+    "userGeneratedTags": "[]",
+    "contactPoint": "Contact person",
+    "contactEmail": "contact@email.com",
+    "publisher": "Publishing organization",
+    "publisherEmail": "contact@email.com",
+    "language": "English",
+    "processId": "535448cf-b6ff-4bb2-886f-ee81d05d517f",
+    "date": "07.04.2020",
+    "lastChange": "2020-04-07T17:12:02Z",
+    "created": "2020-04-07T17:12:02Z",
+    "representations": {
+        "63eda280-493a-4d6c-a196-c8a9773babd9": {
+            "distribution_label": "csv",
+            "distribution_description": "CSV file",
+            "access_rights": "free",
+            "file_items": [
+                "representations/63eda280-493a-4d6c-a196-c8a9773babd9/data/zillow.csv"
+            ]
+        },
+        "1f66edb8-d363-4307-85b2-e8f38cf245a2": {
+            "distribution_label": "ods",
+            "distribution_description": "Open Document Spreadsheet file",
+            "access_rights": "free",
+            "file_items": [
+                "representations/1f66edb8-d363-4307-85b2-e8f38cf245a2/data/zillow.ods"
+            ]
+        }
+    },
+    "nodeNamespaceId": "repo",
+    "repoIdentifier": "urn:uuid:2baa45fb-145e-44f4-895f-54ead5ab5eb7",
+    "repoTitle": "earkweb",
+    "repoDescription": "Data Repository",
+    "repoCatalogueIssued": "2020-01-01T12:00:00Z",
+    "repoCatalogueModified": "2020-02-01T12:00:00Z"
+}

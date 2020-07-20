@@ -24,31 +24,3 @@
 form-group .pp-tags-list {
   width: 100%;
 }
-
-.pp-tags-list-value {
-  display: inline-block;
-  padding: 0;
-  margin: 2px;
-}
-
-.pp-tags-list-value .selection-label {
-    background: #f0efe6;
-    border: 1px solid #e5e5dc;
-    border-radius: 10px;
-    color: #000000;
-    font-size: 16px;
-    line-height: 12px;
-    padding: 8px 20px 8px;
-}
-
-.pp-tags-list-value .selection-label:after{
-  content:"\00d7";
-  padding-left:5px;
-  color:#666666;
-  font-weight:600;
-}
-
-.pp-tags-list-value .selection-label:hover {
-  background-color: #EEE;
-  cursor: pointer;
-}

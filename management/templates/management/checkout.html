@@ -23,10 +23,10 @@
 
     <form method="POST" action="{% url 'management:checkout' ip.identifier %}">
         {% csrf_token %}
-        <div class="form-check">
+        <!--div class="form-check">
         <input type="checkbox" checked="checked" name="reset_aip" id="reset-aip"/>
-        <label data-toggle="tooltip" title="Reset AIP structure" class="control-label col-sm-8" for="reset-aip">{% trans 'Reset AIP to SIP' %}</label>
-        </div>
+        <label data-toggle="tooltip" title="Reset AIP structure" class="control-label col-sm-8" for="reset-aip">{% trans 'Reset logging' %}</label>
+        </div-->
 
     <button id="startsearch" class="btn btn-primary" type="submit">{% trans 'Checkout working copy' %}</button>
 

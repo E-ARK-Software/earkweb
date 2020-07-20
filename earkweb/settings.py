@@ -83,6 +83,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGIN_URL = '/earkweb/accounts/login/'
 LOGOUT_URL = '/earkweb/accounts/logout/'
 LOGIN_REDIRECT_URL = '/earkweb/home/'
+LOGOUT_REDIRECT_URL = '/earkweb/home/'
 
 LOGIN_EXEMPT_URLS = (
     'earkweb/api/',

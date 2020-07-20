@@ -6,7 +6,7 @@ __Information packages__ are data containers which are packaged as transferable 
 via different transfer methods, such as Hypertext Transfer Protocol (HTTP), File Transfer Protocol 
 (FTP) or Torrent. 
 
-The __information package__ consists of the __data__ itself  and the __metadata__ 
+An __information package__ consists of the __data__ itself  and the __metadata__ 
 related to it. On the one hand, the __data__ can contain different representations, i.e. the same data 
 in different formats, such as a data table in Comma Separated Values (CSV) and PDF, for example. 
 And, on the other hand, the __metadata__ contains basic information about the information package, 
@@ -146,6 +146,13 @@ and directly access it (if the file size does not exceed a configurable limit).
 
 ## Administration
 
+### Dashboard
+
+The application provides a dashboard which allows verifying if required services are running and if enough storage space
+is available in the working and storage area.
+
+![](img/dashboard.png)
+
 ### Django administration
 
 The web application is based on the [Django framework](https://docs.djangoproject.com) which provides an admin interface. It 
@@ -167,4 +174,4 @@ If the flower service is available in a sub-path (e.g. http://127.0.0.1/flower),
 
 <hr>
 
-<a name="uuid">uuid</a> https://tools.ietf.org/html/rfc4122
+<a name="rfc4122">rfc4122</a> https://tools.ietf.org/html/rfc4122

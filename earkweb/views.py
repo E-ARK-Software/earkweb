@@ -94,7 +94,7 @@ def working_area2(request, section, process_id):
     template = loader.get_template('earkweb/workingarea2.html')
     request.session['process_id'] = process_id
     r = request.META['PATH_INFO']
-    title = trans("Archival data management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
+    title = trans("Data set management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (django_backend_service_host, django_backend_service_port, process_id)
     user_api_token = get_user_api_token(request.user)
@@ -113,7 +113,7 @@ def storage_area(request, section, identifier):
     template = loader.get_template('earkweb/workingarea2.html')
     request.session['identifier'] = identifier
     r = request.META['HTTP_REFERER']
-    title = "Archival data management" if "management" in r else "Submission" if "submission" in r else "Access"
+    title = "Data set management" if "management" in r else "Submission" if "submission" in r else "Access"
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
     logger.info(store_path)
@@ -131,7 +131,7 @@ def storage_area(request, section, identifier):
 
 @login_required
 @csrf_exempt
-def read_file(request, ip_sub_file_path):
+def read_file(request, ip_sub_file_path, area=None):
     """
     :param request: Request
     :param ip_sub_file_path: path to be read from working directory
@@ -140,7 +140,8 @@ def read_file(request, ip_sub_file_path):
     parts = ip_sub_file_path.split("/")
     process_id = parts[0]
     path = ip_sub_file_path.lstrip(parts[0]).lstrip("/")
-    url = "http://%s:%s/earkweb/api/informationpackages/%s/file-resource/%s/" % (django_backend_service_host, django_backend_service_port, process_id, path)
+    area = area if area else "informationpackages"
+    url = "http://%s:%s/earkweb/api/%s/%s/file-resource/%s/" % (django_backend_service_host, django_backend_service_port, area, process_id, path)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     content_type = response.headers['content-type']

@@ -3,8 +3,11 @@ import os
 import tarfile
 from datetime import datetime
 from json import JSONDecodeError
+from typing import List
 
 from celery.result import AsyncResult
+
+from api.util import get_representation_ids_by_label
 from eatb.metadata.XmlHelper import q
 from eatb.packaging.packaged_container import TarContainer
 from eatb.storage.checksum import check_transfer
@@ -12,7 +15,7 @@ from eatb.storage.directorypairtreestorage import make_storage_directory_path
 from eatb.storage.pairtreestorage import PairtreeStorage
 from eatb.utils.datetime import date_format, DT_ISO_FORMAT
 from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs, \
-    read_file_content
+    read_file_content, rec_find_files
 from eatb.xml.xmlvalidation import XmlValidation
 from lxml import etree
 
@@ -20,11 +23,13 @@ from earkweb.models import InternalIdentifier, InformationPackage
 from taskbackend.ip_state import IpState
 from taskbackend.tasklogger import TaskLogger
 from config.configuration import config_path_work, flower_service_url, \
-    verify_certificate
+    verify_certificate, representations_directory
 from subprocess import Popen, PIPE
 from config.configuration import django_backend_service_host, django_backend_service_port
 import logging
 import requests
+
+from util.custom_exceptions import NotFoundError
 from util.djangoutils import get_user_api_token
 from util.flowerapiclient import get_task_info
 
@@ -476,3 +481,53 @@ def create_or_update_state_info_file(working_dir, info=None):
     result_info["last_change"] = current_date
     with open(state_info_file, 'w') as status_file:
         status_file.write(json.dumps(result_info, indent=4))
+
+
+def get_process_representation_ids_by_label(process_id, representation_label) -> List[str]:
+    working_directory = os.path.join(config_path_work, process_id)
+    return get_wd_representation_ids_by_label(working_directory, representation_label)
+
+
+def get_wd_representation_ids_by_label(working_directory, representation_label) -> List[str]:
+    if not os.path.exists(working_directory):
+        raise NotFoundError("Working directory not found")
+    metadata_file_path = os.path.join(working_directory, "metadata/metadata.json")
+    if not os.path.exists(metadata_file_path):
+        raise NotFoundError("Basic metadata not found")
+    try:
+        md_content = read_file_content(metadata_file_path)
+        md = json.loads(md_content)
+        if "representations" not in md:
+            raise NotFoundError("Insufficient metadata")
+        representation_ids = [k for k, v in md["representations"].items() if
+                              "distribution_label" in v and v["distribution_label"] == representation_label]
+        return representation_ids
+    except JSONDecodeError:
+        raise NotFoundError('Error parsing metadata')
+
+
+def get_representation_data_dir_by_label(process_id, representation_label):
+    work_dir = os.path.join(config_path_work, process_id)
+    representation_ids = get_representation_ids_by_label(work_dir, representation_label)
+    if len(representation_ids) < 1:
+        raise ValueError("This dataset does not contain data with the label '%s'!" % representation_label)
+    mldata_representation_id = representation_ids[0]
+    representation_data_dir = os.path.join(work_dir, representations_directory, mldata_representation_id, "data")
+    return representation_data_dir
+
+
+def get_representation_data_files_by_pattern(process_id, representation_label, pattern):
+    representation_data_dir = get_representation_data_dir_by_label(process_id, representation_label)
+    representation_data_files = [
+        data_file for data_file in
+        rec_find_files(representation_data_dir, include_files_rgxs=[pattern])
+    ]
+    return representation_data_files
+
+
+def get_ml_data_file(process_id, subset_type):
+    train_test_files = get_representation_data_files_by_pattern(process_id, "mldata", r'%s_.*\.csv$' % subset_type)
+    if len(train_test_files) < 1:
+        raise ValueError("This dataset does not contain %s data!" % subset_type)
+    # select first data file
+    return train_test_files[0]

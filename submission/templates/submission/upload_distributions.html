@@ -17,7 +17,7 @@
 var process_id = '{{ ip.process_id }}';
 var rep = '{{ rep }}';
 var add_rep_url = '{% url 'submission:add_representation' ip.id %}';
-var del_rep_url = '{% url 'submission:del_representation' ip.process_id '0000000000000000000000000000000000000000' %}';
+var del_rep_url = '{% url 'submission:del_representation' ip.process_id '000000000000000000000000000000000000' %}';
 var sip_detail_url = '/earkweb/submission/upload_step4/{{ pk }}/';
 </script>
 <script language="JavaScript">
@@ -127,9 +127,11 @@ function loadDataFiles(repr) {
                 $("#kv-explorer").fileinput({
                     minFileCount: 1,
                     maxFileCount: 50,
-                    maxFileSize: 10000,
+                    maxFileSize: 102400,
                     'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
-                    'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'dbf', 'prj', 'shp', 'shx', 'gml', 'xsd'],
+                    'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'dbf', 'prj', 'shp', 'shx', 'gml', 'xsd',
+                    'flv', 'wmv', 'mpg', 'mpeg', 'webm', 'mov', 'avi', 'mp4', 'rar', 'tar', 'gzip', 'gz', '7z', 'xz',
+                    'json'],
                     'theme': 'explorer-fa',
                     'uploadUrl': '/earkweb/submission/upload',
                     overwriteInitial: false,
@@ -140,7 +142,9 @@ function loadDataFiles(repr) {
                     preferIconicPreview: true, // this will force thumbnails to display icons for following file extensions
                     previewFileIconSettings: { // configure your icon file extensions
                     'doc': '<i class="fas fa-file-word text-primary"></i>',
+                    'odt': '<i class="fas fa-file-word text-primary"></i>',
                     'xls': '<i class="fas fa-file-excel text-primary"></i>',
+                    'ods': '<i class="fas fa-file-excel text-primary"></i>',
                     'ppt': '<i class="fas fa-file-powerpoint text-primary"></i>',
                     'pdf': '<i class="fas fa-file-pdf text-primary"></i>',
                     'zip': '<i class="fas fa-file-archive text-primary"></i>',
@@ -150,6 +154,7 @@ function loadDataFiles(repr) {
                     'mp3': '<i class="fas fa-file-audio text-primary"></i>',
                     'csv': '<i class="fas fa-file-csv text-primary"></i>',
                     'xml': '<i class="fas fa-file-code text-primary"></i>',
+                    'json': '<i class="fas fa-file-code text-primary"></i>',
                     'gml': '<i class="fas fa-atlas text-primary"></i>',
                     'xsd': '<i class="fas fa-file-code text-primary"></i>',
                     'shp': '<i class="fas fa-atlas text-primary"></i>',
@@ -169,6 +174,12 @@ function loadDataFiles(repr) {
                     'doc': function(ext) {
                         return ext.match(/(doc|docx)$/i);
                     },
+                    'ods': function(ext) {
+                        return ext.match(/(ods)$/i);
+                    },
+                    'odt': function(ext) {
+                        return ext.match(/(odt)$/i);
+                    },
                     'xls': function(ext) {
                         return ext.match(/(xls|xlsx)$/i);
                     },
@@ -176,7 +187,7 @@ function loadDataFiles(repr) {
                         return ext.match(/(ppt|pptx)$/i);
                     },
                     'zip': function(ext) {
-                        return ext.match(/(zip|rar|tar|gzip|gz|7z)$/i);
+                        return ext.match(/(zip|rar|tar|gzip|gz|7z|xz)$/i);
                     },
                     'htm': function(ext) {
                         return ext.match(/(htm|html)$/i);
@@ -416,6 +427,10 @@ function removeRepSwitchItem(repId) {
 function addRep(rep, url) {
     var rep_value = $('#repval').val();
     var re = new RegExp("^[A-Za-z0-9_-]{30,50}$");
+    $('#delrepbtn').show();
+    $('#representation-switch').show();
+    addRepSwitchItem(rep_value);
+
     if(re.test(rep_value)) {
         $.ajax({
             url: url,
@@ -427,6 +442,7 @@ function addRep(rep, url) {
                     changeRep(newRepId, sip_detail_url);
                     console.log("Representation added: " +  newRepId);
                     addRepSwitchItem(newRepId);
+                    $("#dditem_"+newRepId).hide();
                     $("#id_access_rights").val("free");
                     var reprObj = {'description': '', 'accessRights': 'free', 'label': ''};
                     representations[newRepId] = reprObj;
@@ -513,14 +529,17 @@ function delRep(rep, url) {
 
             <button type="button" id="addrepbtn" class="btn" onclick="addRep($(this), add_rep_url)" title="Add another representation to the data set.">{% trans 'Create another representation' %} <i class="fa fa-plus"></i></button>
 
+
              <div class="dropdown">
 
                 <button class="btn dropdown-toggle" type="button" id="representation-switch" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     {% trans 'Switch to other representation' %}
                 </button>
                 <div id="repswitchitems" class="dropdown-menu" aria-labelledby="representation-switch">
-                    {% for repr_dir in repr_dirs %}
-                        <a class="dropdown-item" id="dditem_{{ repr_dir }}" href="#" onclick="changeRep($(this)[0].text, sip_detail_url)">{{ repr_dir }}</a>
+
+
+                    {% for reprid, repprops in representations.items %}
+                        <a class="dropdown-item" id="dditem_{{ reprid }}" href="#" data-key="{{ reprid }}" onclick="changeRep($(this).attr('data-key'), sip_detail_url)">{{ repprops.label }}</a>
                     {% endfor %}
                 </div>
             </div>

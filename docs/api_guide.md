@@ -135,3 +135,7 @@ The procedure is as follows:
 
 File upload does not have to be done via this API. It is possible to just create the data folders and transfer the data 
 using other means of file transfer (scp, rsync, etc.).
+
+An example bash script can be found here:
+
+    earkweb/util/scripts/import_script.sh

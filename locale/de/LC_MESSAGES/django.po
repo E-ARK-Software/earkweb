@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-25 22:57+0100\n"
+"POT-Creation-Date: 2020-07-20 15:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,50 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:52
+#: access/templates/access/about_module.html:2 templates/conduit/navbar.html:67
+#: templates/earkweb/navbar.html:51
 msgid "Search & Access"
 msgstr "Suche & Zugriff"
 
 #: access/templates/access/detail.html:40
-#: access/templates/access/search.html:50
+#: access/templates/access/search.html:52
 #: management/templates/management/detail.html:40
 #: management/templates/management/iptable.html:23
 msgid "Information package"
 msgstr "Informationspaket"
 
 #: access/templates/access/detail.html:46
-#: management/templates/management/detail.html:76
+#: management/templates/management/detail.html:86
+#: submission/templates/submission/detail.html:93
 msgid "Representations"
 msgstr "Repräsentationen"
 
 #: access/templates/access/detail.html:50 access/views.py:61
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:97
 msgid "Identifier"
 msgstr "Bezeichner"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
 #: management/templates/management/iptable.html:7
+#: submission/templates/submission/detail.html:97
 #: submission/templates/submission/iptable.html:7
-#: submission/templates/submission/start.html:32 submission/views.py:557
+#: submission/templates/submission/start.html:32
 msgid "Label"
 msgstr "Bezeichner"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:57
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:64
+#: submission/templates/submission/detail.html:97
 msgid "Description"
 msgstr "Beschreibung"
 
 #: access/templates/access/detail.html:50
-#: management/templates/management/detail.html:80
+#: management/templates/management/detail.html:90
+#: submission/templates/submission/detail.html:97
 msgid "Access rights"
 msgstr "Zugriffsrechte"
 
@@ -61,14 +69,14 @@ msgstr "Zugriffsrechte"
 msgid "Save changes"
 msgstr "Änderungen speichern"
 
-#: access/templates/access/index.html:16 access/templates/access/search.html:94
-#: templates/earkweb/navbar.html:55
+#: access/templates/access/index.html:16 access/templates/access/search.html:96
+#: templates/conduit/navbar.html:70 templates/earkweb/navbar.html:54
 msgid "Search"
 msgstr "Suche"
 
 #: access/templates/access/index.html:18
 #: access/templates/access/indexing_status.html:22
-#: templates/earkweb/navbar.html:56
+#: templates/conduit/navbar.html:71 templates/earkweb/navbar.html:55
 msgid "Indexing status"
 msgstr "Indexierungsstatus"
 
@@ -76,43 +84,43 @@ msgstr "Indexierungsstatus"
 msgid "Indexing status of archived information packages."
 msgstr "Indizierungsstatus archivierter Informationspakete"
 
-#: access/templates/access/search.html:37
+#: access/templates/access/search.html:39
 msgid "Full-text search"
 msgstr "Volltext-Suche"
 
-#: access/templates/access/search.html:44
+#: access/templates/access/search.html:46
 msgid "Search term"
 msgstr "Suchbegriff"
 
-#: access/templates/access/search.html:52
+#: access/templates/access/search.html:54
 msgid "Identifier of the information package"
 msgstr "Bezeichner des Informationspakets"
 
-#: access/templates/access/search.html:57
+#: access/templates/access/search.html:59
 msgid "Content type"
 msgstr "Inhaltstyp"
 
-#: access/templates/access/search.html:77
+#: access/templates/access/search.html:79
 msgid "Sort"
 msgstr "Sortieren"
 
-#: access/templates/access/search.html:80
+#: access/templates/access/search.html:82
 msgid "Relevance"
 msgstr "Relevanz"
 
-#: access/templates/access/search.html:81
+#: access/templates/access/search.html:83
 msgid "size (ascending)"
 msgstr "Größe (aufsteigend)"
 
-#: access/templates/access/search.html:82
+#: access/templates/access/search.html:84
 msgid "size (descending)"
 msgstr "Größe (absteigend)"
 
-#: access/templates/access/search.html:87
+#: access/templates/access/search.html:89
 msgid "Only information packages"
 msgstr "Nur Informationspakete"
 
-#: access/views.py:63 submission/templates/submission/iptable.html:31
+#: access/views.py:63 submission/templates/submission/iptable.html:37
 msgid "Last change"
 msgstr "Letzte Änderung"
 
@@ -125,22 +133,22 @@ msgid "BackendAdministration"
 msgstr "Backend-Administration"
 
 #: administration/templates/administration/backendadmin.html:22
-#: templates/earkweb/navbar.html:12
+#: templates/conduit/navbar.html:12 templates/earkweb/navbar.html:12
 msgid "Dashboard"
 msgstr ""
 
 #: administration/templates/administration/backendadmin.html:24
-#: templates/earkweb/navbar.html:14
+#: templates/conduit/navbar.html:14 templates/earkweb/navbar.html:14
 msgid "Django Administration"
 msgstr "Django Administration"
 
 #: administration/templates/administration/backendadmin.html:25
-#: templates/earkweb/navbar.html:15
+#: templates/conduit/navbar.html:15 templates/earkweb/navbar.html:15
 msgid "Flower process monitoring"
 msgstr "Flower Prozess-Monitoring"
 
 #: administration/templates/administration/backendadmin.html:28
-#: templates/earkweb/navbar.html:18
+#: templates/conduit/navbar.html:18 templates/earkweb/navbar.html:18
 msgid "ResourceSyncInterface"
 msgstr "ResourceSync-Schnittstelle"
 
@@ -152,18 +160,20 @@ msgstr ""
 msgid "The backend task execution did not deliver the expected result"
 msgstr ""
 
-#: earkweb/settings.py:301
+#: earkweb/settings.py:306
 msgid "English"
 msgstr "Englisch"
 
-#: earkweb/settings.py:302
+#: earkweb/settings.py:307
 msgid "German"
 msgstr "Deutsch"
 
+#: earkweb/templates/conduit/workingarea2.html:26
 #: earkweb/templates/earkweb/workingarea2.html:26
 msgid "WorkingDirectory"
 msgstr "Arbeitsverzeichnis"
 
+#: earkweb/templates/conduit/workingarea2.html:28
 #: earkweb/templates/earkweb/workingarea2.html:28
 msgid "ThisWorkDirShowsContentOf"
 msgstr "Dieses Verzeichnis zeigt den Inhalt des Informationspakets"
@@ -183,7 +193,7 @@ msgid "Checkout working copy"
 msgstr "Arbeitskopie erstellen"
 
 #: management/templates/management/checkout.html:18
-msgid "There is currently no working copy for the information package"
+msgid "There is currently no working copy for the data set"
 msgstr "Es gibt zur Zeit keine Arbeitskopie für das Informationspaket"
 
 #: management/templates/management/checkout.html:20
@@ -244,7 +254,40 @@ msgid "Back to overview"
 msgstr "Zur&uuml;ck zur Übersicht"
 
 #: management/templates/management/detail.html:46
+#: submission/templates/submission/detail.html:53
 msgid "Descriptive metadata"
+msgstr ""
+
+#: management/templates/management/detail.html:53
+#: submission/templates/submission/detail.html:60
+msgid "Title"
+msgstr ""
+
+#: management/templates/management/detail.html:63
+#: submission/templates/submission/detail.html:70
+msgid "Tags"
+msgstr ""
+
+#: management/templates/management/detail.html:71
+#: submission/templates/submission/detail.html:78
+msgid "Contact point"
+msgstr ""
+
+#: management/templates/management/detail.html:75 submission/forms.py:106
+#: submission/forms.py:107 submission/templates/submission/detail.html:82
+msgid "Maintainer"
+msgstr ""
+
+#: management/templates/management/detail.html:79
+#: submission/templates/submission/detail.html:86
+#, fuzzy
+#| msgid "MainInitialLanguage"
+msgid "Main language"
+msgstr "Deutsch"
+
+#: management/templates/management/detail.html:104
+#: submission/templates/submission/detail.html:111
+msgid "Back"
 msgstr ""
 
 #: management/templates/management/iptable.html:11 management/views.py:155
@@ -271,7 +314,7 @@ msgstr "Informationspaket-Erstellung"
 
 #: management/views.py:151
 msgid "Archived Information Package"
-msgstr "Archivinformationspaket"
+msgstr "Archiviertes Informationspaket"
 
 #: management/views.py:152
 msgid "PackageDirectory"
@@ -289,63 +332,102 @@ msgstr "Informationspaket-Übersicht"
 msgid "ChangeIt"
 msgstr "Ändern"
 
-#: submission/forms.py:50
+#: submission/forms.py:56 submission/forms.py:57
+msgid "Data set label"
+msgstr ""
+
+#: submission/forms.py:59 submission/forms.py:60
+#: submission/templates/submission/iptable.html:12
+#, fuzzy
+#| msgid "External identifier (optional)"
+msgid "External identifier"
+msgstr "Externer identifier"
+
+#: submission/forms.py:61
 msgid "Information package title"
 msgstr "Titel des Informationspakets"
 
-#: submission/forms.py:51
+#: submission/forms.py:61
+#, fuzzy
+#| msgid "DataManagementTitle"
+msgid "Data set title"
+msgstr "Archivdaten-Management"
+
+#: submission/forms.py:62
 msgid "Information package description"
 msgstr "Beschreibung des Informationspakets"
 
-#: submission/forms.py:56
+#: submission/forms.py:62
+#, fuzzy
+#| msgid "Description"
+msgid "Data set description"
+msgstr "Beschreibung"
+
+#: submission/forms.py:64
+msgid "PleasePressEnterToAddTag"
+msgstr ""
+
+#: submission/forms.py:74
 msgid "PleaseAddNameOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:57 submission/forms.py:62
+#: submission/forms.py:75 submission/forms.py:91 submission/forms.py:96
 msgid "ModifyInitialValue"
 msgstr "Ändern"
 
-#: submission/forms.py:68 submission/forms.py:69
-msgid "ContactOfPackage"
+#: submission/forms.py:77
+msgid ""
+"Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
+"('.') are allowed."
+msgstr ""
+
+#: submission/forms.py:90
+#, fuzzy
+#| msgid "PleaseAddNameOfPackage"
+msgid "PleaseAddTitleOfPackage"
+msgstr "Bitte den Namen des Informationspakets hinzufügen"
+
+#: submission/forms.py:102 submission/forms.py:103
+#, fuzzy
+#| msgid "ContactOfPackage"
+msgid "Contact"
 msgstr "Kontaktstelle"
 
-#: submission/forms.py:70
-msgid "ContactEmailOfPackage"
+#: submission/forms.py:104
+#, fuzzy
+#| msgid "ContactEmailOfPackage"
+msgid "Contact email"
 msgstr "Email der Kontaktstelle"
 
-#: submission/forms.py:72 submission/forms.py:73
-msgid "PublisherOfPackage"
-msgstr "Herausgeber"
+#: submission/forms.py:108
+msgid "MaintainerEmail"
+msgstr ""
 
-#: submission/forms.py:74
-msgid "PublisherEmailOfPackage"
-msgstr "Email des Herausgebers"
-
-#: submission/forms.py:76
+#: submission/forms.py:110
 msgid "MainLanguageOfPackage"
 msgstr "Hauptsprache"
 
-#: submission/forms.py:77
+#: submission/forms.py:111
 msgid "MainInitialLanguage"
 msgstr "Deutsch"
 
-#: submission/forms.py:82 submission/forms.py:83
+#: submission/forms.py:116 submission/forms.py:117
 msgid "Representation label"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/forms.py:85
+#: submission/forms.py:119
 msgid "AccessRightsField"
 msgstr "Zugriffsrecht"
 
-#: submission/forms.py:86
+#: submission/forms.py:120
 msgid "DistributionAccessRightsValueFree"
 msgstr "Frei (Kein Vertrag erforderlich)"
 
-#: submission/forms.py:86
+#: submission/forms.py:120
 msgid "DistributionAccessRightsValueLimited"
 msgstr "Zugriffsbeschränkt (Vertrag erforderlich)"
 
-#: submission/forms.py:89
+#: submission/forms.py:123
 msgid "Representation description"
 msgstr "Beschreibung der Repräsentation"
 
@@ -361,6 +443,10 @@ msgstr "Bestätigung der Löschung"
 msgid "Information package working directory deleted"
 msgstr "Arbeitsverzeichnis des Informationspakets gelöscht"
 
+#: submission/templates/submission/detail.html:47
+msgid "Data Set"
+msgstr ""
+
 #: submission/templates/submission/index.html:20
 msgid "Create new information package"
 msgstr "Neues Informationspaket erstellen"
@@ -375,7 +461,7 @@ msgstr "Übertragung mehrerer Informationspakete"
 
 #: submission/templates/submission/ip_creation_process.html:14
 msgid "Package creation task completed!"
-msgstr ""
+msgstr "Datenpaketerstellung abgeschlossen!"
 
 #: submission/templates/submission/ip_creation_process.html:32
 msgid "Information package creation"
@@ -387,21 +473,21 @@ msgstr "Informationspaket-Erstellung abschließen"
 
 #: submission/templates/submission/ip_creation_process.html:50
 msgid "Review submission information package"
-msgstr "Einreichungsinformationspaket überprüfen"
+msgstr "Informationspaket überprüfen"
 
-#: submission/templates/submission/iptable.html:11
+#: submission/templates/submission/iptable.html:17
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:15 submission/views.py:555
+#: submission/templates/submission/iptable.html:21 submission/views.py:563
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
 
-#: submission/templates/submission/iptable.html:20
+#: submission/templates/submission/iptable.html:26
 msgid "Information package identifier"
 msgstr "Informationspaket-Bezeichner"
 
-#: submission/templates/submission/iptable.html:26
+#: submission/templates/submission/iptable.html:32
 msgid "Version"
 msgstr "Version"
 
@@ -414,7 +500,7 @@ msgid "SearchInternalLabelOrIdentifier"
 msgstr "Nach internem Bezeichner oder Prozess-Kennung filtern"
 
 #: submission/templates/submission/start.html:21
-#: templates/earkweb/navbar.html:31
+#: templates/conduit/navbar.html:31 templates/earkweb/navbar.html:31
 msgid "NavNewSubmission"
 msgstr "Neues Informationspaket erstellen"
 
@@ -429,7 +515,7 @@ msgid "External identifier (optional)"
 msgstr "Externer identifier"
 
 #: submission/templates/submission/start.html:56
-#: submission/templates/submission/upload_mdform.html:80
+#: submission/templates/submission/upload_mdform.html:182
 msgid "Continue"
 msgstr "Weiter"
 
@@ -460,27 +546,27 @@ msgstr "Der Service für die Vearbeitung der Informationspakete ist verfügbar"
 msgid "Upload data"
 msgstr "Daten hochladen"
 
-#: submission/templates/submission/upload_distributions.html:492
+#: submission/templates/submission/upload_distributions.html:508
 msgid "Create representations and upload data"
 msgstr "Repräsentationen anlegen und Daten-Dateien hochladen"
 
-#: submission/templates/submission/upload_distributions.html:508
+#: submission/templates/submission/upload_distributions.html:524
 msgid "Representation ID"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/templates/submission/upload_distributions.html:514
+#: submission/templates/submission/upload_distributions.html:530
 msgid "Create another representation"
 msgstr "Weitere Repräsentation anlegen"
 
-#: submission/templates/submission/upload_distributions.html:519
+#: submission/templates/submission/upload_distributions.html:536
 msgid "Switch to other representation"
 msgstr "Zu Repräsentation wechseln"
 
-#: submission/templates/submission/upload_distributions.html:527
+#: submission/templates/submission/upload_distributions.html:546
 msgid "Delete distribution"
 msgstr "Repräsentation l&ouml;schen"
 
-#: submission/templates/submission/upload_distributions.html:577
+#: submission/templates/submission/upload_distributions.html:596
 msgid "Create information package"
 msgstr "Neues Informationspaket erstellen"
 
@@ -492,61 +578,61 @@ msgstr "Informationspaket erstellt"
 msgid "The information package was created successfully"
 msgstr "Das Informationspaket wurde erfolgreich erstellt"
 
-#: submission/templates/submission/upload_mdform.html:20
+#: submission/templates/submission/upload_mdform.html:122
 msgid "Information package metadata"
 msgstr "Informationspaket-Metadaten"
 
-#: submission/templates/submission/upload_mdform.html:82
+#: submission/templates/submission/upload_mdform.html:184
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: submission/views.py:552
+#: submission/views.py:560
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:556
+#: submission/views.py:564
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:558
+#: submission/views.py:565
+msgid "Data Set Label"
+msgstr ""
+
+#: submission/views.py:567
 #: venv/lib/python3.6/site-packages/django/forms/widgets.py:397
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:559
+#: submission/views.py:568
 #: venv/lib/python3.6/site-packages/django/forms/formsets.py:391
 msgid "Delete"
 msgstr "Löschen"
 
-#: submission/views.py:604
-msgid "AuthenticationError"
-msgstr "Authentifizierungsfehler"
-
-#: submission/views.py:604
-msgid "PleaseVerifyUserAPIToken"
-msgstr "Bitte API Token überprüfen"
-
+#: templates/conduit/base.html:88 templates/conduit/base_fileupload.html:79
 #: templates/earkweb/base.html:88 templates/earkweb/base_fileupload.html:79
 msgid "Language"
 msgstr "Sprache"
 
+#: templates/conduit/base.html:118 templates/conduit/base_fileupload.html:109
 #: templates/earkweb/base.html:118 templates/earkweb/base_fileupload.html:109
 msgid "log out"
 msgstr "ausloggen"
 
+#: templates/conduit/base.html:123 templates/conduit/base_fileupload.html:114
 #: templates/earkweb/base.html:123 templates/earkweb/base_fileupload.html:114
 msgid "Access"
 msgstr "Benutzung"
 
+#: templates/conduit/base.html:127 templates/conduit/base_fileupload.html:118
 #: templates/earkweb/base.html:127 templates/earkweb/base_fileupload.html:118
 msgid "log in"
 msgstr "einloggen"
 
-#: templates/earkweb/error.html:12
+#: templates/conduit/error.html:12 templates/earkweb/error.html:12
 msgid "Error"
 msgstr ""
 
-#: templates/earkweb/home.html:21
+#: templates/conduit/home.html:21 templates/earkweb/home.html:21
 msgid "earkwebWelcomeText"
 msgstr ""
 "Dieses System dient der Verarbeitung und Verwaltung von Datenpaketen. <p>Die "
@@ -558,25 +644,45 @@ msgstr ""
 "integration.</li><li>ResourceSync-Schnittstelle, die die Änderungsliste des "
 "Repositorys bereitstellt.</li></ul>"
 
-#: templates/earkweb/navbar.html:8
+#: templates/conduit/navbar.html:8 templates/earkweb/navbar.html:8
 msgid "Administration"
 msgstr "Administration"
 
-#: templates/earkweb/navbar.html:27
+#: templates/conduit/navbar.html:27 templates/earkweb/navbar.html:27
 msgid "Submission"
 msgstr "Informationspaket-Erstellung"
 
-#: templates/earkweb/navbar.html:32
+#: templates/conduit/navbar.html:32 templates/earkweb/navbar.html:32
 msgid "NavOpenSubmissions"
 msgstr "Informationspakete in Bearbeitung"
 
-#: templates/earkweb/navbar.html:40
+#: templates/conduit/navbar.html:40 templates/earkweb/navbar.html:40
 msgid "Package Management"
-msgstr "Archivpaket-Management"
+msgstr "Dataset-Management"
 
-#: templates/earkweb/navbar.html:44
+#: templates/conduit/navbar.html:44 templates/earkweb/navbar.html:44
 msgid "NavIngestedPackages"
 msgstr "Archivierte Informationspakete"
+
+#: templates/conduit/navbar.html:53
+msgid "Knowledge Extraction"
+msgstr ""
+
+#: templates/conduit/navbar.html:57
+msgid "Overview"
+msgstr "Informationspaket-Übersicht"
+
+#: templates/conduit/navbar.html:58
+msgid "Data processing"
+msgstr ""
+
+#: templates/conduit/navbar.html:59
+msgid "Audio Analysis"
+msgstr ""
+
+#: templates/conduit/navbar.html:60
+msgid "Text Analysis"
+msgstr ""
 
 #: templates/registration/login.html:16
 msgid "The repository is configured as a test instance. Default login data:"
@@ -1878,14 +1984,14 @@ msgctxt "stick"
 msgid "club"
 msgstr ""
 
-#~ msgid "Archiving of the information package"
-#~ msgstr "Informationspakets archivieren"
+#~ msgid "PublisherOfPackage"
+#~ msgstr "Herausgeber"
 
-#~ msgid "BackendAvailability"
-#~ msgstr "Überprüfung des Backends"
+#~ msgid "PublisherEmailOfPackage"
+#~ msgstr "Email des Herausgebers"
 
-#~ msgid "NavFlowerProcessMonitoring"
-#~ msgstr "Flower Prozess-Monitoring"
+#~ msgid "AuthenticationError"
+#~ msgstr "Authentifizierungsfehler"
 
-#~ msgid "Download"
-#~ msgstr "Download"
+#~ msgid "PleaseVerifyUserAPIToken"
+#~ msgstr "Bitte API Token überprüfen"

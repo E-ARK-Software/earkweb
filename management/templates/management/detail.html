@@ -50,23 +50,33 @@
 
         <tbody>
             <tr class="row1">
-                <td>Title</td>
-                <td><b>{{ metadata.title }}</b></td>
+                <td class="emph col-md-2">{% trans 'Title' %}</td>
+                <td class="emph">{{ metadata.title }}</td>
             </tr>
             <tr class="row2">
-                <td>Description</td>
-                <td><b>{{ metadata.description }}</b></td>
+                <td>{% trans 'Description' %}</td>
+                <td>
+                    <pre>{{ metadata.description }}</pre>
+                </td>
             </tr>
             <tr class="row2">
-                <td>Contact point</td>
-                <td><b><a href="mailto:{{ metadata.contact_email }}">{{ metadata.contact_point }}</a></b></td>
+                <td>{% trans 'Tags' %}</td>
+                <td>
+                    {% for tag in ip.tags.all %}
+                    <span class="mr-1 badge badge-info">#{{ tag }}</span>
+                    {% endfor %}
+                </td>
             </tr>
             <tr class="row2">
-                <td>Publisher</td>
-                <td><b><a href="mailto:{{ metadata.publisher_email }}">{{ metadata.publisher }}</a></b></td>
+                <td>{% trans 'Contact point' %}</td>
+                <td><b><a href="mailto:{{ metadata.contactEmail }}">{{ metadata.contactPoint }}</a></b></td>
             </tr>
             <tr class="row2">
-                <td>Main language</td>
+                <td>{% trans 'Maintainer' %}</td>
+                <td><b><a href="mailto:{{ metadata.publisherEmail }}">{{ metadata.publisher }}</a></b></td>
+            </tr>
+            <tr class="row2">
+                <td>{% trans 'Main language' %}</td>
                 <td><b>{{ metadata.language }}</b></td>
             </tr>
 
@@ -91,7 +101,7 @@
     </div>
 
     <a data-toggle="tooltip" title="Back to the overview" href="{% url 'management:overview'  %}" class="btn btn-default">
-        Back
+        {% trans 'Back' %}
     </a>
 
 
