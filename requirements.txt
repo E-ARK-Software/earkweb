@@ -32,3 +32,6 @@ simplejson
 PyPDF2==1.26.0
 
 -e git://github.com/ahupp/python-magic.git#egg=python-magic
+
+# fido (patched release 1.4.1)
+git+git://github.com/openpreserve/fido.git@a82e85d89f4ef3805d7289615a6c356cff12b37b

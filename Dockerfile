@@ -27,10 +27,10 @@ RUN wget -P /tmp https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/
     chmod +x /usr/local/bin/ghostscript
 
 # Fido
-RUN wget -P /tmp https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz && \
-    cd /tmp && tar -xzf 1.3.2-81.tar.gz && \
-    cd fido-1.3.2-81 && \
-    python3 setup.py install
+#RUN wget -P /tmp https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz && \
+#    cd /tmp && tar -xzf 1.3.2-81.tar.gz && \
+#    cd fido-1.3.2-81 && \
+#    python3 setup.py install
 
 RUN wget -P /tmp https://github.com/E-ARK-Software/eatb/archive/v0.1.5.tar.gz && \
     cd /tmp && tar -xzf v0.1.5.tar.gz && \
