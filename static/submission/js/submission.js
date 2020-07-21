@@ -8,7 +8,10 @@ function updateTable(filterword) {
         type: "POST",
         data: "filterword=" + filterword,
     }).success(function(table_html){
+        console.log("Table updated!")
         $('#ips-table').html(table_html);
+    }).error(function(err){
+        console.log(err);
     });
 }
 $( document ).ready(function() {

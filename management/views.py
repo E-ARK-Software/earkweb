@@ -205,7 +205,7 @@ def informationpackages_overview(request):
     CONCAT('<a href="/earkweb/management/working_area/management/',ip.process_id,'/" data-toggle="tooltip" title="View working directory">',ip.process_id,'</a><a href="/earkweb/management/delete/',ip.id,'/" data-toggle="tooltip" title="Remove working copy">', IF(process_id IS NULL OR process_id = '', '', '<i class="glyphicon glyphicon-trash editcol"></i>'), '</a>') as packagecol,
     ip.identifier as identifier
     from informationpackage as ip
-    where storage_dir != '' and not deleted > 0 and (ip.process_id like '%%{1}%%' or ip.package_name like '%%{1}%%' or ip.identifier like '%%{1}%%')
+    where storage_dir != '' and not deleted > 0 and (ip.process_id like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
     order by ip.last_change desc;
     """.format(filterword, areacode)
     # user_id={0} and, request.user.pk

@@ -614,7 +614,7 @@ def informationpackages_overview(request):
     <i class="glyphicon glyphicon-remove editcol"></i></a>') as delcol 
     from informationpackage as ip
     where storage_dir='' and 
-    (ip.process_id like '%%{1}%%' or ip.package_name like '%%{1}%%' or ip.identifier like '%%{1}%%')
+    (ip.process_id like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
     and deleted != 1
     order by ip.last_change desc;
     """.format(filterword, areacode)
