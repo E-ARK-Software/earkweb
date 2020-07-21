@@ -202,6 +202,7 @@ INSTALLED_APPS = (
     'resourcesync',
     'api',
     'django_tables2',
+    'taggit',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_swagger',

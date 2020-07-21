@@ -30,6 +30,7 @@ class InformationPackage(models.Model):
     package_name = models.CharField(max_length=200)
     identifier = models.CharField(max_length=200)
     external_id = models.CharField(max_length=200)
+    tags = TaggableManager()
     parent_id = models.CharField(max_length=200)
     version = models.IntegerField()
     work_dir = models.CharField(max_length=4096)
