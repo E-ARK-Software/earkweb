@@ -755,7 +755,7 @@ def store_aip(_, context, task_log):
         django_service_protocol, django_service_host, django_service_port, task_context["process_id"])
     response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
                               verify=verify_certificate)
-    print("Status information updated: %s (%d)" % (response.text, response.status_code))
+    task_log.info("Status information updated: %s (%d)" % (response.text, response.status_code))
 
     return json.dumps(task_context)
 
