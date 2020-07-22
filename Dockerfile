@@ -47,8 +47,8 @@ RUN python3 -m pip install -r /tmp/requirements.txt
 # packages
 RUN apt-get install vim curl redis-server -y
 
-RUN mkdir -p /data/storage/pairtree_version0_1
-COPY ./docker/sample/repo /data/repo
+RUN mkdir -p /var/data/storage/pairtree_version0_1
+COPY ./docker/sample/repo /var/data/repo
 
 ADD . /earkweb
 

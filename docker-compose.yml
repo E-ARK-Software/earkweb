@@ -19,7 +19,7 @@ services:
       - REDIS_PASS=**None**
     container_name: redis1
     ports:
-      - "56379:6379"
+      - "6379:6379"
   rabbitmq:
     image: "bitnami/rabbitmq"
     container_name: rabbitmq1
@@ -30,7 +30,7 @@ services:
       RABBITMQ_VHOST: "/"
     ports:
       - "55673:15672"
-      - "55672:5672"
+      - "5672:5672"
     labels:
       NAME: "rabbitmq"
   solr:
