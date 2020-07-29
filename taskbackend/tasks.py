@@ -42,7 +42,7 @@ from access.search.solrserver import SolrServer
 
 from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
     get_last_submission_path, get_children_from_storage, get_package_from_storage, get_aip_parent, \
-    create_or_update_state_info_file
+    create_or_update_state_info_file, create_file_backup
 import tarfile
 from celery import chain, group
 from earkweb.celery import app
@@ -135,6 +135,7 @@ def ingest_pipeline(_, context):
         create_manifest.s(),
         aip_packaging.s(),
         store_aip.s(),
+        restore_sip.s(),
         aip_indexing.s(),
     ).delay()
     return result
@@ -722,6 +723,7 @@ def aip_packaging(_, context, task_log):
     tar.close()
     task_log.info("Package created: %s" % storage_file)
     # self.update_state(state='PROGRESS', meta={'process_percent': 100})
+    task_context["storage_file"] = storage_file
     return json.dumps(task_context)
 
 
@@ -757,6 +759,30 @@ def store_aip(_, context, task_log):
                               verify=verify_certificate)
     task_log.info("Status information updated: %s (%d)" % (response.text, response.status_code))
 
+    return json.dumps(task_context)
+
+
+@app.task(bind=True, name="restore_sip", base=Task)
+@requires_parameters("process_id", "storage_file")
+@task_logger
+def restore_sip(_, context, task_log):
+    task_context = json.loads(context)
+    working_dir = get_working_dir(task_context["process_id"])
+    aip_mets_file = os.path.join(working_dir, "METS.xml")
+    aip_metadata_directory = os.path.join(working_dir, "metadata")
+    # remove aip metadata and mets file
+    shutil.rmtree(aip_metadata_directory)
+    os.remove(aip_mets_file)
+    submission_folder = os.path.join(working_dir, "submission")
+    if not os.path.exists(submission_folder):
+        raise ValueError("Unable to restore SIP from AIP: submission folder missing")
+    fs_childs = os.listdir(submission_folder)
+    for fs_child in fs_childs:
+        source_item = os.path.join(submission_folder, fs_child)
+        shutil.move(source_item, working_dir)
+    task_log.info("Submission information package restored")
+    shutil.rmtree(submission_folder)
+    os.remove(task_context["storage_file"])
     return json.dumps(task_context)
 
 

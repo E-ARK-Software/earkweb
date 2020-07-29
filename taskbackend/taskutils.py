@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import tarfile
 from datetime import datetime
 from json import JSONDecodeError
@@ -13,7 +14,7 @@ from eatb.packaging.packaged_container import TarContainer
 from eatb.storage.checksum import check_transfer
 from eatb.storage.directorypairtreestorage import make_storage_directory_path
 from eatb.storage.pairtreestorage import PairtreeStorage
-from eatb.utils.datetime import date_format, DT_ISO_FORMAT
+from eatb.utils.datetime import date_format, DT_ISO_FORMAT, ts_date, DT_ISO_FMT_SEC_PREC
 from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs, \
     read_file_content, rec_find_files
 from eatb.xml.xmlvalidation import XmlValidation
@@ -531,3 +532,11 @@ def get_ml_data_file(process_id, subset_type):
         raise ValueError("This dataset does not contain %s data!" % subset_type)
     # select first data file
     return train_test_files[0]
+
+
+def create_file_backup(existing_file):
+    existing_file_name = "bak_%s_%s" % (ts_date(fmt=DT_ISO_FMT_SEC_PREC),
+                                       os.path.basename(existing_file))
+    bak_file = os.path.join(os.path.dirname(existing_file), existing_file_name)
+    shutil.copy(existing_file, bak_file)
+    return os.path.exists(bak_file)

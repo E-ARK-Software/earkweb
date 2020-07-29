@@ -7,17 +7,15 @@ SERVER=localhost
 PORT=8000
 
 # settings
-INPUTFOLDER=/path/to/input/folder
-DATASET_NAME='zillow'
-PACKAGE_NAME="examples.$DATASET_NAME"
+INPUTFOLDER=test/examples/input
+DATASET_NAME='test'
+PACKAGE_NAME="testing.$DATASET_NAME"
 FILE_PATH="$INPUTFOLDER/$DATASET_NAME.csv"
 
 # example title and description
-TITLE='Tallahassee Housing Prices as reported by Zillow'
+TITLE='Test data set'
 read -r -d '' DESCRIPTION << EOM
-Tallahassee Housing Prices as reported by Zillow,
-20 records: Index, Square footage, beds, baths, zip code, year, list price.
-There is also an initial header line.
+Test data set description
 EOM
 
 # contact information
@@ -48,11 +46,16 @@ echo $RESPONSE
 REPRESENTATION_ID1=`echo $RESPONSE  | jq -r '.representationId'`
 echo_highlight $OKGREEN "Representation ID: $REPRESENTATION_ID1"
 
-echo_highlight_header $HEADER 'convert to ods'
-libreoffice --headless --convert-to ods $FILE_PATH --outdir $INPUTFOLDER
-FILE_CONVERTED="${INPUTFOLDER}/${FILENAME_WO_EXT}.ods"
-if [ ! -f "$FILE_CONVERTED" ]; then echo_highlight $FAIL "Converted file not found at: $FILE_CONVERTED"; exit 1; fi
-echo_highlight $OKGREEN "Converted file: $FILE_CONVERTED"
+#echo_highlight_header $HEADER 'convert to ods'
+#libreoffice --headless --convert-to ods $FILE_PATH --outdir $INPUTFOLDER
+#FILE_CONVERTED="${INPUTFOLDER}/${FILENAME_WO_EXT}.ods"
+#if [ ! -f "$FILE_CONVERTED" ]; then echo_highlight $FAIL "Converted file not found at: $FILE_CONVERTED"; exit 1; fi
+#echo_highlight $OKGREEN "Converted file: $FILE_CONVERTED"
+
+echo_highlight_header $HEADER 'Using existing ODS file'
+ODS_FILE="${INPUTFOLDER}/${FILENAME_WO_EXT}.ods"
+if [ ! -f "$ODS_FILE" ]; then echo_highlight $FAIL "Converted file not found at: $ODS_FILE"; exit 1; fi
+echo_highlight $OKGREEN "ODS file: $ODS_FILE"
 
 echo_highlight_header $HEADER 'upload 2nd representation'
 RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -F "file=@$INPUTFOLDER/${FILENAME_WO_EXT}.ods" http://$SERVER:$PORT/earkweb/api/informationpackages/$PROCESS_ID/data/upload/`
