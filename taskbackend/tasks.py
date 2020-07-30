@@ -770,9 +770,9 @@ def restore_sip(_, context, task_log):
     working_dir = get_working_dir(task_context["process_id"])
     aip_mets_file = os.path.join(working_dir, "METS.xml")
     aip_metadata_directory = os.path.join(working_dir, "metadata")
-    # remove aip metadata and mets file
-    shutil.rmtree(aip_metadata_directory)
-    os.remove(aip_mets_file)
+    # move aip metadata and mets file
+    create_file_backup(aip_metadata_directory, move=True)
+    create_file_backup(aip_mets_file, move=True)
     submission_folder = os.path.join(working_dir, "submission")
     if not os.path.exists(submission_folder):
         raise ValueError("Unable to restore SIP from AIP: submission folder missing")

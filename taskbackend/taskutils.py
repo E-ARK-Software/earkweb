@@ -534,9 +534,12 @@ def get_ml_data_file(process_id, subset_type):
     return train_test_files[0]
 
 
-def create_file_backup(existing_file):
+def create_file_backup(existing_file, move=False):
     existing_file_name = "bak_%s_%s" % (ts_date(fmt=DT_ISO_FMT_SEC_PREC),
                                        os.path.basename(existing_file))
     bak_file = os.path.join(os.path.dirname(existing_file), existing_file_name)
-    shutil.copy(existing_file, bak_file)
+    if move:
+        shutil.move(existing_file, bak_file)
+    else:
+        shutil.copy(existing_file, bak_file)
     return os.path.exists(bak_file)
