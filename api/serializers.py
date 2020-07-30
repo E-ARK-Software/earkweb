@@ -14,6 +14,7 @@ class InformationPackageSerializer(serializers.Serializer):
     process_id = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="UUID of the information package")
     work_dir = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Path to the working copy of the information package")
     package_name = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
+    external_id = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
     identifier = serializers.CharField(required=False, allow_blank=True, max_length=50, help_text="Local identifier of the data set")
     version = serializers.IntegerField(required=False, help_text="Version of the data set")
     storage_dir = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Storage location of the data set")
@@ -25,6 +26,8 @@ class InformationPackageSerializer(serializers.Serializer):
         """
         if 'version' not in validated_data:
             validated_data['version'] = 0
+        if 'external_id' not in validated_data:
+            validated_data['external_id'] = "example:undefined"
         if 'process_id' not in validated_data:
             process_id = str(uuid.uuid4())
             validated_data['process_id'] = process_id

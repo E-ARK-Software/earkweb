@@ -9,7 +9,7 @@ PORT=8000
 # settings
 INPUTFOLDER=test/examples/input
 DATASET_NAME='test'
-PACKAGE_NAME="testing.$DATASET_NAME"
+PACKAGE_NAME="testing.$DATASET_NAME.202007301809"
 FILE_PATH="$INPUTFOLDER/$DATASET_NAME.csv"
 
 # example title and description
