@@ -55,6 +55,12 @@ ADD . /earkweb
 # make sure the docker settings are used in the container
 COPY ./settings/settings.cfg.docker /earkweb/settings/settings.cfg
 
+# i18n
+RUN apt-get install gettext -y
+RUN cd /earkweb && django-admin makemessages -l en
+RUN cd /earkweb && django-admin makemessages -l de
+RUN cd /earkweb && django-admin compilemessages
+
 # entry point
 RUN chmod +x /earkweb/run_all.sh
 ENTRYPOINT ["/earkweb/run_all.sh"]
