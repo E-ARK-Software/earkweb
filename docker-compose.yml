@@ -1,4 +1,4 @@
-version: "2.1"
+version: "3.3"
 services:
   db:
     image: mysqldb
@@ -20,6 +20,7 @@ services:
     container_name: redis1
     ports:
       - "6379:6379"
+
   rabbitmq:
     image: "bitnami/rabbitmq"
     container_name: rabbitmq1
@@ -28,6 +29,7 @@ services:
       RABBITMQ_USERNAME: "admin"
       RABBITMQ_PASSWORD: "repormq"
       RABBITMQ_VHOST: "/"
+      RABBITMQ_DISK_FREE_LIMIT: "{mem_relative, 0.1}"
     ports:
       - "55673:15672"
       - "5672:5672"
@@ -44,15 +46,36 @@ services:
     image: earkweb:latest
     build: .
     container_name: earkweb1
-    command: /earkweb/run_all.sh
+    command: /earkweb/run_earkweb.sh
     ports:
       - "8000:8000"
-      - "5555:5555"
     links:
       - db
       - redis
       - rabbitmq
       - solr
-networks:
-  backend:
-    external: true
+    depends_on:
+      - redis
+      - db
+  celery:
+    image: earkweb:latest
+    build: .
+    container_name: celery1
+    command: /earkweb/run_celery.sh
+    links:
+      - redis
+      - rabbitmq
+    depends_on:
+      - redis
+      - rabbitmq
+  flower:
+    image: earkweb:latest
+    build: .
+    container_name: flower1
+    command: /earkweb/run_flower.sh
+    ports:
+      - "5555:5555"
+    links:
+      - earkweb
+      - celery
+      - rabbitmq

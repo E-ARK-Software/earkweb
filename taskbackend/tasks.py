@@ -193,7 +193,10 @@ def validate_working_directory(_, context, task_log):
 
     # package METS file validation
     root_mets_path = os.path.join(ip_path, "METS.xml")
-    root_mets_validator = MetsValidation(ip_path)
+    mets_schema_file = os.path.join(root_dir, "static/schemas/IP.xsd")
+    premis_schema_file = os.path.join(root_dir, "static/schemas/premis-v2-2.xsd")
+    root_mets_validator = MetsValidation(ip_path, mets_schema_file=mets_schema_file,
+                                         premis_schema_file=premis_schema_file)
     if root_mets_validator.validate_mets(root_mets_path):
         task_log.info("Information package METS file validated successfully: %s" % root_mets_path)
     else:

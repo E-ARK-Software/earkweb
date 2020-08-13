@@ -51,7 +51,7 @@ solr_core = storagecore1
 flower_protocol = http
 flower_server = localhost
 flower_port = 5555
-flower_path = /
+flower_path = /flower/
 
 [limits]
 config_max_filesize_viewer = 4194304
