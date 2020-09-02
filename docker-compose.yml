@@ -20,7 +20,6 @@ services:
     container_name: redis1
     ports:
       - "6379:6379"
-
   rabbitmq:
     image: "bitnami/rabbitmq"
     container_name: rabbitmq1
@@ -33,6 +32,14 @@ services:
     ports:
       - "55673:15672"
       - "5672:5672"
+    expose:
+      - 5672
+      - 15672
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 5s
+      timeout: 15s
+      retries: 1
     labels:
       NAME: "rabbitmq"
   solr:
@@ -47,9 +54,13 @@ services:
     build: .
     container_name: earkweb1
     command: /earkweb/run_earkweb.sh
+    user: ${USER}:${USER}
     ports:
       - "8000:8000"
+    volumes:
+      - "${PWD}/docker/sample/repo:/var/data/repo"
     links:
+      - flower
       - db
       - redis
       - rabbitmq
@@ -62,6 +73,10 @@ services:
     build: .
     container_name: celery1
     command: /earkweb/run_celery.sh
+    user: ${USER}:${USER}
+    volumes:
+      - "${PWD}/docker/sample/repo:/var/data/repo"
+    restart: on-failure
     links:
       - redis
       - rabbitmq
@@ -76,6 +91,8 @@ services:
     ports:
       - "5555:5555"
     links:
-      - earkweb
-      - celery
+      - redis
       - rabbitmq
+    depends_on:
+      - redis
+      - celery

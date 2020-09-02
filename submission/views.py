@@ -417,113 +417,116 @@ def updatedistrmd(request):
 
 @login_required
 def ip_creation_process(request, pk):
-    # get ip
-    ip = InformationPackage.objects.get(pk=pk)
+    try:
+        # get ip
+        ip = InformationPackage.objects.get(pk=pk)
 
-    finalization_time = date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT) #  current_timestamp(fmt=DT_ISO_FORMAT)
-    # merge posted data from step2 into one dictionary (ip.created,ip.last_change)
+        finalization_time = date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT) #  current_timestamp(fmt=DT_ISO_FORMAT)
+        # merge posted data from step2 into one dictionary (ip.created,ip.last_change)
 
-    if 'step1' not in request.session or not hasattr(request.session['step1'], 'items'):
-        return redirect('submission:upload_step1', pk=pk)
+        if 'step1' not in request.session or not hasattr(request.session['step1'], 'items'):
+            return redirect('submission:upload_step1', pk=pk)
 
-    context = dict(
-        chain(
-            request.session['step1'].items(),
-            request.session['step2'].items(),
-            {"process_id": ip.process_id}.items(),
-            {'currdate': ts_date(fmt=DT_ISO_FORMAT), 'date': ts_date(fmt=DATE_DMY), "last_change": finalization_time,
-             "created": finalization_time,
-             'landing_page': string.Template(package_access_url_pattern).substitute(
-                 {'packageid': "%s" % ip.process_id})
-             }.items()
+        context = dict(
+            chain(
+                request.session['step1'].items(),
+                request.session['step2'].items(),
+                {"process_id": ip.process_id}.items(),
+                {'currdate': ts_date(fmt=DT_ISO_FORMAT), 'date': ts_date(fmt=DATE_DMY), "last_change": finalization_time,
+                 "created": finalization_time,
+                 'landing_page': string.Template(package_access_url_pattern).substitute(
+                     {'packageid': "%s" % ip.process_id})
+                 }.items()
+            )
         )
-    )
 
-    reprecords = Representation.objects.filter(ip=ip)
-    repinfo = {reprecord.identifier: {
-        'distribution_label': reprecord.label,
-        'distribution_description': reprecord.description,
-        'access_rights': reprecord.accessRights,
-        'file_items': [f.replace(os.path.join(config_path_work, ip.process_id), "").strip("/")
-                       for f in find_files(os.path.join(config_path_work, ip.process_id, representations_directory,
-                                                        reprecord.identifier, "data"), "*")]
-    } for reprecord in reprecords}
-
-
-    if reprecords:
-        context = dict(chain(context.items(), {'representations': repinfo}.items()))
-
-    basic_metadata = context
-
-    context["node_namespace_id"] = node_namespace_id
-    context["repo_identifier"] = repo_identifier
-    context["repo_title"] = repo_title
-    context["repo_description"] = repo_description
-    context["repo_catalogue_issued"] = repo_catalogue_issued
-    context["repo_catalogue_modified"] = repo_catalogue_modified
-
-    lang = pycountry.languages.get(name=context['language'])
-    context["lang_alpha_3"] = "eng" if not lang else lang.alpha_3
+        reprecords = Representation.objects.filter(ip=ip)
+        repinfo = {reprecord.identifier: {
+            'distribution_label': reprecord.label,
+            'distribution_description': reprecord.description,
+            'access_rights': reprecord.accessRights,
+            'file_items': [f.replace(os.path.join(config_path_work, ip.process_id), "").strip("/")
+                           for f in find_files(os.path.join(config_path_work, ip.process_id, representations_directory,
+                                                            reprecord.identifier, "data"), "*")]
+        } for reprecord in reprecords}
 
 
-    basic_metadata_s = json.dumps(basic_metadata)
+        if reprecords:
+            context = dict(chain(context.items(), {'representations': repinfo}.items()))
 
-    ip.basic_metadata = basic_metadata_s
-    ip.save()
+        basic_metadata = context
 
-    if "csrfmiddlewaretoken" in basic_metadata:
-        del basic_metadata["csrfmiddlewaretoken"]
-    if "hidden_user_tags" in basic_metadata:
-        del basic_metadata["hidden_user_tags"]
-    if "user_generated_tags" in basic_metadata:
-        del basic_metadata["user_generated_tags"]
-    if "currdate" in basic_metadata:
-        del basic_metadata["currdate"]
-    if "lang_alpha_3" in basic_metadata:
-        del basic_metadata["lang_alpha_3"]
-    if "landing_page" in basic_metadata:
-        del basic_metadata["landing_page"]
+        context["node_namespace_id"] = node_namespace_id
+        context["repo_identifier"] = repo_identifier
+        context["repo_title"] = repo_title
+        context["repo_description"] = repo_description
+        context["repo_catalogue_issued"] = repo_catalogue_issued
+        context["repo_catalogue_modified"] = repo_catalogue_modified
 
-    basic_metadata["tags"] = [val.name for val in ip.tags.all()]
-    basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
-    files = {'file': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4))}
-    request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
-    user_api_token = get_user_api_token(request.user)
-    response = requests.post(request_url, files=files, headers={'Authorization': 'Token %s' % user_api_token},
-                             verify=verify_certificate)
-    if response.status_code != 201:
-        return render(request, 'earkweb/error.html', {
-            'header': 'Error uploading metadata (%d)' % response.status_code, 'message': response.text
-        })
+        lang = pycountry.languages.get(name=context['language'])
+        context["lang_alpha_3"] = "eng" if not lang else lang.alpha_3
 
-    from taskbackend.tasks import sip_package
-    task_input = {
-        "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "repo"
-    }
-    job = sip_package.delay(json.dumps(task_input))
 
-    # unset session data
-    request.session['step1'] = None
-    request.session['step2'] = None
-    request.session['representations'] = None
+        basic_metadata_s = json.dumps(basic_metadata)
 
-    url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (
-        django_backend_service_host, django_backend_service_port, ip.process_id)
-    user_api_token = get_user_api_token(request.user)
-    response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+        ip.basic_metadata = basic_metadata_s
+        ip.save()
 
-    # render html page (finalization)
-    context = {
-        'process_id': ip.process_id,
-        'config_path_work': config_path_work,
-        'ip': ip,
-        'pk': pk,
-        "dirasjson": response.content.decode('utf-8'),
-        "jobid": job.id,
-        'flower_status': flower_is_running()
-    }
-    template = loader.get_template('submission/ip_creation_process.html')
-    return HttpResponse(template.render(context=context, request=request))
+        if "csrfmiddlewaretoken" in basic_metadata:
+            del basic_metadata["csrfmiddlewaretoken"]
+        if "hidden_user_tags" in basic_metadata:
+            del basic_metadata["hidden_user_tags"]
+        if "user_generated_tags" in basic_metadata:
+            del basic_metadata["user_generated_tags"]
+        if "currdate" in basic_metadata:
+            del basic_metadata["currdate"]
+        if "lang_alpha_3" in basic_metadata:
+            del basic_metadata["lang_alpha_3"]
+        if "landing_page" in basic_metadata:
+            del basic_metadata["landing_page"]
+
+        basic_metadata["tags"] = [val.name for val in ip.tags.all()]
+        basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
+        files = {'file': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4))}
+        request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
+        user_api_token = get_user_api_token(request.user)
+        response = requests.post(request_url, files=files, headers={'Authorization': 'Token %s' % user_api_token},
+                                 verify=verify_certificate)
+        if response.status_code != 201:
+            return render(request, 'earkweb/error.html', {
+                'header': 'Error uploading metadata (%d)' % response.status_code, 'message': response.text
+            })
+
+        from taskbackend.tasks import sip_package
+        task_input = {
+            "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "repo"
+        }
+        job = sip_package.delay(json.dumps(task_input))
+
+        # unset session data
+        request.session['step1'] = None
+        request.session['step2'] = None
+        request.session['representations'] = None
+
+        url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (
+            django_backend_service_host, django_backend_service_port, ip.process_id)
+        user_api_token = get_user_api_token(request.user)
+        response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+
+        # render html page (finalization)
+        context = {
+            'process_id': ip.process_id,
+            'config_path_work': config_path_work,
+            'ip': ip,
+            'pk': pk,
+            "dirasjson": response.content.decode('utf-8'),
+            "jobid": job.id,
+            'flower_status': flower_is_running()
+        }
+        template = loader.get_template('submission/ip_creation_process.html')
+        return HttpResponse(template.render(context=context, request=request))
+    except FileNotFoundError as err:
+        logger.error("Missing file", err)
 
 
 @login_required

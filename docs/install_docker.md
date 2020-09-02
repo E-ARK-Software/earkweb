@@ -12,7 +12,7 @@ Note that this file is copied to the docker container as the settings file:
 
 Bild the docker containers from source: 
 
-    docker-compose build
+    docker-compose build --build-arg USER=$USER db redis rabbitmq solr earkweb celery flower
 
 ## Run
 

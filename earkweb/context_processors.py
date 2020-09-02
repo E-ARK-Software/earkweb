@@ -1,4 +1,4 @@
-from config.configuration import flower_server, flower_port, flower_path, sw_version, sw_version_date, is_test_instance, \
+from config.configuration import flower_server_external, flower_port, flower_path, sw_version, sw_version_date, is_test_instance, \
     logo, repo_title
 import json
 import string
@@ -20,4 +20,4 @@ def environment_variables(request):
             'sw_version': sw_version,
             'sw_version_date': sw_version_date,
             'is_test_instance': is_test_instance,
-            'flower_host': flower_server, 'flower_port': flower_port, 'flower_path': flower_path}
+            'flower_host': flower_server_external, 'flower_port': flower_port, 'flower_path': flower_path}

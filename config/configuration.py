@@ -102,10 +102,12 @@ solr_core_overview_url = '%s/#/%s/core-overview' % (solr_service_url, solr_core)
 
 # flower
 flower_protocol = config.get('server', 'flower_protocol')
-flower_server = config.get('server', 'flower_server')
+flower_server_external = config.get('server', 'flower_server_external')
+flower_server_internal = config.get('server', 'flower_server_internal')
 flower_port = int(config.get('server', 'flower_port'))
 flower_path = config.get('server', 'flower_path')
-flower_service_url = '%s://%s:%s%s' % (flower_protocol, flower_server, flower_port, flower_path)
+flower_service_url = '%s://%s:%s%s' % (flower_protocol, flower_server_external, flower_port, flower_path)
+flower_service_url_internal = '%s://%s:%s%s' % (flower_protocol, flower_server_internal, flower_port, flower_path)
 
 # repo data directories
 config_path_reception = config.get('paths', 'config_path_reception')
@@ -169,7 +171,7 @@ solr_config_changes = [{'type': 'update-requesthandler', 'path': '/update/extrac
                         'fields': {'fmap.content': 'content', 'lowernames': 'true', 'fmap.meta': 'ignored'}}]
 
 
-flower_server = config.get('server', 'flower_server')
+flower_server_external = config.get('server', 'flower_server_external')
 flower_port = int(config.get('server', 'flower_port'))
 flower_path = config.get('server', 'flower_path')
 

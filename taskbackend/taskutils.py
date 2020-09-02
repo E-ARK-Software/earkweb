@@ -24,7 +24,7 @@ from earkweb.models import InternalIdentifier, InformationPackage
 from taskbackend.ip_state import IpState
 from taskbackend.tasklogger import TaskLogger
 from config.configuration import config_path_work, flower_service_url, \
-    verify_certificate, representations_directory
+    verify_certificate, representations_directory, flower_service_url_internal
 from subprocess import Popen, PIPE
 from config.configuration import django_backend_service_host, django_backend_service_port
 import logging
@@ -184,7 +184,7 @@ def get_celery_worker_status():
 
 def flower_is_running():
     try:
-        response = requests.get(flower_service_url, verify=verify_certificate)
+        response = requests.get(flower_service_url_internal, verify=verify_certificate)
         if response.status_code == 200:
             return True
         else:

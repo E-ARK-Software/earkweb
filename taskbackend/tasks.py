@@ -76,6 +76,9 @@ def sip_package(self, context, task_log):
     process_id = task_context["process_id"]
     working_dir = get_working_dir(task_context["process_id"])
 
+    if not os.path.exists(working_dir):
+        raise FileNotFoundError("Working directory not available: %s" % working_dir)
+
     create_sip(working_dir, package_name, process_id, True, False, task_log)
 
     # append generation number to tar file; if tar file exists, the generation number is incremented

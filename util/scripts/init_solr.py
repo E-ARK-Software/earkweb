@@ -17,7 +17,8 @@ from util.configutils import set_default_config_if_not_exists
 
 # check for missing configuration options
 default_config = [
-    ("server", "flower_server", "127.0.0.1"),
+    ("server", "flower_server_external", "127.0.0.1"),
+    ("server", "flower_server_internal", "127.0.0.1"),
     ("server", "flower_port", "5555"),
     ("server", "flower_path", "/"),
 ]

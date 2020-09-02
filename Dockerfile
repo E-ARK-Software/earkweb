@@ -1,13 +1,12 @@
 FROM ubuntu:18.04
 LABEL maintainer="AIT, http://www.ait.ac.at"
 
+ARG USER
+
 RUN apt-get update --fix-missing
 
 # Set locale
 RUN apt-get install -y locales && locale-gen de_AT.UTF-8
-ENV LANG='de_AT.UTF-8' \
-    LANGUAGE='de_AT.UTF-8' \
-    LC_ALL='de_AT.UTF-8'
 
 # copy python requirements
 COPY ./requirements.txt /tmp
@@ -47,8 +46,8 @@ RUN python3 -m pip install -r /tmp/requirements.txt
 # packages
 RUN apt-get install vim curl redis-server -y
 
-RUN mkdir -p /var/data/storage/pairtree_version0_1
-COPY ./docker/sample/repo /var/data/repo
+#RUN mkdir -p /var/data/storage/pairtree_version0_1
+#COPY ./docker/sample/repo /var/data/repo
 
 ADD . /earkweb
 
@@ -61,8 +60,16 @@ RUN cd /earkweb && django-admin makemessages -l en
 RUN cd /earkweb && django-admin makemessages -l de
 RUN cd /earkweb && django-admin compilemessages
 
-# entry point
-RUN chmod +x /earkweb/run_all.sh
-ENTRYPOINT ["/earkweb/run_all.sh"]
+# add non-priviledged user
+RUN adduser --disabled-password --gecos '' ${USER}
 
-EXPOSE 8000 5555
+
+# entry point
+RUN chmod +x /earkweb/run_earkweb.sh
+RUN chmod +x /earkweb/run_celery.sh
+RUN chmod +x /earkweb/run_flower.sh
+#ENTRYPOINT ["/earkweb/run_all.sh"]
+
+USER ${USER}:${USER}
+
+# EXPOSE 8000 5555
