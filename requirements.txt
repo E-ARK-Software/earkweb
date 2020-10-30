@@ -26,6 +26,7 @@ rdflib==5.0.0
 drf-yasg==1.17.1
 djangorestframework-api-key==2.0.0
 simplejson
+uwsgi
 #-e git://github.com/E-ARK-Software/eatb.git#egg=eatb
 # -e ../eatb
 PyPDF2==1.26.0
