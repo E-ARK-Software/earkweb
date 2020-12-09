@@ -103,7 +103,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = django_secret_key
 # SECURITY WARNING: turn off in production!
-DEBUG = True
+DEBUG = False
 
 TEMPLATES = [
     {
@@ -121,7 +121,8 @@ TEMPLATES = [
     },
 ]
 
-ALLOWED_HOSTS = [gethostname(), gethostbyname(gethostname()), 'localhost', '127.0.0.1', 'pluto', '10.128.1.3']
+#ALLOWED_HOSTS = [gethostname(), gethostbyname(gethostname()), 'localhost', '127.0.0.1', 'pluto', '10.128.1.3']
+ALLOWED_HOSTS = ["*"]
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
@@ -312,4 +313,4 @@ LANGUAGES = [
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/static/earkweb/'
+STATIC_ROOT = '/var/www/html/earkweb/static/'
