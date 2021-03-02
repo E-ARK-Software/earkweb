@@ -1070,52 +1070,56 @@ class UploadFile(APIView):
             target_directory = os.path.join(config_path_work, process_id, representations_directory,
                                             representation, datatype)
         else:
-            main_metadata_dir = os.path.join(config_path_work, process_id, "metadata")
+            main_metadata_dir = os.path.join(config_path_work, process_id, "metadata/descriptive")
+
             if not os.path.exists(main_metadata_dir):
                 os.makedirs(main_metadata_dir, exist_ok=True)
             target_directory = main_metadata_dir
 
-        uploaded_file = request.FILES.get('file', None)
-        if not uploaded_file:
-            error = {"message": "No upload file was specified."}
-            return JsonResponse(error, status=status.HTTP_400_BAD_REQUEST)
+        for key, value in request.FILES.items():
 
-        def handle_uploaded_file(f):
-            with open(os.path.join(target_directory, str(uploaded_file)), 'wb+') as destination:
-                for chunk in f.chunks():
-                    destination.write(chunk)
+            uploaded_file = request.FILES.get(key, None)
+            if not uploaded_file:
+                error = {"message": "No upload file was specified."}
+                return JsonResponse(error, status=status.HTTP_400_BAD_REQUEST)
 
-        handle_uploaded_file(uploaded_file)
+            def handle_uploaded_file(f):
+                with open(os.path.join(target_directory, str(uploaded_file)), 'wb+') as destination:
+                    for chunk in f.chunks():
+                        destination.write(chunk)
 
-        # calculate sha
-        sha256 = ChecksumFile(os.path.join(target_directory, str(uploaded_file))).get(ChecksumAlgorithm.SHA256)
+            handle_uploaded_file(uploaded_file)
+
+            # calculate sha
+            sha256 = ChecksumFile(os.path.join(target_directory, str(uploaded_file))).get(ChecksumAlgorithm.SHA256)
+
+            # Add metadata content to database record
+            if datatype == "metadata" and str(uploaded_file).endswith("json"):
+                try:
+                    metadata_file_content = read_file_content(os.path.join(target_directory, str(uploaded_file)))
+                    parsed_md = json.loads(metadata_file_content)
+                    ip.basic_metadata = metadata_file_content
+                    if "representations" in parsed_md:
+                        for r, v in parsed_md["representations"].items():
+                            try:
+                                reprec = Representation.objects.get(ip=ip, identifier=r)
+                            except Representation.DoesNotExist:
+                                reprec = Representation.objects.create(ip=ip, identifier=r)
+                            if "distribution_label" in v:
+                                reprec.label = v["distribution_label"]
+                            if "distribution_description" in v:
+                                reprec.description = v["distribution_description"]
+                            if "access_rights" in v:
+                                reprec.accessRights = v["access_rights"]
+                            reprec.license = 'undefined'
+                            reprec.save()
+                except JSONDecodeError:
+                    return JsonResponse({"message": "error decoding JSON metadata file"},
+                                        status=status.HTTP_400_BAD_REQUEST)
 
         # updating last change date
         ip = InformationPackage.objects.get(process_id=process_id)
 
-        # Add metadata content to database record
-        if datatype == "metadata" and str(uploaded_file).endswith("json"):
-            try:
-                metadata_file_content = read_file_content(os.path.join(target_directory, str(uploaded_file)))
-                parsed_md = json.loads(metadata_file_content)
-                ip.basic_metadata = metadata_file_content
-                if "representations" in parsed_md:
-                    for r, v in parsed_md["representations"].items():
-                        try:
-                            reprec = Representation.objects.get(ip=ip, identifier=r)
-                        except Representation.DoesNotExist:
-                            reprec = Representation.objects.create(ip=ip, identifier=r)
-                        if "distribution_label" in v:
-                            reprec.label = v["distribution_label"]
-                        if "distribution_description" in v:
-                            reprec.description = v["distribution_description"]
-                        if "access_rights" in v:
-                            reprec.accessRights = v["access_rights"]
-                        reprec.license = 'undefined'
-                        reprec.save()
-            except JSONDecodeError:
-                return JsonResponse({"message": "error decoding JSON metadata file"},
-                                    status=status.HTTP_400_BAD_REQUEST)
         # using local time (converted to UTC in DB)
         ip.last_change = datetime.now()
         ip.save()

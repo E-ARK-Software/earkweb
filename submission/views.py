@@ -6,6 +6,7 @@ import string
 import traceback
 import logging
 import uuid
+from xml.etree import ElementTree
 
 import django_tables2 as tables
 import pycountry
@@ -25,6 +26,7 @@ from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
+from eatb.metadata.parsedead import ParsedEad
 from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
@@ -487,7 +489,23 @@ def ip_creation_process(request, pk):
 
         basic_metadata["tags"] = [val.name for val in ip.tags.all()]
         basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
-        files = {'file': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4))}
+
+        ead_dir = 'earkweb'
+        ead_path = os.path.join(ead_dir, 'ead.xml')
+
+
+        #import lxml.etree as ET
+        #pead = ParsedEad(ead_dir, ead_path)
+        #ead_content = ET.tostring(pead.ead_tree.getroot(), encoding='UTF-8', pretty_print=True, xml_declaration=True)
+
+        template = loader.get_template(ead_path)
+
+        ead_content = template.render(context=context)
+
+        files = {
+            'jsonmd': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4)),
+            'eadmd': ('descriptive/ead.xml', ead_content)
+        }
         request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
         user_api_token = get_user_api_token(request.user)
         response = requests.post(request_url, files=files, headers={'Authorization': 'Token %s' % user_api_token},

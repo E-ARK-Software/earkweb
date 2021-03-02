@@ -27,7 +27,7 @@ drf-yasg==1.17.1
 djangorestframework-api-key==2.0.0
 simplejson
 uwsgi
-#-e git://github.com/E-ARK-Software/eatb.git#egg=eatb
+-e git://github.com/E-ARK-Software/eatb.git#egg=eatb
 # -e ../eatb
 PyPDF2==1.26.0
 
@@ -35,3 +35,5 @@ PyPDF2==1.26.0
 
 # fido (patched release 1.4.1)
 git+git://github.com/openpreserve/fido.git@a82e85d89f4ef3805d7289615a6c356cff12b37b
+
+importlib_resources

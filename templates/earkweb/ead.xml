@@ -41,7 +41,7 @@
 			<c01 level="series" >
 				<did>
 					<unitid>Series 1</unitid>
-					<unittitle>Correspondence</unittitle>
+					<unittitle>Demo Series</unittitle>
 				</did>
 				<!-- If the file plan is related to an aggregation (series) -->
 				<fileplan>
@@ -49,7 +49,7 @@
 					<fileplan>
 						<head>DILCIS</head>
 						<list listtype="ordered" numeration="upper-roman">
-							<item>Marketing</item>
+							<item>Demo File List</item>
 						</list>
 					</fileplan>
 				</fileplan>
@@ -76,7 +76,7 @@
 								<unitdatestructured datechar="originated">
 									<datesingle>{{ date }}</datesingle>
 								</unitdatestructured>
-								<abstract>Description of the entity</abstract>
+								<abstract>{{ description }}</abstract>
 								<!--The unit used to describe the extent of the record (e.g MB, pages, num of files/components)-->
 								<physdescstructured coverage="whole" physdescstructuredtype="spaceoccupied">
 									<quantity>1</quantity>
@@ -107,7 +107,7 @@
 								<fileplan>
 									<head>DILCIS</head>
 									<list listtype="ordered" numeration="upper-roman">
-										<item>Marketing</item>
+										<item>Demo File List</item>
 									</list>
 								</fileplan>
 							</fileplan>
