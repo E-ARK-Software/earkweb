@@ -52,12 +52,10 @@ class TinyUploadFileForm(Form):
 
 class MetaFormStep1(forms.Form):
 
-    # Define the core
-    package_name = forms.CharField(label=_('Data set label'), max_length=100,
-                            widget=forms.TextInput(attrs={'placeholder': _('Data set label')}))
-
-    external_id = forms.CharField(label=_('External identifier'), max_length=100,
-                            widget=forms.TextInput(attrs={'placeholder': _('External identifier')}))
+    # Field is hidden!
+    package_name = forms.CharField(widget=forms.HiddenInput())
+    # Field is hidden!
+    external_id = forms.CharField(widget=forms.HiddenInput())
     title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
     description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
     tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
