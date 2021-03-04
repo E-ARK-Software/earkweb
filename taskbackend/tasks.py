@@ -131,14 +131,13 @@ def ingest_pipeline(_, context):
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
-        prepare_sip_for_archiving.s(),
+        package_original_sip.s(),
+        store_original_sip.s(),
         aip_migrations.s(),
-        aip_descriptive_metadata_validation.s(),
         aip_package_mets_creation.s(),
         create_manifest.s(),
         aip_packaging.s(),
         store_aip.s(),
-        restore_sip.s(),
         aip_indexing.s(),
     ).delay()
     return result
@@ -222,7 +221,9 @@ def validate_working_directory(_, context, task_log):
             rep_path = os.path.join(representations_path, name)
             if os.path.isdir(rep_path):
                 mets_validator = MetsValidation(rep_path)
-                valid &= mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+                v = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
+                if not v:
+                    raise ValueError("Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml'))
 
     csip_validation = CSIPValidation()
     csip_validation.validate(ip_path)
@@ -268,38 +269,6 @@ def descriptive_metadata_validation(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="prepare_sip_for_archiving", base=Task)
-@requires_parameters("process_id", "package_name")
-@task_logger
-def prepare_sip_for_archiving(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
-    root_mets_file = os.path.join(working_dir, "METS.xml")
-    sip_file = os.path.join(working_dir, "%s.tar" % task_context["package_name"])
-    processing_log_file = os.path.join(working_dir, "processing.log")
-    delivery_file = os.path.join(working_dir, "%s.xml" % task_context["package_name"])
-    target_folder = os.path.join(working_dir, "submission")
-    if not os.path.exists(target_folder):
-        task_log.info("Submission folder created: %s" % target_folder)
-        os.makedirs(target_folder, exist_ok=True)
-    if not os.path.exists(root_mets_file) and not os.path.exists(sip_file):
-        raise ValueError("Invalid SIP: information package data not found")
-    if os.path.exists(sip_file) and not os.path.exists(root_mets_file):
-        task_log.info("Submission information package found: %s" % sip_file)
-        package_file_path = os.path.join(sip_file)
-        packaged_container = PackagedContainer.factory(package_file_path)
-        packaged_container.extract(target_folder)
-        task_log.info("Submission information package extracted to: %s" % target_folder)
-    fs_childs = os.listdir(working_dir)
-    ignored = [sip_file, delivery_file, processing_log_file]
-    for fs_child in fs_childs:
-        source_item = os.path.join(working_dir, fs_child)
-        if source_item not in ignored:
-            shutil.move(source_item, target_folder)
-    task_log.info("Submission information package data moved to %s" % target_folder)
-    return json.dumps(task_context)
-
-
 @app.task(bind=True, name="aip_migrations", base=Task)
 @requires_parameters("process_id")
 @task_logger
@@ -328,7 +297,7 @@ def aip_migrations(self, context, task_log):
     image_software = cli_execution.execute()  # ImageMagick version
 
     # list of all representations in submission folder
-    rep_path = os.path.join(working_dir, 'submission/representations/')
+    rep_path = os.path.join(working_dir, 'representations/')
     replist = []
     for repdir in os.listdir(rep_path):
         replist.append(repdir)
@@ -382,7 +351,7 @@ def aip_migrations(self, context, task_log):
 
                     self.args = CliCommand('totiff', cliparams)
                 else:
-                    task_log.info('Unclassified file %s, fido result: %s. This file will NOT be migrated.'
+                    task_log.info('No policy rule applies to file %s, fido result: %s. No file format migration.'
                                   % (filename, fido_result))
 
                 if self.args != '':
@@ -502,53 +471,6 @@ def file_migration(self, details):
     else:
         raise ValueError("Missing parameters")
     return True
-
-
-@app.task(bind=True, name="aip_descriptive_metadata_validation", base=Task)
-@requires_parameters("process_id", "package_name")
-@task_logger
-def aip_descriptive_metadata_validation(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
-    submiss_dir = 'submission'
-    md_dir = 'metadata'
-    md_subdir_descr = 'descriptive'
-
-    descriptive_md_dir = os.path.join(md_dir, md_subdir_descr)
-
-    submiss_descr_md_dir = os.path.join(get_last_submission_path(working_dir), descriptive_md_dir)
-
-    overruling_metadata_dir = os.path.join(working_dir, md_dir, submiss_dir, descriptive_md_dir)
-
-    task_log.info("Looking for EAD metadata files in metadata directory: %s"
-                  % strip_prefixes(submiss_descr_md_dir, working_dir))
-    task_log.info("Overruling metadata directory: %s" % strip_prefixes(overruling_metadata_dir, working_dir))
-
-    # "warning" state for validation errors
-    md_files_valid = []
-    for filename in find_files(submiss_descr_md_dir, metadata_file_pattern_ead):
-        md_path, md_file = os.path.split(filename)
-        task_log.info("Found descriptive metadata file in submission folder: '%s'" % md_file)
-        task_log.info(
-            "Looking for overruling version in AIP metadata folder: '%s'" %
-            strip_prefixes(overruling_metadata_dir, working_dir))
-        overruling_md_file = os.path.join(overruling_metadata_dir, md_file)
-        validation_md_path = md_path
-        if os.path.exists(overruling_md_file):
-            task_log.info(
-                "Overruling version of descriptive metadata file found: %s" %
-                strip_prefixes(overruling_md_file, working_dir))
-            validation_md_path = overruling_metadata_dir
-        else:
-            task_log.info("No overruling version of descriptive metadata file in AIP metadata folder found.")
-        #md_files_valid.append(validate_ead_metadata(validation_md_path, md_file, None))
-    if len(md_files_valid) == 0:
-        task_log.info("No descriptive metadata files found.")
-    valid = False not in md_files_valid
-    if valid:
-        task_log.info("Descriptive metadata validated successfully.")
-
-    return json.dumps(task_context)
 
 
 @app.task(bind=True, name="aip_package_mets_creation", base=Task)
@@ -671,7 +593,7 @@ def create_manifest(_, context, task_log):
 @app.task(bind=True, name="aip_packaging", base=Task)
 @requires_parameters("process_id", "identifier", "package_name")
 @task_logger
-def aip_packaging(_, context, task_log):
+def package_original_sip(_, context, task_log):
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["process_id"])
 
@@ -734,6 +656,34 @@ def aip_packaging(_, context, task_log):
     return json.dumps(task_context)
 
 
+@app.task(bind=True, name="store_original_sip", base=Task)
+@requires_parameters("process_id", "package_name", "identifier")
+@task_logger
+def store_original_sip(_, context, task_log):
+    task_context = json.loads(context)
+    working_dir = get_working_dir(task_context["process_id"])
+    pts = DirectoryPairtreeStorage(config_path_storage)
+    version = pts.store_working_directory(task_context["process_id"], task_context["identifier"], working_dir)
+    # version = pts.store(input["identifier"], working_dir)
+    task_context["version"] = version
+    storage_dir = os.path.join(
+        make_storage_data_directory_path(task_context["identifier"], config_path_storage),
+        version,
+        to_safe_filename(task_context["identifier"])
+    )
+    task_context["storage_dir"] = storage_dir
+    patch_data = {
+        "identifier": task_context["identifier"],
+        "version": int(task_context["version"]),
+        "storage_dir": storage_dir,
+        "last_change": date_format(datetime.datetime.utcnow()),
+    }
+    json_data = json.dumps(patch_data)
+    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as status_file:
+        status_file.write(json_data)
+    return json.dumps(task_context)
+
+
 @app.task(bind=True, name="store_aip", base=Task)
 @requires_parameters("process_id", "package_name", "identifier")
 @task_logger
@@ -769,27 +719,69 @@ def store_aip(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="restore_sip", base=Task)
-@requires_parameters("process_id", "storage_file")
+@app.task(bind=True, name="aip_packaging", base=Task)
+@requires_parameters("process_id", "identifier", "package_name")
 @task_logger
-def restore_sip(_, context, task_log):
+def aip_packaging(_, context, task_log):
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["process_id"])
-    aip_mets_file = os.path.join(working_dir, "METS.xml")
-    aip_metadata_directory = os.path.join(working_dir, "metadata")
-    # move aip metadata and mets file
-    create_file_backup(aip_metadata_directory, move=True)
-    create_file_backup(aip_mets_file, move=True)
-    submission_folder = os.path.join(working_dir, "submission")
-    if not os.path.exists(submission_folder):
-        raise ValueError("Unable to restore SIP from AIP: submission folder missing")
-    fs_childs = os.listdir(submission_folder)
-    for fs_child in fs_childs:
-        source_item = os.path.join(submission_folder, fs_child)
-        shutil.move(source_item, working_dir)
-    task_log.info("Submission information package restored")
-    shutil.rmtree(submission_folder)
-    os.remove(task_context["storage_file"])
+
+    # append generation number to tar file; if tar file exists, the generation number is incremented
+    new_id = to_safe_filename(task_context["identifier"])
+
+    storage_file = os.path.join(working_dir, "%s.tar" % new_id)
+    tar = tarfile.open(storage_file, "w:")
+    task_log.info("Creating archive: %s" % storage_file)
+
+    total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
+    task_log.info("Total number of files in working directory %d" % total)
+    # log file is closed at this point because it will be included in the package,
+    # subsequent log messages can only be shown in the gui
+
+    # file_elements, delivery_xml = getDeliveryFiles(working_dir)
+    # continue normally we have only one tar
+    # file_reference = ParsedMets.get_file_element_reference(file_elements[0])
+
+    # task_log.info("Extracted file reference: %s" % file_reference)
+    # delivery_file = os.path.join(working_dir, os.path.basename(remove_protocol(file_reference)))
+
+    package_name = task_context['package_name']
+    delivery_xml = os.path.join(working_dir, "%s.xml" % package_name)
+    delivery_file_tar = os.path.join(working_dir, "%s.tar" % package_name)
+    delivery_file_zip = os.path.join(working_dir, "%s.zip" % package_name)
+
+    status_xml = os.path.join(working_dir, "state.xml")
+    submission_status_xml = os.path.join(working_dir, "submission/state.xml")
+    task_log.info("Ignoring package file (tar): %s" % delivery_file_tar)
+    task_log.info("Ignoring package file (zip): %s" % delivery_file_zip)
+    task_log.info("Ignoring delivery XML file: %s" % delivery_xml)
+    task_log.info("Ignoring status XML file: %s" % status_xml)
+    task_log.info("Ignoring submission status XML file: %s" % submission_status_xml)
+
+    # ignore files that were only needed to check on migration status
+    # ignore_dir = os.path.join(working_dir, 'metadata/earkweb')
+
+    ignore_list = [delivery_file_tar, delivery_file_zip, delivery_xml, status_xml, submission_status_xml]
+    i = 0
+    for subdir, dirs, files in os.walk(working_dir):
+        # if subdir == ignore_dir:
+        #     # remove files and subfolders from loop, so they are not packaged
+        #     del dirs[:]
+        #     del files[:]
+        for file in files:
+            if os.path.join(subdir, file) not in ignore_list:
+                entry = os.path.join(subdir, file)
+                arcname = new_id + "/" + os.path.relpath(entry, working_dir)
+                tar.add(entry, arcname=arcname)
+                if i % 10 == 0:
+                    perc = (i * 100) / total
+                    logger.debug("Progress: %d" % perc)
+                    # self.update_state(state='PROGRESS', meta={'process_percent': perc})
+            i += 1
+    tar.close()
+    task_log.info("Package created: %s" % storage_file)
+    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
+    task_context["storage_file"] = storage_file
     return json.dumps(task_context)
 
 

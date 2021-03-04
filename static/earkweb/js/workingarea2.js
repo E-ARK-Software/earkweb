@@ -23,6 +23,29 @@ function isStateFile(name) {
 function previewSupported(name) {
     return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd|.txt$|.gif$|.tiff$|.tar|.odt$)/));
 }
+$(document).ready(function(){
+    function getCookie(c_name) {
+        if(document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if(c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if(c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start,c_end));
+            }
+        }
+        return "";
+    }
+
+    $(function () {
+        $.ajaxSetup({
+            headers: {
+                "X-CSRFToken": getCookie("csrftoken")
+            }
+        });
+    });
+
+});
 
 /**
  * Context menu
@@ -34,13 +57,24 @@ function customMenu(node) {
             label: "View",
             action: function () { previewfile(node); }
         },
-        editItem: {
-            label: "Edit",
-            action: function () { window.location.href = '/earkweb/xmleditor/'+ node.data.path +'/'; }
+        deleteItem: {
+            label: "Delete",
+            action: function () {
+                console.log(node.data.path);
+                //$('#directorytree').delete_node(node);
+                $.ajax({
+                    url: django_backend_service_api_url+'/informationpackages/'+process_id+'/file-resource/'+node.data.path.replace(process_id+'/','')+'/',
+                    type: 'DELETE',
+                    success: function() { console.log("success") },
+                    error: function() { console.log("error") },
+                });
+
+                $('#directorytree').jstree(true).delete_node(node);
+
+            }
         }
     };
     var n = $(node)[0];
-    if (!isEAD(n.text) && !isStateFile(n.text)) { delete items.editItem; }
     if (!previewSupported(n.text)) { delete items.viewItem; }
     return items;
 }

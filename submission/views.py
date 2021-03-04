@@ -539,7 +539,8 @@ def ip_creation_process(request, pk):
             'pk': pk,
             "dirasjson": response.content.decode('utf-8'),
             "jobid": job.id,
-            'flower_status': flower_is_running()
+            'flower_status': flower_is_running(),
+            "django_backend_service_api_url": django_backend_service_api_url
         }
         template = loader.get_template('submission/ip_creation_process.html')
         return HttpResponse(template.render(context=context, request=request))
@@ -563,7 +564,8 @@ def upload_finalize(request, pk):
         'config_path_work': config_path_work,
         'ip': ip,
         'pk': pk,
-        "dirasjson": response.content.decode('utf-8')
+        "dirasjson": response.content.decode('utf-8'),
+        "django_backend_service_api_url": django_backend_service_api_url
     }
     template = loader.get_template('submission/upload_finalize.html')
     return HttpResponse(template.render(context=context, request=request))
@@ -718,6 +720,8 @@ class StartIngestDetail(DetailView):
         context['celery_worker_status'] = get_celery_worker_status()
         context['flower_status'] = flower_is_running()
         context['flower_api_endpoint'] = flower_service_url
+        context['django_backend_service_api_url'] = django_backend_service_api_url
+
         return context
 
 
@@ -984,8 +988,8 @@ def poll_state(request):
                     ip = InformationPackage.objects.get(process_id=process_id)
                     if "storage_dir" in task_status_from_result:
                         ip.storage_loc = task_status_from_result["storage_dir"]
-                    if "version" in task_status_from_result:
-                        ip.version = int(task_status_from_result["version"])
+                    #if "version" in task_status_from_result:
+                    #    ip.version = int(task_status_from_result["version"])
                     ip.statusprocess = 0
                     ip.save()
                     data = {"success": True, "child_task_ids": child_task_ids, "state": task.state,

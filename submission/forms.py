@@ -59,7 +59,7 @@ class MetaFormStep1(forms.Form):
     title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
     description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
     tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
-        'placeholder': _('PleasePressEnterToAddTag'),
+        'placeholder': _('Please enter 2 characters to get tag suggestions or write a custom tag and press enter to add it'),
         'id': 'pp',
     }), required=False)
     hidden_user_tags = forms.CharField(max_length=10000, widget=forms.HiddenInput(attrs={

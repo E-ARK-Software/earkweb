@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-07-20 15:03+0200\n"
+"POT-Creation-Date: 2021-03-04 16:16+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -160,11 +160,11 @@ msgstr ""
 msgid "The backend task execution did not deliver the expected result"
 msgstr ""
 
-#: earkweb/settings.py:307
+#: earkweb/settings.py:308
 msgid "English"
 msgstr "Englisch"
 
-#: earkweb/settings.py:308
+#: earkweb/settings.py:309
 msgid "German"
 msgstr "Deutsch"
 
@@ -181,11 +181,6 @@ msgstr "Dieses Verzeichnis zeigt den Inhalt des Informationspakets"
 #: management/templates/management/about_module.html:2
 msgid "DataManagementTitle"
 msgstr "Archivdaten-Management"
-
-#: management/templates/management/about_module.html:4
-msgid "DataManagementAbout"
-msgstr ""
-"In diesem Bereich werden die archivierten Informationspakete verwaltet. "
 
 #: management/templates/management/checkout.html:16
 #: management/templates/management/checkout.html:31
@@ -222,8 +217,8 @@ msgid "Information package checkout process is running."
 msgstr "Der Prozess der Informationspaket-Erstellung wurde gestartet"
 
 #: management/templates/management/checkout_confirm.html:39
-#: submission/templates/submission/ip_creation_process.html:38
-#: submission/templates/submission/start_ingest.html:61
+#: submission/templates/submission/ip_creation_process.html:66
+#: submission/templates/submission/start_ingest.html:91
 msgid ""
 "Warning: no task monitoring available because the task monitoring service is "
 "not running at"
@@ -273,8 +268,8 @@ msgstr ""
 msgid "Contact point"
 msgstr ""
 
-#: management/templates/management/detail.html:75 submission/forms.py:106
-#: submission/forms.py:107 submission/templates/submission/detail.html:82
+#: management/templates/management/detail.html:75 submission/forms.py:104
+#: submission/forms.py:105 submission/templates/submission/detail.html:82
 msgid "Maintainer"
 msgstr ""
 
@@ -332,108 +327,95 @@ msgstr "Informationspaket-Übersicht"
 msgid "ChangeIt"
 msgstr "Ändern"
 
-#: submission/forms.py:56 submission/forms.py:57
-msgid "Data set label"
-msgstr ""
-
-#: submission/forms.py:59 submission/forms.py:60
-#: submission/templates/submission/iptable.html:12
-#, fuzzy
-#| msgid "External identifier (optional)"
-msgid "External identifier"
-msgstr "Externer identifier"
-
-#: submission/forms.py:61
+#: submission/forms.py:59
 msgid "Information package title"
 msgstr "Titel des Informationspakets"
 
-#: submission/forms.py:61
+#: submission/forms.py:59
 #, fuzzy
 #| msgid "DataManagementTitle"
 msgid "Data set title"
 msgstr "Archivdaten-Management"
 
-#: submission/forms.py:62
+#: submission/forms.py:60
 msgid "Information package description"
 msgstr "Beschreibung des Informationspakets"
 
-#: submission/forms.py:62
+#: submission/forms.py:60
 #, fuzzy
 #| msgid "Description"
 msgid "Data set description"
 msgstr "Beschreibung"
 
-#: submission/forms.py:64
-msgid "PleasePressEnterToAddTag"
+#: submission/forms.py:62
+msgid ""
+"Please enter 2 characters to get tag suggestions or write a custom tag and "
+"press enter to add it"
 msgstr ""
 
-#: submission/forms.py:74
+#: submission/forms.py:72
 msgid "PleaseAddNameOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:75 submission/forms.py:91 submission/forms.py:96
+#: submission/forms.py:73 submission/forms.py:89 submission/forms.py:94
 msgid "ModifyInitialValue"
 msgstr "Ändern"
 
-#: submission/forms.py:77
+#: submission/forms.py:75
 msgid ""
 "Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
 "('.') are allowed."
 msgstr ""
 
-#: submission/forms.py:90
+#: submission/forms.py:88
 #, fuzzy
 #| msgid "PleaseAddNameOfPackage"
 msgid "PleaseAddTitleOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:102 submission/forms.py:103
+#: submission/forms.py:100 submission/forms.py:101
 #, fuzzy
 #| msgid "ContactOfPackage"
 msgid "Contact"
 msgstr "Kontaktstelle"
 
-#: submission/forms.py:104
+#: submission/forms.py:102
 #, fuzzy
 #| msgid "ContactEmailOfPackage"
 msgid "Contact email"
 msgstr "Email der Kontaktstelle"
 
-#: submission/forms.py:108
+#: submission/forms.py:106
 msgid "MaintainerEmail"
 msgstr ""
 
-#: submission/forms.py:110
+#: submission/forms.py:108
 msgid "MainLanguageOfPackage"
 msgstr "Hauptsprache"
 
-#: submission/forms.py:111
+#: submission/forms.py:109
 msgid "MainInitialLanguage"
 msgstr "Deutsch"
 
-#: submission/forms.py:116 submission/forms.py:117
+#: submission/forms.py:114 submission/forms.py:115
 msgid "Representation label"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/forms.py:119
+#: submission/forms.py:117
 msgid "AccessRightsField"
 msgstr "Zugriffsrecht"
 
-#: submission/forms.py:120
+#: submission/forms.py:118
 msgid "DistributionAccessRightsValueFree"
 msgstr "Frei (Kein Vertrag erforderlich)"
 
-#: submission/forms.py:120
+#: submission/forms.py:118
 msgid "DistributionAccessRightsValueLimited"
 msgstr "Zugriffsbeschränkt (Vertrag erforderlich)"
 
-#: submission/forms.py:123
+#: submission/forms.py:121
 msgid "Representation description"
 msgstr "Beschreibung der Repräsentation"
-
-#: submission/templates/submission/about_module.html:5
-msgid "PackageCreationAndTransfer"
-msgstr "Erstellung und Archivierung der Informationspakete."
 
 #: submission/templates/submission/deleted.html:21
 msgid "Delete confirmation"
@@ -463,23 +445,29 @@ msgstr "Übertragung mehrerer Informationspakete"
 msgid "Package creation task completed!"
 msgstr "Datenpaketerstellung abgeschlossen!"
 
-#: submission/templates/submission/ip_creation_process.html:32
+#: submission/templates/submission/ip_creation_process.html:60
 msgid "Information package creation"
 msgstr "Informationspaket erstellt"
 
-#: submission/templates/submission/ip_creation_process.html:34
+#: submission/templates/submission/ip_creation_process.html:62
 msgid "Submission information package creation process is running."
 msgstr "Informationspaket-Erstellung abschließen"
 
-#: submission/templates/submission/ip_creation_process.html:50
+#: submission/templates/submission/ip_creation_process.html:90
 msgid "Review submission information package"
 msgstr "Informationspaket überprüfen"
+
+#: submission/templates/submission/iptable.html:12
+#, fuzzy
+#| msgid "External identifier (optional)"
+msgid "External identifier"
+msgstr "Externer identifier"
 
 #: submission/templates/submission/iptable.html:17
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:21 submission/views.py:587
+#: submission/templates/submission/iptable.html:21 submission/views.py:588
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
 
@@ -527,20 +515,32 @@ msgstr "Die Veröffentlichung des Informationspakets wurde gestartet!"
 msgid "Ingest pipeline terminated!"
 msgstr "Der Ingest-Workflow ist abgeschlossen!"
 
-#: submission/templates/submission/start_ingest.html:38
-#: submission/templates/submission/start_ingest.html:66
+#: submission/templates/submission/start_ingest.html:65
+#: submission/templates/submission/start_ingest.html:96
 #: submission/templates/submission/upload_finalize.html:62
 msgid "Archive information package"
 msgstr "Informationspaket archivieren"
 
-#: submission/templates/submission/start_ingest.html:45
+#: submission/templates/submission/start_ingest.html:71
+#, fuzzy
+#| msgid "Ingest pipeline terminated!"
+msgid "Ingest pipeline execution"
+msgstr "Der Ingest-Workflow ist abgeschlossen!"
+
+#: submission/templates/submission/start_ingest.html:75
 msgid "The processing backend is not available"
 msgstr ""
 "Der Service für die Vearbeitung der Informationspakete ist nicht verfügbar"
 
-#: submission/templates/submission/start_ingest.html:51
+#: submission/templates/submission/start_ingest.html:81
 msgid "The processing backend is available"
 msgstr "Der Service für die Vearbeitung der Informationspakete ist verfügbar"
+
+#: submission/templates/submission/start_ingest.html:113
+#, fuzzy
+#| msgid "Process ID"
+msgid "Processing log"
+msgstr "Prozess-ID"
 
 #: submission/templates/submission/upload.html:13
 msgid "Upload data"
@@ -586,24 +586,24 @@ msgstr "Informationspaket-Metadaten"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: submission/views.py:584
+#: submission/views.py:585
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:588
+#: submission/views.py:589
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:589
+#: submission/views.py:590
 msgid "Data Set Label"
 msgstr ""
 
-#: submission/views.py:591
+#: submission/views.py:592
 #: venv/lib/python3.6/site-packages/django/forms/widgets.py:400
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:592
+#: submission/views.py:593
 #: venv/lib/python3.6/site-packages/django/forms/formsets.py:391
 msgid "Delete"
 msgstr "Löschen"
@@ -1996,6 +1996,18 @@ msgstr ""
 msgctxt "stick"
 msgid "club"
 msgstr ""
+
+#~ msgid "DataManagementAbout"
+#~ msgstr ""
+#~ "In diesem Bereich werden die archivierten Informationspakete verwaltet. "
+
+#, fuzzy
+#~| msgid "Information package metadata"
+#~ msgid "Information package management"
+#~ msgstr "Informationspaket-Metadaten"
+
+#~ msgid "PackageCreationAndTransfer"
+#~ msgstr "Erstellung und Archivierung der Informationspakete."
 
 #~ msgid "PublisherOfPackage"
 #~ msgstr "Herausgeber"

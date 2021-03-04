@@ -1,7 +1,7 @@
 from eatb.storage.directorypairtreestorage import make_storage_data_directory_path
 from eatb.utils.fileutils import path_to_dict
 
-from config.configuration import sw_version
+from config.configuration import sw_version, django_backend_service_api_url
 from config.configuration import sw_version_date
 
 from django.shortcuts import redirect
@@ -94,7 +94,7 @@ def working_area2(request, section, process_id):
     template = loader.get_template('earkweb/workingarea2.html')
     request.session['process_id'] = process_id
     r = request.META['PATH_INFO']
-    title = trans("Data set management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
+    title = trans("Information package management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (django_backend_service_host, django_backend_service_port, process_id)
     user_api_token = get_user_api_token(request.user)
@@ -103,7 +103,8 @@ def working_area2(request, section, process_id):
         "title": title,
         "section": section,
         "process_id": process_id,
-        "dirasjson": response.content.decode('utf-8')
+        "dirasjson": response.content.decode('utf-8'),
+        "django_backend_service_api_url": django_backend_service_api_url
     }
     return HttpResponse(template.render(context=context, request=request))
 
@@ -113,7 +114,7 @@ def storage_area(request, section, identifier):
     template = loader.get_template('earkweb/workingarea2.html')
     request.session['identifier'] = identifier
     r = request.META['HTTP_REFERER']
-    title = "Data set management" if "management" in r else "Submission" if "submission" in r else "Access"
+    title = "Information package management" if "management" in r else "Submission" if "submission" in r else "Access"
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
     logger.info(store_path)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-23 18:19+0100\n"
+"POT-Creation-Date: 2021-03-04 16:16+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -118,7 +118,7 @@ msgstr ""
 
 #: access/templates/access/search.html:89
 msgid "Only information packages"
-msgstr "Only data set"
+msgstr "Only information packages"
 
 #: access/views.py:63 submission/templates/submission/iptable.html:37
 msgid "Last change"
@@ -160,11 +160,11 @@ msgstr ""
 msgid "The backend task execution did not deliver the expected result"
 msgstr ""
 
-#: earkweb/settings.py:307
+#: earkweb/settings.py:308
 msgid "English"
 msgstr ""
 
-#: earkweb/settings.py:308
+#: earkweb/settings.py:309
 msgid "German"
 msgstr ""
 
@@ -180,11 +180,7 @@ msgstr "Content of process"
 
 #: management/templates/management/about_module.html:2
 msgid "DataManagementTitle"
-msgstr "Data set management"
-
-#: management/templates/management/about_module.html:4
-msgid "DataManagementAbout"
-msgstr "Overview and management of stored information packages."
+msgstr "Information package management"
 
 #: management/templates/management/checkout.html:16
 #: management/templates/management/checkout.html:31
@@ -193,7 +189,7 @@ msgstr ""
 
 #: management/templates/management/checkout.html:18
 msgid "There is currently no working copy for the data set"
-msgstr ""
+msgstr "There is currently no working copy for the information package"
 
 #: management/templates/management/checkout.html:20
 msgid "You can checkout a new working copy now."
@@ -221,8 +217,8 @@ msgid "Information package checkout process is running."
 msgstr ""
 
 #: management/templates/management/checkout_confirm.html:39
-#: submission/templates/submission/ip_creation_process.html:38
-#: submission/templates/submission/start_ingest.html:61
+#: submission/templates/submission/ip_creation_process.html:66
+#: submission/templates/submission/start_ingest.html:91
 msgid ""
 "Warning: no task monitoring available because the task monitoring service is "
 "not running at"
@@ -235,7 +231,7 @@ msgstr "Data set overview"
 #: management/templates/management/checkout_confirm.html:53
 #: submission/templates/submission/upload_finalize.html:60
 msgid "Edit information package"
-msgstr "Edit data set"
+msgstr "Edit information package"
 
 #: management/templates/management/deleted.html:22
 msgid "Deletion confirmation"
@@ -270,8 +266,8 @@ msgstr ""
 msgid "Contact point"
 msgstr ""
 
-#: management/templates/management/detail.html:75 submission/forms.py:106
-#: submission/forms.py:107 submission/templates/submission/detail.html:82
+#: management/templates/management/detail.html:75 submission/forms.py:104
+#: submission/forms.py:105 submission/templates/submission/detail.html:82
 msgid "Maintainer"
 msgstr ""
 
@@ -295,7 +291,7 @@ msgstr "Created"
 
 #: management/templates/management/overview.html:18
 msgid "Archived information packages"
-msgstr "Archived information packages"
+msgstr ""
 
 #: management/templates/management/overview.html:20
 msgid "SearchInternalLabelProcessIdOrIdentifier"
@@ -308,11 +304,11 @@ msgstr "Information package creation"
 
 #: management/views.py:151
 msgid "Archived Information Package"
-msgstr "Archived information packages"
+msgstr "Information package management"
 
 #: management/views.py:152
 msgid "PackageDirectory"
-msgstr "Data set directory"
+msgstr "Information package directory"
 
 #: management/views.py:156
 msgid "InternalLabel"
@@ -326,100 +322,89 @@ msgstr "Overview of the information packages"
 msgid "ChangeIt"
 msgstr "Change"
 
-#: submission/forms.py:56 submission/forms.py:57
-msgid "Data set label"
-msgstr "Information package label"
-
-#: submission/forms.py:59 submission/forms.py:60
-#: submission/templates/submission/iptable.html:12
-msgid "External identifier"
-msgstr "External identifier"
-
-#: submission/forms.py:61
+#: submission/forms.py:59
 msgid "Information package title"
 msgstr "Information package title"
 
-#: submission/forms.py:61
+#: submission/forms.py:59
 msgid "Data set title"
 msgstr "Information package title"
 
-#: submission/forms.py:62
+#: submission/forms.py:60
 msgid "Information package description"
 msgstr "Information package description"
 
-#: submission/forms.py:62
+#: submission/forms.py:60
 msgid "Data set description"
 msgstr "Information package title"
 
-#: submission/forms.py:64
-msgid "PleasePressEnterToAddTag"
+#: submission/forms.py:62
+msgid ""
+"Please enter 2 characters to get tag suggestions or write a custom tag and "
+"press enter to add it"
 msgstr ""
 
-#: submission/forms.py:74
+#: submission/forms.py:72
 msgid "PleaseAddNameOfPackage"
-msgstr "Please add the name of the data set"
+msgstr "Please add name of package"
 
-#: submission/forms.py:75 submission/forms.py:91 submission/forms.py:96
+#: submission/forms.py:73 submission/forms.py:89 submission/forms.py:94
 msgid "ModifyInitialValue"
 msgstr "Change"
 
-#: submission/forms.py:77
+#: submission/forms.py:75
 msgid ""
 "Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
 "('.') are allowed."
 msgstr ""
 
-#: submission/forms.py:90
+#: submission/forms.py:88
 msgid "PleaseAddTitleOfPackage"
 msgstr "Please add the name of the information package"
 
-#: submission/forms.py:102 submission/forms.py:103
+#: submission/forms.py:100 submission/forms.py:101
 #, fuzzy
 #| msgid "ContactOfPackage"
 msgid "Contact"
 msgstr "Contact point"
 
-#: submission/forms.py:104
+#: submission/forms.py:102
 #, fuzzy
 #| msgid "ContactEmailOfPackage"
 msgid "Contact email"
 msgstr "Contact point e-mail address"
 
-#: submission/forms.py:108
+#: submission/forms.py:106
 msgid "MaintainerEmail"
 msgstr ""
 
-#: submission/forms.py:110
+#: submission/forms.py:108
 msgid "MainLanguageOfPackage"
 msgstr "Main language"
 
-#: submission/forms.py:111
+#: submission/forms.py:109
 msgid "MainInitialLanguage"
 msgstr "English"
 
-#: submission/forms.py:116 submission/forms.py:117
+#: submission/forms.py:114 submission/forms.py:115
 msgid "Representation label"
 msgstr ""
 
-#: submission/forms.py:119
+#: submission/forms.py:117
 msgid "AccessRightsField"
 msgstr "Access rights"
 
-#: submission/forms.py:120
+#: submission/forms.py:118
 msgid "DistributionAccessRightsValueFree"
 msgstr "Free (no contract required)"
 
-#: submission/forms.py:120
+#: submission/forms.py:118
 msgid "DistributionAccessRightsValueLimited"
 msgstr "Limited (contract required)"
 
-#: submission/forms.py:123
+#: submission/forms.py:121
 msgid "Representation description"
 msgstr ""
-
-#: submission/templates/submission/about_module.html:5
-msgid "PackageCreationAndTransfer"
-msgstr "Overview of information packages in progress."
 
 #: submission/templates/submission/deleted.html:21
 msgid "Delete confirmation"
@@ -449,23 +434,27 @@ msgstr "Batch information package submission"
 msgid "Package creation task completed!"
 msgstr "Information package creation task completed!"
 
-#: submission/templates/submission/ip_creation_process.html:32
+#: submission/templates/submission/ip_creation_process.html:60
 msgid "Information package creation"
 msgstr "Information package creation"
 
-#: submission/templates/submission/ip_creation_process.html:34
+#: submission/templates/submission/ip_creation_process.html:62
 msgid "Submission information package creation process is running."
 msgstr "Information package creation process is running."
 
-#: submission/templates/submission/ip_creation_process.html:50
+#: submission/templates/submission/ip_creation_process.html:90
 msgid "Review submission information package"
 msgstr "Review information package"
+
+#: submission/templates/submission/iptable.html:12
+msgid "External identifier"
+msgstr "External identifier"
 
 #: submission/templates/submission/iptable.html:17
 msgid "Process ID"
 msgstr ""
 
-#: submission/templates/submission/iptable.html:21 submission/views.py:587
+#: submission/templates/submission/iptable.html:21 submission/views.py:588
 msgid "Working directory"
 msgstr ""
 
@@ -511,19 +500,31 @@ msgstr "Information package archiving started!"
 msgid "Ingest pipeline terminated!"
 msgstr "Information package archiving terminated!"
 
-#: submission/templates/submission/start_ingest.html:38
-#: submission/templates/submission/start_ingest.html:66
+#: submission/templates/submission/start_ingest.html:65
+#: submission/templates/submission/start_ingest.html:96
 #: submission/templates/submission/upload_finalize.html:62
 msgid "Archive information package"
 msgstr "Archive information package"
 
-#: submission/templates/submission/start_ingest.html:45
+#: submission/templates/submission/start_ingest.html:71
+#, fuzzy
+#| msgid "Ingest pipeline terminated!"
+msgid "Ingest pipeline execution"
+msgstr "Information package archiving terminated!"
+
+#: submission/templates/submission/start_ingest.html:75
 msgid "The processing backend is not available"
 msgstr ""
 
-#: submission/templates/submission/start_ingest.html:51
+#: submission/templates/submission/start_ingest.html:81
 msgid "The processing backend is available"
 msgstr ""
+
+#: submission/templates/submission/start_ingest.html:113
+#, fuzzy
+#| msgid "Data processing"
+msgid "Processing log"
+msgstr "Data processing"
 
 #: submission/templates/submission/upload.html:13
 msgid "Upload data"
@@ -569,24 +570,24 @@ msgstr "Information package metadata"
 msgid "Cancel"
 msgstr ""
 
-#: submission/views.py:584
+#: submission/views.py:585
 msgid "Last modified"
 msgstr "Last modified"
 
-#: submission/views.py:588
+#: submission/views.py:589
 msgid "ShowWorkingDirectory"
 msgstr "Show working directory"
 
-#: submission/views.py:589
+#: submission/views.py:590
 msgid "Data Set Label"
 msgstr ""
 
-#: submission/views.py:591
+#: submission/views.py:592
 #: venv/lib/python3.6/site-packages/django/forms/widgets.py:400
 msgid "Change"
 msgstr "Change"
 
-#: submission/views.py:592
+#: submission/views.py:593
 #: venv/lib/python3.6/site-packages/django/forms/formsets.py:391
 msgid "Delete"
 msgstr "Delete"
@@ -647,7 +648,7 @@ msgstr "Information package management"
 
 #: templates/conduit/navbar.html:44 templates/earkweb/navbar.html:44
 msgid "NavIngestedPackages"
-msgstr "Archived information packages"
+msgstr "Information package management"
 
 #: templates/conduit/navbar.html:53
 msgid "Knowledge Extraction"
@@ -1980,6 +1981,25 @@ msgstr ""
 msgctxt "stick"
 msgid "club"
 msgstr ""
+
+#~ msgid "DataManagementAbout"
+#~ msgstr "Overview and management of stored information packages."
+
+#, fuzzy
+#~| msgid "Information package metadata"
+#~ msgid "Information package management"
+#~ msgstr "Information package metadata"
+
+#~ msgid "PleasePressEnterToAddTag"
+#~ msgstr ""
+#~ "Enter at least 2 characters to get keyword suggestions, press enter to "
+#~ "add a custom keyword"
+
+#~ msgid "PackageCreationAndTransfer"
+#~ msgstr "Overview of information packages in progress."
+
+#~ msgid "Data set label"
+#~ msgstr "Information package label"
 
 #~ msgid "Overview of information packages"
 #~ msgstr "Overview of information packages"

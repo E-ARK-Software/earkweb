@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import re
+import shutil
 import tarfile
 import traceback
 from json import JSONDecodeError
@@ -458,7 +459,10 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
                 file = os.path.join(config_path_work, ip.process_id, ip_sub_file_path)
                 if not os.path.exists(file):
                     return HttpResponseNotFound("File not found in working directory")
-                os.remove(file)
+                if os.path.isdir(file):
+                    shutil.rmtree(file)
+                else:
+                    os.remove(file)
                 if not os.path.exists(file):
                     return JsonResponse({"message": "File successfully removed"}, status=200)
                 else:

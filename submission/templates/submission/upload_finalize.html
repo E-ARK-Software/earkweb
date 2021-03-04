@@ -7,6 +7,7 @@
 
 {% block extra_head %}
 
+
 <!-- Section highlighting -->
     <script type="text/javascript">$(document).ready(function () { $(".nav li").removeClass("active"); $('#{{ section }}').addClass('active'); });</script>
 
@@ -26,6 +27,8 @@
     <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
 
     <link rel="stylesheet" href="{% static "submission/css/start.css" %}" type="text/css" />
+
+    <script type="text/javascript" src="{% static 'earkweb/js/csrfajax.js' %}"></script>
 
 {% endblock %}
 
@@ -48,8 +51,8 @@
     <script language="javascript">
 
     var dirasjson=`{{ dirasjson | safe }}`;
-    window.console.log(dirasjson);
-    var process_id='{{ ip. }}';</script>
+    var django_backend_service_api_url = "{{ django_backend_service_api_url }}";
+    var process_id='{{ ip.process_id }}';</script>
     <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
 
     <p id="event_result"></p>

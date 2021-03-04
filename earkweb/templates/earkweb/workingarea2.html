@@ -17,6 +17,8 @@
     <!-- bootbox -->
     <script type="text/javascript" src="{% static 'earkweb/bootbox-4.4.0/bootbox.js' %}"></script>
 
+    <script type="text/javascript" src="{% static 'earkweb/js/csrfajax.js' %}"></script>
+
 {% endblock %}
 
 {% block content %}
@@ -33,6 +35,7 @@
 <script language="javascript">
 
 var dirasjson=`{{ dirasjson | safe }}`;
+var django_backend_service_api_url = "{{ django_backend_service_api_url }}";
 window.console.log(dirasjson);
 var process_id='{{ process_id }}';</script>
 <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>

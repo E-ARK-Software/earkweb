@@ -23,6 +23,34 @@
     });
     </script>
     <link rel="stylesheet" href="{% static "workflow/css/execution.css" %}" type="text/css" />
+
+
+    <script type="text/javascript" src="{% static 'earkweb/js/csrfajax.js' %}"></script>
+    <link rel="stylesheet" href="{% static "earkweb/termynal/termynal.css" %}" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Fira+Mono">
+    <script>
+	$( document ).ready(function() {
+          setInterval(function(){get_contents();}, 1000);
+          function get_contents() {
+            console.log("called");
+            $.get('{{ django_backend_service_api_url }}/informationpackages/{{ip.process_id}}/file-resource/processing.log/', function(data) {
+                console.log();
+                var lines = data.split('\n');
+                var newcontent = '';
+                // (lines.length - 10)
+                for(var i = 0;i < lines.length;i++){
+                    newcontent += '<span data-ty="input">'+lines[i]+'</span>';
+                }
+                $('#termynal').html(newcontent);
+                //$('#termynal').scrollTop = $('#termynal').scrollHeight;
+                if($("#follow-log-entries").is(':checked')) {
+                    var objDiv = document.getElementById("termynal");
+                    objDiv.scrollTop = objDiv.scrollHeight;
+                }
+              });
+          }
+	});
+	</script>
 {% endblock %}
 
 {% block content %}
@@ -47,6 +75,18 @@
         <p  id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
     </div>
 
-    <p><a id="reviewbtn" class="btn btn-primary" type="button" href="{% url 'submission:upload_finalize' ip.id %}">{% trans 'Review submission information package' %}</a></p>
+    <div id="termynal" data-termynal style="overflow:scroll; height:400px">
+
+    </div>
+
+    <script type="text/javascript" src="{% static 'earkweb/termynal/termynal.js' %}" data-termynal-container="#termynal"></script>
+     <div class="form-check" style="left: -30px">
+      <label for="follow-log-entries">
+        Follow log entries
+      </label>
+      <input type="checkbox" id="follow-log-entries"  style="margin-top: 8px" checked>
+    </div>
+
+    <div style="clear:both"><a id="reviewbtn" class="btn btn-primary" type="button" href="{% url 'submission:upload_finalize' ip.id %}">{% trans 'Review submission information package' %}</a></div>
 
 {% endblock %}

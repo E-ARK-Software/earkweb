@@ -29,6 +29,33 @@
     <script language="JavaScript">var ingestProcessStartedMessage="{% trans 'IngestProcessStarted' %}"; var pipeline_ready_msg = "{% trans 'Ingest pipeline terminated!' %}";</script>
     <script type="text/javascript" src="{% static 'workflow/js/execution.js' %}"></script>
 
+    <script type="text/javascript" src="{% static 'earkweb/js/csrfajax.js' %}"></script>
+    <link rel="stylesheet" href="{% static "earkweb/termynal/termynal.css" %}" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Fira+Mono">
+    <script>
+	$( document ).ready(function() {
+          setInterval(function(){get_contents();}, 1000);
+          function get_contents() {
+            console.log("called");
+            $.get('{{ django_backend_service_api_url }}/informationpackages/{{ip.process_id}}/file-resource/processing.log/', function(data) {
+                console.log();
+                var lines = data.split('\n');
+                var newcontent = '';
+                // (lines.length - 10)
+                for(var i = 0;i < lines.length;i++){
+                    newcontent += '<span data-ty="input">'+lines[i]+'</span>';
+                }
+                $('#termynal').html(newcontent);
+                //$('#termynal').scrollTop = $('#termynal').scrollHeight;
+                if($("#follow-log-entries").is(':checked')) {
+                    var objDiv = document.getElementById("termynal");
+                    objDiv.scrollTop = objDiv.scrollHeight;
+                }
+              });
+          }
+	});
+	</script>
+
 {% endblock %}
 
 {% block content %}
@@ -39,13 +66,16 @@
 
     {% include "submission/iptable.html" %}
 
-    {% if 'ERROR' in celery_worker_status %}
+    <div class="row">
+    <div class="span6 w-40" style="padding-left: 15px">
+        <h2 class="main">{% trans 'Ingest pipeline execution' %}</h2>
+        {% if 'ERROR' in celery_worker_status %}
 
         <div>
         <p  style="color: red">{% trans 'The processing backend is not available' %}: {{ celery_worker_status.items.0.1 }}</p>
         </div>
 
-    {% else %}
+        {% else %}
 
         <div>
              <p>{% trans 'The processing backend is available' %}:</p>
@@ -62,20 +92,38 @@
         </div>
         {% endif %}
 
-    <button id="starting" type="submit" class="btn btn-primary">
-      <i class="glyphicon glyphicon-save"></i> {% trans 'Archive information package' %}
-    </button>
+        <button id="starting" type="submit" class="btn btn-primary">
+          <i class="glyphicon glyphicon-save"></i> {% trans 'Archive information package' %}
+        </button>
 
-    <div id="confirmation" style="padding-top: 20px;"></div>
+        <div id="confirmation" style="padding-top: 20px;"></div>
 
-    <div id="ingestjobid" style="padding-top: 20px;"></div>
+        <div id="ingestjobid" style="padding-top: 20px;"></div>
 
-    <div id="childjobs"></div>
+        <div id="childjobs"></div>
 
-    <div><p style="padding-top: 20px;" id="errordiv"></p>
-    <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
+        <div><p style="padding-top: 20px;" id="errordiv"></p>
+        <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
+        </div>
+
+        {% endif %}
     </div>
 
-    {% endif %}
+    <div class="span6 w-60" style="padding-left: 30px">
+        <h2 class="main">{% trans 'Processing log' %}</h2>
+        <div id="termynal" data-termynal style="overflow:scroll; height:300px; width: 1000px">
+
+        </div>
+
+        <script type="text/javascript" src="{% static 'earkweb/termynal/termynal.js' %}" data-termynal-container="#termynal"></script>
+         <div class="form-check" style="left: -30px">
+          <label for="follow-log-entries">
+            Follow log entries
+          </label>
+          <input type="checkbox" id="follow-log-entries"  style="margin-top: 8px" checked>
+        </div>
+    </div>
+
+</div>
 
 {% endblock %}
