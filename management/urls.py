@@ -8,6 +8,7 @@ app_name = 'management'
 urlpatterns = [
     url(r'^$', management.views.informationpackages_overview, name='overview'),
     url(r'^overview$', management.views.informationpackages_overview, name='overview'),
+    url(r'^render_network$', management.views.render_network, name='render_network'),
     url(r'^ips_table$', management.views.informationpackages_overview, name='ips_table'),
     url(r'^detail/(?P<pk>\d+)/$', management.views.InformationPackageDetail.as_view(), name='resubmit'),
     url(r'^modify/(?P<pk>\d+)/$', management.views.sip_detail, name='ip_detail'),

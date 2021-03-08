@@ -504,8 +504,9 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
     dpts = DirectoryPairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
     version = dpts.curr_version(package_id)
-    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
-    file_path = os.path.join(access_path, to_safe_filename(identifier), ip_sub_file_path)
+    #access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
+    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
+    file_path = os.path.join(access_path, ip_sub_file_path)
     return read_file(file_path)
 
 
@@ -646,7 +647,7 @@ def directory_json(request, area, item):
 
     """
     version = 0  # N/A
-    if area not in ["work", "storage", "processing"]:
+    if area not in ["work", "storage"]:
         return JsonResponse({"message": "Area not defined."}, status=404)
     if area == "work":
         access_path = config_path_work
@@ -654,16 +655,14 @@ def directory_json(request, area, item):
         dpts = DirectoryPairtreeStorage(config_path_storage)
         version = dpts.curr_version(item)
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
-    else:
-        access_path = os.path.join(config_path_processing, request.user.username)
     if area in ["work", "storage"]:
         try:
             ip = InformationPackage.objects.get(process_id=item) if area == "work" else \
                 InformationPackage.objects.get(identifier=item, version=version)
             try:
                 u = User.objects.get(username=request.user)
-                # if u != ip.user:
-                #     return JsonResponse({"message": "Unauthorized. Access to this directory is not permitted."}, status=403)
+                if u != ip.user:
+                    return JsonResponse({"message": "Unauthorized. Access to this directory is not permitted."}, status=403)
             except User.DoesNotExist:
                 return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
         except InformationPackage.DoesNotExist:
@@ -671,12 +670,18 @@ def directory_json(request, area, item):
         item_path = to_safe_filename(item)
     else:
         item_path = item
+    if area == "storage":
+        item_path = "content"
     if not os.path.exists(os.path.join(access_path, item_path)):
         return JsonResponse({
             "message": "Access path does not exist: %s" %
                        os.path.join(access_path, to_safe_filename(item))
         }, status=404)
-    return JsonResponse(get_directory_json(access_path, item_path), status=200)
+    if area == "work":
+        return JsonResponse(get_directory_json(access_path, item_path), status=200)
+    elif area == "storage":
+        return JsonResponse(get_directory_json(access_path, "../"), status=200)
+
 
 
 @csrf_exempt
@@ -972,7 +977,7 @@ def get_ip_state(request, process_id):
                         }
                 else:
                     result = {"warning": {
-                        "title": "State file not vailable",
+                        "title": "State file not available",
                         "detail": "State file not found at: %s" % ip_state_file_path}
                     }
             return JsonResponse(result, status=200)

@@ -4,11 +4,13 @@
 function previewfile(node) {
     if(node.data) {
         var ip_work_dir_sub_path = node.data.path;
+        if(identifier != '') {
+            ip_work_dir_sub_path = ip_work_dir_sub_path.replace("../", "");
+            ip_work_dir_sub_path = identifier + "/" + ip_work_dir_sub_path;
+        }
         var mimetype = node.data.mimetype;
         var url = "/earkweb/read-file/" + ip_work_dir_sub_path + "/";
-
         window.open(url,'file view','directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1000,height=800');
-
     }
  }
 
@@ -24,6 +26,7 @@ function previewSupported(name) {
     return !!(name.toLowerCase().match(/(.pdf$|.png$|.xml$|.png$|.log$|.xsd|.txt$|.gif$|.tiff$|.tar|.odt$)/));
 }
 $(document).ready(function(){
+
     function getCookie(c_name) {
         if(document.cookie.length > 0) {
             c_start = document.cookie.indexOf(c_name + "=");

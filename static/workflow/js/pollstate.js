@@ -54,7 +54,7 @@ function pollstate(in_task_id) {
                                 var child_task_item = '<a href="' + link + '" target="new">' + child_task_name + '</a>';
                                 var outcomeSign = (child_status == 'SUCCESS') ? ok_sign : (child_status == 'FAILURE') ? err_sign : pending_sign;
 
-                                var row = '<div class="row"><div class="col-md-4 col-md-offset-0">' + subitem_sign + child_task_item + '</div><div class="col-md-4">' + outcomeSign + '</div></div>';
+                                var row = '<div class="row"><div class="col-md-6 col-md-offset-0">' + subitem_sign + child_task_item + '</div><div class="col-md-6">' + outcomeSign + '</div></div>';
 
                                 $("#childjobs").append(row);
                             }

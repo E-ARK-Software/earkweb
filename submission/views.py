@@ -948,13 +948,15 @@ def apply_task(request):
         ip = InformationPackage.objects.get(pk=selected_ip)
         user = User.objects.get(pk=request.user.pk)
         logger.info("Task processing for process id: %s started by user %s" % (ip.process_id, user.username))
+        # the task is an update task if the object already has an identifier
+        is_update_task = ip.identifier
         # identifier assignment (urn:uuid:<uuid>)
         identifier = ip.identifier if ip.identifier else "urn:uuid:%s" % uuid.uuid4().__str__()
         ip.identifier = identifier
         ip.save()
         task_input = {
             "process_id": ip.process_id, "package_name": ip.package_name, "org_nsid": node_namespace_id,
-            "identifier": identifier, "md_format": "METS"}
+            "identifier": identifier, "md_format": "METS", "is_update_task": is_update_task}
         data = execute_task(task_input)
     except Exception as err:
         tb = traceback.format_exc()

@@ -19,6 +19,33 @@
 
     <script type="text/javascript" src="{% static 'earkweb/js/csrfajax.js' %}"></script>
 
+     <script type="text/javascript" src="{% static 'earkweb/moment/moment-with-locales.min.js' %}"></script>
+
+    <link
+      href="{% static 'earkweb/vis.js/vis-timeline-graph2d.min.css' %}"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script
+      type="text/javascript"
+      src="{% static 'earkweb/vis.js/vis-timeline-graph2d.min.js' %}"
+    ></script>
+
+    <style>
+
+    vis-item {
+    color: #ff0000;
+        border-color: #ff0000;
+        background-color: #ff0000;
+    }
+    .myClassName {
+        background-color: #C7424C;
+        border-color: #CCCCCC;
+        color: #ffffff;
+    }
+
+    </style>
+
 {% endblock %}
 
 {% block content %}
@@ -27,7 +54,31 @@
 
 <h2 class="main">{% trans 'WorkingDirectory' %}: {{ process_id }}</h2>
 
-<p>{% trans 'ThisWorkDirShowsContentOf' %}: {{ process_id }}</p>
+{% if show_timeline %}
+
+    <div id="visualization"></div>
+
+    <script type="text/javascript">
+      // DOM element where the Timeline will be attached
+      var container = document.getElementById("visualization");
+
+      // Create a DataSet (allows two way data-binding)
+      var timeline_data = `{{ version_timeline_data | safe }}`;
+      var items = new vis.DataSet(eval(timeline_data));
+
+      // Configuration for the Timeline
+      var options = {};
+
+      // Create a Timeline
+      var timeline = new vis.Timeline(container, items, options);
+      timeline.setWindow(moment(new Date("{{ min_dt }}")).subtract({{ scale_value }}, '{{ scale_unit }}'), moment(new Date("{{ max_dt }}")).add({{ scale_value }}, '{{ scale_unit }}'));
+      var halfDiff = ( new Date("{{ max_dt }}") - new Date("{{ min_dt }}") ) / 2;
+      var middleDate = new Date(moment(new Date("{{ min_dt }}")).add(halfDiff, "milliseconds"))
+      timeline.moveTo(middleDate);
+
+    </script>
+
+{% endif %}
 
 <div id="directorytree"></div>
 
@@ -36,8 +87,8 @@
 
 var dirasjson=`{{ dirasjson | safe }}`;
 var django_backend_service_api_url = "{{ django_backend_service_api_url }}";
-window.console.log(dirasjson);
-var process_id='{{ process_id }}';</script>
+var process_id='{{ process_id }}';
+var identifier='{{ identifier }}';</script>
 <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
 
 <p id="event_result"></p>

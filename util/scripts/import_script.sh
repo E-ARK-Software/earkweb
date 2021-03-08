@@ -24,6 +24,30 @@ PUBLISHER='Publishing organization'
 CONTACT_EMAIL='contact@email.com'
 LANGUAGE='English'
 
+read -r -d '' METADATA << EOM
+{
+    "title": "$TITLE",
+    "description": "$DESCRIPTION",
+    "contactPoint": "$CONTACT",
+    "contactEmail": "$CONTACT_EMAIL",
+    "publisher": "$PUBLISHER",
+    "publisherEmail": "$CONTACT_EMAIL",
+    "language": "$LANGUAGE",
+    "representations": {
+        "$REPRESENTATION_ID1": {
+            "distribution_label": "csv",
+            "distribution_description": "CSV file",
+            "access_rights": "free"
+        },
+        "$REPRESENTATION_ID2": {
+            "distribution_label": "ods",
+            "distribution_description": "Open Document Spreadsheet file",
+            "access_rights": "free"
+        }
+    }
+}
+EOM
+
 # get filename and filename without extension
 FILENAME=${FILE_PATH/$INPUTFOLDER\//}
 FILENAME_WO_EXT=${FILENAME/.csv/}
@@ -32,7 +56,7 @@ echo "Filename without extension: $FILENAME_WO_EXT"
 . highlight.sh
 
 echo_highlight_header $HEADER 'register data set'
-RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -X POST -d "package_name=$PACKAGE_NAME" http://$SERVER:$PORT/earkweb/api/informationpackages/`
+RESPONSE=`curl -H 'Authorization: Token 9a2ad0688a410fd29f94ef31d45d56b624358c17' -X POST -d "package_name=$PACKAGE_NAME&basic_metadata=$METADATA" http://$SERVER:$PORT/earkweb/api/informationpackages/`
 echo $RESPONSE
 PROCESS_ID=`echo $RESPONSE | jq -r '.process_id'`
 if [ -z "$PROCESS_ID" ]; then echo_highlight $FAIL "No process ID"; fi
@@ -65,29 +89,7 @@ if [ -z "$REPRESENTATION_ID2" ]; then echo_highlight $FAIL "No representation ID
 echo_highlight $OKGREEN "Representation ID: $REPRESENTATION_ID2"
 
 echo_highlight_header $HEADER 'create metadata file'
-read -r -d '' METADATA << EOM
-{
-    "title": "$TITLE",
-    "description": "$DESCRIPTION",
-    "contactPoint": "$CONTACT",
-    "contactEmail": "$CONTACT_EMAIL",
-    "publisher": "$PUBLISHER",
-    "publisherEmail": "$CONTACT_EMAIL",
-    "language": "$LANGUAGE",
-    "representations": {
-        "$REPRESENTATION_ID1": {
-            "distribution_label": "csv",
-            "distribution_description": "CSV file",
-            "access_rights": "free"
-        },
-        "$REPRESENTATION_ID2": {
-            "distribution_label": "ods",
-            "distribution_description": "Open Document Spreadsheet file",
-            "access_rights": "free"
-        }
-    }
-}
-EOM
+
 METADATA_FILE=/tmp/metadata.json
 echo $METADATA
 echo $METADATA > $METADATA_FILE

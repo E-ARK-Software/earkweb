@@ -17,7 +17,8 @@ from taskbackend.tasks import aip_migrations
 from taskbackend.tasks import aip_package_mets_creation
 from taskbackend.tasks import create_manifest
 from taskbackend.tasks import package_original_sip
-from taskbackend.tasks import store_ip
+from taskbackend.tasks import store_original_sip
+from taskbackend.tasks import store_aip
 from taskbackend.tasks import aip_indexing
 
 
@@ -25,7 +26,8 @@ from taskbackend.tasks import aip_indexing
 #context = {"process_id": "cd9e6ee8-dfb3-48c4-834c-85d1cfb707b9", "package_name": "testpackage.001",
 #           "org_nsid": "eark", "identifier": "eark:hkdzkvqmmbtjksommahekeidmhifkqaffoffdesg", "md_format": "METS"}
 
-context = {"process_id": "3b233728-898f-41fa-8a00-106ec9d4cf5a",
-           "identifier": "urn:uuid:3c7230dc-4bbc-4584-af9c-a9db5a99c49e",
-           "package_name": "test1234578", "org_nsid": "eark"}
-aip_migrations(json.dumps(context))
+#context = {"process_id": "3b233728-898f-41fa-8a00-106ec9d4cf5a",
+#           "identifier": "urn:uuid:3c7230dc-4bbc-4584-af9c-a9db5a99c49e",
+#           "package_name": "test1234578", "org_nsid": "eark"}
+context = {"process_id": "260acadf-dc37-43cc-a0c5-eaf2c374dacc", "package_name": "mysip", "identifier": "urn:uuid:33333333-3333-3333-3333-333333333333", "org_nsid": "eark"}
+store_original_sip(json.dumps(context))

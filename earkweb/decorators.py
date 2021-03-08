@@ -73,7 +73,7 @@ def task_logger(f):
         task_log = get_task_logger(f, ip_dir)
         kwds["task_log"] = task_log
         try:
-            task_log.info("Task %s" % task.name)
+            task_log.info("============ Task %s ============" % task.name)
             input_params = context
             for param, value in input_params.items():
                 task_log.debug("Input parameter '%s': %s" % (param, value))

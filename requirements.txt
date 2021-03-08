@@ -1,9 +1,9 @@
 celery==4.4.7
-Django==3.1
-django-debug-toolbar==2.2
-django-extensions==3.0.5
+Django==3.1.7
+django-debug-toolbar==3.2
+django-extensions==3.1.1
 django-rest-swagger==2.2.0
-django-tables2==2.3.1
+django-tables2==2.3.4
 django-widget-tweaks==1.4.8
 django-formtools==2.2
 django-bootstrap-form==3.4
@@ -13,7 +13,7 @@ django-taggit-autosuggest==0.3.8
 mysqlclient==2.0.1
 flower==0.9.5
 redis==3.5.3
-requests==2.24.0
+requests==2.25.1
 tornado==6.0.4
 lxml==4.5.2
 Pairtree==0.8.1
@@ -27,16 +27,13 @@ drf-yasg==1.17.1
 djangorestframework-api-key==2.0.0
 simplejson
 uwsgi
+importlib_resources
+PyPDF2==1.26.0
+# eatb
 -e git://github.com/E-ARK-Software/eatb.git#egg=eatb
 # -e ../eatb
-PyPDF2==1.26.0
-
-# fido
-https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
-
+# python-magic
 -e git://github.com/ahupp/python-magic.git#egg=python-magic
-
 # fido (patched release 1.4.1)
 git+git://github.com/openpreserve/fido.git@a82e85d89f4ef3805d7289615a6c356cff12b37b
 
-importlib_resources

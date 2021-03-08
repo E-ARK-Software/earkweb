@@ -221,6 +221,15 @@ def informationpackages_overview(request):
         return render(request, '%s/overview.html' % area, {'informationpackage': table})
 
 
+@login_required
+def render_network(request):
+    template = loader.get_template('management/render_network.html')
+    context = {
+
+    }
+    return HttpResponse(template.render(context=context, request=request))
+
+
 def upload_file(upload_path, f):
     print("Upload file '%s' to working directory: %s" % (f.name, upload_path))
     if not os.path.exists(upload_path):

@@ -1,4 +1,7 @@
+import json
+
 from eatb.storage.directorypairtreestorage import make_storage_data_directory_path
+from eatb.utils.datetime import get_date_from_iso_str, DT_ISO_FORMAT
 from eatb.utils.fileutils import path_to_dict
 
 from config.configuration import sw_version, django_backend_service_api_url
@@ -116,16 +119,60 @@ def storage_area(request, section, identifier):
     r = request.META['HTTP_REFERER']
     title = "Information package management" if "management" in r else "Submission" if "submission" in r else "Access"
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
-    store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
-    logger.info(store_path)
+    #store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
+    #logger.info(store_path)
     url = "http://%s:%s/earkweb/api/storage/informationpackages/%s/dir-json" % (django_backend_service_host, django_backend_service_port, identifier)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+
+    inventory_url = "http://%s:%s/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
+    django_backend_service_host, django_backend_service_port, identifier)
+    print(inventory_url)
+    inventory_response = requests.get(inventory_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+    inventory = json.loads(inventory_response.text)
+
+    version_timeline_data = [
+        {"id": int(key),
+         "content": "%s (%s)" % (val["message"], key),
+         "start": val["created"],
+        "className" : "myClassName"
+         }
+        for key, val in inventory["versions"].items()]
+
+    times = [val["created"] for key, val in inventory["versions"].items()]
+    times.sort()
+    print(times)
+    if len(times) > 1:
+        min_dtstr = times[0]
+        max_dtstr = times[len(times)-1]
+        min_dt = get_date_from_iso_str(min_dtstr, DT_ISO_FORMAT)
+        max_dt = get_date_from_iso_str(max_dtstr, DT_ISO_FORMAT)
+        delta =  max_dt - min_dt
+        print(delta.seconds)
+        scale = ("seconds", (delta.seconds)) if delta.seconds < 60 \
+            else ("minutes", int(delta.seconds/60)) if delta.seconds < 3600 \
+            else ("hours", int(delta.seconds/3600)) if delta.seconds < 86400 \
+            else ("days", (delta.days)) if delta.seconds < 2592000 \
+            else ("months", int(delta.days/30)) if delta.seconds < 31536000 \
+            else ("years", int(delta.days/365))
+        scale_unit, scale_value = scale
+    else:
+        min_dtstr = max_dtstr = times[0]
+        scale_unit = "days"
+        scale_value = "3"
+
     context = {
         "title": title,
         "section": section,
         "process_id": identifier,
-        "dirasjson": response.content.decode('utf-8')
+        "dirasjson": response.content.decode('utf-8'),
+        "show_timeline": True,
+        "identifier": identifier,
+        "version_timeline_data": version_timeline_data,
+        "scale_unit": scale_unit,
+        "scale_value": (scale_value*10),
+        "min_dt": min_dtstr,
+        "max_dt": max_dtstr
     }
     return HttpResponse(template.render(context=context, request=request))
 

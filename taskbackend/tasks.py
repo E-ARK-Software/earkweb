@@ -24,12 +24,13 @@ from eatb.oais.sip_creation import create_sip
 from eatb.oais.sip_generator import SIPGenerator
 from eatb.packaging.manifest import ManifestCreation
 from eatb.packaging.packaged_container import PackagedContainer
-from eatb.storage.checksum import ChecksumValidation, ChecksumAlgorithm, check_transfer, ChecksumFile
+from eatb.storage.checksum import ChecksumValidation, ChecksumAlgorithm, check_transfer, ChecksumFile, get_sha256_hash, \
+    get_hash_values, get_sha512_hash
 from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage, make_storage_data_directory_path
 from eatb.storage.pairtreestorage import PairtreeStorage
 from eatb.utils.datetime import date_format, current_timestamp
 from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files, \
-    strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks
+    strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks, read_and_load_json_file
 from eatb.utils.randomutils import get_unique_id, randomword
 from eatb.validation.csip_validation import CSIPValidation
 from eatb.xml.deliveryvalidation import DeliveryValidation
@@ -135,6 +136,22 @@ def ingest_pipeline(_, context):
         store_original_sip.s(),
         aip_migrations.s(),
         aip_package_mets_creation.s(),
+        create_manifest.s(),
+        aip_packaging.s(),
+        store_aip.s(),
+        aip_indexing.s(),
+    ).delay()
+    return result
+
+
+@app.task(bind=True, name="update_pipeline", base=Task)
+@requires_parameters("process_id")
+def update_pipeline(_, context):
+    task_context = json.loads(context)
+    check_required_params(task_context, ["process_id"])
+    result = chain(
+        validate_working_directory.s(json.dumps(task_context)),
+        descriptive_metadata_validation.s(),
         create_manifest.s(),
         aip_packaging.s(),
         store_aip.s(),
@@ -440,20 +457,21 @@ def aip_migrations(self, context, task_log):
             except IOError:
                 task_log.error('Premis generation for representation %s failed.' % repdir)
 
-                # for every REPRESENTATION without METS file:
-                for rdir in os.listdir(os.path.join(working_dir, 'representations')):
-                    try:
-                        rep_path = os.path.join(working_dir, 'representations/%s' % rdir)
-                        mets_data = {'packageid': rdir,
-                                     'type': 'AIP',
-                                     'schemas': schemas,
-                                     'parent': ''}
-                        metsgen = MetsGenerator(rep_path)
-                        metsgen.createMets(mets_data)
+            # for every REPRESENTATION without METS file:
+            task_log.info("reps: %s" % os.listdir(os.path.join(working_dir, 'representations')))
+            for rdir in os.listdir(os.path.join(working_dir, 'representations')):
+                try:
+                    rep_path = os.path.join(working_dir, 'representations/%s' % rdir)
+                    mets_data = {'packageid': rdir,
+                                 'type': 'AIP',
+                                 'schemas': schemas,
+                                 'parent': ''}
+                    metsgen = MetsGenerator(rep_path)
+                    metsgen.createMets(mets_data)
 
-                        task_log.info('Generated a Mets file for representation %s.' % rdir)
-                    except IOError:
-                        task_log.error('Mets generation for representation %s failed.' % rdir)
+                    task_log.info('Generated a Mets file for representation %s.' % rdir)
+                except IOError:
+                    task_log.error('Mets generation for representation %s failed.' % rdir)
 
     return json.dumps(task_context)
 
@@ -664,13 +682,18 @@ def store_original_sip(_, context, task_log):
     working_dir = get_working_dir(task_context["process_id"])
     pts = DirectoryPairtreeStorage(config_path_storage)
     version = pts.store_working_directory(task_context["process_id"], task_context["identifier"], working_dir)
+    task_log.info("Storing original SIP as version: %s" % version)
     # version = pts.store(input["identifier"], working_dir)
     task_context["version"] = version
+    aip_storage_dir = make_storage_data_directory_path(task_context["identifier"], config_path_storage)
     storage_dir = os.path.join(
-        make_storage_data_directory_path(task_context["identifier"], config_path_storage),
+        aip_storage_dir,
         version,
-        to_safe_filename(task_context["identifier"])
+        "content"
     )
+    storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
+    storage_path = os.path.join(storage_dir, storage_file_name)
+    check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
     task_context["storage_dir"] = storage_dir
     patch_data = {
         "identifier": task_context["identifier"],
@@ -679,8 +702,46 @@ def store_original_sip(_, context, task_log):
         "last_change": date_format(datetime.datetime.utcnow()),
     }
     json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as status_file:
-        status_file.write(json_data)
+    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
+        inventory_file.write(json_data)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
+    ocfl_package_file_path = os.path.join(version, "content", storage_file_name)
+    ocfl = {
+      "digestAlgorithm": "sha512",
+      "fixity": {
+        "md5": {
+            hashval_md5: [ocfl_package_file_path]
+        },
+        "sha256": {
+            hashval_sha256: [ocfl_package_file_path]
+        }
+      },
+      "head": version,
+      "id": task_context["identifier"],
+      "manifest": {
+        hashval_sha512: [ ocfl_package_file_path ]
+      },
+      "type": "https://ocfl.io/1.0/spec/#inventory",
+      "versions": {
+        version: {
+          "created": date_format(datetime.datetime.utcnow()),
+          "message": "Original SIP",
+          "state": {
+            hashval_sha512: [ ocfl_package_file_path ]
+          }
+        }
+      }
+    }
+    ocfl_object_file_name = "0=ocfl_object_1.0"
+    with open(os.path.join(aip_storage_dir, ocfl_object_file_name), 'w') as ocfl_object_file:
+        ocfl_object_file.write("ocfl_object_1.0")
+    inventory_file_name = "inventory.json"
+    inventory_file_path = os.path.join(aip_storage_dir, inventory_file_name)
+    with open(inventory_file_path, 'w') as inventory_file:
+        inventory_file.write(json.dumps(ocfl, indent=4))
+    inventory_file_sha512 = get_sha512_hash(inventory_file_path)
+    with open(os.path.join(aip_storage_dir, "inventory.json.sha512"), 'w') as checksum_inventory:
+        checksum_inventory.write("%s %s" % (inventory_file_sha512, inventory_file_name))
     return json.dumps(task_context)
 
 
@@ -692,14 +753,19 @@ def store_aip(_, context, task_log):
     working_dir = get_working_dir(task_context["process_id"])
     pts = DirectoryPairtreeStorage(config_path_storage)
     version = pts.store_working_directory(task_context["process_id"], task_context["identifier"], working_dir)
+    task_log.info("Storing AIP as version: %s" % version)
     # version = pts.store(input["identifier"], working_dir)
     task_context["version"] = version
     storage_dir = os.path.join(
         make_storage_data_directory_path(task_context["identifier"], config_path_storage),
         version,
-        to_safe_filename(task_context["identifier"])
+        "content"
     )
     task_context["storage_dir"] = storage_dir
+    storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
+    storage_path = os.path.join(storage_dir, storage_file_name)
+    check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+
     patch_data = {
         "identifier": task_context["identifier"],
         "version": int(task_context["version"]),
@@ -714,6 +780,30 @@ def store_aip(_, context, task_log):
         django_service_protocol, django_service_host, django_service_port, task_context["process_id"])
     response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
                               verify=verify_certificate)
+    aip_storage_dir = make_storage_data_directory_path(task_context["identifier"], config_path_storage)
+    inventory_file_name = "inventory.json"
+    inventory_file_path = os.path.join(aip_storage_dir, inventory_file_name)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
+    ocfl_package_file_path = os.path.join(version, "content", storage_file_name)
+
+    action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
+
+    inventory_json = read_and_load_json_file(inventory_file_path)
+    inventory_json["fixity"]["md5"][hashval_md5] = [ocfl_package_file_path]
+    inventory_json["fixity"]["sha256"][hashval_sha256] = [ocfl_package_file_path]
+    inventory_json["head"] = version
+    inventory_json["manifest"][hashval_sha512] = [ocfl_package_file_path]
+    inventory_json["versions"][version] = {
+        "created": date_format(datetime.datetime.utcnow()),
+        "message": "AIP (%s)" % action,
+        "state": {
+            hashval_sha512: [ ocfl_package_file_path ]
+        }
+    }
+
+    with open(inventory_file_path, 'w') as inventory_file:
+        inventory_file.write(json.dumps(inventory_json, indent=4))
+
     task_log.info("Status information updated: %s (%d)" % (response.text, response.status_code))
 
     return json.dumps(task_context)
