@@ -86,7 +86,9 @@ color: red;
     padding-top:1em;
     padding-bottom: 1em;
 }
-
+emph {
+font-style: italic;
+}
 .emph {
     font-weight: bold;
 }

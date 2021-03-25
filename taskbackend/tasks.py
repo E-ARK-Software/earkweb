@@ -7,6 +7,8 @@ import uuid
 from functools import partial
 from os import walk
 import time
+
+import bagit
 import redis
 import datetime
 import requests
@@ -239,8 +241,8 @@ def validate_working_directory(_, context, task_log):
             if os.path.isdir(rep_path):
                 mets_validator = MetsValidation(rep_path)
                 v = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
-                if not v:
-                    raise ValueError("Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml'))
+                #if not v:
+                #    raise ValueError("Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml'))
 
     csip_validation = CSIPValidation()
     csip_validation.validate(ip_path)
@@ -689,11 +691,16 @@ def store_original_sip(_, context, task_log):
     storage_dir = os.path.join(
         aip_storage_dir,
         version,
-        "content"
+        "content",
+        "bag00001"
     )
+    bag = bagit.make_bag(storage_dir, {'Contact-Name': 'E-ARK'})
     storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
-    storage_path = os.path.join(storage_dir, storage_file_name)
-    check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+    storage_path = os.path.join(storage_dir, "data", storage_file_name)
+
+    # TODO: check transfer!
+    #check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+
     task_context["storage_dir"] = storage_dir
     patch_data = {
         "identifier": task_context["identifier"],
@@ -705,7 +712,7 @@ def store_original_sip(_, context, task_log):
     with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
         inventory_file.write(json_data)
     hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
-    ocfl_package_file_path = os.path.join(version, "content", storage_file_name)
+    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", storage_file_name)
     ocfl = {
       "digestAlgorithm": "sha512",
       "fixity": {
@@ -759,12 +766,16 @@ def store_aip(_, context, task_log):
     storage_dir = os.path.join(
         make_storage_data_directory_path(task_context["identifier"], config_path_storage),
         version,
-        "content"
+        "content",
+        "bag00001"
     )
     task_context["storage_dir"] = storage_dir
     storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
-    storage_path = os.path.join(storage_dir, storage_file_name)
-    check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+    storage_path = os.path.join(storage_dir, "data", storage_file_name)
+
+    #check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+
+    bag = bagit.make_bag(storage_dir, {'Contact-Name': 'E-ARK'})
 
     patch_data = {
         "identifier": task_context["identifier"],
@@ -784,7 +795,7 @@ def store_aip(_, context, task_log):
     inventory_file_name = "inventory.json"
     inventory_file_path = os.path.join(aip_storage_dir, inventory_file_name)
     hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
-    ocfl_package_file_path = os.path.join(version, "content", storage_file_name)
+    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", storage_file_name)
 
     action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
