@@ -15,7 +15,7 @@ from django.urls import path, include
 app_name = 'earkweb'
 
 urlpatterns = [
-    url(r'^language/activate/(?P<language_code>[DE|de|EN|en]{2,2})/?', ActivateLanguageView.as_view(), name='activate_language'),
+    url(r'^language/activate/(?P<language_code>[ES|es|DE|de|EN|en]{2,2})/?', ActivateLanguageView.as_view(), name='activate_language'),
     url(r'^health/', include(health.urls)),
     url(r'^administration/', include(administration.urls)),
     url(r'^$', RedirectView.as_view(url='home')),

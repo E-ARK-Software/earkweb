@@ -1,22 +1,25 @@
 import json
 import os
+import re
 import shutil
 import tarfile
 from datetime import datetime
 from json import JSONDecodeError
 from typing import List
 
+import bagit
 from celery.result import AsyncResult
 
 from api.util import get_representation_ids_by_label
 from eatb.metadata.XmlHelper import q
+from eatb.packaging.package_creator import create_package
 from eatb.packaging.packaged_container import TarContainer
-from eatb.storage.checksum import check_transfer
-from eatb.storage.directorypairtreestorage import make_storage_directory_path
+from eatb.storage.checksum import check_transfer, get_sha512_hash, get_hash_values
+from eatb.storage.directorypairtreestorage import make_storage_directory_path, make_storage_data_directory_path
 from eatb.storage.pairtreestorage import PairtreeStorage
 from eatb.utils.datetime import date_format, DT_ISO_FORMAT, ts_date, DT_ISO_FMT_SEC_PREC
 from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs, \
-    read_file_content, rec_find_files
+    read_file_content, rec_find_files, to_safe_filename, read_and_load_json_file
 from eatb.xml.xmlvalidation import XmlValidation
 from lxml import etree
 
@@ -24,7 +27,8 @@ from earkweb.models import InternalIdentifier, InformationPackage
 from taskbackend.ip_state import IpState
 from taskbackend.tasklogger import TaskLogger
 from config.configuration import config_path_work, flower_service_url, \
-    verify_certificate, representations_directory, flower_service_url_internal
+    verify_certificate, representations_directory, flower_service_url_internal, config_path_storage, \
+    django_service_protocol, django_service_host, django_service_port, backend_api_key
 from subprocess import Popen, PIPE
 from config.configuration import django_backend_service_host, django_backend_service_port
 import logging
@@ -543,3 +547,115 @@ def create_file_backup(existing_file, move=False):
     else:
         shutil.copy(existing_file, bak_file)
     return os.path.exists(bak_file)
+
+
+def store_bag(version, identifier):
+    aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
+    safe_identifier_name = to_safe_filename(identifier)
+
+    bag_suffix = "b%05d" % int(1)
+    bag_name = "%s_%s_%s" % (safe_identifier_name, version, bag_suffix)
+    version_content_dir = os.path.join(
+        aip_storage_root,
+        version,
+        "content"
+    )
+    bagit_storage_dir = os.path.join(
+        version_content_dir,
+        bag_name
+    )
+    # storage dir to bagit
+    bag = bagit.make_bag(bagit_storage_dir, {'Contact-Name': 'E-ARK'})
+
+    bagit_file_name = "%s.tar" % bag_name
+    version_bag_package_file_path = os.path.join(version_content_dir, bagit_file_name)
+
+    exclude_files = ["state.json", "processing.log"]
+    checksum = create_package(bagit_storage_dir, bag_name, False, version_content_dir, True, exclude=exclude_files)
+    shutil.rmtree(bagit_storage_dir)
+
+    return bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version
+
+
+def persist_state(identifier, version, bagit_storage_dir, working_dir):
+    patch_data = {
+        "identifier": identifier,
+        "version": re.sub("\D", "", version),
+        "storage_dir": bagit_storage_dir,
+        "last_change": date_format(datetime.utcnow()),
+    }
+    json_data = json.dumps(patch_data)
+    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
+        inventory_file.write(json_data)
+    return patch_data
+
+
+def write_inventory(identifier, version_bag_package_file_path, version, bagit_file_name, version_dir_name):
+    aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(version_bag_package_file_path)
+    ocfl_package_file_path = os.path.join(version, "content", bagit_file_name)
+    ocfl = {
+        "digestAlgorithm": "sha512",
+        "fixity": {
+            "md5": {
+                hashval_md5: [ocfl_package_file_path]
+            },
+            "sha256": {
+                hashval_sha256: [ocfl_package_file_path]
+            }
+        },
+        "head": version_dir_name,
+        "id": identifier,
+        "manifest": {
+            hashval_sha512: [ocfl_package_file_path]
+        },
+        "type": "https://ocfl.io/1.0/spec/#inventory",
+        "versions": {
+            version_dir_name: {
+                "created": date_format(datetime.utcnow()),
+                "message": "Original SIP",
+                "state": {
+                    hashval_sha512: [ocfl_package_file_path]
+                }
+            }
+        }
+    }
+    ocfl_object_file_name = "0=ocfl_object_1.0"
+    with open(os.path.join(aip_storage_root, ocfl_object_file_name), 'w') as ocfl_object_file:
+        ocfl_object_file.write("ocfl_object_1.0")
+    inventory_file_name = "inventory.json"
+    inventory_file_path = os.path.join(aip_storage_root, inventory_file_name)
+    with open(inventory_file_path, 'w') as inventory_file:
+        inventory_file.write(json.dumps(ocfl, indent=4))
+    inventory_file_sha512 = get_sha512_hash(inventory_file_path)
+    with open(os.path.join(aip_storage_root, "inventory.json.sha512"), 'w') as checksum_inventory:
+        checksum_inventory.write("%s %s" % (inventory_file_sha512, inventory_file_name))
+
+
+def update_status(process_id, patch_data):
+    url = "%s://%s:%s/earkweb/api/informationpackages/%s/" % (
+        django_service_protocol, django_service_host, django_service_port, process_id)
+    return requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
+                              verify=verify_certificate)
+
+
+def update_inventory(identifier, version, version_bag_package_file_path, bagit_file_name, action):
+    aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
+    inventory_file_name = "inventory.json"
+    inventory_file_path = os.path.join(aip_storage_root, inventory_file_name)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(version_bag_package_file_path)
+    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", bagit_file_name)
+    inventory_json = read_and_load_json_file(inventory_file_path)
+    inventory_json["fixity"]["md5"][hashval_md5] = [ocfl_package_file_path]
+    inventory_json["fixity"]["sha256"][hashval_sha256] = [ocfl_package_file_path]
+    inventory_json["head"] = version
+    inventory_json["manifest"][hashval_sha512] = [ocfl_package_file_path]
+    inventory_json["versions"][version] = {
+        "created": date_format(datetime.utcnow()),
+        "message": "AIP (%s)" % action,
+        "state": {
+            hashval_sha512: [ocfl_package_file_path]
+        }
+    }
+    with open(inventory_file_path, 'w') as inventory_file:
+        inventory_file.write(json.dumps(inventory_json, indent=4))

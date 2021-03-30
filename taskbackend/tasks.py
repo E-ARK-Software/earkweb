@@ -25,6 +25,7 @@ from eatb.metadata.premis.premisgenerator import PremisGenerator
 from eatb.oais.sip_creation import create_sip
 from eatb.oais.sip_generator import SIPGenerator
 from eatb.packaging.manifest import ManifestCreation
+from eatb.packaging.package_creator import create_package
 from eatb.packaging.packaged_container import PackagedContainer
 from eatb.storage.checksum import ChecksumValidation, ChecksumAlgorithm, check_transfer, ChecksumFile, get_sha256_hash, \
     get_hash_values, get_sha512_hash
@@ -45,7 +46,8 @@ from access.search.solrserver import SolrServer
 
 from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
     get_last_submission_path, get_children_from_storage, get_package_from_storage, get_aip_parent, \
-    create_or_update_state_info_file, create_file_backup
+    create_or_update_state_info_file, create_file_backup, store_bag, persist_state, write_inventory, update_status, \
+    update_inventory
 import tarfile
 from celery import chain, group
 from earkweb.celery import app
@@ -134,12 +136,9 @@ def ingest_pipeline(_, context):
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
-        package_original_sip.s(),
         store_original_sip.s(),
         aip_migrations.s(),
         aip_package_mets_creation.s(),
-        create_manifest.s(),
-        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
@@ -154,8 +153,6 @@ def update_pipeline(_, context):
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
-        create_manifest.s(),
-        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
@@ -610,145 +607,37 @@ def create_manifest(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="aip_packaging", base=Task)
-@requires_parameters("process_id", "identifier", "package_name")
-@task_logger
-def package_original_sip(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
-
-    # append generation number to tar file; if tar file exists, the generation number is incremented
-    new_id = to_safe_filename(task_context["identifier"])
-
-    storage_file = os.path.join(working_dir, "%s.tar" % new_id)
-    tar = tarfile.open(storage_file, "w:")
-    task_log.info("Creating archive: %s" % storage_file)
-
-    total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
-    task_log.info("Total number of files in working directory %d" % total)
-    # log file is closed at this point because it will be included in the package,
-    # subsequent log messages can only be shown in the gui
-
-    # file_elements, delivery_xml = getDeliveryFiles(working_dir)
-    # continue normally we have only one tar
-    # file_reference = ParsedMets.get_file_element_reference(file_elements[0])
-
-    # task_log.info("Extracted file reference: %s" % file_reference)
-    # delivery_file = os.path.join(working_dir, os.path.basename(remove_protocol(file_reference)))
-
-    package_name = task_context['package_name']
-    delivery_xml = os.path.join(working_dir, "%s.xml" % package_name)
-    delivery_file_tar = os.path.join(working_dir, "%s.tar" % package_name)
-    delivery_file_zip = os.path.join(working_dir, "%s.zip" % package_name)
-
-    status_xml = os.path.join(working_dir, "state.xml")
-    submission_status_xml = os.path.join(working_dir, "submission/state.xml")
-    task_log.info("Ignoring package file (tar): %s" % delivery_file_tar)
-    task_log.info("Ignoring package file (zip): %s" % delivery_file_zip)
-    task_log.info("Ignoring delivery XML file: %s" % delivery_xml)
-    task_log.info("Ignoring status XML file: %s" % status_xml)
-    task_log.info("Ignoring submission status XML file: %s" % submission_status_xml)
-
-    # ignore files that were only needed to check on migration status
-    # ignore_dir = os.path.join(working_dir, 'metadata/earkweb')
-
-    ignore_list = [delivery_file_tar, delivery_file_zip, delivery_xml, status_xml, submission_status_xml]
-    i = 0
-    for subdir, dirs, files in os.walk(working_dir):
-        # if subdir == ignore_dir:
-        #     # remove files and subfolders from loop, so they are not packaged
-        #     del dirs[:]
-        #     del files[:]
-        for file in files:
-            if os.path.join(subdir, file) not in ignore_list:
-                entry = os.path.join(subdir, file)
-                arcname = new_id + "/" + os.path.relpath(entry, working_dir)
-                tar.add(entry, arcname=arcname)
-                if i % 10 == 0:
-                    perc = (i * 100) / total
-                    logger.debug("Progress: %d" % perc)
-                    # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-            i += 1
-    tar.close()
-    task_log.info("Package created: %s" % storage_file)
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-    task_context["storage_file"] = storage_file
-    return json.dumps(task_context)
-
-
 @app.task(bind=True, name="store_original_sip", base=Task)
 @requires_parameters("process_id", "package_name", "identifier")
 @task_logger
 def store_original_sip(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    identifier = task_context["identifier"]
+    package_name = task_context["package_name"]
+    process_id = task_context["process_id"]
+    working_dir = get_working_dir(process_id)
+
+    # remove sip
+    os.remove(os.path.join(working_dir, "%s.tar" % package_name))
+    os.remove(os.path.join(working_dir, "%s.xml" % package_name))
+
+    # store directory
     pts = DirectoryPairtreeStorage(config_path_storage)
-    version = pts.store_working_directory(task_context["process_id"], task_context["identifier"], working_dir)
-    task_log.info("Storing original SIP as version: %s" % version)
-    # version = pts.store(input["identifier"], working_dir)
+    version = pts.store_working_directory(process_id, identifier, working_dir)
     task_context["version"] = version
-    aip_storage_dir = make_storage_data_directory_path(task_context["identifier"], config_path_storage)
-    storage_dir = os.path.join(
-        aip_storage_dir,
-        version,
-        "content",
-        "bag00001"
+
+    # store bag
+    bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version_dir_name = store_bag(
+        version, identifier
     )
-    bag = bagit.make_bag(storage_dir, {'Contact-Name': 'E-ARK'})
-    storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
-    storage_path = os.path.join(storage_dir, "data", storage_file_name)
+    task_context["storage_dir"] = bagit_storage_dir
 
-    # TODO: check transfer!
-    #check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
+    # persist state
+    persist_state(identifier, version, bagit_storage_dir, working_dir)
 
-    task_context["storage_dir"] = storage_dir
-    patch_data = {
-        "identifier": task_context["identifier"],
-        "version": int(task_context["version"]),
-        "storage_dir": storage_dir,
-        "last_change": date_format(datetime.datetime.utcnow()),
-    }
-    json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
-        inventory_file.write(json_data)
-    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
-    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", storage_file_name)
-    ocfl = {
-      "digestAlgorithm": "sha512",
-      "fixity": {
-        "md5": {
-            hashval_md5: [ocfl_package_file_path]
-        },
-        "sha256": {
-            hashval_sha256: [ocfl_package_file_path]
-        }
-      },
-      "head": version,
-      "id": task_context["identifier"],
-      "manifest": {
-        hashval_sha512: [ ocfl_package_file_path ]
-      },
-      "type": "https://ocfl.io/1.0/spec/#inventory",
-      "versions": {
-        version: {
-          "created": date_format(datetime.datetime.utcnow()),
-          "message": "Original SIP",
-          "state": {
-            hashval_sha512: [ ocfl_package_file_path ]
-          }
-        }
-      }
-    }
-    ocfl_object_file_name = "0=ocfl_object_1.0"
-    with open(os.path.join(aip_storage_dir, ocfl_object_file_name), 'w') as ocfl_object_file:
-        ocfl_object_file.write("ocfl_object_1.0")
-    inventory_file_name = "inventory.json"
-    inventory_file_path = os.path.join(aip_storage_dir, inventory_file_name)
-    with open(inventory_file_path, 'w') as inventory_file:
-        inventory_file.write(json.dumps(ocfl, indent=4))
-    inventory_file_sha512 = get_sha512_hash(inventory_file_path)
-    with open(os.path.join(aip_storage_dir, "inventory.json.sha512"), 'w') as checksum_inventory:
-        checksum_inventory.write("%s %s" % (inventory_file_sha512, inventory_file_name))
+    # write ocfl inventory
+    write_inventory(identifier, version_bag_package_file_path, version, bagit_file_name, version_dir_name)
+
     return json.dumps(task_context)
 
 
@@ -757,132 +646,39 @@ def store_original_sip(_, context, task_log):
 @task_logger
 def store_aip(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
-    pts = DirectoryPairtreeStorage(config_path_storage)
-    version = pts.store_working_directory(task_context["process_id"], task_context["identifier"], working_dir)
-    task_log.info("Storing AIP as version: %s" % version)
-    # version = pts.store(input["identifier"], working_dir)
-    task_context["version"] = version
-    storage_dir = os.path.join(
-        make_storage_data_directory_path(task_context["identifier"], config_path_storage),
-        version,
-        "content",
-        "bag00001"
-    )
-    task_context["storage_dir"] = storage_dir
-    storage_file_name = "%s.tar" % to_safe_filename(task_context["identifier"])
-    storage_path = os.path.join(storage_dir, "data", storage_file_name)
-
-    #check_transfer(os.path.join(working_dir, storage_file_name), storage_path)
-
-    bag = bagit.make_bag(storage_dir, {'Contact-Name': 'E-ARK'})
-
-    patch_data = {
-        "identifier": task_context["identifier"],
-        "version": int(task_context["version"]),
-        "storage_dir": storage_dir,
-        "last_change": date_format(datetime.datetime.utcnow()),
-    }
-    json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as status_file:
-        status_file.write(json_data)
-
-    url = "%s://%s:%s/earkweb/api/informationpackages/%s/" % (
-        django_service_protocol, django_service_host, django_service_port, task_context["process_id"])
-    response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
-                              verify=verify_certificate)
-    aip_storage_dir = make_storage_data_directory_path(task_context["identifier"], config_path_storage)
-    inventory_file_name = "inventory.json"
-    inventory_file_path = os.path.join(aip_storage_dir, inventory_file_name)
-    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(storage_path)
-    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", storage_file_name)
-
+    identifier = task_context["identifier"]
+    process_id = task_context["process_id"]
+    working_dir = get_working_dir(process_id)
     action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
-    inventory_json = read_and_load_json_file(inventory_file_path)
-    inventory_json["fixity"]["md5"][hashval_md5] = [ocfl_package_file_path]
-    inventory_json["fixity"]["sha256"][hashval_sha256] = [ocfl_package_file_path]
-    inventory_json["head"] = version
-    inventory_json["manifest"][hashval_sha512] = [ocfl_package_file_path]
-    inventory_json["versions"][version] = {
-        "created": date_format(datetime.datetime.utcnow()),
-        "message": "AIP (%s)" % action,
-        "state": {
-            hashval_sha512: [ ocfl_package_file_path ]
-        }
-    }
+    # store directory
+    pts = DirectoryPairtreeStorage(config_path_storage)
 
-    with open(inventory_file_path, 'w') as inventory_file:
-        inventory_file.write(json.dumps(inventory_json, indent=4))
+    version = pts.store_working_directory(process_id, identifier, working_dir)
+    task_context["version"] = version
 
-    task_log.info("Status information updated: %s (%d)" % (response.text, response.status_code))
+    # store bag
+    bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version_dir_name = store_bag(
+        version, identifier
+    )
+    task_context["storage_dir"] = bagit_storage_dir
 
-    return json.dumps(task_context)
+    # persist state
+    patch_data = persist_state(identifier, version, bagit_storage_dir, working_dir)
 
+    # update status db
+    try:
+        response = update_status(process_id, patch_data)
+        if response.status_code == 200:
+            task_log.info("Status information updated")
+        else:
+            task_log.warning("Status information not updated: %s (%d)" % (response.text, response.status_code))
+    except requests.exceptions.ConnectionError as err:
+        task_log.warning("Connection to API failed. Status was not updated.")
 
-@app.task(bind=True, name="aip_packaging", base=Task)
-@requires_parameters("process_id", "identifier", "package_name")
-@task_logger
-def aip_packaging(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    # update ocfl inventory
+    update_inventory(identifier, version, version_bag_package_file_path, bagit_file_name, action)
 
-    # append generation number to tar file; if tar file exists, the generation number is incremented
-    new_id = to_safe_filename(task_context["identifier"])
-
-    storage_file = os.path.join(working_dir, "%s.tar" % new_id)
-    tar = tarfile.open(storage_file, "w:")
-    task_log.info("Creating archive: %s" % storage_file)
-
-    total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
-    task_log.info("Total number of files in working directory %d" % total)
-    # log file is closed at this point because it will be included in the package,
-    # subsequent log messages can only be shown in the gui
-
-    # file_elements, delivery_xml = getDeliveryFiles(working_dir)
-    # continue normally we have only one tar
-    # file_reference = ParsedMets.get_file_element_reference(file_elements[0])
-
-    # task_log.info("Extracted file reference: %s" % file_reference)
-    # delivery_file = os.path.join(working_dir, os.path.basename(remove_protocol(file_reference)))
-
-    package_name = task_context['package_name']
-    delivery_xml = os.path.join(working_dir, "%s.xml" % package_name)
-    delivery_file_tar = os.path.join(working_dir, "%s.tar" % package_name)
-    delivery_file_zip = os.path.join(working_dir, "%s.zip" % package_name)
-
-    status_xml = os.path.join(working_dir, "state.xml")
-    submission_status_xml = os.path.join(working_dir, "submission/state.xml")
-    task_log.info("Ignoring package file (tar): %s" % delivery_file_tar)
-    task_log.info("Ignoring package file (zip): %s" % delivery_file_zip)
-    task_log.info("Ignoring delivery XML file: %s" % delivery_xml)
-    task_log.info("Ignoring status XML file: %s" % status_xml)
-    task_log.info("Ignoring submission status XML file: %s" % submission_status_xml)
-
-    # ignore files that were only needed to check on migration status
-    # ignore_dir = os.path.join(working_dir, 'metadata/earkweb')
-
-    ignore_list = [delivery_file_tar, delivery_file_zip, delivery_xml, status_xml, submission_status_xml]
-    i = 0
-    for subdir, dirs, files in os.walk(working_dir):
-        # if subdir == ignore_dir:
-        #     # remove files and subfolders from loop, so they are not packaged
-        #     del dirs[:]
-        #     del files[:]
-        for file in files:
-            if os.path.join(subdir, file) not in ignore_list:
-                entry = os.path.join(subdir, file)
-                arcname = new_id + "/" + os.path.relpath(entry, working_dir)
-                tar.add(entry, arcname=arcname)
-                if i % 10 == 0:
-                    perc = (i * 100) / total
-                    logger.debug("Progress: %d" % perc)
-                    # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-            i += 1
-    tar.close()
-    task_log.info("Package created: %s" % storage_file)
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-    task_context["storage_file"] = storage_file
     return json.dumps(task_context)
 
 
@@ -896,7 +692,7 @@ def aip_indexing(_, context, task_log):
     identifier = task_context['identifier']
     version = pts.curr_version(task_context["identifier"])
     storage_dir = os.path.join(make_storage_data_directory_path(task_context["identifier"], config_path_storage),
-                               version, to_safe_filename(task_context["identifier"]))
+                               version, "content")
 
     if not pts.identifier_object_exists(identifier):
         task_log.warn("Unable to index data set because it is not available in storage.")
@@ -912,17 +708,21 @@ def aip_indexing(_, context, task_log):
 
     # delete existing records
     submission_url = "http://%s:%d/solr/storagecore1/update/?commit=true" % (solr_host, solr_port)
-    requests.post(submission_url, data="<delete><query>package:\"%s\"</query></delete>" % identifier,
+    delete_response = requests.post(submission_url, data="<delete><query>package:\"%s\"</query></delete>" % identifier,
                   headers={'Content-Type': 'text/xml'}, verify=verify_certificate)
+    if delete_response.status_code == 200:
+        task_log.info("Index records deleted for package: %s" % identifier)
+    else:
+        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % delete_response.status_code, delete_response.text)
 
     # initialize solr client
     solr_client = SolrClient(solr_server, "storagecore1")
-    store_dir = os.path.join(storage_dir)
-    package_files = list_files_in_dir(store_dir)
+    #store_dir = os.path.join(storage_dir)
+    package_files = list_files_in_dir(storage_dir)
     for package_file in package_files:
         if package_file.endswith(".tar"):
             task_log.info("Indexing %s" % package_file)
-            results = solr_client.post_tar_file(os.path.join(store_dir, package_file),
+            results = solr_client.post_tar_file(os.path.join(storage_dir, package_file),
                                                 identifier, version, default_reporter)
             task_log.info("Total number of files posted: %d" % len(results))
             num_ok = sum(1 for result in results if result['status'] == 200)

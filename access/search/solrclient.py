@@ -1,5 +1,6 @@
 """Solr client"""
 import logging
+import re
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
@@ -168,11 +169,11 @@ class SolrClient(object):
             tfile.extract(t, extract_dir)
             afile = os.path.join(extract_dir, t.name)
 
-            if os.path.exists(afile):
+            if os.path.exists(afile) and os.path.isfile(afile):
                 params = SolrDocParams(afile).get_params()
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
-                params['literal.version'] = version
+                params['literal.version'] = re.sub("\D", "", version)
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))
                 response = requests.post(post_url, files=files, verify=verify_certificate)

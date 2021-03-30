@@ -553,9 +553,11 @@ def package_entry_from_backend(_, identifier, entry):
     try:
         dpts = DirectoryPairtreeStorage(config_path_storage)
         object_path = dpts.get_object_path(from_safe_filename(identifier))
-        archive_file_path = os.path.join(object_path, "%s.tar" % identifier)
+        version = dpts.curr_version(from_safe_filename(identifier))
+        bag_name = dpts.get_bag_name(identifier, version, 1)
+        archive_file_path = os.path.join(object_path, "%s.tar" % bag_name)
         t = tarfile.open(archive_file_path, 'r')
-        tar_entry = os.path.join(identifier, entry)
+        tar_entry = os.path.join(bag_name, entry)
 
         info = t.getmember(tar_entry)
 
@@ -658,7 +660,7 @@ def directory_json(request, area, item):
     if area in ["work", "storage"]:
         try:
             ip = InformationPackage.objects.get(process_id=item) if area == "work" else \
-                InformationPackage.objects.get(identifier=item, version=version)
+                InformationPackage.objects.get(identifier=item, version=re.sub("\D", "", version))
             try:
                 u = User.objects.get(username=request.user)
                 if u != ip.user:

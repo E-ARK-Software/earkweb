@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-24 19:07+0100\n"
+"POT-Creation-Date: 2021-03-30 11:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -165,6 +165,10 @@ msgid "English"
 msgstr ""
 
 #: earkweb/settings.py:309
+msgid "Spanish"
+msgstr ""
+
+#: earkweb/settings.py:310
 msgid "German"
 msgstr ""
 
@@ -603,6 +607,15 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
+#: templates/earkweb/home.html:21 templates/registration/login.html:16
+msgid "InitialWelcome"
+msgstr ""
+"The <span class=emph>eArchiving Reference Implementation</span> is the most "
+"up-to-date demonstration implementation of the E-ARK Information Package "
+"specifications. In this environment you can try out the creation of "
+"Information Packages using your own data and metadata, and then download "
+"these packages for closer inspection, and run the E-ARK validator."
+
 # "<ul>"
 # "	<li>Text/Table Document and Data Formats"
 # "		<ul>"
@@ -634,17 +647,11 @@ msgstr ""
 # "		</ul>"
 # "	</li>"
 # "<ul>"
-#: templates/earkweb/home.html:21
-msgid "earkwebWelcomeText"
+#: templates/earkweb/home.html:22
+msgid "disclaimerText"
 msgstr ""
-"<p>The <span class='emph'>eArchiving Reference Implementation</span> is the "
-"most up-to-date demonstration implementation of the E-ARK <a href='https://"
-"dilcis.eu/specifications/common-specification'>Information Package "
-"specifications</a>. In this environment you can try out the creation of "
-"Information Packages using your own data and metadata, and then download "
-"these packages for closer inspection, and run the E-ARK validator.</"
-"p><p><emph>Disclaimer on use</emph>: Please note that the eArchiving "
-"Reference Implementation is intended for the purpose of demonstrating the "
+"<p><emph>Disclaimer on use</emph>: Please note that the eArchiving Reference "
+"Implementation is intended for the purpose of demonstrating the "
 "implementation of E-ARK Information Packages. The maximum size for uploaded "
 "files is 200 MB and a maximum of 50 files per representation can be "
 "uploaded. The following formats are allowed:</p><ul>\t<li>Text/Table "
@@ -687,7 +694,7 @@ msgstr "Information package management"
 msgid "NavIngestedPackages"
 msgstr "Information package management"
 
-#: templates/registration/login.html:16
+#: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"
 msgstr ""
 

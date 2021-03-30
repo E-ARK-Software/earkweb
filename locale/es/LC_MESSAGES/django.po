@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-30 11:53+0200\n"
+"POT-Creation-Date: 2021-03-29 19:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 
 #: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:51
 msgid "Search & Access"
-msgstr "Suche & Zugriff"
+msgstr "Búsqueda y acceso"
 
 #: access/templates/access/detail.html:40
 #: access/templates/access/search.html:52
@@ -28,19 +28,19 @@ msgstr "Suche & Zugriff"
 #: management/templates/management/iptable.html:23
 #: management/templates/management/render_network.html:51
 msgid "Information package"
-msgstr "Informationspaket"
+msgstr "Paquete de información"
 
 #: access/templates/access/detail.html:46
 #: management/templates/management/detail.html:86
 #: submission/templates/submission/detail.html:93
 msgid "Representations"
-msgstr "Repräsentationen"
+msgstr "Representaciones"
 
 #: access/templates/access/detail.html:50 access/views.py:61
 #: management/templates/management/detail.html:90
 #: submission/templates/submission/detail.html:97
 msgid "Identifier"
-msgstr "Bezeichner"
+msgstr "Identificador"
 
 #: access/templates/access/detail.html:50
 #: management/templates/management/detail.html:90
@@ -49,7 +49,7 @@ msgstr "Bezeichner"
 #: submission/templates/submission/iptable.html:7
 #: submission/templates/submission/start.html:32
 msgid "Label"
-msgstr "Bezeichner"
+msgstr "Etiqueta"
 
 #: access/templates/access/detail.html:50
 #: management/templates/management/detail.html:57
@@ -57,162 +57,158 @@ msgstr "Bezeichner"
 #: submission/templates/submission/detail.html:64
 #: submission/templates/submission/detail.html:97
 msgid "Description"
-msgstr "Beschreibung"
+msgstr "Descripción"
 
 #: access/templates/access/detail.html:50
 #: management/templates/management/detail.html:90
 #: submission/templates/submission/detail.html:97
 msgid "Access rights"
-msgstr "Zugriffsrechte"
+msgstr "Derechos de acceso"
 
 #: access/templates/access/detail.html:65
 msgid "Save changes"
-msgstr "Änderungen speichern"
+msgstr "Guardar cambios"
 
 #: access/templates/access/index.html:16 access/templates/access/search.html:96
 #: templates/earkweb/navbar.html:54
 msgid "Search"
-msgstr "Suche"
+msgstr "Búsqueda"
 
 #: access/templates/access/index.html:18
 #: access/templates/access/indexing_status.html:22
 #: templates/earkweb/navbar.html:55
 msgid "Indexing status"
-msgstr "Indexierungsstatus"
+msgstr "Estado de indexación"
 
 #: access/templates/access/indexing_status.html:25
 msgid "Indexing status of archived information packages."
-msgstr "Indizierungsstatus archivierter Informationspakete"
+msgstr "Estado de indexación de paquetes de información archivados"
 
 #: access/templates/access/search.html:39
 msgid "Full-text search"
-msgstr "Volltext-Suche"
+msgstr "Búsqueda de texto completo"
 
 #: access/templates/access/search.html:46
 msgid "Search term"
-msgstr "Suchbegriff"
+msgstr "Término de búsqueda"
 
 #: access/templates/access/search.html:54
 msgid "Identifier of the information package"
-msgstr "Bezeichner des Informationspakets"
+msgstr "Identificador del paquete de información"
 
 #: access/templates/access/search.html:59
 msgid "Content type"
-msgstr "Inhaltstyp"
+msgstr "Tipo de contenido"
 
 #: access/templates/access/search.html:79
 msgid "Sort"
-msgstr "Sortieren"
+msgstr "Ordenar"
 
 #: access/templates/access/search.html:82
 msgid "Relevance"
-msgstr "Relevanz"
+msgstr "Relevancia"
 
 #: access/templates/access/search.html:83
 msgid "size (ascending)"
-msgstr "Größe (aufsteigend)"
+msgstr "tamaño (ascendente)"
 
 #: access/templates/access/search.html:84
 msgid "size (descending)"
-msgstr "Größe (absteigend)"
+msgstr "tamaño (descendente)"
 
 #: access/templates/access/search.html:89
 msgid "Only information packages"
-msgstr "Nur Informationspakete"
+msgstr "Solo paquetes de información"
 
 #: access/views.py:63 submission/templates/submission/iptable.html:37
 msgid "Last change"
-msgstr "Letzte Änderung"
+msgstr "Ultimo cambio"
 
 #: access/views.py:64
 msgid "Number of indexed documents"
-msgstr "Anzahl indizierter Dokumente"
+msgstr "Número de documentos indexados"
 
 #: administration/templates/administration/backendadmin.html:18
 msgid "BackendAdministration"
-msgstr "Backend-Administration"
+msgstr "Administración de backend"
 
 #: administration/templates/administration/backendadmin.html:22
 #: templates/earkweb/navbar.html:12
 msgid "Dashboard"
-msgstr ""
+msgstr "Tablero"
 
 #: administration/templates/administration/backendadmin.html:24
 #: templates/earkweb/navbar.html:14
 msgid "Django Administration"
-msgstr "Django Administration"
+msgstr "Administración de Django"
 
 #: administration/templates/administration/backendadmin.html:25
 #: templates/earkweb/navbar.html:15
 msgid "Flower process monitoring"
-msgstr "Flower Prozess-Monitoring"
+msgstr "Monitoreo de procesos con Flower"
 
 #: administration/templates/administration/backendadmin.html:28
 #: templates/earkweb/navbar.html:18
 msgid "ResourceSyncInterface"
-msgstr "ResourceSync-Schnittstelle"
+msgstr "ResourceSync interfaz"
 
 #: administration/templates/administration/dashboard.html:86
 msgid "The backend task execution was successful"
-msgstr "Der Prozess wurde erfolgreich im Hintergrund ausgeführt"
+msgstr "Tarea ejecutado con exito"
 
 #: administration/templates/administration/dashboard.html:88
 msgid "The backend task execution did not deliver the expected result"
-msgstr "Der Prozess hat nicht das erwartete Ergebnis geliefert"
+msgstr "Error en la ejecución de la tarea"
 
 #: earkweb/settings.py:308
 msgid "English"
-msgstr "Englisch"
+msgstr "Inglés"
 
 #: earkweb/settings.py:309
-msgid "Spanish"
-msgstr ""
-
-#: earkweb/settings.py:310
 msgid "German"
-msgstr "Deutsch"
+msgstr "Alemán"
 
 #: earkweb/templates/earkweb/workingarea2.html:55
 msgid "WorkingDirectory"
-msgstr "Arbeitsverzeichnis"
+msgstr "Working directory"
 
 #: management/templates/management/about_module.html:2
 msgid "DataManagementTitle"
-msgstr "Archivdaten-Management"
+msgstr "Gestión de paquetes de información"
 
 #: management/templates/management/checkout.html:16
 #: management/templates/management/checkout.html:31
 msgid "Checkout working copy"
-msgstr "Arbeitskopie erstellen"
+msgstr "Solicitar copia de trabajo"
 
 #: management/templates/management/checkout.html:18
 msgid "There is currently no working copy for the data set"
-msgstr "Es gibt zur Zeit keine Arbeitskopie für das Informationspaket"
+msgstr "Actualmente no hay una copia de trabajo para el paquete de información."
 
 #: management/templates/management/checkout.html:20
 msgid "You can checkout a new working copy now."
-msgstr "Sie können jetzt eine Arbeitskopie erstellen"
+msgstr "Puede retirar una nueva copia de trabajo ahora."
 
 #: management/templates/management/checkout.html:28
 msgid "Reset logging"
-msgstr "Logging zurücksetzen"
+msgstr "Restablecer registro"
 
 #: management/templates/management/checkout_confirm.html:14
 msgid "Checkout task completed!"
-msgstr "Erstellung der Arbeitskopie abgeschlossen"
+msgstr "¡Tarea de retirar una nueva copia completada!"
 
 #: management/templates/management/checkout_confirm.html:15
 #: submission/templates/submission/ip_creation_process.html:15
 msgid "An error occurred while trying to execute the task!"
-msgstr "Es ist ein Fehler während der Ausführung des Prozesses aufgetreten"
+msgstr "¡Se produjo un error al intentar ejecutar la tarea!"
 
 #: management/templates/management/checkout_confirm.html:31
 msgid "Checkout confirmation"
-msgstr "Bestätigung der Arbeitskopie-Erstellung "
+msgstr "Confirmación de retirar una nueva copia"
 
 #: management/templates/management/checkout_confirm.html:33
 msgid "Information package checkout process is running."
-msgstr "Der Prozess der Informationspaket-Erstellung wurde gestartet"
+msgstr "Se está ejecutando el proceso de retirar una nueva copia del paquete de información."
 
 #: management/templates/management/checkout_confirm.html:39
 #: submission/templates/submission/ip_creation_process.html:66
@@ -220,453 +216,460 @@ msgstr "Der Prozess der Informationspaket-Erstellung wurde gestartet"
 msgid ""
 "Warning: no task monitoring available because the task monitoring service is "
 "not running at"
-msgstr ""
-"Warnung: Das Task-Monitoring ist nicht verfügbar, weil der Flower-Service "
-"nicht erreicht werden kann"
+msgstr "Advertencia: no hay supervisión de tareas disponible porque el servicio de monitoreo de tareas no se está ejecutando."
 
 #: management/templates/management/checkout_confirm.html:51
 msgid "Overview of information package"
-msgstr "Informationspakete-Übersicht"
+msgstr "Descripción general del paquete de información"
 
 #: management/templates/management/checkout_confirm.html:53
 #: submission/templates/submission/upload_finalize.html:63
 msgid "Edit information package"
-msgstr "Informationspaket bearbeiten"
+msgstr "Editar paquete de información"
 
 #: management/templates/management/deleted.html:22
 msgid "Deletion confirmation"
-msgstr "Bestätigung der Löschung"
+msgstr "Confirmación de eliminación"
 
 #: management/templates/management/deleted.html:24
 msgid "Working copy deleted: "
-msgstr "Arbeitskopie gelöscht"
+msgstr "Copia eliminada:"
 
 #: management/templates/management/deleted.html:26
 #: submission/templates/submission/deleted.html:25
 msgid "Back to overview"
-msgstr "Zur&uuml;ck zur Übersicht"
+msgstr "Atrás"
 
 #: management/templates/management/detail.html:46
 #: submission/templates/submission/detail.html:53
 msgid "Descriptive metadata"
-msgstr "Deskriptive Metadaten"
+msgstr "Metadatos descriptivos"
 
 #: management/templates/management/detail.html:53
 #: submission/templates/submission/detail.html:60
 msgid "Title"
-msgstr "Titel"
+msgstr "Título"
 
 #: management/templates/management/detail.html:63
 #: submission/templates/submission/detail.html:70
 msgid "Tags"
-msgstr "Tags"
+msgstr "Etiquetas"
 
 #: management/templates/management/detail.html:71
 #: submission/templates/submission/detail.html:78
 msgid "Contact point"
-msgstr "Kontakt"
+msgstr "Punto de contacto"
 
 #: management/templates/management/detail.html:75 submission/forms.py:104
 #: submission/forms.py:105 submission/templates/submission/detail.html:82
 msgid "Maintainer"
-msgstr "BetreuerIn"
+msgstr "Mantenedor/a"
 
 #: management/templates/management/detail.html:79
 #: submission/templates/submission/detail.html:86
-#, fuzzy
-#| msgid "MainInitialLanguage"
 msgid "Main language"
-msgstr "Hauptsprache"
+msgstr "Lenguaje principal"
 
 #: management/templates/management/detail.html:104
 #: submission/templates/submission/detail.html:111
 msgid "Back"
-msgstr "Zurück"
+msgstr "Atrás"
 
 #: management/templates/management/iptable.html:11 management/views.py:155
 msgid "WorkingCopy"
-msgstr "Arbeitsverzeichnis"
+msgstr "Directorio de editar"
 
 #: management/templates/management/iptable.html:36 management/views.py:154
 msgid "CreationDateTime"
-msgstr "Erstellungszeitpunkt"
+msgstr "Fecha de creación"
 
 #: management/templates/management/overview.html:18
 msgid "Archived information packages"
-msgstr "Archivierte Informationspakete"
+msgstr "Paquetes de información archivada"
 
 #: management/templates/management/overview.html:20
 msgid "SearchInternalLabelProcessIdOrIdentifier"
-msgstr ""
-"Nach internem Bezeichner, Prozess-Kennung oder Informationspaket-ID filtern"
+msgstr "Buscar etiqueta, id de proceso o identificador"
 
 #: management/views.py:151
 msgid "Archived Information Package"
-msgstr "Archiviertes Informationspaket"
+msgstr "Information package management"
 
 #: management/views.py:152
 msgid "PackageDirectory"
-msgstr "Informationspaket-Verzeichnis"
+msgstr "Gestión de paquetes de información"
 
 #: management/views.py:156
 msgid "InternalLabel"
-msgstr "Bezeichner"
+msgstr "Etiqueta"
 
 #: management/views.py:157
 msgid "PackageOverview"
-msgstr "Informationspaket-Übersicht"
+msgstr "Resumen de los paquetes de información"
 
 #: management/views.py:158
 msgid "ChangeIt"
-msgstr "Ändern"
+msgstr "Cambio"
 
 #: submission/forms.py:59
 msgid "Information package title"
-msgstr "Titel des Informationspakets"
+msgstr "Título del paquete de información"
 
 #: submission/forms.py:59
-#, fuzzy
-#| msgid "DataManagementTitle"
 msgid "Data set title"
-msgstr "Archivdaten-Management"
+msgstr "Título del paquete de información"
 
 #: submission/forms.py:60
 msgid "Information package description"
-msgstr "Beschreibung des Informationspakets"
+msgstr "Descripción del paquete de información"
 
 #: submission/forms.py:60
-#, fuzzy
-#| msgid "Description"
 msgid "Data set description"
-msgstr "Beschreibung"
+msgstr "Título del paquete de información"
 
 #: submission/forms.py:62
 msgid ""
 "Please enter 2 characters to get tag suggestions or write a custom tag and "
 "press enter to add it"
 msgstr ""
-"Bitte geben Sie 2 Zeichen ein, um Tag-Vorschläge zu erhalten, oder schreiben "
-"Sie ein benutzerdefiniertes Tag und drücken Sie die Eingabetaste, um es "
-"hinzuzufügen"
+"Ingrese 2 caracteres para recibir sugerencias de etiquetas o escriba una etiqueta personalizada y "
+"presiona enter para agregarlo"
 
 #: submission/forms.py:72
 msgid "PleaseAddNameOfPackage"
-msgstr "Bitte den Namen des Informationspakets hinzufügen"
+msgstr "Por favor agregue el nombre del paquete"
 
 #: submission/forms.py:73 submission/forms.py:89 submission/forms.py:94
 msgid "ModifyInitialValue"
-msgstr "Ändern"
+msgstr "Cambiar"
 
 #: submission/forms.py:75
 msgid ""
-"Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
-"('.') are allowed."
+"Solo caracteres alfanuméricos más guión ('-'), guión bajo ('_') y punto"
+"('.') están permitidos."
 msgstr ""
-"Es sind nur alphanumerische Zeichen plus Bindestrich ('-'), Unterstrich "
-"('_') und Punkt ('.') Erlaubt."
 
 #: submission/forms.py:88
-#, fuzzy
-#| msgid "PleaseAddNameOfPackage"
 msgid "PleaseAddTitleOfPackage"
-msgstr "Bitte den Namen des Informationspakets hinzufügen"
+msgstr "Por favor agregue el nombre del paquete de información."
 
-#: submission/forms.py:100 submission/forms.py:101
-#, fuzzy
-#| msgid "ContactOfPackage"
-msgid "Contact"
-msgstr "Kontaktstelle"
-
-#: submission/forms.py:102
-#, fuzzy
-#| msgid "ContactEmailOfPackage"
-msgid "Contact email"
-msgstr "Email der Kontaktstelle"
 
 #: submission/forms.py:106
 msgid "MaintainerEmail"
-msgstr "Email BetreuerIn"
+msgstr "Correo electrónico del/de la mantenedor/a"
 
 #: submission/forms.py:108
 msgid "MainLanguageOfPackage"
-msgstr "Hauptsprache"
+msgstr "Lenguaje principal"
 
 #: submission/forms.py:109
 msgid "MainInitialLanguage"
-msgstr "Deutsch"
+msgstr "Idioma inicial principal"
 
 #: submission/forms.py:114 submission/forms.py:115
 msgid "Representation label"
-msgstr "Metadaten der Repräsentation"
+msgstr "Etiqueta de representación"
 
 #: submission/forms.py:117
 msgid "AccessRightsField"
-msgstr "Zugriffsrecht"
+msgstr "Derechos de acceso"
 
 #: submission/forms.py:118
 msgid "DistributionAccessRightsValueFree"
-msgstr "Frei (Kein Vertrag erforderlich)"
+msgstr "Gratis (no se requiere contrato)"
 
 #: submission/forms.py:118
 msgid "DistributionAccessRightsValueLimited"
-msgstr "Zugriffsbeschränkt (Vertrag erforderlich)"
+msgstr "Limitado (requiere contrato)"
 
 #: submission/forms.py:121
 msgid "Representation description"
-msgstr "Beschreibung der Repräsentation"
+msgstr "Descripción de la representación"
 
 #: submission/templates/submission/about_module.html:3
 msgid "NavSubmissions"
-msgstr "Informationspaket-Erstellung"
+msgstr "Creación de paquetes de información"
 
 #: submission/templates/submission/deleted.html:21
 msgid "Delete confirmation"
-msgstr "Bestätigung der Löschung"
+msgstr "Eliminar confirmación"
 
 #: submission/templates/submission/deleted.html:23
 msgid "Information package working directory deleted"
-msgstr "Arbeitsverzeichnis des Informationspakets gelöscht"
+msgstr "Se eliminó el directorio de trabajo del paquete de información"
 
 #: submission/templates/submission/detail.html:47
 msgid "Data Set"
-msgstr "Informationspaket"
+msgstr "Conjunto de datos"
 
 #: submission/templates/submission/index.html:20
 msgid "Create new information package"
-msgstr "Neues Informationspaket erstellen"
+msgstr "Crear nuevo paquete de información"
 
 #: submission/templates/submission/index.html:21
 msgid "Information packages in process"
-msgstr "Informationspakete in Bearbeitung"
+msgstr "Paquetes de información en proceso"
 
 #: submission/templates/submission/index.html:23
 msgid "Batch information package submissions"
-msgstr "Übertragung mehrerer Informationspakete"
+msgstr "Envío de paquetes de información por lotes"
 
 #: submission/templates/submission/ip_creation_process.html:14
 msgid "Package creation task completed!"
-msgstr "Datenpaketerstellung abgeschlossen!"
+msgstr "¡Tarea de creación del paquete de información completada!"
 
 #: submission/templates/submission/ip_creation_process.html:60
 msgid "Information package creation"
-msgstr "Informationspaket erstellt"
+msgstr "Creación de paquetes de información"
 
 #: submission/templates/submission/ip_creation_process.html:62
 msgid "Submission information package creation process is running."
-msgstr "Informationspaket-Erstellung abschließen"
+msgstr "Se está ejecutando el proceso de creación del paquete de información."
 
 #: submission/templates/submission/ip_creation_process.html:90
 msgid "Review submission information package"
-msgstr "Informationspaket überprüfen"
+msgstr "Revisar el paquete de información"
 
 #: submission/templates/submission/iptable.html:12
-#, fuzzy
-#| msgid "External identifier (optional)"
 msgid "External identifier"
-msgstr "Externer identifier"
+msgstr "Identificador externo"
 
 #: submission/templates/submission/iptable.html:17
 msgid "Process ID"
-msgstr "Prozess-ID"
+msgstr "Identificacion de proceso"
 
 #: submission/templates/submission/iptable.html:21 submission/views.py:589
 msgid "Working directory"
-msgstr "Arbeitsverzeichnis"
+msgstr "Directorio de editar"
 
 #: submission/templates/submission/iptable.html:26
 msgid "Information package identifier"
-msgstr "Informationspaket-Bezeichner"
+msgstr "Identificador del paquete de información"
 
 #: submission/templates/submission/iptable.html:32
 msgid "Version"
-msgstr "Version"
+msgstr "Versión"
 
 #: submission/templates/submission/overview.html:17
 msgid "OpenSubmissions"
-msgstr "Informationspakete in Bearbeitung"
+msgstr "Paquetes de información en proceso"
 
 #: submission/templates/submission/overview.html:19
 msgid "SearchInternalLabelOrIdentifier"
-msgstr "Nach internem Bezeichner oder Prozess-Kennung filtern"
+msgstr "Buscar etiqueta o identificación de proceso"
 
 #: submission/templates/submission/start.html:21
 #: templates/earkweb/navbar.html:31
 msgid "NavNewSubmission"
-msgstr "Neues Informationspaket erstellen"
+msgstr "Crear nuevo paquete de información"
 
 #: submission/templates/submission/start.html:23
 msgid "EnterInternalLabelAndOptionalExternalId"
-msgstr ""
-"Bitte einen Bezeichner für das Informationspaket angeben. Optional kann eine "
-"externe ID hinzugefügt werden."
+msgstr "Ingrese la etiqueta y opcionalmente una identificación externa."
 
 #: submission/templates/submission/start.html:41
 msgid "External identifier (optional)"
-msgstr "Externer identifier"
+msgstr "Identificador externo (opcional)"
 
 #: submission/templates/submission/start.html:56
 #: submission/templates/submission/upload_mdform.html:182
 msgid "Continue"
-msgstr "Weiter"
+msgstr "Continuar"
 
 #: submission/templates/submission/start_ingest.html:29
 msgid "IngestProcessStarted"
-msgstr "Die Veröffentlichung des Informationspakets wurde gestartet!"
+msgstr "¡Comenzó el proceso de archivar el paquete de información!"
 
 #: submission/templates/submission/start_ingest.html:29
 msgid "Ingest pipeline terminated!"
-msgstr "Der Ingest-Workflow ist abgeschlossen!"
+msgstr "¡El proceso de archivar el paquetes de información ha terminado!"
 
 #: submission/templates/submission/start_ingest.html:65
 #: submission/templates/submission/start_ingest.html:96
 #: submission/templates/submission/upload_finalize.html:65
 msgid "Archive information package"
-msgstr "Informationspaket archivieren"
+msgstr "Paquete de información de archivo"
 
 #: submission/templates/submission/start_ingest.html:71
-#, fuzzy
-#| msgid "Ingest pipeline terminated!"
 msgid "Ingest pipeline execution"
-msgstr "Der Ingest-Workflow ist abgeschlossen!"
+msgstr "Ejecución de canalización de ingesta"
 
 #: submission/templates/submission/start_ingest.html:75
 msgid "The processing backend is not available"
-msgstr ""
-"Der Service für die Vearbeitung der Informationspakete ist nicht verfügbar"
+msgstr "El backend de procesamiento no está disponible"
 
 #: submission/templates/submission/start_ingest.html:81
 msgid "The processing backend is available"
-msgstr "Der Service für die Vearbeitung der Informationspakete ist verfügbar"
+msgstr "El backend de procesamiento está disponible"
 
 #: submission/templates/submission/start_ingest.html:113
 #, fuzzy
-#| msgid "Process ID"
+#| msgid "Data processing"
 msgid "Processing log"
-msgstr "Prozess-ID"
+msgstr "Registro de procesamiento"
 
 #: submission/templates/submission/upload.html:13
 msgid "Upload data"
-msgstr "Daten hochladen"
+msgstr "Subir datos"
 
 #: submission/templates/submission/upload_distributions.html:506
 msgid "Create representations and upload data"
-msgstr "Repräsentationen anlegen und Daten-Dateien hochladen"
+msgstr "Cree representaciones y cargue datos"
 
 #: submission/templates/submission/upload_distributions.html:522
 msgid "Representation ID"
-msgstr "Metadaten der Repräsentation"
+msgstr "ID de representación"
 
 #: submission/templates/submission/upload_distributions.html:528
 msgid "Create another representation"
-msgstr "Weitere Repräsentation anlegen"
+msgstr "Crea otra representación"
 
 #: submission/templates/submission/upload_distributions.html:534
 msgid "Switch to other representation"
-msgstr "Zu Repräsentation wechseln"
+msgstr "Cambiar a otra representación"
 
 #: submission/templates/submission/upload_distributions.html:544
 msgid "Delete distribution"
-msgstr "Repräsentation l&ouml;schen"
+msgstr "Eliminar representación"
 
 #: submission/templates/submission/upload_distributions.html:594
 msgid "Create information package"
-msgstr "Neues Informationspaket erstellen"
+msgstr "Crear paquete de información"
 
 #: submission/templates/submission/upload_finalize.html:37
 msgid "Information package created"
-msgstr "Informationspaket erstellt"
+msgstr "Paquete de información creado"
 
 #: submission/templates/submission/upload_finalize.html:40
 msgid "The information package was created successfully"
-msgstr "Das Informationspaket wurde erfolgreich erstellt"
+msgstr "El paquete de información se creó con éxito"
 
 #: submission/templates/submission/upload_mdform.html:122
 msgid "Information package metadata"
-msgstr "Informationspaket-Metadaten"
+msgstr "Metadatos del paquete de información"
 
 #: submission/templates/submission/upload_mdform.html:184
 msgid "Cancel"
-msgstr "Abbrechen"
+msgstr "Cancelar"
 
 #: submission/views.py:586
 msgid "Last modified"
-msgstr "Letzte Änderung"
+msgstr "Última modificación"
 
 #: submission/views.py:590
 msgid "ShowWorkingDirectory"
-msgstr "Arbeitsverzeichnis anzeigen"
+msgstr "Mostrar directorio de trabajo"
 
 #: submission/views.py:591
 msgid "Data Set Label"
-msgstr "Bezeichner des Informationspakets"
+msgstr "Etiqueta de conjunto de datos"
 
 #: submission/views.py:593
 msgid "Change"
-msgstr "Ändern"
+msgstr "Cambiar"
 
 #: submission/views.py:594
 msgid "Delete"
-msgstr "Löschen"
+msgstr "Eliminar"
 
 #: templates/earkweb/base.html:88 templates/earkweb/base_fileupload.html:79
 msgid "Language"
-msgstr "Sprache"
+msgstr "Lenguaje"
 
 #: templates/earkweb/base.html:118 templates/earkweb/base_fileupload.html:109
 msgid "log out"
-msgstr "ausloggen"
+msgstr "cerrar sesión"
 
 #: templates/earkweb/base.html:123 templates/earkweb/base_fileupload.html:114
 msgid "Access"
-msgstr "Benutzung"
+msgstr "Acceso"
 
 #: templates/earkweb/base.html:127 templates/earkweb/base_fileupload.html:118
 msgid "log in"
-msgstr "einloggen"
+msgstr "iniciar sesión"
 
 #: templates/earkweb/error.html:12
 msgid "Error"
-msgstr "Fehler"
+msgstr "Error"
 
 #: templates/earkweb/home.html:21 templates/registration/login.html:16
 msgid "InitialWelcome"
 msgstr ""
-"Die <span class = emph>eArchiving-Referenzimplementierung</span> ist die "
-"aktuelle Implementierung der E-ARK-Spezifikationen zu Demonstrationszwecken. "
-"In dieser Umgebung können Sie die Erstellung von Informationspaketen testen "
-"und dabei Ihre eigenen Daten und Metadaten verwenden. Anschließend können "
-"sie die erstellten Informationspakete zur genaueren Begutachtung "
-"herunterladen."
+"<span class=emph>eArchiving Reference Implementation</span> es la "
+"implementación de estándares E-ARK para demostrar la creación de paquetes de información. "
+"En este entorno se puede probar la creación de "
+"paquetes de información utilizando sus propios datos y metadatos, y luego descargándolos."
 
+# "<ul>"
+# "	<li>Text/Table Document and Data Formats"
+# "		<ul>"
+# "			<li>Text Document (*.txt)</li>"
+# "			<li>Portable Document Format (*.pdf)</li>"
+# "			<li>OpenDocument Spreadsheet (*.ods)</li>"
+# "			<li>OpenDocument Text Document (*.odt)</li>"
+# "			<li>Microsoft Word Open XML (*.docx)</li>"
+# "			<li>Microsoft Word Document (*.doc)</li>"
+# "			<li>Microsoft Excel 97-2003 Worksheet (*.xls)</li>"
+# "			<li> Microsoft Excel Open XML Spreadsheet (*.xlsx)</li>"
+# "			<li>Comma Separated Values (*.csv)</li># "
+# "		</ul>"
+# "	</li>"
+# "	<li>Image Formats"
+# "		<ul>"
+# "			<li>Joint Photographic Experts Group (*.jpg, *.jpeg)</li>"
+# "			<li>Tag Image File Format (*.tif, *.tiff)</li>"
+# "			<li>Portable Network Graphics (png)</li>"
+# "		</ul>"
+# "	</li>"
+# "	<li>Generic/Geographic Markup Language Formats"
+# "		<ul>"
+# "			<li>Extensible Markup Language (*.xml)</li>"
+# "			<li>XML Schema Definition (*.xsd)</li>"
+# "			<li>Geography Markup Language (*.gml)</li>"
+# "			<li>GPS Exchange Format (*.gpx)</li>"
+# "			<li>OpenStreetMap (*.osm)</li>"
+# "		</ul>"
+# "	</li>"
+# "<ul>"
 #: templates/earkweb/home.html:22
 msgid "disclaimerText"
 msgstr ""
-"<p><emph>Haftungsausschluss</emph>: Bitte beachten Sie, dass die eArchiving-"
-"Referenzimplementierung ausschließlich zu Demonstrationszwecken zur "
-"Verfügung gestellt wird. Die maximale Größe für Dateien, die hochgeladen "
-"werden, ist 200 MB und es können maximal 50 Dateien pro Repräsentation "
-"hochgeladen werden. Folgende Formate sind zulässig: </ p> <ul> \t <li> "
-"Text / TabelleDokument- und Datenformate \t \t <ul> \t \t \t <li> "
-"Textdokument (* .txt) </li> \t \t\t <li> Portable Document Format (* .pdf) "
-"</ li> \t \t \t <li> OpenDocumentTabellenkalkulation (* .ods) </li> \t \t \t "
-"<li> OpenDocument-Textdokument (* .odt) </li> \t \t\t <li> Microsoft Word "
-"Open XML (* .docx) </li> \t \t \t <li> Microsoft Word-Dokument(* .doc) </ "
-"li> \t \t \t <li> Microsoft Excel 97-2003-Arbeitsblatt (* .xls) </li> \t \t"
-"\t <li> Microsoft Excel Open XML-Tabelle (* .xlsx) </li> \t \t \t <li> "
-"KommaGetrennte Werte (* .csv) </li> \t \t </ul> \t </li> \t <li> Bildformate "
-"\t \t <ul> \t \t\t <li> Gemeinsame fotografische Expertengruppe (* .jpg, * ."
-"jpeg) </li> \t \t \t <li> TagBilddateiformat (* .tif, * .tiff) </li> \t \t "
-"\t <li> Tragbare Netzwerkgrafiken(png) </li> \t \t </ul> \t </li> \t <li> "
-"Generische / geografische Markup-Sprachformate \t\t <ul> \t \t \t <li> "
-"Erweiterbare Markup-Sprache (* .xml) </li> \t \t \t <li> XML-"
-"SchemaDefinition (* .xsd) </li> \t \t \t <li> Geografie-Markup-Sprache (* ."
-"gml) </li> \t \t\t <li> GPS-Austauschformat (* .gpx) </li> \t \t \t <li> "
-"OpenStreetMap (* .osm) </li> \t\t </ul> \t </li> </ul> <p> <emph> Anmerkung "
-"zum Datenschutz:</emph> Alle Daten und Metadaten, die in die E-ARK-"
-"Referenzimplementierung hochgeladen wurden, sind für alle angemeldeten "
-"Benutzer sichtbar. Wir empfehlen Ihnen daher, keine .sensiblen Inhalte "
-"hochzuladen. Bitte beachten Sie, dass die Daten auf täglich nachts (3 Uhr "
-"morgens MEZ) gelöscht werden. </p>"
+"<ul>"
+"<li> Formatos de datos y documentos de texto/tabla"
+"<ul>"
+"<li> Documento de texto (* .txt) </li>"
+"<li> Formato de documento portátil (* .pdf) </li>"
+"<li> Hoja de cálculo de OpenDocument (* .ods) </li>"
+"<li> Documento de texto de OpenDocument (* .odt) </li>"
+"<li> Microsoft Word Open XML (* .docx) </li>"
+"<li> Documento de Microsoft Word (* .doc) </li>"
+"<li> Hoja de trabajo de Microsoft Excel 97-2003 (* .xls) </li>"
+"<li> Hoja de cálculo de XML abierto de Microsoft Excel (* .xlsx) </li>"
+"<li> Valores separados por comas (* .csv) </li>"
+"</ul>"
+"</li>"
+"<li> Formatos de imagen"
+"<ul>"
+"<li> Grupo conjunto de expertos en fotografía (* .jpg, * .jpeg) </li>"
+"<li> Formato de archivo de imagen de etiqueta (* .tif, * .tiff) </li>"
+"<li> Gráficos de red portátiles (png) </li>"
+"</ul>"
+"</li>"
+"<li> Formatos de lenguaje de marcado genéricos / geográficos"
+"<ul>"
+"<li> Lenguaje de marcado extensible (* .xml) </li>"
+"<li> Definición de esquema XML (* .xsd) </li>"
+"<li> Lenguaje de marcado de geografía (* .gml) </li>"
+"<li> Formato de intercambio de GPS (* .gpx) </li>"
+"<li> OpenStreetMap (* .osm) </li>"
+"</ul>"
+"</li>"
+"</ul>"
+"<p>Toda la información "
+"y los metadatos cargados en la aplicación son visibles para "
+"todos los usuarios registrados. Por lo tanto, le recomendamos que no cargue ningún "
+"contenido restringido. Tenga en cuenta que los datos se eliminan a diario "
+"durante la noche (3 a. m. CET).</p>"
 
 #: templates/earkweb/navbar.html:8
 msgid "Administration"
@@ -674,80 +677,29 @@ msgstr "Administration"
 
 #: templates/earkweb/navbar.html:27
 msgid "Submission"
-msgstr "Informationspaket-Erstellung"
+msgstr "Creación de paquetes de información"
 
 #: templates/earkweb/navbar.html:32
 msgid "NavOpenSubmissions"
-msgstr "Informationspakete in Bearbeitung"
+msgstr "Paquetes de información en proceso"
 
 #: templates/earkweb/navbar.html:40
 msgid "Package Management"
-msgstr "Dataset-Management"
+msgstr "Gestión de paquetes de información"
 
 #: templates/earkweb/navbar.html:44
 msgid "NavIngestedPackages"
-msgstr "Archivierte Informationspakete"
+msgstr "Gestión de paquetes de información"
 
 #: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"
-msgstr ""
-"Das Repository ist als Testinstanz konfiguriert. Standard-Anmeldedaten: "
+msgstr "El repositorio está configurado como una instancia de prueba. Datos de inicio de sesión predeterminados:"
 
 #: util/djangoutils.py:30
 msgid "No unused Blockchain identifier available"
-msgstr "Keine Blockchain-Identifikatoren verfügbar"
+msgstr "No hay ningún identificador de Blockchain sin usar disponible"
 
 #: util/djangoutils.py:40
 msgid "An error occurred"
-msgstr "Es ist ein Fehler aufgetreten"
+msgstr "An error occurred"
 
-#~ msgid "Duration"
-#~ msgstr "Dauer"
-
-#~ msgid "Email address"
-#~ msgstr "Email-Adresse"
-
-#~ msgid "IPv4 address"
-#~ msgstr "IPv4-Adresse"
-
-#~ msgid "IP address"
-#~ msgstr "IP-Adresse"
-
-#~ msgid "No"
-#~ msgstr "Nein"
-
-#~ msgid "yes,no,maybe"
-#~ msgstr "ja,nein, vielleich"
-
-#~ msgid "Django Documentation"
-#~ msgstr "Django Dokumentation"
-
-#~ msgid "ThisWorkDirShowsContentOf"
-#~ msgstr "Dieses Verzeichnis zeigt den Inhalt des Informationspakets"
-
-#~ msgid "Overview"
-#~ msgstr "Informationspaket-Übersicht"
-
-#~ msgid "DataManagementAbout"
-#~ msgstr ""
-#~ "In diesem Bereich werden die archivierten Informationspakete verwaltet. "
-
-#, fuzzy
-#~| msgid "Information package metadata"
-#~ msgid "Information package management"
-#~ msgstr "Informationspaket-Metadaten"
-
-#~ msgid "PackageCreationAndTransfer"
-#~ msgstr "Erstellung und Archivierung der Informationspakete."
-
-#~ msgid "PublisherOfPackage"
-#~ msgstr "Herausgeber"
-
-#~ msgid "PublisherEmailOfPackage"
-#~ msgstr "Email des Herausgebers"
-
-#~ msgid "AuthenticationError"
-#~ msgstr "Authentifizierungsfehler"
-
-#~ msgid "PleaseVerifyUserAPIToken"
-#~ msgstr "Bitte API Token überprüfen"

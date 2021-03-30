@@ -55,7 +55,7 @@ class MetaFormStep1(forms.Form):
     # Field is hidden!
     package_name = forms.CharField(widget=forms.HiddenInput())
     # Field is hidden!
-    external_id = forms.CharField(widget=forms.HiddenInput())
+    external_id = forms.CharField(widget=forms.HiddenInput(), required=False)
     title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
     description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
     tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={

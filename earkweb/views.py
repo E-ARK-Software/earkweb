@@ -1,4 +1,5 @@
 import json
+import re
 
 from eatb.storage.directorypairtreestorage import make_storage_data_directory_path
 from eatb.utils.datetime import get_date_from_iso_str, DT_ISO_FORMAT
@@ -132,7 +133,7 @@ def storage_area(request, section, identifier):
     inventory = json.loads(inventory_response.text)
 
     version_timeline_data = [
-        {"id": int(key),
+        {"id": re.sub("\D", "", key),
          "content": "%s (%s)" % (val["message"], key),
          "start": val["created"],
         "className" : "myClassName"

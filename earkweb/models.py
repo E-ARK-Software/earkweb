@@ -103,6 +103,30 @@ class UploadedFile(models.Model):
         super(UploadedFile, self).save(*args, **kw_args)
 
 
+class VocabularyType(models.Model):
+
+    class Meta:
+        db_table = 'vocabularytype'
+
+    type = models.CharField(primary_key=True, max_length=20)
+
+    def __str__(self):
+        return self.type
+
+
+class Vocabulary(models.Model):
+
+    class Meta:
+        db_table = 'vocabulary'
+
+    id = models.AutoField(primary_key=True)
+    type = models.ForeignKey(VocabularyType, related_name='vocabulary', on_delete=models.CASCADE)
+    term = models.CharField(max_length=200)
+
+    def __str__(self):
+        return "%s:%s" % (self.type, self.term)
+
+
 class TestModel(models.Model):
     class Meta:
         db_table = 'testmodel'
