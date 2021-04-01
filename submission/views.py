@@ -554,9 +554,9 @@ def ip_creation_process(request, pk):
 def upload_finalize(request, pk):
     # get ip
     ip = InformationPackage.objects.get(pk=pk)
-
-    url = "/earkweb/api/informationpackages/%s/dir-json" % (
-       ip.process_id)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (
+       schema, domain, ip.process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
