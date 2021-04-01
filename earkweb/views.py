@@ -33,6 +33,12 @@ from django.utils.translation import gettext as trans
 logger = logging.getLogger(__name__)
 
 
+def get_domain_scheme(referrer):
+    from urllib.parse import urlparse
+    domain = urlparse(referrer)
+    return domain.scheme, domain.netloc
+
+
 class ActivateLanguageView(View):
     language_code = ''
     redirect_to = ''
@@ -100,7 +106,8 @@ def working_area2(request, section, process_id):
     r = request.META['PATH_INFO']
     title = trans("Information package management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
-    url = "/earkweb/api/informationpackages/%s/dir-json" % (process_id)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (schema, domain, process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     context = {
@@ -122,12 +129,13 @@ def storage_area(request, section, identifier):
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     #store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
     #logger.info(store_path)
-    url = "/earkweb/api/storage/informationpackages/%s/dir-json" % (identifier)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = "%s://%s/earkweb/api/storage/informationpackages/%s/dir-json" % (schema, domain, identifier)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
-    inventory_url = "/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
-    identifier)
+    inventory_url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
+    schema, domain, identifier)
     print(inventory_url)
     inventory_response = requests.get(inventory_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     inventory = json.loads(inventory_response.text)
@@ -190,7 +198,8 @@ def read_file(request, ip_sub_file_path, area=None):
     process_id = parts[0]
     path = ip_sub_file_path.lstrip(parts[0]).lstrip("/")
     area = area if area else "informationpackages"
-    url = "/earkweb/api/%s/%s/file-resource/%s/" % (area, process_id, path)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = "%s://%s/earkweb/api/%s/%s/file-resource/%s/" % (schema, domain, area, process_id, path)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     content_type = response.headers['content-type']

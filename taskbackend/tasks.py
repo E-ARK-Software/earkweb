@@ -813,7 +813,7 @@ def solr_update_metadata(_, context, task_log):
         task_log.info("Descriptive metadata validated successfully.")
 
     # reload the Solr core, because the index was changed by adding new fields
-    requests.get('http://localhost:8983/solr/admin/cores?action=RELOAD&core=%s' % solr_core)
+    requests.get('%s://%s:%s/solr/admin/cores?action=RELOAD&core=%s' % (solr_protocol, solr_host, solr_port, solr_core))
 
 
 @app.task(bind=True, name="dip_acquire_aips", base=Task)
