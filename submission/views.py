@@ -26,6 +26,8 @@ from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
+
+from earkweb.views import get_domain_scheme
 from eatb.metadata.parsedead import ParsedEad
 from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
@@ -95,8 +97,9 @@ def start(request):
 @csrf_exempt
 def fileresource(request, item, ip_sub_file_path):
     user_api_token = get_user_api_token(request.user)
-    url = "/earkweb/api/informationpackages/%s/file-resource/%s/" % (
-        item, ip_sub_file_path)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/%s/" % (
+        schema, domain, item, ip_sub_file_path)
     if request.method == "GET":
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
         content_type = response.headers['content-type']
@@ -525,9 +528,8 @@ def ip_creation_process(request, pk):
         request.session['step1'] = None
         request.session['step2'] = None
         request.session['representations'] = None
-
-        url = "/earkweb/api/informationpackages/%s/dir-json" % (
-            ip.process_id)
+        schema, domain = get_domain_scheme(request.headers.get("Referer"))
+        url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (schema, domain, ip.process_id)
         user_api_token = get_user_api_token(request.user)
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
