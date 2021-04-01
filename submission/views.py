@@ -95,8 +95,8 @@ def start(request):
 @csrf_exempt
 def fileresource(request, item, ip_sub_file_path):
     user_api_token = get_user_api_token(request.user)
-    url = "http://%s:%s/earkweb/api/informationpackages/%s/file-resource/%s/" % (
-        django_backend_service_host, django_backend_service_port, item, ip_sub_file_path)
+    url = "/earkweb/api/informationpackages/%s/file-resource/%s/" % (
+        item, ip_sub_file_path)
     if request.method == "GET":
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
         content_type = response.headers['content-type']
@@ -526,8 +526,8 @@ def ip_creation_process(request, pk):
         request.session['step2'] = None
         request.session['representations'] = None
 
-        url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (
-            django_backend_service_host, django_backend_service_port, ip.process_id)
+        url = "/earkweb/api/informationpackages/%s/dir-json" % (
+            ip.process_id)
         user_api_token = get_user_api_token(request.user)
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
@@ -553,8 +553,8 @@ def upload_finalize(request, pk):
     # get ip
     ip = InformationPackage.objects.get(pk=pk)
 
-    url = "http://%s:%s/earkweb/api/informationpackages/%s/dir-json" % (
-        django_backend_service_host, django_backend_service_port, ip.process_id)
+    url = "/earkweb/api/informationpackages/%s/dir-json" % (
+       ip.process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 

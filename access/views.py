@@ -121,7 +121,7 @@ def get_information_package_item(request, identifier, entry):
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % tar_entry)
 
-    url = "http://%s:%s/earkweb/api/informationpackages/%s/%s/stream" % (django_backend_service_host, django_backend_service_port, identifier, tar_entry)
+    url = "/earkweb/api/informationpackages/%s/%s/stream" % (identifier, tar_entry)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:

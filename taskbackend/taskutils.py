@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 def update_state_from_backend_api(request, process_id):
     """updating frontend database table based on information persisted in the backend"""
-    ip_state_url = "http://%s:%s/earkweb/api/informationpackages/%s/status/" % (django_backend_service_host, django_backend_service_port, process_id)
+    ip_state_url = "/earkweb/api/informationpackages/%s/status/" % (process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(ip_state_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     ip_state_json = json.loads(response.content)
@@ -59,7 +59,7 @@ def update_state_from_backend_api(request, process_id):
 
 def update_states_from_backend_api(request):
     """updating frontend database table based on status information in the backend"""
-    ip_states_url = "http://%s:%s/earkweb/api/informationpackages/status/" % (django_backend_service_host, django_backend_service_port)
+    ip_states_url = "/earkweb/api/informationpackages/status/"
     logger.info("Submissions update states request URL: %s" % ip_states_url)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(ip_states_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)

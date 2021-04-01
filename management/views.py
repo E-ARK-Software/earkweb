@@ -116,8 +116,8 @@ def checkout(request, identifier):
     from config.configuration import django_backend_service_host, django_backend_service_port
     import requests
     reset_aip = "reset_aip" in request.POST and request.POST["reset_aip"] == "on"
-    request_url = "http://%s:%s/earkweb/api/informationpackages/%s/checkout-working-copy/?reset=%s" % \
-                  (django_backend_service_host, django_backend_service_port, identifier, str(reset_aip).lower())
+    request_url = "/earkweb/api/informationpackages/%s/checkout-working-copy/?reset=%s" % \
+                  (identifier, str(reset_aip).lower())
     user_api_token = get_user_api_token(request.user)
     response = requests.post(request_url, headers={'Authorization': 'Token %s' % user_api_token},
                              verify=verify_certificate)
