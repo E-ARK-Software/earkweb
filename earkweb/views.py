@@ -126,8 +126,8 @@ def storage_area(request, section, identifier):
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
-    inventory_url = "http://%s:%s/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
-    django_backend_service_host, django_backend_service_port, identifier)
+    inventory_url = "/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
+    identifier)
     print(inventory_url)
     inventory_response = requests.get(inventory_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     inventory = json.loads(inventory_response.text)
