@@ -4,7 +4,7 @@
 function previewfile(node) {
     if(node.data) {
         var ip_work_dir_sub_path = node.data.path;
-        if(typeof variable !== 'undefined' && identifier != '') {
+        if(typeof identifier !== 'undefined' && identifier != '') {
             ip_work_dir_sub_path = ip_work_dir_sub_path.replace("../", "");
             ip_work_dir_sub_path = identifier + "/" + ip_work_dir_sub_path;
         }
