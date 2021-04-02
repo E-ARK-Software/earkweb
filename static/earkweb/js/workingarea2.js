@@ -66,7 +66,7 @@ function customMenu(node) {
                 console.log(node.data.path);
                 //$('#directorytree').delete_node(node);
                 $.ajax({
-                    url: django_backend_service_api_url+'/informationpackages/'+process_id+'/file-resource/'+node.data.path.replace(process_id+'/','')+'/',
+                    url: '/earkweb/api/informationpackages/'+process_id+'/file-resource/'+node.data.path.replace(process_id+'/','')+'/',
                     type: 'DELETE',
                     success: function() { console.log("success") },
                     error: function() { console.log("error") },
