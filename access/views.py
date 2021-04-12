@@ -18,7 +18,7 @@ import requests
 from django.contrib.auth.models import User
 
 from config.configuration import solr_host, django_backend_service_host, django_backend_service_port, \
-    verify_certificate, config_path_work, solr_core_url, solr_core_ping_url
+    verify_certificate, config_path_work, solr_core_url, solr_core_ping_url, django_service_url
 from config.configuration import django_service_port
 from config.configuration import django_service_host
 from config.configuration import solr_core
@@ -121,7 +121,7 @@ def get_information_package_item(request, identifier, entry):
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % tar_entry)
 
-    url = "/earkweb/api/informationpackages/%s/%s/stream" % (identifier, tar_entry)
+    url = "%s/api/informationpackages/%s/%s/stream" % (django_service_url, identifier, tar_entry)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:

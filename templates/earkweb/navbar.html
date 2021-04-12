@@ -3,6 +3,7 @@
 {% if user.is_authenticated %}
 
 {% if request.user.is_superuser or request.user.is_staff or request.user.is_superuser  %}
+<!--
 <li id="administration" class="nav-item dropdown">
 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   <i aria-hidden="true" class="fas fa-tools"></i>  {% trans 'Administration' %}
@@ -20,7 +21,7 @@
 </div>
 </li>
 {% endif %}
-
+-->
 
 <li id="submission" class="nav-item dropdown pointer text-nowrap">
   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

@@ -59,6 +59,7 @@ django_secret_key = config.get('server', 'django_secret_key')
 django_service_protocol = config.get('server', 'django_service_protocol')
 django_service_host = config.get('server', 'django_service_host')
 django_service_port = int(config.get('server', 'django_service_port'))
+django_service_url = build_url(django_service_protocol, django_service_host, django_service_port, app_label)
 package_access_url_pattern = \
     "%s://%s%s/%s/access/package/$packageid/" % \
     (django_service_protocol, django_service_host,
