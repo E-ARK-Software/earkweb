@@ -24,6 +24,7 @@ logfile_celery =  /var/log/celery/celery.log
 logfile_celery_proc =  /var/log/celery/logfile_celery_proc.log
 
 [server]
+django_debug = True
 django_secret_key = #3z0vf5)p_jd##o-y_&g-5yop(fx19f+-egw+2_@44w-kftfqw
 django_service_protocol = http
 django_service_host = localhost

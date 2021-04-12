@@ -55,6 +55,7 @@ logfile_celery = config.get('logs', 'logfile_celery')
 logfile_celery_proc = config.get('logs', 'logfile_celery_proc')
 
 # repo
+django_debug = config.get('server', 'django_debug')
 django_secret_key = config.get('server', 'django_secret_key')
 django_service_protocol = config.get('server', 'django_service_protocol')
 django_service_host = config.get('server', 'django_service_host')
