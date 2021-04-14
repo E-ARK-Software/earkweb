@@ -170,9 +170,11 @@ mptr and area elements for mapping MPEG21 DII Identifier values
 		http://eac.staatsbibliothek-berlin.de/eac-cpf-schema.html
 -->
 <xsd:schema targetNamespace="http://www.loc.gov/METS/" xmlns="http://www.loc.gov/METS/"
-	xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:DILCIS="DILCIS"
 	elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" id="eARDuuid">
 	<xsd:import namespace="http://www.w3.org/1999/xlink" schemaLocation="xlink.xsd"/>
+
+	<xsd:import namespace="DILCIS" schemaLocation="csip.xsd"/>
 	<!-- old schemalocation for xlink: http://www.loc.gov/standards/xlink/xlink.xsd -->
 	<!-- Change of xlink location based om risk of not getting access to Library of Congress servers -->
 	<xsd:element name="mets">
@@ -212,6 +214,7 @@ mptr and area elements for mapping MPEG21 DII Identifier values
 					<xsd:documentation xml:lang="en">Made element mandatory instead of optional,
 						Karin Bredenberg minOccurs="0 removed"</xsd:documentation>
 				</xsd:annotation>
+
 				<xsd:complexType>
 					<xsd:sequence>
 						<xsd:element name="agent" minOccurs="1" maxOccurs="unbounded">
@@ -465,6 +468,7 @@ mptr and area elements for mapping MPEG21 DII Identifier values
 							</xsd:restriction>
 						</xsd:simpleType>
 					</xsd:attribute>
+					<xsd:attribute ref="DILCIS:OAISPACKAGETYPE"/>
 				</xsd:complexType>
 			</xsd:element>
 			<xsd:element name="dmdSec" type="mdSecType" minOccurs="0" maxOccurs="unbounded">

@@ -137,7 +137,7 @@ def ingest_pipeline(_, context):
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
         store_original_sip.s(),
-        aip_migrations.s(),
+        #aip_migrations.s(),
         aip_package_mets_creation.s(),
         store_aip.s(),
         aip_indexing.s(),

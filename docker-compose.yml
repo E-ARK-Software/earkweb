@@ -54,7 +54,7 @@ services:
     build: .
     container_name: earkweb1
     command: /earkweb/run_earkweb.sh
-    #user: ${USER}:${USER}
+    user: ${USER}:${USER}
     ports:
       - "8000:8000"
     volumes:
@@ -75,7 +75,7 @@ services:
     build: .
     container_name: celery1
     command: /earkweb/run_celery.sh
-    #user: ${USER}:${USER}
+    user: ${USER}:${USER}
     volumes:
       - "/d1/sample/repo:/var/data/repo"
     restart: on-failure

@@ -7,7 +7,7 @@ var typeField = 'content_type';
 var rows = 20;
 
 function callback(data) {
-  var repo_item_access_endpoint = 'http://'+django_service_host+':'+django_service_port+'/earkweb/access/get-item/';
+  var repo_item_access_endpoint = '/earkweb/access/get-item/';
 
   var results = data.response.numFound;
   var resultMessage = results + ' result';
@@ -59,7 +59,7 @@ function callback(data) {
 }
 
 function askSolr(start) {
-  var solrEndpoint = 'http://'+django_service_host+':'+django_service_port+'/earkweb/solrif/storagecore1/';
+  var solrEndpoint = '/earkweb/solrif/storagecore1/';
   window.console.log("solr endpoint: " + solrEndpoint)
   var queryString = document.forms.find.queryString.value;
 
