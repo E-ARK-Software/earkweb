@@ -1,0 +1,34 @@
+{
+    "packageName": "example.wikipedia.article.oais.001",
+    "externalId": "https://en.wikipedia.org/wiki/Open_Archival_Information_System",
+    "title": "Open Archival Information System",
+    "description": "Open Archival Information System",
+    "tags": [
+        "knowledge sharing"
+    ],
+    "contactPoint": "E-ARK",
+    "contactEmail": "contact@eark-project.com",
+    "publisher": "E-ARK",
+    "publisherEmail": "contact@eark-project.com",
+    "language": "English",
+    "processId": "00174b7e-fa4f-4088-b551-7d038d8f8148",
+    "date": "15.04.2021",
+    "lastChange": "2021-04-15T18:12:49Z",
+    "created": "2021-04-15T18:12:49Z",
+    "representations": {
+        "8ef14996-d2ac-4daf-a58f-06f078febe91": {
+            "distribution_label": "pdf",
+            "distribution_description": "PDF representation",
+            "access_rights": "free",
+            "file_items": [
+                "representations/8ef14996-d2ac-4daf-a58f-06f078febe91/data/Open_Archival_Information_System.pdf"
+            ]
+        }
+    },
+    "nodeNamespaceId": "repo",
+    "repoIdentifier": "urn:uuid:2baa45fb-145e-44f4-895f-54ead5ab5eb7",
+    "repoTitle": "earkweb",
+    "repoDescription": "Repository",
+    "repoCatalogueIssued": "2020-01-01T12:00:00Z",
+    "repoCatalogueModified": "2020-02-01T12:00:00Z"
+}

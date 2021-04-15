@@ -1,0 +1,52 @@
+{
+    "digestAlgorithm": "sha512",
+    "fixity": {
+        "md5": {
+            "b4416d8462d873ff18050cd96c3919f8": [
+                "v00000/content/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00000_b00001.tar"
+            ],
+            "c13cce24b54620b0804a79a6691b92ca": [
+                "v00001/content/bag00001/data/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00001_b00001.tar"
+            ]
+        },
+        "sha256": {
+            "b35d6d7a5c05bdb34585398b6d46222c8b35f959bcbaf54a1af1198037cde4ec": [
+                "v00000/content/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00000_b00001.tar"
+            ],
+            "aeee47a04f542f0d50839fedc613fb57863f29726b536539690a1b3ffb46e7a8": [
+                "v00001/content/bag00001/data/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00001_b00001.tar"
+            ]
+        }
+    },
+    "head": "v00001",
+    "id": "urn:uuid:ff80b235-672f-4575-b04c-0e3a2b7a941c",
+    "manifest": {
+        "d576c78a9489e7d2298044ed8c27e376623dc3cd7f70dcee01f8bbb0f5f5f845783c44dd1d1295d8d25193b45c53edbe1b074276e7d3566a193058dfae8c403d": [
+            "v00000/content/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00000_b00001.tar"
+        ],
+        "69b2ab4b40551098c32d0a3992f1b40ca367181fd962a38cefe9aa72ff18eefd3b6718800e008549bfb4e207bf4f77234279bef148c79b4625b472a7f5db24d1": [
+            "v00001/content/bag00001/data/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00001_b00001.tar"
+        ]
+    },
+    "type": "https://ocfl.io/1.0/spec/#inventory",
+    "versions": {
+        "v00000": {
+            "created": "2021-04-15T18:13:17Z",
+            "message": "Original SIP",
+            "state": {
+                "d576c78a9489e7d2298044ed8c27e376623dc3cd7f70dcee01f8bbb0f5f5f845783c44dd1d1295d8d25193b45c53edbe1b074276e7d3566a193058dfae8c403d": [
+                    "v00000/content/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00000_b00001.tar"
+                ]
+            }
+        },
+        "v00001": {
+            "created": "2021-04-15T18:13:17Z",
+            "message": "AIP (ingest)",
+            "state": {
+                "69b2ab4b40551098c32d0a3992f1b40ca367181fd962a38cefe9aa72ff18eefd3b6718800e008549bfb4e207bf4f77234279bef148c79b4625b472a7f5db24d1": [
+                    "v00001/content/bag00001/data/urn+uuid+ff80b235-672f-4575-b04c-0e3a2b7a941c_v00001_b00001.tar"
+                ]
+            }
+        }
+    }
+}

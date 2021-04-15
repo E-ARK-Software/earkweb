@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mets xmlns="http://www.loc.gov/METS/" xmlns:csip="https://dilcis.eu/XML/METS/CSIPExtensionMETS" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ext="ExtensionMETS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" OBJID="00174b7e-fa4f-4088-b551-7d038d8f8148" LABEL="METS file describing the SIP matching the OBJID." PROFILE="http://www.ra.ee/METS/v01/IP.xml" TYPE="SIP" xsi:schemaLocation="http://www.loc.gov/METS/ https://www.loc.gov/standards/mets/version111/mets.xsd http://www.w3.org/1999/xlink https://www.w3.org/1999/xlink.xsd https://dilcis.eu/XML/METS/CSIPExtensionMETS schemas/DILCISExtensionMETS.xsd">
+  <metsHdr CREATEDATE="2021-04-15T20:12:49" RECORDSTATUS="NEW" csip:OAISPACKAGETYPE="SIP">
+    <agent ROLE="CREATOR" TYPE="OTHER" OTHERTYPE="SOFTWARE">
+      <name>eatb</name>
+      <note>VERSION=1.0</note>
+    </agent>
+    <metsDocumentID>METS.xml</metsDocumentID>
+  </metsHdr>
+  <amdSec ID="ID76caa15c-7f69-4a6f-8f11-bdefaf9b1bd1">
+    <digiprovMD ID="ID87e71056-cb54-4203-935f-2530c15b6454">
+      <mdRef LOCTYPE="URL" MIMETYPE="application/xml" CREATED="2021-04-15T20:12:49" xlink:type="simple" xlink:href="./metadata/preservation/premis.xml" CHECKSUMTYPE="SHA-256" CHECKSUM="bc267cb93dd89fa86d14504f2bcc46ee76bbd93f6ec8e8a2c15ab98f6f273b23" ID="ID70606f97-67ee-4234-ad97-0c3af730e013" SIZE="1747" MDTYPE="PREMIS"/>
+    </digiprovMD>
+  </amdSec>
+  <fileSec ID="ID08bc26fb-9439-4d6a-9192-8d01ed007a98">
+    <fileGrp ID="IDdbf4da3d-be73-44c7-8b09-e8d8fc8793af" USE="data">
+      <file MIMETYPE="application/pdf" CHECKSUMTYPE="SHA-256" CREATED="2021-04-15T20:12:45" CHECKSUM="f83ccba4cdf0ff2e8d813b22d0c1bb74ed89261afd6a0c0c9c3771e084b07858" USE="Datafile" ID="ID3d6f852b-0bb7-42de-b501-8b31fd28b023" SIZE="653978">
+        <FLocat xlink:href="./data/Open_Archival_Information_System.pdf" LOCTYPE="URL" xlink:type="simple"/>
+      </file>
+    </fileGrp>
+  </fileSec>
+  <structMap LABEL="CSIP" TYPE="PHYSICAL" ID="ID3dbb8659-76a1-4de9-b5dc-3f3eaca3c855">
+    <div LABEL="00174b7e-fa4f-4088-b551-7d038d8f8148" ID="IDaa2d8c17-27d5-4781-945c-251188e73969">
+      <div LABEL="data" ID="IDe3b9ac21-eb76-4e1d-aa04-b7fbd0222e61">
+        <fptr FILEID="ID3d6f852b-0bb7-42de-b501-8b31fd28b023"/>
+      </div>
+      <div LABEL="metadata" ID="ID642e283e-05a5-4c7d-b633-ee0071cf407e">
+        <fptr FILEID="ID70606f97-67ee-4234-ad97-0c3af730e013"/>
+      </div>
+    </div>
+  </structMap>
+  <structMap LABEL="Simple SIP structuring" TYPE="logical">
+    <div LABEL="Package structure" ID="IDa258777a-1b29-4e9b-be7c-421d6713f1bc">
+      <div LABEL="metadata files" ID="ID1714e944-b24e-4a1e-8395-2a50f3f3ef76">
+        <fptr FILEID="ID70606f97-67ee-4234-ad97-0c3af730e013"/>
+      </div>
+      <div LABEL="schema files" ID="ID440ab645-5ff4-4941-81c9-22bf58830669"/>
+      <div LABEL="content files" ID="ID620d1376-ab6c-4a9d-b78c-5807ba914448">
+        <fptr FILEID="ID3d6f852b-0bb7-42de-b501-8b31fd28b023"/>
+      </div>
+    </div>
+  </structMap>
+</mets>

@@ -8,7 +8,7 @@ from eatb.utils.fileutils import path_to_dict
 from config.configuration import sw_version, django_backend_service_api_url
 from config.configuration import sw_version_date
 
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.utils import translation
 from django.views.generic.base import View
 from django.conf import settings
@@ -20,7 +20,7 @@ from urllib.parse import urlencode
 import requests
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.template import loader
 from django.http import JsonResponse
 from celery.result import AsyncResult
@@ -133,6 +133,10 @@ def storage_area(request, section, identifier):
     url = "%s://%s/earkweb/api/storage/informationpackages/%s/dir-json" % (schema, domain, identifier)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+    if response.status_code != 200:
+        return render(request, 'earkweb/error.html', {
+            'header': 'Archived object does not exist (%d)' % response.status_code
+        })
 
     inventory_url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
     schema, domain, identifier)

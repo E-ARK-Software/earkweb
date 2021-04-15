@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:schemaLocation="info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd">
+  <object xsi:type="representation" xmlID="ID68dec565-39ef-4fc4-a360-eb72aef721b8">
+    <objectIdentifier>
+      <objectIdentifierType>repository</objectIdentifierType>
+      <objectIdentifierValue>ID68dec565-39ef-4fc4-a360-eb72aef721b8</objectIdentifierValue>
+    </objectIdentifier>
+  </object>
+  <object xsi:type="file" xmlID="IDff60e55d-457a-47f0-b706-e6527836084c">
+    <objectIdentifier>
+      <objectIdentifierType>filepath</objectIdentifierType>
+      <objectIdentifierValue>./data/Open_Archival_Information_System.pdf</objectIdentifierValue>
+    </objectIdentifier>
+    <objectCharacteristics>
+      <compositionLevel>0</compositionLevel>
+      <fixity>
+        <messageDigestAlgorithm>SHA-256</messageDigestAlgorithm>
+        <messageDigest>f83ccba4cdf0ff2e8d813b22d0c1bb74ed89261afd6a0c0c9c3771e084b07858</messageDigest>
+        <messageDigestOriginator>hashlib</messageDigestOriginator>
+      </fixity>
+      <size>653978</size>
+      <format>
+        <formatRegistry>
+          <formatRegistryName>PRONOM</formatRegistryName>
+          <formatRegistryKey>fmt/000</formatRegistryKey>
+          <formatRegistryRole>identification</formatRegistryRole>
+        </formatRegistry>
+      </format>
+    </objectCharacteristics>
+  </object>
+  <agent>
+    <agentIdentifier>
+      <agentIdentifierType>LOCAL</agentIdentifierType>
+      <agentIdentifierValue>Premis Generator</agentIdentifierValue>
+    </agentIdentifier>
+    <agentName>Premis Generator</agentName>
+    <agentType>Software</agentType>
+  </agent>
+</premis>

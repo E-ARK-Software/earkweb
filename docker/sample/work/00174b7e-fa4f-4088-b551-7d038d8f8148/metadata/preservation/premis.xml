@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<premis xmlns="info:lc/xmlns/premis-v2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:schemaLocation="info:lc/xmlns/premis-v2 ../../schemas/premis-v2-2.xsd">
+  <object xsi:type="representation" xmlID="ID5f587057-554c-4cff-ad62-45a012629cdd">
+    <objectIdentifier>
+      <objectIdentifierType>repository</objectIdentifierType>
+      <objectIdentifierValue>ID5f587057-554c-4cff-ad62-45a012629cdd</objectIdentifierValue>
+    </objectIdentifier>
+  </object>
+  <agent>
+    <agentIdentifier>
+      <agentIdentifierType>LOCAL</agentIdentifierType>
+      <agentIdentifierValue>Premis Generator</agentIdentifierValue>
+    </agentIdentifier>
+    <agentName>Premis Generator</agentName>
+    <agentType>Software</agentType>
+  </agent>
+</premis>
