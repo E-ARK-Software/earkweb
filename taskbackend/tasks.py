@@ -82,7 +82,7 @@ def sip_package(self, context, task_log):
     working_dir = get_working_dir(task_context["process_id"])
 
     if not os.path.exists(working_dir):
-        raise FileNotFoundError("Working directory not available: %s" % working_dir)
+        os.makedirs(working_dir, exist_ok=True)
 
     create_sip(working_dir, package_name, process_id, True, False, task_log)
 
