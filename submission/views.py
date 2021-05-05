@@ -503,20 +503,21 @@ def ip_creation_process(request, pk):
 
         template = loader.get_template(ead_path)
 
-        ead_content = template.render(context=context)
+        md_target_path = os.path.join(config_path_work, ip.process_id, "metadata", 'metadata.json')
+        md_content = json.dumps(basic_metadata_to_be_stored, indent=4)
+        target_dir = os.path.dirname(md_target_path)
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir, exist_ok=True)
+        with open(md_target_path, 'w') as md_file:
+            md_file.write(md_content)
 
-        files = {
-            'jsonmd': ('metadata.json', json.dumps(basic_metadata_to_be_stored, indent=4)),
-            'eadmd': ('descriptive/ead.xml', ead_content)
-        }
-        request_url = "%s/informationpackages/%s/metadata/upload/" % (django_backend_service_api_url, ip.process_id)
-        user_api_token = get_user_api_token(request.user)
-        response = requests.post(request_url, files=files, headers={'Authorization': 'Token %s' % user_api_token},
-                                 verify=verify_certificate)
-        if response.status_code != 201:
-            return render(request, 'earkweb/error.html', {
-                'header': 'Error uploading metadata (%d)' % response.status_code, 'message': response.text
-            })
+        ead_content = template.render(context=context)
+        ead_target_path = os.path.join(config_path_work, ip.process_id, "metadata/descriptive", 'ead.xml')
+        target_dir = os.path.dirname(ead_target_path)
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir, exist_ok=True)
+        with open(ead_target_path, 'w') as md_file:
+            md_file.write(ead_content)
 
         from taskbackend.tasks import sip_package
         task_input = {

@@ -100,3 +100,33 @@ def data_sources_info_from_processing_input(request, processing_input):
         else:
             raise ValueError('Error retrieving source data for process id: %s' % data_source.source)
         return data_sources_info
+
+
+class DirectoryInfo(object):
+
+    def __init__(self, root_directory):
+        self.root_directory = root_directory
+
+    def summary(self):
+
+        report = {"mime_types": {}, "total_num_files": 0}
+        contained_files = find_files(self.root_directory, "*")
+
+        for contained_file in contained_files:
+            report["total_num_files"] = report["total_num_files"] + 1
+            mime_type = magic.Magic(mime=True).from_file(contained_file)
+            if mime_type not in report["mime_types"]:
+                report["mime_types"][mime_type] = 1
+            else:
+                report["mime_types"][mime_type] = report["mime_types"][mime_type] + 1
+
+        return report
+
+    @staticmethod
+    def summary_to_hr(summary):
+        report_hr = {}
+        for k, v in summary.items():
+            key = k.replace("num", "number of").replace("_", " ")
+            key = key[0].upper() + key[1:]
+            report_hr[key] = v
+        return report_hr
