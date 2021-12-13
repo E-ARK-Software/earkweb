@@ -15,7 +15,7 @@ flower==0.9.5
 redis==3.5.3
 requests==2.25.1
 tornado==6.0.4
-lxml==4.5.2
+lxml==4.6.5
 Pairtree==0.8.1
 pika==1.1.0
 xmltodict==0.12.0
