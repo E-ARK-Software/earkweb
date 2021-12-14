@@ -67,3 +67,7 @@ Dockerfile_*
 static/download/*
 
 venv
+
+eatb
+fido
+python-magic
