@@ -16,24 +16,24 @@
     }
 
     $('#initialize').attr("disabled", "disabled");
-    $( "#initialize" ).on( "click", function() {
-        var pn = $( "#packagename" );
-        var extuid = $( "#extuid" );
-        var initialize_url = "/earkweb/submission/initialize/" + pn.val() + "/" + extuid.val() + "/";
-        $.ajax({
-            url: initialize_url,
-            type: "GET",
-        }).success(function(response){
-//            window.location.href = "/earkweb/submission/detail/"+response;
-            window.location.href = "/earkweb/submission/upload_step1/"+response;
-        });
-    });
+//    $( "#initialize" ).on( "click", function() {
+//        var pn = $( "#packagename" );
+//        var extuid = $( "#extuid" );
+//        var initialize_url = "/earkweb/submission/initialize/" + pn.val() + "/" + extuid.val() + "/";
+//        $.ajax({
+//            url: initialize_url,
+//            type: "GET",
+//        }).success(function(response){
+////            window.location.href = "/earkweb/submission/detail/"+response;
+//            window.location.href = "/earkweb/submission/upload_step1/"+response;
+//        });
+//    });
     function checkPackageName(successCallback) {
         var pn = $( "#packagename" );
         var check_folder_url = "/earkweb/check_submission_exists/" + pn.val()
         window.console.log(check_folder_url);
         if (pn.val().length < 3) {
-            $( "#msgpackagename" ).html("The lable must consist of at least 3 characters!");
+            $( "#msgpackagename" ).html("The package name must consist of at least 3 characters!");
             setInvalid("packagename");
             return false;
         } else {
@@ -64,6 +64,8 @@
      * Continously check if folder for data set exists
      */
     $( "#packagename" ).keyup(function() {
+       checkPackageName(function() {});
+    }).focus(function() {
        checkPackageName(function() {});
     });
     function validURI(value) {

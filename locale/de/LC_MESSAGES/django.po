@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-30 11:53+0200\n"
+"POT-Creation-Date: 2021-12-14 17:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:51
+#: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:52
 msgid "Search & Access"
 msgstr "Suche & Zugriff"
 
@@ -70,13 +70,13 @@ msgid "Save changes"
 msgstr "Änderungen speichern"
 
 #: access/templates/access/index.html:16 access/templates/access/search.html:96
-#: templates/earkweb/navbar.html:54
+#: templates/earkweb/navbar.html:55
 msgid "Search"
 msgstr "Suche"
 
 #: access/templates/access/index.html:18
 #: access/templates/access/indexing_status.html:22
-#: templates/earkweb/navbar.html:55
+#: templates/earkweb/navbar.html:56
 msgid "Indexing status"
 msgstr "Indexierungsstatus"
 
@@ -133,22 +133,22 @@ msgid "BackendAdministration"
 msgstr "Backend-Administration"
 
 #: administration/templates/administration/backendadmin.html:22
-#: templates/earkweb/navbar.html:12
+#: templates/earkweb/navbar.html:13
 msgid "Dashboard"
 msgstr ""
 
 #: administration/templates/administration/backendadmin.html:24
-#: templates/earkweb/navbar.html:14
+#: templates/earkweb/navbar.html:15
 msgid "Django Administration"
 msgstr "Django Administration"
 
 #: administration/templates/administration/backendadmin.html:25
-#: templates/earkweb/navbar.html:15
+#: templates/earkweb/navbar.html:16
 msgid "Flower process monitoring"
 msgstr "Flower Prozess-Monitoring"
 
 #: administration/templates/administration/backendadmin.html:28
-#: templates/earkweb/navbar.html:18
+#: templates/earkweb/navbar.html:19
 msgid "ResourceSyncInterface"
 msgstr "ResourceSync-Schnittstelle"
 
@@ -469,7 +469,7 @@ msgstr "Externer identifier"
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:21 submission/views.py:589
+#: submission/templates/submission/iptable.html:21 submission/views.py:592
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
 
@@ -490,7 +490,7 @@ msgid "SearchInternalLabelOrIdentifier"
 msgstr "Nach internem Bezeichner oder Prozess-Kennung filtern"
 
 #: submission/templates/submission/start.html:21
-#: templates/earkweb/navbar.html:31
+#: templates/earkweb/navbar.html:32
 msgid "NavNewSubmission"
 msgstr "Neues Informationspaket erstellen"
 
@@ -588,23 +588,23 @@ msgstr "Informationspaket-Metadaten"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: submission/views.py:586
+#: submission/views.py:589
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:590
+#: submission/views.py:593
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:591
+#: submission/views.py:594
 msgid "Data Set Label"
 msgstr "Bezeichner des Informationspakets"
 
-#: submission/views.py:593
+#: submission/views.py:596
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:594
+#: submission/views.py:597
 msgid "Delete"
 msgstr "Löschen"
 
@@ -668,23 +668,23 @@ msgstr ""
 "hochzuladen. Bitte beachten Sie, dass die Daten auf täglich nachts (3 Uhr "
 "morgens MEZ) gelöscht werden. </p>"
 
-#: templates/earkweb/navbar.html:8
+#: templates/earkweb/navbar.html:9
 msgid "Administration"
 msgstr "Administration"
 
-#: templates/earkweb/navbar.html:27
+#: templates/earkweb/navbar.html:28
 msgid "Submission"
 msgstr "Informationspaket-Erstellung"
 
-#: templates/earkweb/navbar.html:32
+#: templates/earkweb/navbar.html:33
 msgid "NavOpenSubmissions"
 msgstr "Informationspakete in Bearbeitung"
 
-#: templates/earkweb/navbar.html:40
+#: templates/earkweb/navbar.html:41
 msgid "Package Management"
 msgstr "Dataset-Management"
 
-#: templates/earkweb/navbar.html:44
+#: templates/earkweb/navbar.html:45
 msgid "NavIngestedPackages"
 msgstr "Archivierte Informationspakete"
 
