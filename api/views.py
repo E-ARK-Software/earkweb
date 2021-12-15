@@ -8,6 +8,7 @@ import traceback
 from json import JSONDecodeError
 
 import magic
+from _icu import CharsetDetector
 from dateutil import parser
 from datetime import date, timedelta, datetime
 from django.contrib.auth.models import User
@@ -409,19 +410,6 @@ def informationpackage_representation_info_by_label(request, process_id, represe
         return HttpResponseServerError({"message": e.__str__()})
 
 
-@api_view(['GET'])
-@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
-@permission_classes((IsAuthenticated,))
-def processing_file_resource(request, processing, resource_path):
-    """
-    get: Read processing log (database, file system)
-    """
-    username = request.user.username
-    file_path = os.path.join(config_path_processing, username, processing, resource_path)
-    return read_file(file_path)
-
-
-
 @csrf_exempt
 @api_view(['GET', 'DELETE'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
@@ -527,9 +515,18 @@ def read_file(file_path):
             response['Content-Disposition'] = "attachment; filename=%s" % os.path.basename(file_path)
             return response
         if file_size <= file_size_limit:
-            file_content = read_file_content(file_path)
-            if mime == "text/plain":
+            if mime.startswith("text/"):
                 mime = "text/plain;charset=utf-8"
+
+                stream = open(file_path, 'rb')
+                bytes = stream.read()
+
+                coding = CharsetDetector(bytes).detect().getName()
+                file_content = bytes.decode(coding).encode('utf-8')
+
+                file_content = file_content
+            else:
+                file_content = read_file_content(file_path)
             return HttpResponse(file_content, content_type=mime)
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" %
