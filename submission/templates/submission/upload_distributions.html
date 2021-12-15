@@ -35,32 +35,9 @@ function generateId (len) {
   return Array.from(arr, dec2hex).join('')
 }
 
-
-function checkValidBlockchainAddress(repr) {
-    $.ajax({
-        type: 'GET',
-        url: '/earkweb/api/is_asset_address/'+repr+'/',
-        data: {
-
-        },
-        success: function(data){
-            console.log("Blockchain address: "+data);
-            if(data)
-                $("#blockchain-symbol").show();
-            else
-                $("#blockchain-symbol").hide();
-        },
-        error: function(data){
-            $("#blockchain-symbol").hide();
-        }
-    });
-}
-
 function loadDataFiles(repr) {
 
     console.log("Loading: "+repr);
-
-    checkValidBlockchainAddress(repr);
 
     $.ajax({
             type: 'GET',
@@ -339,7 +316,6 @@ $( document ).ready(function() {
                     $('#repval').val(data.new_asset_id);
                     $('#repheader').html(data.new_asset_id);
                     addRepSwitchItem(data.new_asset_id);
-                    checkValidBlockchainAddress(data.new_asset_id);
                 }
                 if (typeof(data.error) !== 'undefined') {
                     $('#reprnote').html(
@@ -505,13 +481,13 @@ function delRep(rep, url) {
 
     <h2>{% trans 'Create representations and upload data' %}</h2>
 
-    <p>Information package: <b>{{ ip.package_name }}</b> / <b>{{ ip.process_id }}</b>
+    <h3>{{ ip.package_name }} ({{ ip.process_id }})
 
     {% if rep %}
         / <b><span id="repheader">{{ rep }}</span></b>
     {% endif %}
 
-    </p>
+    </h3>
 
     <div id="reperr"></div>
     <div id="reprnote"></div>
@@ -522,7 +498,6 @@ function delRep(rep, url) {
         <label for="repval">{% trans 'Representation ID' %}</label>
         <div class="row" style="padding-left:15px">
 
-            <img id="blockchain-symbol" src="{% static 'img/chain_icon.png' %}" style="padding-left: 5px; padding-top: 10px; height:25px" alt="Blockchain-Identifikator" data-toggle="tooltip" title="Blockchain-Identifikator">
             <input id="repval" type="text" style="left:5px; width: 500px" value="{{ rep }}"  data-toggle="tooltip" title="Currently selected representation" readonly="readonly">
 
             <button type="button" id="addrepbtn" class="btn" onclick="addRep($(this), add_rep_url)" title="Add another representation to the data set.">{% trans 'Create another representation' %} <i class="fa fa-plus"></i></button>
