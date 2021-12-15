@@ -5,12 +5,12 @@ import json
 
 import datetime
 
-from config.configuration import flower_path, flower_port, flower_server_external, verify_certificate, \
-    flower_server_internal
+from config.configuration import flower_path, flower_port, flower_host, verify_certificate, \
+    flower_host
 
 
 def get_task_info(task_id):
-    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_server_internal, flower_port, flower_path)
+    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
     print(flower_request_url)
     response = requests.get(flower_request_url,
                             verify=verify_certificate, headers={'Connection': 'close'})
@@ -45,7 +45,7 @@ def get_task_info(task_id):
 
 
 def get_task_list(task_id, exclude_tasks:list=None):
-    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_server_internal, flower_port, flower_path)
+    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
     response = requests.get(flower_request_url, verify=verify_certificate, headers={'Connection': 'close'})
     tasks_json = json.loads(response.text)
     task_ids = []

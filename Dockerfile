@@ -77,9 +77,9 @@ COPY wait-for-it.sh wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
 # entry point
-RUN chmod +x /earkweb/run_earkweb.sh
-RUN chmod +x /earkweb/run_celery.sh
-RUN chmod +x /earkweb/run_flower.sh
+RUN chmod +x /earkweb/docker/run_earkweb.sh
+RUN chmod +x /earkweb/docker/run_celery.sh
+RUN chmod +x /earkweb/docker/run_flower.sh
 #ENTRYPOINT ["/earkweb/run_all.sh"]
 
 USER ${USER}:${USER}

@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from eatb.utils.fileutils import human_readable_size, total_directory_size
 
-from config.configuration import flower_service_url, flower_server_external, flower_port, flower_path, solr_core_ping_url, \
+from config.configuration import flower_service_url, flower_host, flower_port, flower_path, solr_core_ping_url, \
     solr_core_url, solr_core, solr_core_overview_url, config_path_work, config_path_storage
 
 from taskbackend.tasks import backend_available
@@ -82,7 +82,7 @@ def dashboard(request):
 @login_required
 def backendadmin(request):
     context = {
-        'flower_host': flower_server_external,
+        'flower_host': flower_host,
         'flower_port': flower_port,
         'flower_path': flower_path,
         'celery_worker_status': get_celery_worker_status(),

@@ -50,8 +50,8 @@ solr_host = solr
 solr_port = 8983
 solr_core = storagecore1
 flower_protocol = http
-flower_server_external = localhost
-flower_server_internal = flower
+flower_host = localhost
+flower_host = flower
 flower_port = 5555
 flower_path = /flower/
 
