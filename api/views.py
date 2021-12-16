@@ -1072,7 +1072,7 @@ class UploadFile(APIView):
             representation_dir = os.path.join(config_path_work, process_id, representations_directory, representation)
             if not os.path.exists(representation_dir):
                 os.makedirs(representation_dir, exist_ok=True)
-                folders = ["metadata", "data", "documentation"]
+                folders = ["data"]
                 for folder in folders:
                     os.mkdir(os.path.join(representation_dir, folder))
             target_directory = os.path.join(config_path_work, process_id, representations_directory,
