@@ -115,7 +115,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 <div>
                                     <p>Flower task execution monitoring</p>
-                                    <p class="{% if flower_status %}text-success{% else %}text-primary{% endif %}">Service is {% if not flower_status %}not{% endif %} available.</p>
+                                    <p class="{% if flower_status %}text-success{% else %}text-primary{% endif %}">Service is {% if not flower_status %}not{% endif %} available at: {{ flower_api_endpoint }}</p>
                                 </div>
                             </div>
                         </div>

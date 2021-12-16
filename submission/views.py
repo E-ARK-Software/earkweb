@@ -21,6 +21,7 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView
 from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
@@ -777,8 +778,10 @@ def upload_aip(ip_work_dir, upload_path, f):
 
 
 @login_required
-@csrf_exempt
-def initialize(request, package_name, extuid):
+@require_http_methods(["POST"])
+def initialize(request):
+    package_name = request.POST["packagename"]
+    extuid = request.POST["extuid"]
     process_id = get_unique_id()
     working_dir = os.path.join(config_path_work, process_id)
     os.makedirs(os.path.join(working_dir, representations_directory), exist_ok=True)
@@ -791,7 +794,11 @@ def initialize(request, package_name, extuid):
     with open(os.path.join(working_dir, "state.json"), 'w') as status_file:
         status_file.write(state_data)
 
-    return HttpResponse(str(ip.id))
+    return redirect('submission:upload_step1', pk=ip.pk)
+
+    # return render(request, upload_step1, context)
+    #
+    # return HttpResponse(str(ip.id))
 
 
 @login_required

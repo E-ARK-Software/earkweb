@@ -267,3 +267,11 @@ This section explains how to run *earkweb* in development mode.
        Quit the server with CONTROL-C.
        
     Open web browser at http://127.0.0.1:8000/
+
+# Additional configuration steps
+
+1. Configure API key:
+
+    http://127.0.0.1:8000/earkweb/adminrest_framework_api_key/apikey/
+    
+    And make sure it matches the parameter `backend_api_key` in the configuration file `settings/settings.cfg`. 

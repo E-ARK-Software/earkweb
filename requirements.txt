@@ -30,9 +30,10 @@ uwsgi
 importlib_resources
 PyPDF2==1.26.0
 bagit==1.8.1
+PyICU==2.8
 # eatb
 -e git://github.com/E-ARK-Software/eatb.git#egg=eatb
-# -e ../eatb
+#-e eatb
 # python-magic
 -e git://github.com/ahupp/python-magic.git#egg=python-magic
 # fido (patched release 1.4.1)

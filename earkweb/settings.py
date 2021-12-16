@@ -313,5 +313,5 @@ LANGUAGES = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/html/earkweb/static/'
+STATIC_URL = '/earkwebstatic/'
+STATIC_ROOT = '/var/www/data/earkwebstatic/'

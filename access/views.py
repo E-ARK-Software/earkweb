@@ -125,10 +125,9 @@ def get_information_package_item(request, identifier, entry):
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:
-        response_msg = json.loads(response.text)
         return render(request, 'earkweb/error.html',
                       {'header': 'Not available',
-                       'message': response_msg["message"]})
+                       'message': "Resource not found!"})
     elif response.status_code == 200:
         content_type = response.headers['content-type']
         if content_type.startswith('text'):
