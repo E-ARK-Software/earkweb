@@ -85,7 +85,7 @@ function askSolr(start) {
   }
 
   if($('#submission_data_only').prop('checked')) {
-    packageQuery += " AND path:*/data/*";
+    packageQuery += " AND path:(\"*/representations/*\")";
   }
 
   if($('#exclude_migrated_data').prop('checked')) {
