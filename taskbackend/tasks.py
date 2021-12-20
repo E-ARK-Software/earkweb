@@ -713,7 +713,7 @@ def aip_indexing(_, context, task_log):
     if delete_response.status_code == 200:
         task_log.info("Index records deleted for package: %s" % identifier)
     else:
-        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % delete_response.status_code, delete_response.text)
+        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (delete_response.status_code, delete_response.text))
 
     # initialize solr client
     solr_client = SolrClient(solr_server, "storagecore1")
