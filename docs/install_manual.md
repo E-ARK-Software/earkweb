@@ -6,7 +6,7 @@ Step-by-step manual installation.
 
 ### Debian packages
 
-    sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev summain
+    sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev summain libicu-dev
     
 ### Message queue and result backend
 

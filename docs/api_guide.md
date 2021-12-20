@@ -125,7 +125,7 @@ The procedure is as follows:
 
    4. Store data:
    
-          curl http://$server:$port/repo/api/informationpackages/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
+          curl http://$server:$port/earkweb/api/informationpackages/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
 
       Once the data package is stored, it is indexed and gets an identifier of the form 
       "urn:uuid:f90668b9-112b-4723-8344-07449e7b657e".

@@ -40,7 +40,6 @@ urlpatterns = [
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(url='earkweb/')),
-    url(r'^repo/', include(urlpatterns)),
     url(r'^earkweb/', include(urlpatterns)),
 ]
 
