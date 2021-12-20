@@ -3,8 +3,10 @@ import subprocess
 import time
 import os
 from json import JSONDecodeError
-
+import sys
 import requests
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
 from util import build_url
 from util.configutils import set_default_config_if_not_exists
