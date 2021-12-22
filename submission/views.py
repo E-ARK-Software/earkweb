@@ -472,7 +472,9 @@ def ip_creation_process(request, pk):
         lang = pycountry.languages.get(name=context['language'])
         context["lang_alpha_3"] = "eng" if not lang else lang.alpha_3
 
-
+        basic_metadata.pop('csrfmiddlewaretoken', None)
+        basic_metadata.pop('hidden_user_tags', None)
+        basic_metadata.pop('currdate', None)
         basic_metadata_s = json.dumps(basic_metadata)
 
         ip.basic_metadata = basic_metadata_s

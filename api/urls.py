@@ -44,9 +44,9 @@ urlpatterns = [
     url(r'^ips/(?P<uid>[a-z0-9\-:+]{36,50})/(?P<representation>[a-z0-9\-]{40,40})/rename/$',
         views.rename_representation),
 
-    url(r'^ips/(?P<procid>[a-z0-9\-]{36,36})/create-package$', views.create_package),
+    url(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/create-package$', views.create_package),
 
-    url(r'^ips/(?P<procid>[a-z0-9\-]{36,36})/startingest$', views.start_ingest),
+    url(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/startingest$', views.start_ingest),
 
     url(r'^ips/(?P<uid>[a-z0-9\-:+]{36,50})/(?P<representation_id>[a-z0-9\-]{40,40})/$',
         views.do_informationpackage_representation),

@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def create_package(request, procid):
+def create_package(request, uid):
     """
     post:
     Create package (database, task queue)
@@ -70,7 +70,7 @@ def create_package(request, procid):
     """
     if request.method == "POST":
         try:
-            ip = InformationPackage.objects.get(uid=procid)
+            ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
             logger.info("Package creation task for process id: %s started by user %s" % (ip.uid, user.username))
             task_input = {
@@ -86,7 +86,7 @@ def create_package(request, procid):
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
-                "errdetail": "No information package record with ID '%s'" % procid}, status=404)
+                "errdetail": "No information package record with ID '%s'" % uid}, status=404)
         except Exception as err:
             tb = traceback.format_exc()
             logging.error(str(tb))
@@ -102,7 +102,7 @@ def create_package(request, procid):
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def start_ingest(request, procid):
+def start_ingest(request, uid):
     """
     post:
     Start ingest (database, task queue)
@@ -115,7 +115,7 @@ def start_ingest(request, procid):
     if request.method == "POST":
         try:
             # selected_ip = request.POST['selected_ip']
-            ip = InformationPackage.objects.get(uid=procid)
+            ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
             logger.info("Task processing for process id: %s started by user %s" % (ip.uid, user.username))
             identifier = ip.identifier if ip.identifier \
@@ -130,7 +130,7 @@ def start_ingest(request, procid):
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
-                "errdetail": "No information package record with ID '%s'" % procid}, status=404)
+                "errdetail": "No information package record with ID '%s'" % uid}, status=404)
         except Exception as err:
             tb = traceback.format_exc()
             logging.error(str(tb))
@@ -758,7 +758,7 @@ def submissions_list(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def submission_detail(request, procid):
+def submission_detail(request, uid):
     """
     get:
     Get details of a submission
@@ -780,7 +780,7 @@ def submission_detail(request, procid):
     Delete submission details
     """
     try:
-        info_obj = InformationPackage.objects.get(uid=procid)
+        info_obj = InformationPackage.objects.get(uid=uid)
     except InformationPackage.DoesNotExist:
         return HttpResponse(status=404)
     if request.method == 'GET':
