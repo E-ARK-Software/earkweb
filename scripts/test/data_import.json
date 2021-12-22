@@ -1,0 +1,31 @@
+[
+	{
+		  "packageName": "examples.poly_a",
+		  "title": "Poly for letter a",
+		  "description": "POLY is a data directory which contains examples of POLY files, a format used by Jonathan Shewchuk to define PSLG's, planar straight line graphs, for use with his program TRIANGLE.",
+		  "contactPoint": "Contact",
+		  "contactEmail": "contact@email.com",
+		  "publisher": "Publisher",
+		  "publisherEmail": "contact@email.com",
+		  "language": "English",
+		  "representations": {
+		  "5ed2c8b6-4f4b-46f7-a1f3-192472a76a41": {
+			  "distribution_label": "poly",
+			  "distribution_description": "POLY file",
+			  "access_rights": "free",
+			  "file_items": [
+				"a.poly"
+				  ]
+		  },
+		  "ebfebdfc-095c-4c90-ac23-b7c459d9c8ac": {
+			  "distribution_label": "png",
+			  "distribution_description": "PNG file",
+			  "access_rights": "free",
+			  "file_items": [
+				"a.png"
+				  ]
+		  }
+		  }
+	  }
+]
+
