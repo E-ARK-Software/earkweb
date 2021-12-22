@@ -73,18 +73,18 @@ r = redis.StrictRedis(host=redis_host, port=redis_port, password=redis_password,
 cli_commands = CliCommands(os.path.join(root_dir, "settings/commands.cfg"))
 
 @app.task(bind=True, name="sip_package", base=Task)
-@requires_parameters("package_name", "process_id", "org_nsid")
+@requires_parameters("package_name", "uid", "org_nsid")
 @task_logger
 def sip_package(self, context, task_log):
     task_context = json.loads(context)
     package_name = task_context["package_name"]
-    process_id = task_context["process_id"]
-    working_dir = get_working_dir(task_context["process_id"])
+    uid = task_context["uid"]
+    working_dir = get_working_dir(task_context["uid"])
 
     if not os.path.exists(working_dir):
         os.makedirs(working_dir, exist_ok=True)
 
-    create_sip(working_dir, package_name, process_id, True, False, task_log)
+    create_sip(working_dir, package_name, uid, True, False, task_log)
 
     # append generation number to tar file; if tar file exists, the generation number is incremented
     sip_tar_file = os.path.join(working_dir, task_context['package_name'] + '.tar')
@@ -118,7 +118,7 @@ def sip_package(self, context, task_log):
         "last_change": date_format(datetime.datetime.utcnow())
     }
     url = "%s://%s:%s/earkweb/api/ips/%s/" % (
-        django_service_protocol, django_service_host, django_service_port, task_context["process_id"])
+        django_service_protocol, django_service_host, django_service_port, task_context["uid"])
     response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
                               verify=verify_certificate)
     print("Status information updated: %s (%d)" % (response.text, response.status_code))
@@ -129,10 +129,10 @@ def sip_package(self, context, task_log):
 
 
 @app.task(bind=True, name="ingest_pipeline", base=Task)
-@requires_parameters("process_id")
+@requires_parameters("uid")
 def ingest_pipeline(_, context):
     task_context = json.loads(context)
-    check_required_params(task_context, ["process_id"])
+    check_required_params(task_context, ["uid"])
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
@@ -146,10 +146,10 @@ def ingest_pipeline(_, context):
 
 
 @app.task(bind=True, name="update_pipeline", base=Task)
-@requires_parameters("process_id")
+@requires_parameters("uid")
 def update_pipeline(_, context):
     task_context = json.loads(context)
-    check_required_params(task_context, ["process_id"])
+    check_required_params(task_context, ["uid"])
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
@@ -160,11 +160,11 @@ def update_pipeline(_, context):
 
 
 @app.task(bind=True, name="validate_working_directory", base=Task)
-@requires_parameters("process_id", "package_name")
+@requires_parameters("uid", "package_name")
 @task_logger
 def validate_working_directory(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     package_name = task_context["package_name"]
     delivery_file = os.path.join(working_dir, "%s.tar" % package_name)
     delivery_xml_file = os.path.join(working_dir, "%s.xml" % package_name)
@@ -260,11 +260,11 @@ def validate_working_directory(_, context, task_log):
 
 
 @app.task(bind=True, name="descriptive_metadata_validation", base=Task)
-@requires_parameters("process_id")
+@requires_parameters("uid")
 @task_logger
 def descriptive_metadata_validation(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     metadata_dir = os.path.join(working_dir, 'metadata/')
     task_log.info("Looking for EAD metadata files in metadata directory: %s" % metadata_dir)
 
@@ -286,12 +286,12 @@ def descriptive_metadata_validation(_, context, task_log):
 
 
 @app.task(bind=True, name="aip_migrations", base=Task)
-@requires_parameters("process_id")
+@requires_parameters("uid")
 @task_logger
 def aip_migrations(self, context, task_log):
     software = "earkweb"
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     # make metadata/earkweb dir for temporary files
     if not os.path.exists(os.path.join(working_dir, 'metadata/earkweb')):
         os.makedirs(os.path.join(working_dir, 'metadata/earkweb'))
@@ -491,11 +491,11 @@ def file_migration(self, details):
 
 
 @app.task(bind=True, name="aip_package_mets_creation", base=Task)
-@requires_parameters("process_id", "package_name", "identifier")
+@requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def aip_package_mets_creation(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     try:
         # copy schema files
         schemalist = os.listdir(os.path.join(root_dir, 'static/schemas'))
@@ -591,12 +591,12 @@ def aip_package_mets_creation(_, context, task_log):
 
 
 @app.task(bind=True, name="create_manifest", base=Task)
-@requires_parameters("process_id")
+@requires_parameters("uid")
 @task_logger
 def create_manifest(_, context, task_log):
     time.sleep(2)
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     manifest_creation = ManifestCreation(working_dir)
     manifest_file = os.path.join(working_dir, "manifest.txt")
     manifest_creation.create_manifest(working_dir, manifest_file)
@@ -608,14 +608,14 @@ def create_manifest(_, context, task_log):
 
 
 @app.task(bind=True, name="store_original_sip", base=Task)
-@requires_parameters("process_id", "package_name", "identifier")
+@requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def store_original_sip(_, context, task_log):
     task_context = json.loads(context)
     identifier = task_context["identifier"]
     package_name = task_context["package_name"]
-    process_id = task_context["process_id"]
-    working_dir = get_working_dir(process_id)
+    uid = task_context["uid"]
+    working_dir = get_working_dir(uid)
 
     # remove sip
     os.remove(os.path.join(working_dir, "%s.tar" % package_name))
@@ -623,7 +623,7 @@ def store_original_sip(_, context, task_log):
 
     # store directory
     pts = DirectoryPairtreeStorage(config_path_storage)
-    version = pts.store_working_directory(process_id, identifier, working_dir)
+    version = pts.store_working_directory(uid, identifier, working_dir)
     task_context["version"] = version
 
     # store bag
@@ -642,19 +642,19 @@ def store_original_sip(_, context, task_log):
 
 
 @app.task(bind=True, name="store_aip", base=Task)
-@requires_parameters("process_id", "package_name", "identifier")
+@requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def store_aip(_, context, task_log):
     task_context = json.loads(context)
     identifier = task_context["identifier"]
-    process_id = task_context["process_id"]
-    working_dir = get_working_dir(process_id)
+    uid = task_context["uid"]
+    working_dir = get_working_dir(uid)
     action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
     # store directory
     pts = DirectoryPairtreeStorage(config_path_storage)
 
-    version = pts.store_working_directory(process_id, identifier, working_dir)
+    version = pts.store_working_directory(uid, identifier, working_dir)
     task_context["version"] = version
 
     # store bag
@@ -668,7 +668,7 @@ def store_aip(_, context, task_log):
 
     # update status db
     try:
-        response = update_status(process_id, patch_data)
+        response = update_status(uid, patch_data)
         if response.status_code == 200:
             task_log.info("Status information updated")
         else:
@@ -734,11 +734,11 @@ def aip_indexing(_, context, task_log):
 
 
 @app.task(bind=True, name="solr_update_metadata", base=Task)
-@requires_parameters("process_id", "package_name", "identifier")
+@requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def solr_update_metadata(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     task_log.info("Updating SolR records with metadata.")
 
     submiss_dir = 'submission'
@@ -821,7 +821,7 @@ def solr_update_metadata(_, context, task_log):
 @task_logger
 def dip_acquire_aips(self, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
 
     # create dip working directory
     if not os.path.exists(working_dir):
@@ -867,7 +867,7 @@ def dip_acquire_aips(self, context, task_log):
 @task_logger
 def dip_acquire_dependant_aips(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
 
     # create dip working directory
     if not os.path.exists(working_dir):
@@ -904,7 +904,7 @@ def dip_acquire_dependant_aips(_, context, task_log):
 @task_logger
 def dip_extract_aips(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     selected_aips = task_context["selected_aips"]
     for selected_aip in selected_aips:
         task_log.info(str(selected_aip))
@@ -969,7 +969,7 @@ def dip_extract_aips(_, context, task_log):
 @task_logger
 def dip_package_metadata_creation(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     reps_path = os.path.join(working_dir, 'representations')
     if os.path.isdir(reps_path):
         for name in os.listdir(reps_path):
@@ -979,7 +979,7 @@ def dip_package_metadata_creation(_, context, task_log):
                 premisgen = PremisGenerator(rep_path)
                 premisgen.createPremis()
                 # Mets
-                mets_data = {'packageid': task_context["process_id"],
+                mets_data = {'packageid': task_context["uid"],
                              'type': 'DIP',
                              'schemas': os.path.join(working_dir, 'schemas'),
                              'parent': ''}
@@ -993,7 +993,7 @@ def dip_package_metadata_creation(_, context, task_log):
     # premisgen.createPremis()
 
     # create DIP parent Mets
-    mets_data = {'packageid': task_context["process_id"],
+    mets_data = {'packageid': task_context["uid"],
                  'type': 'DIP',
                  'schemas': os.path.join(working_dir, 'schemas'),
                  'parent': ''}
@@ -1014,7 +1014,7 @@ def dip_package_metadata_creation(_, context, task_log):
 @task_logger
 def dip_packaging(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
 
     # identifier (not uuid of the working directory) is used as first part of the tar file
 
@@ -1076,7 +1076,7 @@ def dip_packaging(_, context, task_log):
 @task_logger
 def dip_store(_, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     from config.configuration import config_path_storage
     if not os.path.exists(os.path.join(config_path_storage, "pairtree_version0_1")):
         raise ValueError("Storage path is not a pairtree storage directory.")
@@ -1109,7 +1109,7 @@ def dip_store(_, context, task_log):
 @task_logger
 def dip_create_access_copy(self, context, task_log):
     task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["process_id"])
+    working_dir = get_working_dir(task_context["uid"])
     from config.configuration import config_path_storage
     from config.configuration import dip_download_base_url
     from config.configuration import dip_download_path
@@ -1170,24 +1170,24 @@ def initialize_working_directory(context):
     check_required_params(task_context, ["package_name", "username"])
     package_name = task_context['package_name']
     username = task_context['username']
-    process_id = get_unique_id()
-    working_dir = os.path.join(config_path_work, process_id)
+    uid = get_unique_id()
+    working_dir = os.path.join(config_path_work, uid)
     os.makedirs(os.path.join(working_dir, 'distributions'), exist_ok=True)
     os.makedirs(os.path.join(working_dir, 'metadata'), exist_ok=True)
-    InformationPackage.objects.create(work_dir=os.path.join(config_path_work, process_id), process_id=process_id,
+    InformationPackage.objects.create(work_dir=os.path.join(config_path_work, uid), uid=uid,
                                       package_name=package_name, user=username, version=0)
-    InformationPackage.objects.get(process_id=process_id)
-    task_context["process_id"] = process_id
+    InformationPackage.objects.get(uid=uid)
+    task_context["uid"] = uid
     create_or_update_state_info_file(working_dir, task_context)
     return json.dumps(task_context)
 
 
 @app.task(bind=True, name="checkout_working_copy_from_storage")
-@requires_parameters("identifier", "process_id")
+@requires_parameters("identifier", "uid")
 @task_logger
 def checkout_working_copy_from_storage(_, context, task_log):
     task_context = json.loads(context) if isinstance(context, str) else context
-    process_id = task_context['process_id']
+    uid = task_context['uid']
     identifier = task_context['identifier']
 
     task_log.info('Checking out archival information package: %s' % identifier)
@@ -1200,7 +1200,7 @@ def checkout_working_copy_from_storage(_, context, task_log):
                                          version, to_safe_filename(identifier),
                                          "%s.tar" % to_safe_filename(identifier))
 
-    work_dir = os.path.join(config_path_work, process_id)
+    work_dir = os.path.join(config_path_work, uid)
 
     shutil.copy2(archival_package_file, work_dir)
     for f in os.listdir(work_dir):
@@ -1248,12 +1248,12 @@ def checkout_working_copy_from_storage(_, context, task_log):
 @app.task(name="delete_representation_data_from_workdir")
 def delete_representation_data_from_workdir(context):
     task_context = json.loads(context)
-    check_required_params(task_context, ["process_id", "representation_id"])
+    check_required_params(task_context, ["uid", "representation_id"])
 
-    process_id = task_context['process_id']
+    uid = task_context['uid']
     representation_id = task_context['representation_id']
 
-    work_dir = os.path.join(config_path_work, process_id)
+    work_dir = os.path.join(config_path_work, uid)
     distribution_dir = os.path.join(work_dir, representations_directory, representation_id)
 
     if os.path.exists(distribution_dir):
@@ -1265,13 +1265,13 @@ def delete_representation_data_from_workdir(context):
 @app.task(name="rename_representation_directory")
 def rename_representation_directory(context):
     task_context = json.loads(context)
-    check_required_params(task_context, ["process_id", "current_representation_dir", "new_representation_dir"])
+    check_required_params(task_context, ["uid", "current_representation_dir", "new_representation_dir"])
 
-    process_id = task_context['process_id']
+    uid = task_context['uid']
     current_representation_dirname = task_context['current_representation_dir']
     new_representation_dirname = task_context['new_representation_dir']
 
-    work_dir = os.path.join(config_path_work, process_id)
+    work_dir = os.path.join(config_path_work, uid)
     current_representation_directory = os.path.join(work_dir, representations_directory, current_representation_dirname)
     new_representation_directory = os.path.join(work_dir, representations_directory, new_representation_dirname)
 
@@ -1281,7 +1281,7 @@ def rename_representation_directory(context):
         os.makedirs(new_representation_directory)
     if not os.path.exists(new_representation_directory):
         raise ValueError("Process id: %s, renaming directory failed. The new directory does not exist: %s"
-                         % (process_id, new_representation_directory))
+                         % (uid, new_representation_directory))
     return json.dumps(task_context)
 
 

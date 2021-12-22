@@ -4,9 +4,11 @@ import re
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
+import pytz
 from eatb.format.formatidentification import FormatIdentification
 from eatb.utils import randomutils
-
+from eatb.utils.datetime import current_date
+from datetime import datetime
 from access.search.solrdocparams import SolrDocParams
 from config.configuration import verify_certificate
 
@@ -174,6 +176,8 @@ class SolrClient(object):
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
                 params['literal.size'] = t.size
+                params['literal.indexdate'] = current_date(time_zone_id='UTC')
+                params['literal.archivedate'] = datetime.fromtimestamp(os.path.getctime(tar_file_path)).astimezone(pytz.UTC)
                 params['literal.version'] = int(re.search(r'\d+', version).group(0))
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))

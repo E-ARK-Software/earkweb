@@ -94,26 +94,26 @@ def check_identifier_exists(request, identifier):
 def check_submission_exists(request, package_name):
     try:
         ip = InformationPackage.objects.get(package_name=package_name)
-        exists = ip and os.path.exists(os.path.join(config_path_work, ip.process_id))
+        exists = ip and os.path.exists(os.path.join(config_path_work, ip.uid))
         return HttpResponse(str(exists).lower())
     except:
         return HttpResponse("false")
 
 
-def working_area2(request, section, process_id):
+def working_area2(request, section, uid):
     template = loader.get_template('earkweb/workingarea2.html')
-    request.session['process_id'] = process_id
+    request.session['uid'] = uid
     r = request.META['PATH_INFO']
     title = trans("Information package management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/ips/%s/dir-json" % (schema, domain, process_id)
+    url = "%s://%s/earkweb/api/ips/%s/dir-json" % (schema, domain, uid)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     context = {
         "title": title,
         "section": section,
-        "process_id": process_id,
+        "uid": uid,
         "dirasjson": response.content.decode('utf-8'),
         "django_backend_service_api_url": django_backend_service_api_url
     }
@@ -177,7 +177,7 @@ def storage_area(request, section, identifier):
     context = {
         "title": title,
         "section": section,
-        "process_id": identifier,
+        "uid": identifier,
         "dirasjson": response.content.decode('utf-8'),
         "show_timeline": True,
         "identifier": identifier,
@@ -199,11 +199,11 @@ def read_file(request, ip_sub_file_path, area=None):
     :return: HTTP response (content and content type)
     """
     parts = ip_sub_file_path.split("/")
-    process_id = parts[0]
+    uid = parts[0]
     path = ip_sub_file_path.lstrip(parts[0]).lstrip("/")
     area = area if area else "ips"
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/%s/%s/file-resource/%s/" % (schema, domain, area, process_id, path)
+    url = "%s://%s/earkweb/api/%s/%s/file-resource/%s/" % (schema, domain, area, uid, path)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     content_type = response.headers['content-type']
@@ -213,8 +213,8 @@ def read_file(request, ip_sub_file_path, area=None):
 @login_required
 @csrf_exempt
 def get_directory_json(request):
-    process_id = request.POST['process_id']
-    work_dir = os.path.join(config_path_work, process_id)
+    uid = request.POST['uid']
+    work_dir = os.path.join(config_path_work, uid)
     dirlist = os.listdir(work_dir)
     if len(dirlist) > 0:
         package_name = dirlist[0]

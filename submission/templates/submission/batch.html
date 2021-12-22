@@ -69,8 +69,8 @@
                 <td><a href="{% url 'sip2aip:ip_detail' ip.pk %}" title='Detail information'>{{ ip.package_name }}</a></td>
                 <td>{{ ip.last_change|date:"d.m.Y H:i:s" }}</td>
                 <td>{{ ip.last_task }}</td>
-                <td><span id="st{{ ip.process_id }}" class="label label-default open">Open</span></td>
-                <td><input id="ip{{ ip.process_id }}" name="ipselect" value="{{ ip.process_id }}" type="checkbox" checked="checked"/></td>
+                <td><span id="st{{ ip.uid }}" class="label label-default open">Open</span></td>
+                <td><input id="ip{{ ip.uid }}" name="ipselect" value="{{ ip.uid }}" type="checkbox" checked="checked"/></td>
             </tr>
         {% endfor %}
     </tbody>
@@ -92,17 +92,17 @@
               });
               for(var i=0; i<selected.length; i++) {
                 window.console.log(selected[i].val());
-                var process_id = selected[i].val();
-                label_id = '#st'+process_id;
+                var uid = selected[i].val();
+                label_id = '#st'+uid;
                 changeLabel(label_id, "Open", "Queued", "Queued");
-                $('#ip'+process_id).attr("disabled", "disabled");
+                $('#ip'+uid).attr("disabled", "disabled");
                 $.ajax({
-                url: "/earkweb/sipcreator/submit_sipcreation_batch/" +  process_id + "/",
+                url: "/earkweb/sipcreator/submit_sipcreation_batch/" +  uid + "/",
                 method: "POST",
                 async: true,
                 data: { },
                 success: function(json_result) {
-                    var proc_pack_status_id = '#st'+json_result.process_id;
+                    var proc_pack_status_id = '#st'+json_result.uid;
                     changeLabel(proc_pack_status_id, "Queued", "Processing", "Processing");
                     $('#nextnote').css("display", "block");
                 },

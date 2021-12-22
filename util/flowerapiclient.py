@@ -21,7 +21,7 @@ def get_task_info(task_id):
     task_runtime = None
     if 'runtime' in task_json and isinstance(task_json['runtime'], int):
         task_runtime = round(task_json['runtime'], 2)
-    process_id = None
+    uid = None
     if 'args' in task_json:
 
         from ast import literal_eval
@@ -30,7 +30,7 @@ def get_task_info(task_id):
             js = tpl[0]
         else:
             js = json.loads(tpl[0])
-        process_id = js["process_id"]
+        uid = js["uid"]
     task_received = datetime.datetime.fromtimestamp(int(task_json['received'])).strftime('%Y-%m-%d %H:%M:%S')
 
     task_info = {
@@ -39,8 +39,8 @@ def get_task_info(task_id):
     }
     if task_runtime:
         task_info["runtime"] = task_runtime
-    if process_id:
-        task_info["process_id"] = process_id
+    if uid:
+        task_info["uid"] = uid
     return task_info
 
 

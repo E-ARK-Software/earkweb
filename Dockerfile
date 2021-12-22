@@ -74,7 +74,7 @@ RUN cd /earkweb && django-admin compilemessages
 # add non-priviledged user
 RUN adduser --disabled-password --gecos "" ${USER}
 
-COPY wait-for-it.sh wait-for-it.sh
+COPY scripts/wait-for-it.sh wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
 # entry point

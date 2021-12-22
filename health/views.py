@@ -139,7 +139,7 @@ def addperson(request):
 def testtask(request):
     from taskbackend.tasks import assign_identifier
     if request.method == 'POST':
-        assign_identifier.delay("{\"process_id\": \"86b080c0-058c-4064-aa04-6805416df690\"}")
+        assign_identifier.delay("{\"uid\": \"86b080c0-058c-4064-aa04-6805416df690\"}")
     logger.info(request.method)
     query_results = TestModel.objects.all()
     template = loader.get_template('health/testtask.html')

@@ -14,10 +14,10 @@
 </style>
 <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
 <script language="javascript">
-var process_id = '{{ ip.process_id }}';
+var uid = '{{ ip.uid }}';
 var rep = '{{ rep }}';
 var add_rep_url = '{% url 'submission:add_representation' ip.id %}';
-var del_rep_url = '{% url 'submission:del_representation' ip.process_id '000000000000000000000000000000000000' %}';
+var del_rep_url = '{% url 'submission:del_representation' ip.uid '000000000000000000000000000000000000' %}';
 var sip_detail_url = '/earkweb/submission/upload_step4/{{ pk }}/';
 </script>
 <script language="JavaScript">
@@ -41,7 +41,7 @@ function loadDataFiles(repr) {
 
     $.ajax({
             type: 'GET',
-            url: '/earkweb/api/ips/{{ process_id }}/dir-json',
+            url: '/earkweb/api/ips/{{ uid }}/dir-json',
             data: {
 
             },
@@ -93,9 +93,9 @@ function loadDataFiles(repr) {
 
                         var downloadUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path'];
                         var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']+'/';
-                        caption = mimeTypes[key]['path'].replace('{{ process_id }}/{{representations_directory}}/'+repr+'/data/', '');
+                        caption = mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/'+repr+'/data/', '');
                         initPrev.push(mimeTypes[key]['mimetype']);
-                        console.log(mimeTypes[key]['path'].replace('{{ process_id }}/{{representations_directory}}/'+repr+'/', ''));
+                        console.log(mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/'+repr+'/', ''));
                         initPrevConfig.push({caption: caption, filetype: mimeTypes[key]['mimetype'], downloadUrl: downloadUrl, key: mimeTypes[key]['path'], previewAsData: false, 'showPreview': false, url: deleteUrl});
                     }
 
@@ -179,7 +179,7 @@ function loadDataFiles(repr) {
                 },
                     uploadExtraData: function (previewId, index) {
                     var info = {
-                        "process_id": "{{ process_id }}",
+                        "uid": "{{ uid }}",
                         "rep": repr,
                         "distribution_description": $('#id_distribution_description').val(),
                         "offer": $('#id_offer').val(),
@@ -481,7 +481,7 @@ function delRep(rep, url) {
 
     <h2>{% trans 'Create representations and upload data' %}</h2>
 
-    <h3>{{ ip.package_name }} ({{ ip.process_id }})
+    <h3>{{ ip.package_name }} ({{ ip.uid }})
 
     {% if rep %}
         / <b><span id="repheader">{{ rep }}</span></b>
@@ -551,7 +551,7 @@ function delRep(rep, url) {
 
         <form id="datauploadform" enctype="multipart/form-data" method="post">
             <input type="hidden" name="packagename" value="{{ ip.package_name }}"/>
-            <input type="hidden" name="process_id" value="{{ ip.process_id }}"/>
+            <input type="hidden" name="uid" value="{{ ip.uid }}"/>
             <input type="hidden" name="pk" value="{{ pk }}"/>
             <input type="hidden" name="rep" value="{{ rep }}"/>
             <div class="file-loading">

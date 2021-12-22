@@ -65,7 +65,7 @@ def index(request):
 @login_required
 def sip_detail(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
-    if not ip.process_id:
+    if not ip.uid:
         context = {"ip": ip}
         return render(request, 'management/checkout.html', context=context)
     return upload_step1(request, pk)
@@ -91,14 +91,14 @@ def upload_aip(ip_work_dir, upload_path, f):
 def delete(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('management/deleted.html')
-    if ip.process_id:
-        path = os.path.join(config_path_work, ip.process_id)
+    if ip.uid:
+        path = os.path.join(config_path_work, ip.uid)
         if os.path.exists(path):
             rmtree(path)
     context = {
-        'process_id': ip.process_id,
+        'uid': ip.uid,
     }
-    ip.process_id = ""
+    ip.uid = ""
     ip.work_dir = ""
     ip.save()
     return HttpResponse(template.render(context=context, request=request))
@@ -107,11 +107,11 @@ def delete(request, pk):
 @login_required
 def checkout(request, identifier):
     ip = InformationPackage.objects.get(identifier=identifier)
-    process_id = None
-    if not ip.process_id:
-        process_id = str(uuid4())
-        ip.process_id = process_id
-        ip.work_dir = os.path.join(config_path_work, process_id)
+    uid = None
+    if not ip.uid:
+        uid = str(uuid4())
+        ip.uid = uid
+        ip.work_dir = os.path.join(config_path_work, uid)
     template = loader.get_template('management/checkout_confirm.html')
     from config.configuration import django_backend_service_host, django_backend_service_port
     import requests
@@ -135,7 +135,7 @@ def checkout(request, identifier):
     context = {
         'msg_checkout_confirm': resp_json['message'],
         'identifier': identifier,
-        'process_id': process_id,
+        'uid': uid,
         'ip': ip,
         "jobid": resp_json["job_id"],
         'flower_status': flower_is_running()
@@ -200,12 +200,12 @@ def informationpackages_overview(request):
     areacode = "2"
     filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
     sql_query = """
-    select ip.id as id, ip.work_dir as path, ip.process_id as process_id, ip.package_name as package_name,
+    select ip.id as id, ip.work_dir as path, ip.uid as uid, ip.package_name as package_name,
     CONCAT('<a href="/earkweb/management/modify/',ip.id,'/" data-toggle="tooltip" title="Metadaten ändern oder neue Version übertragen"><i class="glyphicon glyphicon-edit editcol"></i></a>') as edit,
-    CONCAT('<a href="/earkweb/management/working_area/management/',ip.process_id,'/" data-toggle="tooltip" title="View working directory">',ip.process_id,'</a><a href="/earkweb/management/delete/',ip.id,'/" data-toggle="tooltip" title="Remove working copy">', IF(process_id IS NULL OR process_id = '', '', '<i class="glyphicon glyphicon-trash editcol"></i>'), '</a>') as packagecol,
+    CONCAT('<a href="/earkweb/management/working_area/management/',ip.uid,'/" data-toggle="tooltip" title="View working directory">',ip.uid,'</a><a href="/earkweb/management/delete/',ip.id,'/" data-toggle="tooltip" title="Remove working copy">', IF(uid IS NULL OR uid = '', '', '<i class="glyphicon glyphicon-trash editcol"></i>'), '</a>') as packagecol,
     ip.identifier as identifier
     from informationpackage as ip
-    where storage_dir != '' and not deleted > 0 and (ip.process_id like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    where storage_dir != '' and not deleted > 0 and (ip.uid like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
     order by ip.last_change desc;
     """.format(filterword, areacode)
     # user_id={0} and, request.user.pk

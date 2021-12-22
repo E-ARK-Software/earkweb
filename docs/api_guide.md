@@ -37,22 +37,22 @@ The procedure is as follows:
    
           curl -X POST  -d 'package_name=packagename' http://$server:$port/earkweb/api/ips/
 
-      In case of success the HTTP response code is "201 CREATED" and a new process ID (`process_id`) is returned which 
+      In case of success the HTTP response code is "201 CREATED" and a new process ID (`uid`) is returned which 
       is required for uploading data in a subsequent step.
 
           {
-              "process_id":"73483984-debd-4d04-a14c-5acb11167719",
+              "uid":"73483984-debd-4d04-a14c-5acb11167719",
               "work_dir":"/var/data/repo/work/73483984-debd-4d04-a14c-5acb11167719",
               "package_name":"packagename",
               "version":0,
               "last_change":"2020-03-20T15:38:23.026106+01:00"
           }
           
-   2. Upload data file (here a CSV file /home/$user/datafile.csv (note that the process ID  (`process_id`) returned by 
+   2. Upload data file (here a CSV file /home/$user/datafile.csv (note that the process ID  (`uid`) returned by 
       the previous request is used in this request to identify the target data set where the files are going to be 
       uploaded).
       
-      For the first file of a representation only the process ID (`process_id`, here: 
+      For the first file of a representation only the process ID (`uid`, here: 
       `73483984-debd-4d04-a14c-5acb11167719`) needs to be provided and the representation ID can be omitted:
    
           curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/ips/73483984-debd-4d04-a14c-5acb11167719/data/upload/
@@ -114,13 +114,13 @@ The procedure is as follows:
       
           curl -X POST http://localhost:8000/earkweb/api/ips/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
 
-      Which in case of success returns the new process ID (`process_id`) of the working copy and the corresponding
+      Which in case of success returns the new process ID (`uid`) of the working copy and the corresponding
       job ID which allows monitoring the process.
 
           {
               "message": "Checkout request submitted successfully.", 
               "job_id": "59a7da2e-7496-4b70-b2c5-1fc1c7a41a02", 
-              "process_id": "650abd36-1203-4d6b-aa10-d8305271db9b"
+              "uid": "650abd36-1203-4d6b-aa10-d8305271db9b"
           }
 
    4. Store data:

@@ -14,13 +14,13 @@
 
 {% block content %}
 
-    {% if process_id %}
+    {% if uid %}
 
     {% include "submission/about_module.html" %}
 
     <h2 class="main">{% trans 'Delete confirmation' %}</h2>
 
-    <p>{% trans 'Information package working directory deleted' %}: '{{ process_id }}'</p>
+    <p>{% trans 'Information package working directory deleted' %}: '{{ uid }}'</p>
 
     <p><a href="{% url 'submission:overview' %}">{% trans 'Back to overview' %}</a></p>
 

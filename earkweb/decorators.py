@@ -65,8 +65,8 @@ def task_logger(f):
             context = json.loads(task_input)
         else:
             context = task_input
-        process_id = context["process_id"]
-        ip_dir = os.path.join(config_path_work, process_id)
+        uid = context["uid"]
+        ip_dir = os.path.join(config_path_work, uid)
         log_dir = ip_dir
         if not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)

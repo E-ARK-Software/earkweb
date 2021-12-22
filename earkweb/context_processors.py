@@ -20,4 +20,5 @@ def environment_variables(request):
             'sw_version': sw_version,
             'sw_version_date': sw_version_date,
             'is_test_instance': is_test_instance,
+            'lang': lang,
             'flower_host': flower_host, 'flower_port': flower_port, 'flower_path': flower_path}

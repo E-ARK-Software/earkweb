@@ -66,7 +66,7 @@ function customMenu(node) {
                 console.log(node.data.path);
                 //$('#directorytree').delete_node(node);
                 $.ajax({
-                    url: '/earkweb/api/ips/'+process_id+'/file-resource/'+node.data.path.replace(process_id+'/','')+'/',
+                    url: '/earkweb/api/ips/'+uid+'/file-resource/'+node.data.path.replace(uid+'/','')+'/',
                     type: 'DELETE',
                     success: function() { console.log("success") },
                     error: function() { console.log("error") },

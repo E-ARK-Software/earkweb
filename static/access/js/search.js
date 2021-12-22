@@ -35,10 +35,12 @@ function callback(data) {
     // var fileAdress = repo_item_access_endpoint + doc[identifier_field] + "/" + doc[titleField];
     var fileAdress = repo_item_access_endpoint  +  doc[titleField];
 
-    var displaytitle = "<span style='font-size:9px'>"+doc[identifier_field]+"</span><br>" + ( (doc[labelField] != null) ? doc[labelField] : doc[titleField] );
+    var archiveDateFormatted = new Date(doc['archivedate']).toLocaleDateString(window.lang+'-'+window.lang, {year:"numeric", month:"short", day:"numeric", hour:"numeric", minute:"numeric"})
+    var displaytitle = "<span style='font-size:9px'>"+doc[identifier_field]+" (v"+doc['version']+", "+archiveDateFormatted+")</span><br>" + ( (doc[labelField] != null) ? doc[labelField] : doc[titleField] );
 
     var popupWidth = window.popupWidth != undefined ? window.popupWidth : 900;
     var popupHeight = window.popupHeight != undefined ? window.popupHeight : 500;
+
 
     var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '?search='+document.forms.find.queryString.value+'" target="_blank" onclick="PopupCenter(this,\'xtf\',\''+popupWidth+'\',\''+popupHeight+'\'); return false;">' + displaytitle + '</a>';
     var bytes = doc[bytesField];

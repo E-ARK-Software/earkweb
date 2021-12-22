@@ -15,11 +15,11 @@
                 {% endif %}
                 <tr>
                     <td>{% trans 'Process ID' %}</td>
-                    <td>{{ ip.process_id }}</td>
+                    <td>{{ ip.uid }}</td>
                 </tr>
                 <tr class="row1">
                     <td>{% trans 'Working directory' %}</td>
-                    <td><a href="{% url 'submission:working_area' 'submission' ip.process_id %}" title='Path to the working directory of this submission'>{{ config_path_work }}/{{ ip.process_id }}</a></td>
+                    <td><a href="{% url 'submission:working_area' 'submission' ip.uid %}" title='Path to the working directory of this submission'>{{ config_path_work }}/{{ ip.uid }}</a></td>
                 </tr>
                 {% if ip.identifier %}
                 <tr class="row2">

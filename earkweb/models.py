@@ -26,7 +26,7 @@ class InformationPackage(models.Model):
     class Meta:
         db_table = 'informationpackage'
     id = models.AutoField(primary_key=True)
-    process_id = models.CharField(max_length=200, unique=True)
+    uid = models.CharField(max_length=200, unique=True)
     package_name = models.CharField(max_length=200)
     identifier = models.CharField(max_length=200)
     external_id = models.CharField(max_length=200)

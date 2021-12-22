@@ -17,6 +17,7 @@
 
     window.popupWidth = 630;
     window.popupHeight = 920;
+    window.lang = '{{ lang }}';
     </script>
     <script type="text/javascript" src="{% static 'access/js/search.js' %}">
     </script>
@@ -84,6 +85,8 @@
             <div class="col-sm-8">
               <select style="font-size:1em" id="sort" name="sort">
                     <option value="">{% trans 'Relevance' %}</option>
+                    <option value="archivedate asc">{% trans 'date (ascending)' %}</option>
+                    <option value="archivedate desc">{% trans 'date (descending)' %}</option>
                     <option value="size asc">{% trans 'size (ascending)' %}</option>
                     <option value="size desc">{% trans 'size (descending)' %}</option>
               </select>

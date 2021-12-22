@@ -24,7 +24,7 @@ process ID to identify the working directory. For example, assuming the process 
 follows:
 
     from taskbackend.tasks import validate_working_directory
-    result = validate_working_directory.delay('{"process_id": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}')
+    result = validate_working_directory.delay('{"uid": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}')
 
 Using `result.status`, the current status is printed out ('SUCCESS' in case it finished successfully):
 
@@ -40,7 +40,7 @@ not executed successfully:
 Each task returns a JSON formatted string which can be passed as input to another task. In this case, the 
 
     print result.result
-    {"process_id": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}
+    {"uid": "a81e9f2c-4ad0-4b8d-8973-d70eacf0fa1d"}
 
 A list of registered tasks can be retrieved by issuing the following command: 
 
