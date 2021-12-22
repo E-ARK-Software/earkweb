@@ -66,7 +66,7 @@ def create_package(request, procid):
     To start the package creation for a given working directory
 
         curl -v -X POST -H "Authorization: Token 16f733abd45c589867af5f72f5e0593ff3723010"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/dfd7d463-6560-4e0d-b8ec-1815e88513f4/create-package
+        http://127.0.0.1:8000/earkweb/api/ips/dfd7d463-6560-4e0d-b8ec-1815e88513f4/create-package
     """
     if request.method == "POST":
         try:
@@ -110,7 +110,7 @@ def start_ingest(request, procid):
     To start the ingest for a given submission run
 
         <code>curl -v -X POST -H "Authorization: Token 16f733abd45c589867af5f72f5e0593ff3723010"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/dfd7d463-6560-4e0d-b8ec-1815e88513f4/startingest
+        http://127.0.0.1:8000/earkweb/api/ips/dfd7d463-6560-4e0d-b8ec-1815e88513f4/startingest
     """
     if request.method == "POST":
         try:
@@ -157,7 +157,7 @@ def checkout_working_copy(request, identifier):
 
     To checkout the information package use the following command:
 
-        curl -X POST http://localhost:8000/earkweb/api/informationpackages/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
+        curl -X POST http://localhost:8000/earkweb/api/ips/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
     """
     data = None
     if request.body and request.body != "":
@@ -422,7 +422,7 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
     For example, the following is a request to retrieve a metadata file named `metadata.json` from  the metadata folder
     in the working directory:
 
-        http://localhost:8000/earkweb/api/informationpackages/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
+        http://localhost:8000/earkweb/api/ips/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
 
     delete: Remove file resource (database, working area)
 
@@ -474,7 +474,7 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
     Retrieve file resource from the storage area's file system.
     For example, the following is a request to retrieve a packaged data set from the storage area:
 
-        http://localhost:8000/earkweb/api/informationpackages/urn%3Auuid%3A42658bbd-a76f-46f5-85da-f0ad2bed94dc/file-resource/urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar/
+        http://localhost:8000/earkweb/api/ips/urn%3Auuid%3A42658bbd-a76f-46f5-85da-f0ad2bed94dc/file-resource/urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar/
 
     Note that in the filename the colon of the identifier is mapped to '+' so that the identifier:
 
@@ -909,7 +909,7 @@ def get_ip_states(request):
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/status/
+            http://localhost:8000/earkweb/api/ips/status/
     """
     results = {}
     if request.method == 'GET':
@@ -956,7 +956,7 @@ def get_ip_state(request, process_id):
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/status/
+            http://localhost:8000/earkweb/api/ips/08c261ce-2aec-412c-b245-7a64be495b03/status/
     """
     if request.method == 'GET':
         try:
@@ -1019,14 +1019,14 @@ class UploadFile(APIView):
     The variable ${datatype} is one of "metadata", "data", or "documentation".
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${datatype}/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/${process_id}/${datatype}/upload/
 
     For example, to upload a metadatafile, and with `DATA_TYPE="metadata"`,
     `PROCESS_ID="08c261ce-2aec-412c-b245-7a64be495b03"`,
     and local file path `LOCAL_FILE_PATH="/home/user/dcat.xml`, the upload command would be as follows:
 
         curl -v -X POST -F "file=@/home/user/dcat.xml"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
 
     If a data set exists, the metadata file is also added to the last version of it.
 
@@ -1035,8 +1035,8 @@ class UploadFile(APIView):
     For example, add a data file to an information package, the file can be uploaded using the following curl command:
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${representation}/${datatype}/upload
-        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/earkweb/api/informationpackages/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/${process_id}/${representation}/${datatype}/upload
+        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/earkweb/api/ips/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
     """
     throttle_classes = ()
 
@@ -1148,11 +1148,11 @@ class InformationPackages(generics.ListCreateAPIView):
 
     The submission process is initialized using the following command:
 
-        curl -X POST -d 'package_name=${PACKAGE_NAME}' http://127.0.0.1:8000/earkweb/api/informationpackages/
+        curl -X POST -d 'package_name=${PACKAGE_NAME}' http://127.0.0.1:8000/earkweb/api/ips/
 
     For example, with `PACKAGE_NAME='mypackage'`, the `curl` command would be:
 
-        curl -X POST -d 'package_name=mypackage' 'http://127.0.0.1:8000/earkweb/api/informationpackages/'
+        curl -X POST -d 'package_name=mypackage' 'http://127.0.0.1:8000/earkweb/api/ips/'
 
     Example message in case of success (returns process ID):
 

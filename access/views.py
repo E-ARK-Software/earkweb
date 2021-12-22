@@ -121,7 +121,7 @@ def get_information_package_item(request, identifier, entry):
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % tar_entry)
 
-    url = "%s/api/informationpackages/%s/%s/stream" % (django_service_url, identifier, tar_entry)
+    url = "%s/api/ips/%s/%s/stream" % (django_service_url, identifier, tar_entry)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:

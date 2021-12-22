@@ -99,7 +99,7 @@ def start(request):
 def fileresource(request, item, ip_sub_file_path):
     user_api_token = get_user_api_token(request.user)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/%s/" % (
+    url = "%s://%s/earkweb/api/ips/%s/file-resource/%s/" % (
         schema, domain, item, ip_sub_file_path)
     if request.method == "GET":
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
@@ -190,7 +190,7 @@ def upload_step1(request, pk):
         ip.external_id = request.POST["external_id"]
         ip.save()
     user_api_token = get_user_api_token(request.user)
-    dir_info_request_url = "%s/informationpackages/%s/dir-json" % (django_backend_service_api_url, ip.process_id)
+    dir_info_request_url = "%s/ips/%s/dir-json" % (django_backend_service_api_url, ip.process_id)
     dir_info_resp = requests.get(dir_info_request_url,
                                  headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if dir_info_resp.status_code == 200:
@@ -531,7 +531,7 @@ def ip_creation_process(request, pk):
         request.session['step2'] = None
         request.session['representations'] = None
         schema, domain = get_domain_scheme(request.headers.get("Referer"))
-        url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (schema, domain, ip.process_id)
+        url = "%s://%s/earkweb/api/ips/%s/dir-json" % (schema, domain, ip.process_id)
         user_api_token = get_user_api_token(request.user)
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
@@ -557,7 +557,7 @@ def upload_finalize(request, pk):
     # get ip
     ip = InformationPackage.objects.get(pk=pk)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (
+    url = "%s://%s/earkweb/api/ips/%s/dir-json" % (
        schema, domain, ip.process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)

@@ -56,7 +56,7 @@ EOM
 . highlight.sh
 
 echo_highlight_header $HEADER 'register data set'
-RESPONSE=`curl -H "Authorization: Token $AUTH_TOKEN" -X POST -d "package_name=$PACKAGE_NAME&basic_metadata=$METADATA" http://$SERVER:$PORT/earkweb/api/informationpackages/`
+RESPONSE=`curl -H "Authorization: Token $AUTH_TOKEN" -X POST -d "package_name=$PACKAGE_NAME&basic_metadata=$METADATA" http://$SERVER:$PORT/earkweb/api/ips/`
 echo $RESPONSE
 PROCESS_ID=`echo $RESPONSE | jq -r '.process_id'`
 if [ -z "$PROCESS_ID" ]; then echo_highlight $FAIL "No process ID"; fi
@@ -65,7 +65,7 @@ echo_highlight $OKGREEN "Process ID: $PROCESS_ID"
 
 echo_highlight_header $HEADER 'upload 1st representation'
 if [ ! -f "$FILE_PATH" ]; then echo_highlight $FAIL "File not found at: $FILE_PATH"; exit 1; fi
-RESPONSE=`curl  -H "Authorization: Token $AUTH_TOKEN" -F "file=@$FILE_PATH" http://$SERVER:$PORT/earkweb/api/informationpackages/$PROCESS_ID/$REPRESENTATION_UUID/data/upload/`
+RESPONSE=`curl  -H "Authorization: Token $AUTH_TOKEN" -F "file=@$FILE_PATH" http://$SERVER:$PORT/earkweb/api/ips/$PROCESS_ID/$REPRESENTATION_UUID/data/upload/`
 echo $RESPONSE
 REPRESENTATION_ID1=`echo $RESPONSE  | jq -r '.representationId'`
 echo_highlight $OKGREEN "Representation ID: $REPRESENTATION_ID1"
@@ -79,7 +79,7 @@ if [ -z "$METADATA_FILE" ]; then echo_highlight $FAIL "No metadata file"; fi
 echo_highlight $OKGREEN "Metadata file: $METADATA_FILE"
 
 echo_highlight_header $HEADER 'upload metadata'
-RESPONSE=`curl -H "Authorization: Token $AUTH_TOKEN" --write-out %{http_code} --silent --output /dev/null -F "file=@${METADATA_FILE}" http://localhost:8000/earkweb/api/informationpackages/$PROCESS_ID/metadata/upload/`
+RESPONSE=`curl -H "Authorization: Token $AUTH_TOKEN" --write-out %{http_code} --silent --output /dev/null -F "file=@${METADATA_FILE}" http://localhost:8000/earkweb/api/ips/$PROCESS_ID/metadata/upload/`
 if [ -z "$RESPONSE" ]; then echo_highlight $FAIL "No response for metadata upload request"; exit 1; fi
 if [ $RESPONSE == 201 ]; then
   echo_highlight $OKGREEN "Metadata upload executed successfully with status code: $RESPONSE"

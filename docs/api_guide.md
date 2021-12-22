@@ -35,7 +35,7 @@ The procedure is as follows:
 
    1. Initialise a new data package:
    
-          curl -X POST  -d 'package_name=packagename' http://$server:$port/earkweb/api/informationpackages/
+          curl -X POST  -d 'package_name=packagename' http://$server:$port/earkweb/api/ips/
 
       In case of success the HTTP response code is "201 CREATED" and a new process ID (`process_id`) is returned which 
       is required for uploading data in a subsequent step.
@@ -55,7 +55,7 @@ The procedure is as follows:
       For the first file of a representation only the process ID (`process_id`, here: 
       `73483984-debd-4d04-a14c-5acb11167719`) needs to be provided and the representation ID can be omitted:
    
-          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/informationpackages/73483984-debd-4d04-a14c-5acb11167719/data/upload/
+          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/ips/73483984-debd-4d04-a14c-5acb11167719/data/upload/
     
       This will generate a random UUID identifier (`representationId`) for the representation which is returned as part 
       of the response message in case of success:
@@ -72,7 +72,7 @@ The procedure is as follows:
       If a file needs to be added to a representation, the representation ID (`representationId`,  here: 
       `5ed2c8b6-4f4b-46f7-a1f3-192472a76a41`) is given as a parameter after the process ID.
     
-          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/informationpackages/73483984-debd-4d04-a14c-5acb11167719/5ed2c8b6-4f4b-46f7-a1f3-192472a76a41/data/upload/
+          curl -F "file=@/home/$USER/datafile.csv" http://$server:$port/earkweb/api/ips/73483984-debd-4d04-a14c-5acb11167719/5ed2c8b6-4f4b-46f7-a1f3-192472a76a41/data/upload/
           
       To upload metadata, a JSON metadata (`metadata.json`) file can be created:
       
@@ -98,7 +98,7 @@ The procedure is as follows:
       
       An example for a metadata upload request is the following:
       
-          curl -F "file=@/home/$USER/metadata.json" http://localhost:8000/earkweb/api/informationpackages/cb755987-9e83-4e71-b000-dea9324e5dea/metadata/upload/
+          curl -F "file=@/home/$USER/metadata.json" http://localhost:8000/earkweb/api/ips/cb755987-9e83-4e71-b000-dea9324e5dea/metadata/upload/
 
       which returns a similar response as the data file upload:
    
@@ -112,7 +112,7 @@ The procedure is as follows:
    
       If an archived dataset does not have a working copy, it must be checked out first:
       
-          curl -X POST http://localhost:8000/earkweb/api/informationpackages/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
+          curl -X POST http://localhost:8000/earkweb/api/ips/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
 
       Which in case of success returns the new process ID (`process_id`) of the working copy and the corresponding
       job ID which allows monitoring the process.
@@ -125,7 +125,7 @@ The procedure is as follows:
 
    4. Store data:
    
-          curl http://$server:$port/earkweb/api/informationpackages/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
+          curl http://$server:$port/earkweb/api/ips/cc3e95de-71d9-4e9e-8de7-128a1c92774f/startingest
 
       Once the data package is stored, it is indexed and gets an identifier of the form 
       "urn:uuid:f90668b9-112b-4723-8344-07449e7b657e".

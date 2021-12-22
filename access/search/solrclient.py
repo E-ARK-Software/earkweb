@@ -174,7 +174,7 @@ class SolrClient(object):
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
                 params['literal.size'] = t.size
-                params['literal.version'] = version
+                params['literal.version'] = int(re.search(r'\d+', version).group(0))
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))
                 response = requests.post(post_url, files=files, verify=verify_certificate)

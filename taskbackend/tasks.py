@@ -117,7 +117,7 @@ def sip_package(self, context, task_log):
     patch_data = {
         "last_change": date_format(datetime.datetime.utcnow())
     }
-    url = "%s://%s:%s/earkweb/api/informationpackages/%s/" % (
+    url = "%s://%s:%s/earkweb/api/ips/%s/" % (
         django_service_protocol, django_service_host, django_service_port, task_context["process_id"])
     response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
                               verify=verify_certificate)

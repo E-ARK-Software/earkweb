@@ -20,7 +20,7 @@ patch_data = {
         "last_change": date_format(datetime.datetime.utcnow()),
 }
 
-url = "%s://%s:%s/earkweb/api/informationpackages/%s/" % (
+url = "%s://%s:%s/earkweb/api/ips/%s/" % (
     django_service_protocol, django_service_host, django_service_port, "cd9e6ee8-dfb3-48c4-834c-85d1cfb707b9")
 response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key}, verify=verify_certificate)
 print("Status information updated: %s (%d)" % (response.text, response.status_code))

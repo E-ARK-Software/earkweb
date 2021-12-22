@@ -107,7 +107,7 @@ def working_area2(request, section, process_id):
     title = trans("Information package management") if "management" in r else trans("Submission") if "submission" in r else trans("Access")
     section = "management" if "management" in r else "submission" if "submission" in r else "access"
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (schema, domain, process_id)
+    url = "%s://%s/earkweb/api/ips/%s/dir-json" % (schema, domain, process_id)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     context = {
@@ -130,7 +130,7 @@ def storage_area(request, section, identifier):
     #store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
     #logger.info(store_path)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/storage/informationpackages/%s/dir-json" % (schema, domain, identifier)
+    url = "%s://%s/earkweb/api/storage/ips/%s/dir-json" % (schema, domain, identifier)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code != 200:
@@ -138,7 +138,7 @@ def storage_area(request, section, identifier):
             'header': 'Archived object does not exist (%d)' % response.status_code
         })
 
-    inventory_url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/inventory.json" % (
+    inventory_url = "%s://%s/earkweb/api/ips/%s/file-resource/inventory.json" % (
     schema, domain, identifier)
     print(inventory_url)
     inventory_response = requests.get(inventory_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
@@ -201,7 +201,7 @@ def read_file(request, ip_sub_file_path, area=None):
     parts = ip_sub_file_path.split("/")
     process_id = parts[0]
     path = ip_sub_file_path.lstrip(parts[0]).lstrip("/")
-    area = area if area else "informationpackages"
+    area = area if area else "ips"
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
     url = "%s://%s/earkweb/api/%s/%s/file-resource/%s/" % (schema, domain, area, process_id, path)
     user_api_token = get_user_api_token(request.user)

@@ -33,7 +33,7 @@
           setInterval(function(){get_contents();}, 1000);
           function get_contents() {
             console.log("called");
-            $.get('/earkweb/api/informationpackages/{{ip.process_id}}/file-resource/processing.log/', function(data) {
+            $.get('/earkweb/api/ips/{{ip.process_id}}/file-resource/processing.log/', function(data) {
                 console.log();
                 var lines = data.split('\n');
                 var newcontent = '';
