@@ -4,9 +4,10 @@ import os
 import os.path
 import re
 
+from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage
 from pairtree import PairtreeStorageClient
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "earkweb.settings")
 
 import django
@@ -44,17 +45,22 @@ def index_aip_storage():
                print("=========================================================")
                _, file_name = os.path.split(package_abs_path)
 
-               id_path = package_abs_path[0:re.search('data\/[0-9]{5,5}\/', package_abs_path).start()]
-               store = PairtreeStorageClient(store_dir=config_path_storage, uri_base='http')
-               identifier = store._get_id_from_dirpath(id_path)
+               id_path = package_abs_path[0:re.search('data\/v[0-9]{5,5}\/', package_abs_path).start()]
 
-               results = solr_client.post_tar_file(package_abs_path, identifier, 1)
-               print("Total number of files posted: %d" % len(results))
-               num_ok = sum(1 for result in results if result['status'] == 200)
-               print("Number of files posted successfully: %d" % num_ok)
-               num_failed = sum(1 for result in results if result['status'] != 200)
-               print("Number of plain documents: %d" % num_failed)
-               package_count += 1
+               store = PairtreeStorageClient(store_dir=config_path_storage, uri_base='http')
+               dpts = DirectoryPairtreeStorage(config_path_storage)
+               identifier = store._get_id_from_dirpath(id_path)
+               given_package_version = re.search(r'v[0-9]{5,5}', package_abs_path).group(0)
+               current_version = dpts.curr_version(identifier)
+               if given_package_version == current_version:
+                   current_version_num = dpts.curr_version_num(identifier)
+                   results = solr_client.post_tar_file(package_abs_path, identifier, current_version_num)
+                   print("Total number of files posted: %d" % len(results))
+                   num_ok = sum(1 for result in results if result['status'] == 200)
+                   print("Number of files posted successfully: %d" % num_ok)
+                   num_failed = sum(1 for result in results if result['status'] != 200)
+                   print("Number of plain documents: %d" % num_failed)
+                   package_count += 1
     print("Indexing of %d packages available in local storage finished" % package_count)
 
 

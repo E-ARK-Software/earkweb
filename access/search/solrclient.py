@@ -173,7 +173,8 @@ class SolrClient(object):
                 params = SolrDocParams(afile).get_params()
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
-                params['literal.version'] = re.sub("\D", "", version)
+                params['literal.size'] = t.size
+                params['literal.version'] = version
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))
                 response = requests.post(post_url, files=files, verify=verify_certificate)

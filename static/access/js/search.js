@@ -37,9 +37,10 @@ function callback(data) {
 
     var displaytitle = "<span style='font-size:9px'>"+doc[identifier_field]+"</span><br>" + ( (doc[labelField] != null) ? doc[labelField] : doc[titleField] );
 
+    var popupWidth = window.popupWidth != undefined ? window.popupWidth : 900;
+    var popupHeight = window.popupHeight != undefined ? window.popupHeight : 500;
 
-
-    var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '" target="_blank" onclick="PopupCenter(this,\'xtf\',\'900\',\'500\'); return false;">' + displaytitle + '</a>';
+    var link = '<a data-toggle="tooltip" title="' + mimeStr + '" href="' + fileAdress + '?search='+document.forms.find.queryString.value+'" target="_blank" onclick="PopupCenter(this,\'xtf\',\''+popupWidth+'\',\''+popupHeight+'\'); return false;">' + displaytitle + '</a>';
     var bytes = doc[bytesField];
     var filesize;
     if (bytes < 1024)
@@ -79,13 +80,11 @@ function askSolr(start) {
   var package = document.forms.find.package.value;
   var packageQuery = '*:*';
   if (package) {
-    stripped_package_identifier = package.replace("urn:uuid:", "")
-    window.console.log(stripped_package_identifier);
-    packageQuery += " AND " + identifier_field + ':"' + stripped_package_identifier + '"';
+    packageQuery += " AND " + identifier_field + ':"' + package + '"';
   }
 
   if($('#submission_data_only').prop('checked')) {
-    packageQuery += " AND path:(\"*/representations/*\")";
+    packageQuery += " AND (path:(\"*/representations/*\") OR path:*/representations/*)";
   }
 
   if($('#exclude_migrated_data').prop('checked')) {
@@ -124,10 +123,11 @@ function askSolr(start) {
   }
 
   window.console.log("query: " + query)
+  window.console.log("sortParameter: " + sortParameter)
 
   var script = document.createElement('script');
   script.src = solrEndpoint + 'select?q=' + encodeURIComponent(query) +
       sortParameter + '&start=' + start + '&rows=' + rows + '&wt=json&json.wrf=callback';
-
+  console.log(script.src);
   document.getElementsByTagName('head')[0].appendChild(script);
 }

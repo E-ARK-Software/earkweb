@@ -275,11 +275,13 @@ def solrif(request, core, operation):
     logger.debug("Query: %s" % request.GET.get('q', ''))
     start = request.GET.get('start', '0')
     logger.debug("Start: %s" % start)
+    sort = request.GET.get('sort', '')
+    logger.debug("Sort: %s" % sort)
     rows = request.GET.get('rows', '20')
     logger.debug("Rows: %s" % rows)
     field_list = request.GET.get('fl', '')
     logger.debug("Field list: %s" % field_list)
-    q = urlencode({'q': request.GET.get('q', ''), "fl": field_list, "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
+    q = urlencode({'q': request.GET.get('q', ''), "fl": field_list, "sort": sort,  "start": start, "rows": rows, "wt": "json", "json.wrf": "callback"})
 
     from config.configuration import solr_host
     from config.configuration import solr_port
