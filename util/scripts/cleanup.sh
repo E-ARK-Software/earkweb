@@ -2,8 +2,9 @@
 
 MYSQL_USERNAME=repo
 MYSQL_PASSWORD=repo
+DATABASE=repodb
 
-repo_data_directory="/var/data/earkweb"
+repo_data_directory="/var/data/repo"
 
 echo "Do you want to delete repository data? (y/n, default: n)"
 read actiondata
@@ -22,10 +23,7 @@ read actiondata
 actiondata_val=${actiondata:-n}
 if [[ "$actiondata_val" = "y" ]]; then
 	echo "Deleting database data"
-	echo "delete from informationpackage;" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD earkweb
-	echo "delete from search_aip;" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD earkweb
-	echo "delete from search_dip;" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD earkweb
-	echo "delete from search_inclusion;" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD earkweb
+	echo "delete from informationpackage;" | mysql -u $MYSQL_USERNAME -p$MYSQL_PASSWORD $DATABASE
 fi
 
 echo "Do you want to reset the index? (y/n, default: y)"

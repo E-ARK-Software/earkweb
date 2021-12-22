@@ -10,6 +10,7 @@ import logging
 from eatb.storage.pairtreestorage import PairtreeStorage
 from eatb.utils.fileutils import get_immediate_subdirectories
 from eatb.utils.terminal import print_headline, success, warning
+from pairtree import ObjectNotFoundException
 
 logger = logging.getLogger("earkweb")
 logger.setLevel(logging.INFO)
@@ -81,6 +82,10 @@ Note that the storage location value is also unset if the identifier has changed
                 warning("Unsetting storage_dir because the referenced object is not accessible: %s" % ip.identifier)
                 ip.storage_dir = ''
                 ip.save()
+            except ObjectNotFoundException:
+                warning("Object not found in storage (record is removed): %s" % ip.identifier)
+                ip.delete()
+
     print_headline("Check if a process for each working directory exists")
     print(
         "Checking if each working directory has an information package process with the corresponding UUID or create it otherwise.")
@@ -103,7 +108,7 @@ Note that the storage location value is also unset if the identifier has changed
             ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "state.json")
             if os.path.exists(ip_state_doc_path):
                 success("State information available (state.json)")
-                ip_state_info = json.loads(ip_state_doc_path)
+                ip_state_info = json.load(open(ip_state_doc_path))
                 sync_ip_state(ip_state_info, ip)
             else:
                 warning("Process directory has no state information")

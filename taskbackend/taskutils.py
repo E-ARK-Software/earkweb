@@ -585,7 +585,7 @@ def persist_state(identifier, version, bagit_storage_dir, working_dir):
         "last_change": date_format(datetime.utcnow()),
     }
     json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
+    with open(os.path.join(working_dir, "state.json"), 'w') as inventory_file:
         inventory_file.write(json_data)
     return patch_data
 
