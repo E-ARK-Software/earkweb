@@ -12,7 +12,7 @@ import bagit
 import redis
 import datetime
 import requests
-from celery.task import Task
+#from celery.task import Task
 from eatb.cli.cli import CliCommand, CliExecution, CliCommands
 from eatb.format.formatidentification import FormatIdentification
 from eatb.metadata.mets.MetsValidation import MetsValidation, METS_NS, XLINK_NS
@@ -72,7 +72,7 @@ r = redis.StrictRedis(host=redis_host, port=redis_port, password=redis_password,
 
 cli_commands = CliCommands(os.path.join(root_dir, "settings/commands.cfg"))
 
-@app.task(bind=True, name="sip_package", base=Task)
+@app.task(bind=True, name="sip_package")
 @requires_parameters("package_name", "uid", "org_nsid")
 @task_logger
 def sip_package(self, context, task_log):
@@ -128,7 +128,7 @@ def sip_package(self, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="ingest_pipeline", base=Task)
+@app.task(bind=True, name="ingest_pipeline")
 @requires_parameters("uid")
 def ingest_pipeline(_, context):
     task_context = json.loads(context)
@@ -145,7 +145,7 @@ def ingest_pipeline(_, context):
     return result
 
 
-@app.task(bind=True, name="update_pipeline", base=Task)
+@app.task(bind=True, name="update_pipeline")
 @requires_parameters("uid")
 def update_pipeline(_, context):
     task_context = json.loads(context)
@@ -159,7 +159,7 @@ def update_pipeline(_, context):
     return result
 
 
-@app.task(bind=True, name="validate_working_directory", base=Task)
+@app.task(bind=True, name="validate_working_directory")
 @requires_parameters("uid", "package_name")
 @task_logger
 def validate_working_directory(_, context, task_log):
@@ -259,7 +259,7 @@ def validate_working_directory(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="descriptive_metadata_validation", base=Task)
+@app.task(bind=True, name="descriptive_metadata_validation")
 @requires_parameters("uid")
 @task_logger
 def descriptive_metadata_validation(_, context, task_log):
@@ -285,7 +285,7 @@ def descriptive_metadata_validation(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="aip_migrations", base=Task)
+@app.task(bind=True, name="aip_migrations")
 @requires_parameters("uid")
 @task_logger
 def aip_migrations(self, context, task_log):
@@ -475,7 +475,7 @@ def aip_migrations(self, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="file_migration", base=Task)
+@app.task(bind=True, name="file_migration")
 def file_migration(self, details):
     # filename = details['filename']
     # taskid = details['taskid']
@@ -490,7 +490,7 @@ def file_migration(self, details):
     return True
 
 
-@app.task(bind=True, name="aip_package_mets_creation", base=Task)
+@app.task(bind=True, name="aip_package_mets_creation")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def aip_package_mets_creation(_, context, task_log):
@@ -590,7 +590,7 @@ def aip_package_mets_creation(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="create_manifest", base=Task)
+@app.task(bind=True, name="create_manifest")
 @requires_parameters("uid")
 @task_logger
 def create_manifest(_, context, task_log):
@@ -607,7 +607,7 @@ def create_manifest(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="store_original_sip", base=Task)
+@app.task(bind=True, name="store_original_sip")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def store_original_sip(_, context, task_log):
@@ -641,7 +641,7 @@ def store_original_sip(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="store_aip", base=Task)
+@app.task(bind=True, name="store_aip")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def store_aip(_, context, task_log):
@@ -682,7 +682,7 @@ def store_aip(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="aip_indexing", base=Task)
+@app.task(bind=True, name="aip_indexing")
 @requires_parameters("identifier")
 @task_logger
 def aip_indexing(_, context, task_log):
@@ -733,7 +733,7 @@ def aip_indexing(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="solr_update_metadata", base=Task)
+@app.task(bind=True, name="solr_update_metadata")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def solr_update_metadata(_, context, task_log):
@@ -816,7 +816,7 @@ def solr_update_metadata(_, context, task_log):
     requests.get('%s://%s:%s/solr/admin/cores?action=RELOAD&core=%s' % (solr_protocol, solr_host, solr_port, solr_core))
 
 
-@app.task(bind=True, name="dip_acquire_aips", base=Task)
+@app.task(bind=True, name="dip_acquire_aips")
 @requires_parameters("selected_aips")
 @task_logger
 def dip_acquire_aips(self, context, task_log):
@@ -862,7 +862,7 @@ def dip_acquire_aips(self, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_acquire_dependant_aips", base=Task)
+@app.task(bind=True, name="dip_acquire_dependant_aips")
 @requires_parameters("storage_dest")
 @task_logger
 def dip_acquire_dependant_aips(_, context, task_log):
@@ -899,7 +899,7 @@ def dip_acquire_dependant_aips(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_extract_aips", base=Task)
+@app.task(bind=True, name="dip_extract_aips")
 @requires_parameters("selected_aips")
 @task_logger
 def dip_extract_aips(_, context, task_log):
@@ -964,7 +964,7 @@ def dip_extract_aips(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_package_metadata_creation", base=Task)
+@app.task(bind=True, name="dip_package_metadata_creation")
 @requires_parameters("selected_aips")
 @task_logger
 def dip_package_metadata_creation(_, context, task_log):
@@ -1009,7 +1009,7 @@ def dip_package_metadata_creation(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_packaging", base=Task)
+@app.task(bind=True, name="dip_packaging")
 @requires_parameters("identifier")
 @task_logger
 def dip_packaging(_, context, task_log):
@@ -1071,7 +1071,7 @@ def dip_packaging(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_store", base=Task)
+@app.task(bind=True, name="dip_store")
 @requires_parameters("identifier")
 @task_logger
 def dip_store(_, context, task_log):
@@ -1104,7 +1104,7 @@ def dip_store(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="dip_create_access_copy", base=Task)
+@app.task(bind=True, name="dip_create_access_copy")
 @requires_parameters("identifier")
 @task_logger
 def dip_create_access_copy(self, context, task_log):
