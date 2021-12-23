@@ -1,13 +1,11 @@
 # Manual installation
 
-Step-by-step manual installation.
-
 ## Install dependencies
 
 ### Debian packages
 
     sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev summain libicu-dev
-    
+
 ### Message queue and result backend
 
 Install result backend database:
@@ -19,6 +17,10 @@ Install result backend database:
 This section only applies if SolR is used as a search module.
     
 Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](https://www.oracle.com/java/technologies/javase-jdk13-downloads.html)).
+
+Use the following command to install the default JRE on Ubuntu:
+
+    sudo apt install default-jre
 
 1. Install SolR:
 
@@ -38,11 +40,12 @@ Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](ht
     
 3. Copy solr.xml to SOLR_HOME:
   
-       cp ${SOLR_INSTALL_DIR}/server/solr/solr.xml ${SOLR_HOME}    
+       cp ${SOLR_INSTALL_DIR}/solr-${SOLR_VERSION}/server/solr/solr.xml ${SOLR_HOME}    
        
-4. Create core `storagecore1`
+4. Start SolR and create core `storagecore1`
 
-        cd ${SOLR_INSTALL_DIR}
+        cd ${SOLR_INSTALL_DIR}/solr-${SOLR_VERSION}
+        ./solr start
         ./bin/solr create_core -c storagecore1
         
 5. Enable remote streaming
@@ -156,7 +159,7 @@ Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](ht
 7. Rename sample config file `settings/settings.cfg.default` to `settings/settings.cfg` and adapt settings according to your environment.
 
 ## Create and initialize database
-
+cd 
 1. Prepare databases (one main database for the frontend (earkweb) and one for the celery backend (celerydb):
 
     Install mysql database if not available on your system:
