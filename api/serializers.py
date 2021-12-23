@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class InformationPackageSerializer(serializers.Serializer):
-    process_id = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="UUID of the information package")
+    uid = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="UUID of the information package")
     work_dir = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Path to the working copy of the information package")
     package_name = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
     external_id = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
@@ -29,10 +29,10 @@ class InformationPackageSerializer(serializers.Serializer):
             validated_data['version'] = -1
         if 'external_id' not in validated_data:
             validated_data['external_id'] = "example:undefined"
-        if 'process_id' not in validated_data:
-            process_id = str(uuid.uuid4())
-            validated_data['process_id'] = process_id
-            validated_data['work_dir'] = os.path.join(config_path_work, process_id)
+        if 'uid' not in validated_data:
+            uid = str(uuid.uuid4())
+            validated_data['uid'] = uid
+            validated_data['work_dir'] = os.path.join(config_path_work, uid)
         if 'user_id' not in validated_data:
             validated_data['user_id'] = self.context['request'].user.id
         if 'basic_metadata' not in validated_data:
@@ -43,7 +43,7 @@ class InformationPackageSerializer(serializers.Serializer):
         """
         Update and return an existing `InformationPackage` instance, given the validated data.
         """
-        instance.process_id = validated_data.get('process_id', instance.process_id)
+        instance.uid = validated_data.get('uid', instance.uid)
         instance.work_dir = validated_data.get('work_dir', instance.work_dir)
         instance.package_name = validated_data.get('package_name', instance.package_name)
         instance.identifier = validated_data.get('identifier', instance.identifier)

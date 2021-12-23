@@ -99,7 +99,7 @@ def start(request):
 def fileresource(request, item, ip_sub_file_path):
     user_api_token = get_user_api_token(request.user)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/informationpackages/%s/file-resource/%s/" % (
+    url = "%s://%s/earkweb/api/ips/%s/file-resource/%s/" % (
         schema, domain, item, ip_sub_file_path)
     if request.method == "GET":
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
@@ -122,7 +122,7 @@ def upload(request):
             # distribution metadata
             rep = request.POST["rep"]
             # get information package
-            ip = InformationPackage.objects.get(process_id=request.POST["process_id"])
+            ip = InformationPackage.objects.get(uid=request.POST["uid"])
             try:
                 reprec = Representation.objects.get(ip=ip, identifier=rep)
             except ObjectDoesNotExist:
@@ -144,11 +144,11 @@ def upload(request):
                 reps_in_session = {rep: rep_info}
             request.session['representations'] = reps_in_session
 
-            ip = InformationPackage.objects.get(process_id=request.POST['process_id'])
+            ip = InformationPackage.objects.get(uid=request.POST['uid'])
             u = User.objects.get(username=request.user)
             # if u != ip.user:
             #    return JsonResponse({'error': "Unauthorized. Operation is not permitted."}, status=500)
-            ip_work_dir = os.path.join(config_path_work, request.POST['process_id'])
+            ip_work_dir = os.path.join(config_path_work, request.POST['uid'])
             data_path = os.path.join(ip_work_dir, representations_directory, request.POST['rep'], "data")
             os.makedirs(data_path, exist_ok=True)
             file_data = posted_files['file_data']
@@ -190,7 +190,7 @@ def upload_step1(request, pk):
         ip.external_id = request.POST["external_id"]
         ip.save()
     user_api_token = get_user_api_token(request.user)
-    dir_info_request_url = "%s/informationpackages/%s/dir-json" % (django_backend_service_api_url, ip.process_id)
+    dir_info_request_url = "%s/ips/%s/dir-json" % (django_backend_service_api_url, ip.uid)
     dir_info_resp = requests.get(dir_info_request_url,
                                  headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if dir_info_resp.status_code == 200:
@@ -336,7 +336,7 @@ def upload_step4(request, pk):
     elif reprs_qs:
         repname = reprs_qs[0].identifier
     else:
-        representations_path = os.path.join(config_path_work, ip.process_id, representations_directory)
+        representations_path = os.path.join(config_path_work, ip.uid, representations_directory)
         representation_dirs = get_immediate_subdirectories(representations_path)
         if representation_dirs:
             repname = representation_dirs[0]
@@ -371,7 +371,7 @@ def upload_step4(request, pk):
         form = MetaFormStep4(request.POST)
 
     context = {
-        'process_id': ip.process_id,
+        'uid': ip.uid,
         'django_backend_service_api_url': django_backend_service_api_url,
         'django_backend_service_url': django_backend_service_url,
         'config_path_work': config_path_work,
@@ -437,11 +437,11 @@ def ip_creation_process(request, pk):
             chain(
                 request.session['step1'].items(),
                 request.session['step2'].items(),
-                {"process_id": ip.process_id}.items(),
+                {"uid": ip.uid}.items(),
                 {'currdate': ts_date(fmt=DT_ISO_FORMAT), 'date': ts_date(fmt=DATE_DMY), "last_change": finalization_time,
                  "created": finalization_time,
                  'landing_page': string.Template(package_access_url_pattern).substitute(
-                     {'packageid': "%s" % ip.process_id})
+                     {'packageid': "%s" % ip.uid})
                  }.items()
             )
         )
@@ -451,8 +451,8 @@ def ip_creation_process(request, pk):
             'distribution_label': reprecord.label,
             'distribution_description': reprecord.description,
             'access_rights': reprecord.accessRights,
-            'file_items': [f.replace(os.path.join(config_path_work, ip.process_id), "").strip("/")
-                           for f in find_files(os.path.join(config_path_work, ip.process_id, representations_directory,
+            'file_items': [f.replace(os.path.join(config_path_work, ip.uid), "").strip("/")
+                           for f in find_files(os.path.join(config_path_work, ip.uid, representations_directory,
                                                             reprecord.identifier, "data"), "*")]
         } for reprecord in reprecords}
 
@@ -472,7 +472,9 @@ def ip_creation_process(request, pk):
         lang = pycountry.languages.get(name=context['language'])
         context["lang_alpha_3"] = "eng" if not lang else lang.alpha_3
 
-
+        basic_metadata.pop('csrfmiddlewaretoken', None)
+        basic_metadata.pop('hidden_user_tags', None)
+        basic_metadata.pop('currdate', None)
         basic_metadata_s = json.dumps(basic_metadata)
 
         ip.basic_metadata = basic_metadata_s
@@ -504,7 +506,7 @@ def ip_creation_process(request, pk):
 
         template = loader.get_template(ead_path)
 
-        md_target_path = os.path.join(config_path_work, ip.process_id, "metadata", 'metadata.json')
+        md_target_path = os.path.join(config_path_work, ip.uid, "metadata", 'metadata.json')
         md_content = json.dumps(basic_metadata_to_be_stored, indent=4)
         target_dir = os.path.dirname(md_target_path)
         if not os.path.exists(target_dir):
@@ -513,7 +515,7 @@ def ip_creation_process(request, pk):
             md_file.write(md_content)
 
         ead_content = template.render(context=context)
-        ead_target_path = os.path.join(config_path_work, ip.process_id, "metadata/descriptive", 'ead.xml')
+        ead_target_path = os.path.join(config_path_work, ip.uid, "metadata/descriptive", 'ead.xml')
         target_dir = os.path.dirname(ead_target_path)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
@@ -522,7 +524,7 @@ def ip_creation_process(request, pk):
 
         from taskbackend.tasks import sip_package
         task_input = {
-            "package_name": ip.package_name, "process_id": ip.process_id, "org_nsid": "repo"
+            "package_name": ip.package_name, "uid": ip.uid, "org_nsid": "repo"
         }
         job = sip_package.delay(json.dumps(task_input))
 
@@ -531,13 +533,13 @@ def ip_creation_process(request, pk):
         request.session['step2'] = None
         request.session['representations'] = None
         schema, domain = get_domain_scheme(request.headers.get("Referer"))
-        url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (schema, domain, ip.process_id)
+        url = "%s://%s/earkweb/api/ips/%s/dir-json" % (schema, domain, ip.uid)
         user_api_token = get_user_api_token(request.user)
         response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
         # render html page (finalization)
         context = {
-            'process_id': ip.process_id,
+            'uid': ip.uid,
             'config_path_work': config_path_work,
             'ip': ip,
             'pk': pk,
@@ -557,14 +559,14 @@ def upload_finalize(request, pk):
     # get ip
     ip = InformationPackage.objects.get(pk=pk)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/informationpackages/%s/dir-json" % (
-       schema, domain, ip.process_id)
+    url = "%s://%s/earkweb/api/ips/%s/dir-json" % (
+       schema, domain, ip.uid)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
 
     # render html page (finalization)
     context = {
-        'process_id': ip.process_id,
+        'uid': ip.uid,
         'config_path_work': config_path_work,
         'ip': ip,
         'pk': pk,
@@ -588,8 +590,8 @@ class InformationPackageTable(tables.Table):
     from django_tables2.utils import A
     area = "submission"
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name=_('Last modified'), orderable=True)
-    process_id = tables.LinkColumn('%s:working_area' % area,
-                                   kwargs={'section': area, 'process_id': A('process_id')},
+    uid = tables.LinkColumn('%s:working_area' % area,
+                                   kwargs={'section': area, 'uid': A('uid')},
                                    verbose_name=_('Working directory'), orderable=False,
                                    attrs={'a': {'data-toggle': 'tooltip', 'title': _('ShowWorkingDirectory')}})
     package_name = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name=_('Data Set Label'), orderable=True)
@@ -599,7 +601,7 @@ class InformationPackageTable(tables.Table):
 
     class Meta:
         model = InformationPackage
-        fields = ('package_name', 'process_id', 'last_change', 'edit', 'delcol')
+        fields = ('package_name', 'uid', 'last_change', 'edit', 'delcol')
         attrs = {'class': 'table table-striped table-bordered table-condensed'}
         row_attrs = {'data-id': lambda record: record.pk}
 
@@ -636,7 +638,7 @@ def informationpackages_overview(request):
     areacode = "1"
     filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
     sql_query = """
-    select ip.id as id, ip.work_dir as path, ip.process_id as process_id, ip.package_name as package_name, 
+    select ip.id as id, ip.work_dir as path, ip.uid as uid, ip.package_name as package_name, 
     ip.identifier as identifier,
     CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title="Change">
     <i class="glyphicon glyphicon-edit editcol"></i></a>') as edit,
@@ -644,7 +646,7 @@ def informationpackages_overview(request):
     <i class="glyphicon glyphicon-remove editcol"></i></a>') as delcol 
     from informationpackage as ip
     where storage_dir='' and 
-    (ip.process_id like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    (ip.uid like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
     and deleted != 1
     order by ip.last_change desc;
     """.format(filterword, areacode)
@@ -673,7 +675,7 @@ def sip_detail_rep(request, pk, rep):
     request.session['rep'] = rep
 
     context = {
-        'process_id': ip.process_id,
+        'uid': ip.uid,
         'config_path_work': config_path_work,
         'uploadFileForm': upload_file_form,
         'repr_dirs': repr_dirs,
@@ -731,8 +733,8 @@ class StartIngestDetail(DetailView):
 
 @login_required
 @csrf_exempt
-def add_file(request, process_id, subfolder):
-    ip = InformationPackage.objects.get(process_id=process_id)
+def add_file(request, uid, subfolder):
+    ip = InformationPackage.objects.get(uid=uid)
     repname = ""
     if 'rep' in request.POST:
         repname = request.POST['rep']
@@ -741,7 +743,7 @@ def add_file(request, process_id, subfolder):
         repsubdir = request.POST['subdir']
     if subfolder.startswith("_root_"):
         subfolder = subfolder.replace("_root_", ".")
-    ip_work_dir = os.path.join(config_path_work, process_id)
+    ip_work_dir = os.path.join(config_path_work, uid)
     upload_path = os.path.join(ip_work_dir, subfolder, repname, repsubdir)
     print(upload_path)
 
@@ -782,13 +784,13 @@ def upload_aip(ip_work_dir, upload_path, f):
 def initialize(request):
     package_name = request.POST["packagename"]
     extuid = request.POST["extuid"]
-    process_id = get_unique_id()
-    working_dir = os.path.join(config_path_work, process_id)
+    uid = get_unique_id()
+    working_dir = os.path.join(config_path_work, uid)
     os.makedirs(os.path.join(working_dir, representations_directory), exist_ok=True)
     os.makedirs(os.path.join(working_dir, metadata_directory), exist_ok=True)
-    InformationPackage.objects.create(work_dir=os.path.join(config_path_work, process_id), process_id=process_id,
+    InformationPackage.objects.create(work_dir=os.path.join(config_path_work, uid), uid=uid,
                                       package_name=package_name, external_id=extuid, user=request.user, version=0)
-    ip = InformationPackage.objects.get(process_id=process_id)
+    ip = InformationPackage.objects.get(uid=uid)
 
     state_data = json.dumps({"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)})
     with open(os.path.join(working_dir, "state.json"), 'w') as status_file:
@@ -805,12 +807,12 @@ def initialize(request):
 def delete(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('submission/deleted.html')
-    if ip.process_id:
-        path = os.path.join(config_path_work, ip.process_id)
+    if ip.uid:
+        path = os.path.join(config_path_work, ip.uid)
         if os.path.exists(path):
             shutil.rmtree(path)
     context = {
-        'process_id': ip.process_id,
+        'uid': ip.uid,
     }
     ip.delete()
     return HttpResponse(template.render(context=context, request=request))
@@ -830,12 +832,12 @@ def add_representation(request, pk):
 
 @login_required
 @csrf_exempt
-def del_representation(request, process_id, representation_id):
-    ip = InformationPackage.objects.get(process_id=process_id)
+def del_representation(request, uid, representation_id):
+    ip = InformationPackage.objects.get(uid=uid)
     if request.user != ip.user:
         return HttpResponseForbidden("Permission denied to delete this object")
     try:
-        work_dir = os.path.join(config_path_work, process_id)
+        work_dir = os.path.join(config_path_work, uid)
         distribution_dir = os.path.join(work_dir, representations_directory, representation_id)
         if os.path.exists(distribution_dir):
             shutil.rmtree(distribution_dir)
@@ -854,12 +856,12 @@ def del_representation(request, process_id, representation_id):
 @csrf_exempt
 def ip_by_primary_key(_, pk):
     ip = InformationPackage.objects.get(pk=pk)
-    return HttpResponse(ip.process_id)
+    return HttpResponse(ip.uid)
 
 
 @login_required
 @csrf_exempt
-def ins_file(request, process_id, subfolder):
+def ins_file(request, uid, subfolder):
     repname = ""
     if 'rep' in request.POST:
         repname = request.POST['rep']
@@ -874,7 +876,7 @@ def ins_file(request, process_id, subfolder):
         subfolder = subfolder.replace("_root_", ".")
         print("subfolder=%s" % subfolder)
 
-    ip_work_dir = os.path.join(config_path_work, process_id)
+    ip_work_dir = os.path.join(config_path_work, uid)
     upload_path = os.path.join(ip_work_dir, subfolder, repname, repsubdir)
     print("upload_path=%s" % upload_path)
 
@@ -957,7 +959,7 @@ def apply_task(request):
         selected_ip = request.POST['selected_ip']
         ip = InformationPackage.objects.get(pk=selected_ip)
         user = User.objects.get(pk=request.user.pk)
-        logger.info("Task processing for process id: %s started by user %s" % (ip.process_id, user.username))
+        logger.info("Task processing for process id: %s started by user %s" % (ip.uid, user.username))
         # the task is an update task if the object already has an identifier
         is_update_task = ip.identifier
         # identifier assignment (urn:uuid:<uuid>)
@@ -965,7 +967,7 @@ def apply_task(request):
         ip.identifier = identifier
         ip.save()
         task_input = {
-            "process_id": ip.process_id, "package_name": ip.package_name, "org_nsid": node_namespace_id,
+            "uid": ip.uid, "package_name": ip.package_name, "org_nsid": node_namespace_id,
             "identifier": identifier, "md_format": "METS", "is_update_task": is_update_task}
         data = execute_task(task_input)
     except Exception as err:
@@ -996,8 +998,8 @@ def poll_state(request):
                 task_info = get_task_info(task.id)
                 if task.state == "SUCCESS":
                     child_task_ids, task_status_from_result = get_task_info_from_child_tasks(task)
-                    process_id = task_info["process_id"]
-                    ip = InformationPackage.objects.get(process_id=process_id)
+                    uid = task_info["uid"]
+                    ip = InformationPackage.objects.get(uid=uid)
                     if "storage_dir" in task_status_from_result:
                         ip.storage_loc = task_status_from_result["storage_dir"]
                     #if "version" in task_status_from_result:

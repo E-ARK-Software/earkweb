@@ -84,9 +84,9 @@ class DirectoryInfo(object):
 def data_sources_info_from_processing_input(request, processing_input):
     data_sources_info = []
     for data_source in processing_input.data_sources.all():
-        data_source_info = {'identifier': data_source.ip.process_id, 'process_id': data_source.ip.process_id}
+        data_source_info = {'identifier': data_source.ip.uid, 'uid': data_source.ip.uid}
         query_url = "%s/datasets/%s/representations/info/" % (
-            django_backend_service_api_url, data_source.ip.process_id)
+            django_backend_service_api_url, data_source.ip.uid)
         user_api_token = get_user_api_token(request.user)
         response = requests.get(query_url, headers={'Authorization': 'Token %s' % user_api_token},
                                 verify=verify_certificate)

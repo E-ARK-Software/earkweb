@@ -19,6 +19,7 @@ RUN apt-get install -y build-essential libmysqlclient-dev -y
 RUN apt-get upgrade python3 -y
 RUN apt install python3-pip -y
 RUN apt-get install git telnet nano -y
+RUN apt-get install libicu-dev -y
 
 RUN apt-get install wget -y
 RUN apt-get install unzip -y
@@ -73,7 +74,7 @@ RUN cd /earkweb && django-admin compilemessages
 # add non-priviledged user
 RUN adduser --disabled-password --gecos "" ${USER}
 
-COPY wait-for-it.sh wait-for-it.sh
+COPY scripts/wait-for-it.sh wait-for-it.sh
 RUN chmod +x /wait-for-it.sh
 
 # entry point

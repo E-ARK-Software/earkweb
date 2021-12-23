@@ -21,7 +21,7 @@ def main():
     wdirs = os.listdir("%s" % config_path_work)
     for wdir in wdirs:
         try:
-            InformationPackage.objects.get(process_id=wdir)
+            InformationPackage.objects.get(uid=wdir)
         except:
             import shutil
             if wdir:

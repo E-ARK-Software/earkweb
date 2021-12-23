@@ -52,7 +52,7 @@
 
 <h1 class="main">{{ title }}</h1>
 
-<h2 class="main">{% trans 'WorkingDirectory' %}: {{ process_id }}</h2>
+<h2 class="main">{% trans 'WorkingDirectory' %}: {{ uid }}</h2>
 
 {% if show_timeline %}
 
@@ -87,7 +87,7 @@
 
 var dirasjson=`{{ dirasjson | safe }}`;
 var django_backend_service_api_url = "{{ django_backend_service_api_url }}";
-var process_id='{{ process_id }}';
+var uid='{{ uid }}';
 var identifier='{{ identifier }}';</script>
 <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
 

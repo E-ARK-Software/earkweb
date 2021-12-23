@@ -12,7 +12,7 @@
 
 			<td>
 				{% if ip.path != '' %}
-				<a href="{% url 'management:working_area' 'management' ip.process_id %}" title='Path to the directory of this working copy'>{{ config_path_work }}/{{ ip.process_id }}</a>
+				<a href="{% url 'management:working_area' 'management' ip.uid %}" title='Path to the directory of this working copy'>{{ config_path_work }}/{{ ip.uid }}</a>
 				{% else %}
 				--
 				{% endif %}

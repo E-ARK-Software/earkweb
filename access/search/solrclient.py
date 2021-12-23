@@ -4,11 +4,13 @@ import re
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
+import pytz
 from eatb.format.formatidentification import FormatIdentification
 from eatb.utils import randomutils
-
+from eatb.utils.datetime import current_date
+from datetime import datetime
 from access.search.solrdocparams import SolrDocParams
-from config.configuration import verify_certificate
+from config.configuration import verify_certificate, representations_directory, metadata_directory
 
 logger = logging.getLogger(__name__)
 import os
@@ -173,7 +175,12 @@ class SolrClient(object):
                 params = SolrDocParams(afile).get_params()
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
-                params['literal.version'] = re.sub("\D", "", version)
+                params['literal.size'] = t.size
+                params['literal.is_metadata'] = bool(re.search("/%s/" % metadata_directory, afile))
+                params['literal.is_content_data'] = bool(re.search("/%s/[-0-9a-z]{36,36}/data" % representations_directory, afile))
+                params['literal.indexdate'] = current_date(time_zone_id='UTC')
+                params['literal.archivedate'] = datetime.fromtimestamp(os.path.getctime(tar_file_path)).astimezone(pytz.UTC)
+                params['literal.version'] = int(re.search(r'\d+', version).group(0))
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))
                 response = requests.post(post_url, files=files, verify=verify_certificate)

@@ -12,6 +12,4 @@ urlpatterns = [
     url(r'^(?P<identifier>[0-9a-zA-Z-\:]{36,50})/$', views.InformationPackageDetail.as_view(), name='asset'),
     url(r'^indexing-status$', views.indexingstatus, name='indexing-status'),
     url(r'^reindex-storage/$', views.reindex_storage, name='reindex-storage'),
-
-
 ]

@@ -67,3 +67,28 @@ Local library dependencies can be installed using pip with the '-e' parameter. I
 library take effect immediately:
 
     pip install -e ../otherproject/otherlib/.
+    
+# Adapted libraries
+
+## PDF.js
+
+The following code was added to the `webViewerInitialized` function in `viewer.js`:
+
+    // customized search
+    PDFViewerApplication.findBar.open();
+    var searchTerm = params.get("search");
+    console.log(searchTerm);
+    PDFViewerApplication.findBar.findField.value = searchTerm;
+    PDFViewerApplication.findBar.caseSensitive.checked = true;
+    PDFViewerApplication.findBar.highlightAll.checked = true;
+    PDFViewerApplication.findBar.findNextButton.click();
+
+The search parameter `search` can then be passed to the viewer, e.g. as `GET` parameter in the `iframe` of the viewer:
+
+    <iframe id="pdf-js-viewer" src="/path/to/pdfjs-dist/web/viewer.html?file=SomeFile.pdf&search=SearchTerm" title="webviewer" frameborder="0" width="615" height="890">
+    </iframe>
+    
+And in `viewer.js` a base64 string is added as parameter before calling `getDocument`:
+
+    parameters['data'] = window.pdfData
+    

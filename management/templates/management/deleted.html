@@ -14,14 +14,14 @@
 
 {% block content %}
 
-    {% if process_id %}
+    {% if uid %}
 
 
     {% include "management/about_module.html" %}
 
     <h2 class="main">{% trans 'Deletion confirmation' %}</h2>
 
-    <p>{% trans 'Working copy deleted: ' %} {{ process_id }}</p>
+    <p>{% trans 'Working copy deleted: ' %} {{ uid }}</p>
 
     <p><a href="{% url 'management:overview' %}" title='Back to overview'>{% trans 'Back to overview' %}</a></p>
 

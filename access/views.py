@@ -121,7 +121,7 @@ def get_information_package_item(request, identifier, entry):
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % tar_entry)
 
-    url = "%s/api/informationpackages/%s/%s/stream" % (django_service_url, identifier, tar_entry)
+    url = "%s/api/ips/%s/%s/stream" % (django_service_url, identifier, tar_entry)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:
@@ -130,8 +130,15 @@ def get_information_package_item(request, identifier, entry):
                        'message': "Resource not found!"})
     elif response.status_code == 200:
         content_type = response.headers['content-type']
+        if content_type == "application/pdf":
+            search_term = request.GET["search"] if "search" in request.GET else None
+            import base64
+            base64_encoded = base64.b64encode(response.content)
+            base64_string = base64_encoded.decode("ascii")
+            return render(request, 'access/pdfviewer.html', {'url': url, "search": search_term, 'data': base64_string})
         if content_type.startswith('text'):
             content_type = '%s; charset=utf-8' % content_type
+        print(content_type)
         return HttpResponse(response.content, content_type=content_type)
     else:
         return render(request, 'earkweb/error.html',

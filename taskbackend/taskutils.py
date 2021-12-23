@@ -41,15 +41,15 @@ from util.flowerapiclient import get_task_info
 logger = logging.getLogger(__name__)
 
 
-def update_state_from_backend_api(request, process_id):
+def update_state_from_backend_api(request, uid):
     """updating frontend database table based on information persisted in the backend"""
-    ip_state_url = "/earkweb/api/informationpackages/%s/status/" % (process_id)
+    ip_state_url = "/earkweb/api/ips/%s/status/" % (uid)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(ip_state_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     ip_state_json = json.loads(response.content)
     identifier = ip_state_json["identifier"]
     if identifier != "" and identifier != 'None':
-        ip = InformationPackage.objects.get(process_id=process_id)
+        ip = InformationPackage.objects.get(uid=uid)
         ip.identifier = ip_state_json["identifier"]
         version = ip_state_json["version"]
         ip.version = int(version)
@@ -59,7 +59,7 @@ def update_state_from_backend_api(request, process_id):
 
 def update_states_from_backend_api(request):
     """updating frontend database table based on status information in the backend"""
-    ip_states_url = "/earkweb/api/informationpackages/status/"
+    ip_states_url = "/earkweb/api/ips/status/"
     logger.info("Submissions update states request URL: %s" % ip_states_url)
     user_api_token = get_user_api_token(request.user)
     response = requests.get(ip_states_url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
@@ -73,11 +73,11 @@ def update_states_from_backend_api(request):
     logger.info(response.text)
     ip_states_json = json.loads(response.text)
     if ip_states_json != "{}":
-        for process_id in ip_states_json.keys():
-            states = ip_states_json[process_id]
+        for uid in ip_states_json.keys():
+            states = ip_states_json[uid]
             identifier = states["identifier"]
             if identifier != "" and identifier != 'None':
-                ip = InformationPackage.objects.get(process_id=process_id)
+                ip = InformationPackage.objects.get(uid=uid)
                 ip.identifier = states["identifier"]
                 version = states["version"]
                 ip.version = int(version)
@@ -85,9 +85,9 @@ def update_states_from_backend_api(request):
                 ip.save()
 
 
-def get_working_dir(process_id):
+def get_working_dir(uid):
     """Get working directory for given process id"""
-    working_dir = os.path.join(config_path_work, process_id)
+    working_dir = os.path.join(config_path_work, uid)
     if not os.path.exists(working_dir):
         raise RuntimeError("Working directory does not exist for the given process ID")
     return working_dir
@@ -488,8 +488,8 @@ def create_or_update_state_info_file(working_dir, info=None):
         status_file.write(json.dumps(result_info, indent=4))
 
 
-def get_process_representation_ids_by_label(process_id, representation_label) -> List[str]:
-    working_directory = os.path.join(config_path_work, process_id)
+def get_process_representation_ids_by_label(uid, representation_label) -> List[str]:
+    working_directory = os.path.join(config_path_work, uid)
     return get_wd_representation_ids_by_label(working_directory, representation_label)
 
 
@@ -511,8 +511,8 @@ def get_wd_representation_ids_by_label(working_directory, representation_label) 
         raise NotFoundError('Error parsing metadata')
 
 
-def get_representation_data_dir_by_label(process_id, representation_label):
-    work_dir = os.path.join(config_path_work, process_id)
+def get_representation_data_dir_by_label(uid, representation_label):
+    work_dir = os.path.join(config_path_work, uid)
     representation_ids = get_representation_ids_by_label(work_dir, representation_label)
     if len(representation_ids) < 1:
         raise ValueError("This dataset does not contain data with the label '%s'!" % representation_label)
@@ -521,8 +521,8 @@ def get_representation_data_dir_by_label(process_id, representation_label):
     return representation_data_dir
 
 
-def get_representation_data_files_by_pattern(process_id, representation_label, pattern):
-    representation_data_dir = get_representation_data_dir_by_label(process_id, representation_label)
+def get_representation_data_files_by_pattern(uid, representation_label, pattern):
+    representation_data_dir = get_representation_data_dir_by_label(uid, representation_label)
     representation_data_files = [
         data_file for data_file in
         rec_find_files(representation_data_dir, include_files_rgxs=[pattern])
@@ -530,8 +530,8 @@ def get_representation_data_files_by_pattern(process_id, representation_label, p
     return representation_data_files
 
 
-def get_ml_data_file(process_id, subset_type):
-    train_test_files = get_representation_data_files_by_pattern(process_id, "mldata", r'%s_.*\.csv$' % subset_type)
+def get_ml_data_file(uid, subset_type):
+    train_test_files = get_representation_data_files_by_pattern(uid, "mldata", r'%s_.*\.csv$' % subset_type)
     if len(train_test_files) < 1:
         raise ValueError("This dataset does not contain %s data!" % subset_type)
     # select first data file
@@ -585,7 +585,7 @@ def persist_state(identifier, version, bagit_storage_dir, working_dir):
         "last_change": date_format(datetime.utcnow()),
     }
     json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "metadata/state.json"), 'w') as inventory_file:
+    with open(os.path.join(working_dir, "state.json"), 'w') as inventory_file:
         inventory_file.write(json_data)
     return patch_data
 
@@ -632,9 +632,9 @@ def write_inventory(identifier, version_bag_package_file_path, version, bagit_fi
         checksum_inventory.write("%s %s" % (inventory_file_sha512, inventory_file_name))
 
 
-def update_status(process_id, patch_data):
-    url = "%s://%s:%s/earkweb/api/informationpackages/%s/" % (
-        django_service_protocol, django_service_host, django_service_port, process_id)
+def update_status(uid, patch_data):
+    url = "%s://%s:%s/earkweb/api/ips/%s/" % (
+        django_service_protocol, django_service_host, django_service_port, uid)
     return requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
                               verify=verify_certificate)
 

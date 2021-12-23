@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def create_package(request, procid):
+def create_package(request, uid):
     """
     post:
     Create package (database, task queue)
@@ -66,15 +66,15 @@ def create_package(request, procid):
     To start the package creation for a given working directory
 
         curl -v -X POST -H "Authorization: Token 16f733abd45c589867af5f72f5e0593ff3723010"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/dfd7d463-6560-4e0d-b8ec-1815e88513f4/create-package
+        http://127.0.0.1:8000/earkweb/api/ips/dfd7d463-6560-4e0d-b8ec-1815e88513f4/create-package
     """
     if request.method == "POST":
         try:
-            ip = InformationPackage.objects.get(process_id=procid)
+            ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
-            logger.info("Package creation task for process id: %s started by user %s" % (ip.process_id, user.username))
+            logger.info("Package creation task for process id: %s started by user %s" % (ip.uid, user.username))
             task_input = {
-                "process_id": ip.process_id, "package_name": ip.package_name, "org_nsid": node_namespace_id
+                "uid": ip.uid, "package_name": ip.package_name, "org_nsid": node_namespace_id
             }
             try:
                 # Execute task
@@ -86,7 +86,7 @@ def create_package(request, procid):
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
-                "errdetail": "No information package record with ID '%s'" % procid}, status=404)
+                "errdetail": "No information package record with ID '%s'" % uid}, status=404)
         except Exception as err:
             tb = traceback.format_exc()
             logging.error(str(tb))
@@ -102,7 +102,7 @@ def create_package(request, procid):
 @api_view(['POST'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def start_ingest(request, procid):
+def start_ingest(request, uid):
     """
     post:
     Start ingest (database, task queue)
@@ -110,27 +110,27 @@ def start_ingest(request, procid):
     To start the ingest for a given submission run
 
         <code>curl -v -X POST -H "Authorization: Token 16f733abd45c589867af5f72f5e0593ff3723010"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/dfd7d463-6560-4e0d-b8ec-1815e88513f4/startingest
+        http://127.0.0.1:8000/earkweb/api/ips/dfd7d463-6560-4e0d-b8ec-1815e88513f4/startingest
     """
     if request.method == "POST":
         try:
             # selected_ip = request.POST['selected_ip']
-            ip = InformationPackage.objects.get(process_id=procid)
+            ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
-            logger.info("Task processing for process id: %s started by user %s" % (ip.process_id, user.username))
+            logger.info("Task processing for process id: %s started by user %s" % (ip.uid, user.username))
             identifier = ip.identifier if ip.identifier \
                 else "urn:uuid:%s:%s" % (node_namespace_id, get_unused_identifier(user.pk, False))
             ip.identifier = identifier
             ip.save()
             task_input = {
-                "process_id": ip.process_id, "package_name": ip.package_name, "org_nsid": node_namespace_id,
+                "uid": ip.uid, "package_name": ip.package_name, "org_nsid": node_namespace_id,
                 "identifier": identifier, "md_format": "METS"
             }
             data = execute_task(task_input)
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
-                "errdetail": "No information package record with ID '%s'" % procid}, status=404)
+                "errdetail": "No information package record with ID '%s'" % uid}, status=404)
         except Exception as err:
             tb = traceback.format_exc()
             logging.error(str(tb))
@@ -157,7 +157,7 @@ def checkout_working_copy(request, identifier):
 
     To checkout the information package use the following command:
 
-        curl -X POST http://localhost:8000/earkweb/api/informationpackages/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
+        curl -X POST http://localhost:8000/earkweb/api/ips/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
     """
     data = None
     if request.body and request.body != "":
@@ -173,22 +173,22 @@ def checkout_working_copy(request, identifier):
             u = User.objects.get(username=request.user)
             #if u != ip.user:
             #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
-            if ip.process_id != "":
+            if ip.uid != "":
                 return JsonResponse({"message": "A working copy already exists."}, status=400)
             dpts = DirectoryPairtreeStorage(config_path_storage)
             if not dpts.identifier_object_exists(identifier):
                 return JsonResponse({"message": "Object does not exist in storage."}, status=404)
-            process_id = str(uuid4())
+            uid = str(uuid4())
             task_input = {
-                "identifier": identifier, "process_id": process_id,
+                "identifier": identifier, "uid": uid,
                 "metadataonly": metadata_only, "reset": reset_aip
             }
             job = checkout_working_copy_from_storage.delay(task_input)
-            ip.process_id = process_id
-            ip.work_dir = os.path.join(config_path_work, process_id)
+            ip.uid = uid
+            ip.work_dir = os.path.join(config_path_work, uid)
             ip.save()
             return JsonResponse(
-                {"message": "Checkout request submitted successfully.", "job_id": job.id, "process_id": process_id},
+                {"message": "Checkout request submitted successfully.", "job_id": job.id, "uid": uid},
                 status=201
             )
         except User.DoesNotExist:
@@ -201,20 +201,20 @@ def checkout_working_copy(request, identifier):
 @api_view(['DELETE'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def do_informationpackage_representation(request, process_id, representation_id):
+def do_informationpackage_representation(request, uid, representation_id):
     """
     delete: delete a representation (database, task queue)
 
     delete a representation
     """
     try:
-        ip = InformationPackage.objects.get(process_id=process_id)
+        ip = InformationPackage.objects.get(uid=uid)
         try:
             u = User.objects.get(username=request.user)
             #if u != ip.user:
             #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             job = delete_representation_data_from_workdir.delay(
-                ('{"process_id": "%s", "representation_id": "%s"}' % (process_id, representation_id))
+                ('{"uid": "%s", "representation_id": "%s"}' % (uid, representation_id))
             )
             return JsonResponse(
                 {"message": "Representation deletion request submitted successfully.", "job_id": job.id},
@@ -230,14 +230,14 @@ def do_informationpackage_representation(request, process_id, representation_id)
 @api_view(['PATCH'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def rename_representation(request, process_id, representation):
+def rename_representation(request, uid, representation):
     """
     post: rename representation (database, task queue)
 
     rename representation
     """
     try:
-        ip = InformationPackage.objects.get(process_id=process_id)
+        ip = InformationPackage.objects.get(uid=uid)
 
         new_representation_dir = request.GET.get('new_representation_dir', None)
         if not new_representation_dir:
@@ -248,8 +248,8 @@ def rename_representation(request, process_id, representation):
             #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
 
             job = rename_representation_directory.delay((
-                '{"process_id": "%s", "current_representation_dir": "%s", "new_representation_dir": "%s"}'
-                % (process_id, representation, new_representation_dir)
+                '{"uid": "%s", "current_representation_dir": "%s", "new_representation_dir": "%s"}'
+                % (uid, representation, new_representation_dir)
             ))
             return JsonResponse(
                 {"message": "Rename representation request submitted successfully.", "job_id": job.id},
@@ -317,7 +317,7 @@ def identifiers_by_extuid(request):
             extuidcsl = request.body.decode('utf-8')
             extuids = extuidcsl.split(",")
             ips = list(InformationPackage.objects.filter(extuid__in=extuids).values_list(
-                "external_id", "process_id", "identifier", "deleted")
+                "external_id", "uid", "identifier", "deleted")
             )
             res = [{"external-id": ip[0], "process-id": ip[1], "persistent-id": ip[2], "deleted": ip[3]} for ip in ips]
             result = {"ids": res}
@@ -365,13 +365,13 @@ def index_informationpackage(request, identifier):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def informationpackage_representations_info(request, process_id):
+def informationpackage_representations_info(request, uid):
     """
     get: Get representation ids by label (database, file system)
 
     Requires the metadata file to look up labels and find the corresponding representation id.
     """
-    working_directory = os.path.join(config_path_work, process_id)
+    working_directory = os.path.join(config_path_work, uid)
     try:
         representation_ids = get_representation_ids(working_directory)
         representations_info = {}
@@ -389,13 +389,13 @@ def informationpackage_representations_info(request, process_id):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def informationpackage_representation_info_by_label(request, process_id, representation_label):
+def informationpackage_representation_info_by_label(request, uid, representation_label):
     """
     get: Get representation ids by label (database, file system)
 
     Requires the metadata file to look up labels and find the corresponding representation id.
     """
-    working_directory = os.path.join(config_path_work, process_id)
+    working_directory = os.path.join(config_path_work, uid)
     try:
         representation_ids = get_representation_ids_by_label(working_directory, representation_label)
         representations_info = {}
@@ -414,7 +414,7 @@ def informationpackage_representation_info_by_label(request, process_id, represe
 @api_view(['GET', 'DELETE'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
+def do_working_dir_file_resource(request, uid, ip_sub_file_path):
     """
     get: Retrieve file resource (database, file system)
 
@@ -422,18 +422,18 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
     For example, the following is a request to retrieve a metadata file named `metadata.json` from  the metadata folder
     in the working directory:
 
-        http://localhost:8000/earkweb/api/informationpackages/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
+        http://localhost:8000/earkweb/api/ips/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
 
     delete: Remove file resource (database, working area)
 
     Retrieve file resource
     """
     if request.method == 'GET':
-        file_path = os.path.join(config_path_work, process_id, ip_sub_file_path)
+        file_path = os.path.join(config_path_work, uid, ip_sub_file_path)
         return read_file(file_path)
     elif request.method == 'DELETE':
         try:
-            ip = InformationPackage.objects.get(process_id=process_id)
+            ip = InformationPackage.objects.get(uid=uid)
             try:
                 u = User.objects.get(username=request.user)
                 #if u != ip.user:
@@ -444,7 +444,7 @@ def do_working_dir_file_resource(request, process_id, ip_sub_file_path):
                 if ip_sub_file_path.startswith("/"):
                     msg = "File path should be relative to the working directory. Please omit leading slash."
                     return HttpResponseBadRequest({"message": msg})
-                file = os.path.join(config_path_work, ip.process_id, ip_sub_file_path)
+                file = os.path.join(config_path_work, ip.uid, ip_sub_file_path)
                 if not os.path.exists(file):
                     return HttpResponseNotFound("File not found in working directory")
                 if os.path.isdir(file):
@@ -474,7 +474,7 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
     Retrieve file resource from the storage area's file system.
     For example, the following is a request to retrieve a packaged data set from the storage area:
 
-        http://localhost:8000/earkweb/api/informationpackages/urn%3Auuid%3A42658bbd-a76f-46f5-85da-f0ad2bed94dc/file-resource/urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar/
+        http://localhost:8000/earkweb/api/ips/urn%3Auuid%3A42658bbd-a76f-46f5-85da-f0ad2bed94dc/file-resource/urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar/
 
     Note that in the filename the colon of the identifier is mapped to '+' so that the identifier:
 
@@ -604,13 +604,13 @@ def get_ip_representations_info(_, identifier):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def do_working_dir_dir_json(request, process_id):
+def do_working_dir_dir_json(request, uid):
     """
     get: List directory content as JSON (working area)
 
     List directory content as JSON
     """
-    return directory_json(request, "work", process_id)
+    return directory_json(request, "work", uid)
 
 
 @csrf_exempt
@@ -656,7 +656,7 @@ def directory_json(request, area, item):
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
     if area in ["work", "storage"]:
         try:
-            ip = InformationPackage.objects.get(process_id=item) if area == "work" else \
+            ip = InformationPackage.objects.get(uid=item) if area == "work" else \
                 InformationPackage.objects.get(identifier=item, version=re.sub("\D", "", version))
             try:
                 u = User.objects.get(username=request.user)
@@ -714,9 +714,9 @@ def submissions_list(request):
         except RuntimeError as e:
             error = {"message": "%s" % str(e)}
             return JsonResponse(error, status=400)
-        process_id = str(uuid4())
-        path = os.path.join(config_path_work, process_id)
-        ips = InformationPackage.objects.filter(package_name=process_id)
+        uid = str(uuid4())
+        path = os.path.join(config_path_work, uid)
+        ips = InformationPackage.objects.filter(package_name=uid)
         if ips.count() > 0:
             error = {"message": "Duplicate entry. A submission process with the given UUID already exists "}
             return JsonResponse(error, status=400)
@@ -732,7 +732,7 @@ def submissions_list(request):
 
         extuid = data['extuid'] if 'extuid' in data else ''
 
-        working_directory = os.path.join(config_path_work, process_id)
+        working_directory = os.path.join(config_path_work, uid)
         if not os.path.exists(working_directory):
             os.makedirs(working_directory, exist_ok=True)
 
@@ -744,12 +744,12 @@ def submissions_list(request):
 
         serializer = InformationPackageSerializer(data=data)
         if serializer.is_valid():
-            ip = InformationPackage.objects.create(process_id=process_id, identifier='',
+            ip = InformationPackage.objects.create(uid=uid, identifier='',
                                                    package_name=data['package_name'],
                                                    work_dir=path, user=request.user, version=0, external_id=extuid)
             ip.save()
             return JsonResponse({
-                "message": "Informationspaket-Paket erfolgreich erstellt.", "process_id": process_id
+                "message": "Informationspaket-Paket erfolgreich erstellt.", "uid": uid
             }, status=201)
         return JsonResponse(serializer.errors, status=400)
 
@@ -758,7 +758,7 @@ def submissions_list(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def submission_detail(request, procid):
+def submission_detail(request, uid):
     """
     get:
     Get details of a submission
@@ -780,7 +780,7 @@ def submission_detail(request, procid):
     Delete submission details
     """
     try:
-        info_obj = InformationPackage.objects.get(process_id=procid)
+        info_obj = InformationPackage.objects.get(uid=uid)
     except InformationPackage.DoesNotExist:
         return HttpResponse(status=404)
     if request.method == 'GET':
@@ -791,7 +791,7 @@ def submission_detail(request, procid):
         serializer = InformationPackageSerializer(info_obj, data=data)
         if serializer.is_valid():
             serializer.save()
-            ip = InformationPackage.objects.get(process_id=info_obj.process_id)
+            ip = InformationPackage.objects.get(uid=info_obj.uid)
             if "last_change" in data:
                 ip.created = parser.parse(data["last_change"])
                 logger.info("Updating last_change: %s (UTC)" % ip.last_change)
@@ -909,7 +909,7 @@ def get_ip_states(request):
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/status/
+            http://localhost:8000/earkweb/api/ips/status/
     """
     results = {}
     if request.method == 'GET':
@@ -920,7 +920,7 @@ def get_ip_states(request):
             logger.debug(ips.query)
             for ip in ips:
                 result = {}
-                working_dir = os.path.join(config_path_work, ip.process_id)
+                working_dir = os.path.join(config_path_work, ip.uid)
                 if os.path.exists(working_dir):
                     ip_state_file_path = os.path.join(working_dir, "state.json")
                     if os.path.exists(ip_state_file_path):
@@ -937,7 +937,7 @@ def get_ip_states(request):
                             "title": "State file not vailable",
                             "detail": "State file not found at: %s" % ip_state_file_path}
                         }
-                results[ip.process_id] = result
+                results[ip.uid] = result
             return JsonResponse(results, status=200)
         except Exception as err:
             logger.debug("Error", err)
@@ -949,20 +949,20 @@ def get_ip_states(request):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
-def get_ip_state(request, process_id):
+def get_ip_state(request, uid):
     """
     get:
         Status of selected submission (database, working area)
 
         Example
 
-            http://localhost:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/status/
+            http://localhost:8000/earkweb/api/ips/08c261ce-2aec-412c-b245-7a64be495b03/status/
     """
     if request.method == 'GET':
         try:
-            ip = InformationPackage.objects.get(process_id=process_id)
+            ip = InformationPackage.objects.get(uid=uid)
             result = {}
-            working_dir = os.path.join(config_path_work, ip.process_id)
+            working_dir = os.path.join(config_path_work, ip.uid)
             if os.path.exists(working_dir):
                 ip_state_file_path = os.path.join(working_dir, "state.json")
                 if os.path.exists(ip_state_file_path):
@@ -1014,19 +1014,19 @@ class UploadFile(APIView):
     """
     post: Upload file to a submission or working copy (database, working area)
 
-    The variable ${process_id} is the identifier of the process.
+    The variable ${uid} is the identifier of the process.
 
     The variable ${datatype} is one of "metadata", "data", or "documentation".
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${datatype}/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/${uid}/${datatype}/upload/
 
     For example, to upload a metadatafile, and with `DATA_TYPE="metadata"`,
     `PROCESS_ID="08c261ce-2aec-412c-b245-7a64be495b03"`,
     and local file path `LOCAL_FILE_PATH="/home/user/dcat.xml`, the upload command would be as follows:
 
         curl -v -X POST -F "file=@/home/user/dcat.xml"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/08c261ce-2aec-412c-b245-7a64be495b03/metadata/upload/
 
     If a data set exists, the metadata file is also added to the last version of it.
 
@@ -1035,8 +1035,8 @@ class UploadFile(APIView):
     For example, add a data file to an information package, the file can be uploaded using the following curl command:
 
         curl -v -X POST -F "file=@${LOCAL_FILE_PATH}"
-        http://127.0.0.1:8000/earkweb/api/informationpackages/${process_id}/${representation}/${datatype}/upload
-        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/earkweb/api/informationpackages/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
+        http://127.0.0.1:8000/earkweb/api/ips/${uid}/${representation}/${datatype}/upload
+        curl -v -H 'Authorization: Token 325dfabc9839904a117d446440232abaf344f9a0' -X POST -F "file=@/home/schlarbs/test.txt" http://localhost:8000/earkweb/api/ips/73483984-debd-4d04-a14c-5acb11167719/36045801-af2f-4bc2-9df5-f3eeb9755904/data/upload/
     """
     throttle_classes = ()
 
@@ -1047,7 +1047,7 @@ class UploadFile(APIView):
     renderer_classes = (renderers.JSONRenderer,)
     serializer_class = serializers.UploadedFileSerializer
 
-    def post(self, request, process_id, datatype, representation=None):
+    def post(self, request, uid, datatype, representation=None):
 
         logger.info(self.get_view_name())
 
@@ -1057,9 +1057,9 @@ class UploadFile(APIView):
 
         # get information package object
         try:
-            ip = InformationPackage.objects.get(process_id=process_id)
+            ip = InformationPackage.objects.get(uid=uid)
         except InformationPackage.DoesNotExist:
-            return JsonResponse({"message": "The information package does not exist: %s" % process_id}, status=400)
+            return JsonResponse({"message": "The information package does not exist: %s" % uid}, status=400)
 
         target_directory = None
 
@@ -1069,16 +1069,16 @@ class UploadFile(APIView):
             reprec.save()
 
         if representation:
-            representation_dir = os.path.join(config_path_work, process_id, representations_directory, representation)
+            representation_dir = os.path.join(config_path_work, uid, representations_directory, representation)
             if not os.path.exists(representation_dir):
                 os.makedirs(representation_dir, exist_ok=True)
                 folders = ["data"]
                 for folder in folders:
                     os.mkdir(os.path.join(representation_dir, folder))
-            target_directory = os.path.join(config_path_work, process_id, representations_directory,
+            target_directory = os.path.join(config_path_work, uid, representations_directory,
                                             representation, datatype)
         else:
-            main_metadata_dir = os.path.join(config_path_work, process_id, "metadata/descriptive")
+            main_metadata_dir = os.path.join(config_path_work, uid, "metadata/descriptive")
 
             if not os.path.exists(main_metadata_dir):
                 os.makedirs(main_metadata_dir, exist_ok=True)
@@ -1126,13 +1126,13 @@ class UploadFile(APIView):
                                         status=status.HTTP_400_BAD_REQUEST)
 
         # updating last change date
-        ip = InformationPackage.objects.get(process_id=process_id)
+        ip = InformationPackage.objects.get(uid=uid)
 
         # using local time (converted to UTC in DB)
         ip.last_change = datetime.now()
         ip.save()
         logger.info("Last_change date updated: %s" % ip.last_change)
-        response_data = {"message": "File upload successful", "sha256": sha256, 'processId': process_id}
+        response_data = {"message": "File upload successful", "sha256": sha256, 'processId': uid}
         if representation:
             response_data["representationId"] = representation
         return JsonResponse(response_data, status=201)
@@ -1148,15 +1148,15 @@ class InformationPackages(generics.ListCreateAPIView):
 
     The submission process is initialized using the following command:
 
-        curl -X POST -d 'package_name=${PACKAGE_NAME}' http://127.0.0.1:8000/earkweb/api/informationpackages/
+        curl -X POST -d 'package_name=${PACKAGE_NAME}' http://127.0.0.1:8000/earkweb/api/ips/
 
     For example, with `PACKAGE_NAME='mypackage'`, the `curl` command would be:
 
-        curl -X POST -d 'package_name=mypackage' 'http://127.0.0.1:8000/earkweb/api/informationpackages/'
+        curl -X POST -d 'package_name=mypackage' 'http://127.0.0.1:8000/earkweb/api/ips/'
 
     Example message in case of success (returns process ID):
 
-        {"message": "Submission process initiated successfully.", "process_id": "08c261ce-2aec-412c-b245-7a64be495b03"}
+        {"message": "Submission process initiated successfully.", "uid": "08c261ce-2aec-412c-b245-7a64be495b03"}
     """
     serializer_class = InformationPackageSerializer
     authentication_classes = (TokenAuthentication, SessionAuthentication,)
@@ -1192,7 +1192,7 @@ class InfPackDetail(generics.RetrieveUpdateDestroyAPIView):
 
     Delete registered information package
     """
-    lookup_field = 'process_id'
+    lookup_field = 'uid'
     queryset = InformationPackage.objects.all()
     serializer_class = InformationPackageSerializer
     authentication_classes = (TokenAuthentication, SessionAuthentication,)
