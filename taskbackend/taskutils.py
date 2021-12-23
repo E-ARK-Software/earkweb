@@ -169,8 +169,9 @@ def get_identifier(org_nsid):
 def get_celery_worker_status():
     ERROR_KEY = "ERROR"
     try:
-        from celery.task.control import inspect
-        insp = inspect()
+        from earkweb.celery import app
+
+        insp = app.control.inspect()
         d = insp.stats()
         if not d:
             d = { ERROR_KEY: 'No Celery workers running.' }
