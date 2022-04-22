@@ -26,7 +26,7 @@ djangorestframework-api-key==2.1.0
 simplejson
 uwsgi
 importlib_resources
-PyPDF2==1.26.0
+PyPDF2==1.27.5
 bagit==1.8.1
 PyICU==2.8
 # eatb
