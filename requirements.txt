@@ -10,7 +10,7 @@ djangorestframework==3.13.1
 django-taggit==2.0.0
 django-taggit-autosuggest==0.3.8
 mysqlclient==2.1.0
-flower==1.0.0
+flower==1.2.0
 redis==4.0.2
 requests==2.26.0
 lxml==4.7.1
