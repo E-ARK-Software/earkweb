@@ -51,6 +51,37 @@ msgstr "Identificador"
 msgid "Label"
 msgstr "Etiqueta"
 
+msgid "Help"
+msgstr "Ayuda"
+
+
+msgid "How to create a submission information package (SIP)"
+msgstr "Cómo crear un Paquete de Información de Transferencias (SIP)"
+
+msgid "How-to create a submission information package (SIP)"
+msgstr "Cómo crear un Paquete de Información de Transferencias (SIP)"
+
+
+msgid "How to create an archival information package (AIP)"
+msgstr "Cómo crear un Paquete de Información de Archivo (AIP)"
+
+msgid "How-to create an archival information package (AIP)"
+msgstr "Cómo crear un Paquete de Información de Archivo (AIP)"
+
+
+msgid "How to use the API"
+msgstr "Cómo utilizar la API"
+msgid "How-to use the API"
+msgstr "Cómo utilizar la API"
+
+
+msgid "eArchiving Repository"
+msgstr "Repositorio eArchiving"
+
+
+msgid "Site Administration"
+msgstr "Administración del sitio"
+
 #: access/templates/access/detail.html:50
 #: management/templates/management/detail.html:57
 #: management/templates/management/detail.html:90
@@ -673,7 +704,7 @@ msgstr ""
 
 #: templates/earkweb/navbar.html:8
 msgid "Administration"
-msgstr "Administration"
+msgstr "Administración"
 
 #: templates/earkweb/navbar.html:27
 msgid "Submission"
@@ -689,7 +720,7 @@ msgstr "Gestión de paquetes de información"
 
 #: templates/earkweb/navbar.html:44
 msgid "NavIngestedPackages"
-msgstr "Gestión de paquetes de información"
+msgstr "Paquetes de información archivados"
 
 #: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"
@@ -701,5 +732,5 @@ msgstr "No hay ningún identificador de Blockchain sin usar disponible"
 
 #: util/djangoutils.py:40
 msgid "An error occurred"
-msgstr "An error occurred"
+msgstr "Se ha producido un error"
 

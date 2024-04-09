@@ -31,13 +31,15 @@
             $.ajax({
                 url: "/earkweb/access/reindex-storage",
                 context: document.body,
-            }).success(function(data) {
-                $('#reindexbtn').attr("disabled", "disabled");
-                $('.top-right').notify({
-                    message: { text: 'Indexing of stored data sets started!' }
-                  }).show();
-            }).error(function(err, message, status_text) {
-                alert("Error!");
+                success: function(data) {
+                    $('#reindexbtn').attr("disabled", "disabled");
+                    $('.top-right').notify({
+                        message: { text: 'Indexing of stored data sets started!' }
+                      }).show();
+                },
+                error: function(err, message, status_text) {
+                    alert("Error!");
+                }
             });
         });
 	</script>

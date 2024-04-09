@@ -36,6 +36,11 @@ urlpatterns = [
     url(r'^get_storage_directory_json$', views.get_storage_directory_json, name='get_storage_directory_json'),
     url(r'^poll_state/$', views.poll_state, name='poll_state'),
     url(r'^solrif/(?P<core>[0-9a-zA-Z-]{3,200})/(?P<operation>[0-9a-zA-Z-]{3,200})/$', views.solrif, name='solrif'),
+
+    url(r'^howto/$', views.howto_overview, name='howto'),
+    url(r'^howto-create-dataset/$', views.howto_create_dataset, name='howto_create_dataset'),
+    url(r'^howto-ingest-dataset/$', views.howto_ingest_dataset, name='howto_ingest_dataset'),
+    url(r'^howto-use-the-api/$', views.howto_use_the_api, name='howto_use_the_api'),
 ]
 
 urlpatterns = [

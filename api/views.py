@@ -8,16 +8,18 @@ import traceback
 from json import JSONDecodeError
 
 import magic
-from _icu import CharsetDetector
+#from _icu import CharsetDetector
+import cchardet
 from dateutil import parser
 from datetime import date, timedelta, datetime
 from django.contrib.auth.models import User
 from django.http import JsonResponse, HttpResponse, HttpResponseNotFound, HttpResponseBadRequest, \
     HttpResponseForbidden, FileResponse, HttpResponseNotAllowed, Http404, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-from eatb.packaging.tar_entry_reader import ChunkedTarEntryReader
-from eatb.storage.checksum import ChecksumFile, ChecksumAlgorithm
-from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage, make_storage_data_directory_path
+
+from eatb.checksum import ChecksumFile, ChecksumAlgorithm
+from eatb.pairtree_storage import make_storage_data_directory_path, PairtreeStorage
+from eatb.packaging import ChunkedTarEntryReader
 from eatb.utils.datetime import date_format, DT_ISO_FORMAT
 from eatb.utils.fileutils import fsize, get_mime_type, read_file_content, list_files_in_dir, get_directory_json, \
     to_safe_filename, from_safe_filename
@@ -51,7 +53,6 @@ from rest_framework import renderers
 from uuid import uuid4
 from rest_framework import generics
 from util.djangoutils import check_required_params, get_unused_identifier
-
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -175,7 +176,7 @@ def checkout_working_copy(request, identifier):
             #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
             if ip.uid != "":
                 return JsonResponse({"message": "A working copy already exists."}, status=400)
-            dpts = DirectoryPairtreeStorage(config_path_storage)
+            dpts = PairtreeStorage(config_path_storage)
             if not dpts.identifier_object_exists(identifier):
                 return JsonResponse({"message": "Object does not exist in storage."}, status=404)
             uid = str(uuid4())
@@ -351,7 +352,7 @@ def index_informationpackage(request, identifier):
             u = User.objects.get(username=request.user)
             #if u != ip.user:
             #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
-            dpts = DirectoryPairtreeStorage(config_path_storage)
+            dpts = PairtreeStorage(config_path_storage)
             if not dpts.identifier_object_exists(identifier):
                 return JsonResponse({"message": "Data asset does not exist in storage."}, status=404)
             job = aip_indexing.delay(('{"identifier": "%s"}' % identifier))
@@ -489,7 +490,7 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
         urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar
 
     """
-    dpts = DirectoryPairtreeStorage(config_path_storage)
+    dpts = PairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
     version = dpts.curr_version(package_id)
     #access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
@@ -520,11 +521,9 @@ def read_file(file_path):
 
                 stream = open(file_path, 'rb')
                 bytes = stream.read()
-
-                coding = CharsetDetector(bytes).detect().getName()
-                file_content = bytes.decode(coding).encode('utf-8')
-
-                file_content = file_content
+                #encoding = CharsetDetector(bytes).detect().getName()
+                encoding = cchardet.detect(bytes)['encoding']
+                file_content = bytes.decode(encoding).encode('utf-8')
             else:
                 file_content = read_file_content(file_path)
             return HttpResponse(file_content, content_type=mime)
@@ -548,13 +547,10 @@ def package_entry_from_backend(_, identifier, entry):
     representation: default
     """
     try:
-        dpts = DirectoryPairtreeStorage(config_path_storage)
+        dpts = PairtreeStorage(config_path_storage)
         object_path = dpts.get_object_path(from_safe_filename(identifier))
-        version = dpts.curr_version(from_safe_filename(identifier))
-        bag_name = dpts.get_bag_name(identifier, version, 1)
-        archive_file_path = os.path.join(object_path, "%s.tar" % bag_name)
-        t = tarfile.open(archive_file_path, 'r')
-        tar_entry = os.path.join(bag_name, entry)
+        t = tarfile.open(object_path, 'r')
+        tar_entry = os.path.join(identifier, entry)
 
         info = t.getmember(tar_entry)
 
@@ -586,7 +582,7 @@ def get_ip_representations_info(_, identifier):
         Get data set structure
     """
     try:
-        dpts = DirectoryPairtreeStorage(config_path_storage)
+        dpts = PairtreeStorage(config_path_storage)
         object_path = dpts.get_object_path(identifier)
         package_path = os.path.join(object_path, representations_directory)
         tar_files = list_files_in_dir(package_path)
@@ -651,7 +647,7 @@ def directory_json(request, area, item):
     if area == "work":
         access_path = config_path_work
     elif area == "storage":
-        dpts = DirectoryPairtreeStorage(config_path_storage)
+        dpts = PairtreeStorage(config_path_storage)
         version = dpts.curr_version(item)
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
     if area in ["work", "storage"]:
@@ -670,7 +666,7 @@ def directory_json(request, area, item):
     else:
         item_path = item
     if area == "storage":
-        item_path = "content"
+        item_path = ""
     if not os.path.exists(os.path.join(access_path, item_path)):
         return JsonResponse({
             "message": "Access path does not exist: %s" %
@@ -739,7 +735,7 @@ def submissions_list(request):
         state_data = json.dumps(
             {"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)}
         )
-        with open(os.path.join(working_directory, "state.json"), 'w') as status_file:
+        with open(os.path.join(working_directory, "metadata/other/state.json"), 'w') as status_file:
             status_file.write(state_data)
 
         serializer = InformationPackageSerializer(data=data)
@@ -922,7 +918,7 @@ def get_ip_states(request):
                 result = {}
                 working_dir = os.path.join(config_path_work, ip.uid)
                 if os.path.exists(working_dir):
-                    ip_state_file_path = os.path.join(working_dir, "state.json")
+                    ip_state_file_path = os.path.join(working_dir, "metadata/other/state.json")
                     if os.path.exists(ip_state_file_path):
                         try:
                             info_file_content = read_file_content(ip_state_file_path)
@@ -964,7 +960,7 @@ def get_ip_state(request, uid):
             result = {}
             working_dir = os.path.join(config_path_work, ip.uid)
             if os.path.exists(working_dir):
-                ip_state_file_path = os.path.join(working_dir, "state.json")
+                ip_state_file_path = os.path.join(working_dir, "metadata/other/state.json")
                 if os.path.exists(ip_state_file_path):
                     try:
                         info_file_content = read_file_content(ip_state_file_path)

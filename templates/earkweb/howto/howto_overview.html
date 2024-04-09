@@ -1,0 +1,29 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+<!-- Management area javascript -->
+<script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+<style>
+    h3 { padding-top: 20px }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">{% trans "Help" %}</h1>
+
+<h2>{% trans "Overview about how-to pages" %}</h2>
+
+<ul>
+    <li><a href="/earkweb/howto-create-dataset/">Overview about how-to pages</a></li>
+    <li><a href="/earkweb/howto-ingest-dataset/">How to ingest a submission information package (SIP)</a></li>
+    <li><a href="/earkweb/howto-use-the-api/">How to use the API</a></li>
+</ul>
+
+
+
+{% endblock %}

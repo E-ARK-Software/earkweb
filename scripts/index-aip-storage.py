@@ -4,7 +4,7 @@ import os
 import os.path
 import re
 
-from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage
+from eatb.storage.directorypairtreestorage import PairtreeStorage
 from pairtree import PairtreeStorageClient
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -48,7 +48,7 @@ def index_aip_storage():
                id_path = package_abs_path[0:re.search('data\/v[0-9]{5,5}\/', package_abs_path).start()]
 
                store = PairtreeStorageClient(store_dir=config_path_storage, uri_base='http')
-               dpts = DirectoryPairtreeStorage(config_path_storage)
+               dpts = PairtreeStorage(config_path_storage)
                identifier = store._get_id_from_dirpath(id_path)
                given_package_version = re.search(r'v[0-9]{5,5}', package_abs_path).group(0)
                current_version = dpts.curr_version(identifier)

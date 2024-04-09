@@ -33,7 +33,7 @@
           setInterval(function(){get_contents();}, 1000);
           function get_contents() {
             console.log("called");
-            $.get('/earkweb/api/ips/{{ip.uid}}/file-resource/processing.log/', function(data) {
+            $.get('/earkweb/api/ips/{{ip.uid}}/file-resource/metadata/other/processing.log/', function(data) {
                 console.log();
                 var lines = data.split('\n');
                 var newcontent = '';
@@ -75,7 +75,7 @@
         <p  id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
     </div>
 
-    <div id="termynal" data-termynal style="overflow:scroll; height:400px">
+    <div id="termynal" data-termynal style="overflow:scroll; height:200px; width:100%">
 
     </div>
 

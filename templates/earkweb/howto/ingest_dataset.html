@@ -1,0 +1,71 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+<!-- Management area javascript -->
+<script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+<style>
+    h3 { padding-top: 20px }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">{% trans "Help" %}</h1>
+
+<h2>{% trans "How to create an archival information package (AIP)" %}</h2>
+
+<p>The archival information package (AIP) is the result of ingesting a submission information package (SIP).</p>
+
+<h3>{% trans "Submission Information Package creation finalised" %}</h3>
+<p>After creating the submisssion information package the information package can be reviewed. Either click on "Edit information
+package to change it or click on "Archive Information package" to proceed with ingesting it.</p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-1.png" %}" />
+<p>Note that it is possible to return to this step by selecting a package from the "Information Package Creation" / "Information Packages in Process"
+overview (click on the "Edit" button).</p>
+
+<h3>{% trans "Start Archiving the Information Package" %}</h3>
+<p>On the next page there is an overview about the information package which is going to be archived. It shows the
+Process ID, Working Directory, and when it was changed the last time. If no identifier and version number is shown this
+means that the information package is archived for the first time. </p>
+<p>Below the information package table follows the area of the "Ingest Pipeline execution" with the button to start the
+ingest process (button "Archive Information Package"). </p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-2.png" %}" />
+
+<h3>{% trans "Archiving the Information Package started" %}</h3>
+<p>Once the Archiving of the Information Package is started, the backend processes are shown in the "Ingest Pipeline execution" area.
+The individual processes of the Ingest Pipeline are linked to the corresponding task which can be inspected in the flower task monitoring tool.</p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-3.png" %}" />
+<p>On the bottom is the "Processing Log" which shows the log of the SIP creation processes executed for the package. Once the
+ingest process is started, the log is continued in the same log file and shown in the "Process log".</p>
+
+<h3>{% trans "Archiving the Information Package terminated" %}</h3>
+<p>When the Archiving the Information Package is finished, the Information Package table on top shows the "Information Package identifier" and
+a version of the Archival Information Package. When the Information Package is ingested for the first time, the system will create a version 0 with no changes at all, i.e., only the representations
+which were submitted with the SIP. Additionally, a version 1 may contain additional representations due to representation migration.</p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-4.png" %}" />
+
+<h3>{% trans "Creating a new version of the Archival Information Package" %}</h3>
+<p>From the "Information Package Management" area, it is possible to change the information package, i.e., re-ingest
+updated content for the Archival Information Package. If a local process directory exists, it is used for the updated
+submission. If the process directory does not exist, the Archival Information Package needs to be checked out first.</p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-5.png" %}" />
+<p>Re-executing the ingest will create a new version which is shown in the Information Package table in the "Version" field.
+The identifier of the information package will remain the same.</p>
+
+<h3>{% trans "Working directory" %}</h3>
+<p>The "Working directory" can be kept as a local copy of the information package in order to re-execute the ingest at
+some later point in time. </p>
+<img style="width: 100%" src="{% static "howto/how-to-ingest-6.png" %}" />
+
+<h3>{% trans "AIP Directory" %}</h3>
+The "Information Package Identifier" links to the root directory of the Archival Information Package. It shows all
+versions of the packaged AIPs.
+<img style="width: 100%" src="{% static "howto/how-to-ingest-7.png" %}" />
+<p>On top of the directory is a timeline which indicates when the different versions were
+created. The original SIP is stored as version 0 together with the version 1 which contains representation migrations.
+At a later point in time two additional versions were created in this example.</p>
+{% endblock %}

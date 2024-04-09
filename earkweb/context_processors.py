@@ -1,5 +1,5 @@
 from config.configuration import flower_host, flower_port, flower_path, sw_version, sw_version_date, is_test_instance, \
-    logo, repo_title
+    logo, repo_title, repo_description
 import json
 import string
 
@@ -17,6 +17,7 @@ def environment_variables(request):
         lang = request.session[translation.LANGUAGE_SESSION_KEY]
     return {'logo': logo,
             'repo_title': repo_title,
+            'repo_description': repo_description,
             'sw_version': sw_version,
             'sw_version_date': sw_version_date,
             'is_test_instance': is_test_instance,

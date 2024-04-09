@@ -1,0 +1,65 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+<!-- Management area javascript -->
+<script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+<style>
+    h3 { padding-top: 20px }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">{% trans "Help" %}</h1>
+
+<h2>{% trans "How to create a submission information package (SIP)" %}</h2>
+
+<h3>{% trans "Select 'Information package creation' from the menu, then select 'Create new information package'" %}</h3>
+<img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-1.png" %}" />
+
+<h3>{% trans "Choose a label for the information package" %}</h3>
+<p>The label must be unique and it must not contain white spaces; dot, dash and underscore are allowed.</p>
+<p>The external identifier is an optional field.</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-2.png" %}" /></p>
+
+<h3>{% trans "Fill out data set title, description, and tags" %}</h3>
+<p>{% trans "Tags are suggested from the Eurovocs vocabulary. The vocabulary can be adapted in the 'Administration/Site Administration' section." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-3.png" %}" /></p>
+
+<h3>{% trans "Fill out main contact and maintainer metadata and the main language of the information package" %}</h3>
+<p>{% trans "'Contact' is the person responsible for the data set to be asked regarding re-use and ethical or legal questions, and the 'maintainer' is the person in charge of technical issues, e.g. regarding encryption, data formats, etc." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-4.png" %}" /></p>
+
+<h3>{% trans "Define a representation of the information package." %}</h3>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-5.png" %}" /></p>
+
+<h3>{% trans "Select files to upload" %}</h3>
+<p>Either use drag &amp; drop or select the files using the file browser.</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-6.png" %}" /></p>
+
+<h3>{% trans "<span style='color:red; font-weight: bold'>Important</span>: Press the 'upload' button on the bottom right of the file upload field to upload files of the representation." %}</h3>
+<p>{% trans "Note that data upload is discarded if the 'Upload' button is not clicked." %}</p>
+<p>{% trans "After uploading the data files, click on 'Finish data upload' to finalize data set creation." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-7.png" %}" /></p>
+
+<h3>{% trans "Review information package" %}</h3>
+<p>{% trans "In this step the created information package can be reviewed. Click on 'Edit data set' to make any changes." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-8.png" %}" /></p>
+
+<h3>{% trans "Open the 'ead.xml' file, for example, to inspect metadata of the information package." %}</h3>
+<p>{% trans "Double-click on a file to open it in a pop-up window or a tool that can visualize the data (depends on browser configuration and system). Right click and choose 'delete' to remove a file." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-9.png" %}" /></p>
+
+<p>{% trans "Review other uploaded files." %}</p>
+<p>{% trans "Double-click on a PDF file, for example, opens the file in a pop-up window." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-10.png" %}" /></p>
+
+<h3>{% trans "Information package overview" %}</h3>
+<p>{% trans "The new information package can be accessed in the 'Information package creation' / 'Information packages in process' section if anything needs to be changed." %}</p>
+<p><img style="width: 100%" src="{% static "howto/how-to-create-a-dataset-11.png" %}" /></p>
+
+{% endblock %}

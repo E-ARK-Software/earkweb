@@ -8,11 +8,11 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from shutil import rmtree
 
-from eatb.storage.directorypairtreestorage import VersionDirFormat
-
 from earkweb.models import InformationPackage, Representation
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+
+from eatb import VersionDirFormat
 from taskbackend.taskutils import extract_and_remove_package, flower_is_running
 
 from config.configuration import config_path_work, verify_certificate
@@ -179,15 +179,15 @@ class InformationPackageTable(tables.Table):
     def render_statusprocess(value):
         if value == "Success":
             return mark_safe(
-                'Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>'
+                'Success <span class="fas fa-check-circle" aria-hidden="true" style="color:green"/>'
             )
         elif value == "Error":
             return mark_safe(
-                'Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>'
+                'Error <span class="fas fa-exclamation-circle" aria-hidden="true" style="color:#91170A"/>'
             )
         elif value == "Warning":
             return mark_safe(
-                'Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>'
+                'Warning <span class="fas fa-exclamation-triangle" aria-hidden="true" style="color:#F6A50B"/>'
             )
         else:
             return value
@@ -201,7 +201,7 @@ def informationpackages_overview(request):
     filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
     sql_query = """
     select ip.id as id, ip.work_dir as path, ip.uid as uid, ip.package_name as package_name,
-    CONCAT('<a href="/earkweb/management/modify/',ip.id,'/" data-toggle="tooltip" title="Metadaten ändern oder neue Version übertragen"><i class="glyphicon glyphicon-edit editcol"></i></a>') as edit,
+    CONCAT('<a href="/earkweb/management/modify/',ip.id,'/" data-toggle="tooltip" title="Metadaten ändern oder neue Version übertragen"><i class="fas fa-edit editcol"></i></a>') as edit,
     CONCAT('<a href="/earkweb/management/working_area/management/',ip.uid,'/" data-toggle="tooltip" title="View working directory">',ip.uid,'</a><a href="/earkweb/management/delete/',ip.id,'/" data-toggle="tooltip" title="Remove working copy">', IF(uid IS NULL OR uid = '', '', '<i class="glyphicon glyphicon-trash editcol"></i>'), '</a>') as packagecol,
     ip.identifier as identifier
     from informationpackage as ip

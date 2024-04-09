@@ -1,67 +1,63 @@
+import datetime
 import fnmatch
+import gettext
 import json
 import os
 import shutil
+import tarfile
+import time
 import traceback
 import uuid
 from functools import partial
 from os import walk
-import time
 
-import bagit
 import redis
-import datetime
 import requests
-#from celery.task import Task
-from eatb.cli.cli import CliCommand, CliExecution, CliCommands
-from eatb.format.formatidentification import FormatIdentification
-from eatb.metadata.mets.MetsValidation import MetsValidation, METS_NS, XLINK_NS
-from eatb.metadata.mets.ParsedMets import ParsedMets
-from eatb.metadata.mets.metsgenerator import MetsGenerator
-from eatb.metadata.mets.metsutil import get_mets_objids_from_basedir
-from eatb.metadata.parsedead import field_namevalue_pairs_per_file
-from eatb.metadata.premis.dippremis import DIPPremis
-from eatb.metadata.premis.premisgenerator import PremisGenerator
-from eatb.oais.sip_creation import create_sip
-from eatb.oais.sip_generator import SIPGenerator
-from eatb.packaging.manifest import ManifestCreation
-from eatb.packaging.package_creator import create_package
-from eatb.packaging.packaged_container import PackagedContainer
-from eatb.storage.checksum import ChecksumValidation, ChecksumAlgorithm, check_transfer, ChecksumFile, get_sha256_hash, \
-    get_hash_values, get_sha512_hash
-from eatb.storage.directorypairtreestorage import DirectoryPairtreeStorage, make_storage_data_directory_path
-from eatb.storage.pairtreestorage import PairtreeStorage
-from eatb.utils.datetime import date_format, current_timestamp
-from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files, \
-    strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks, read_and_load_json_file
-from eatb.utils.randomutils import get_unique_id, randomword
-from eatb.validation.csip_validation import CSIPValidation
-from eatb.xml.deliveryvalidation import DeliveryValidation
+from celery import chain, group
+# from celery.task import Task
+
 from lxml import etree, objectify
-from earkweb.decorators import requires_parameters, task_logger
-from earkweb.models import InformationPackage
+
+import eatb.pairtree_storage
 from access.search.solrclient import SolrClient, default_reporter
 from access.search.solrquery import SolrQuery
 from access.search.solrserver import SolrServer
-
-from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
-    get_last_submission_path, get_children_from_storage, get_package_from_storage, get_aip_parent, \
-    create_or_update_state_info_file, create_file_backup, store_bag, persist_state, write_inventory, update_status, \
-    update_inventory
-import tarfile
-from celery import chain, group
-from earkweb.celery import app
-from util.djangoutils import check_required_params
-from taskbackend.ip_state import IpState
 from config.configuration import config_path_storage, config_path_work, solr_protocol, solr_host, solr_port, \
     solr_core, representations_directory, verify_certificate, redis_host, redis_port, redis_password, commands, \
     root_dir, metadata_file_pattern_ead, django_service_protocol, django_service_host, django_service_port, \
     backend_api_key
-from eatb.metadata.XmlHelper import q
-
+from earkweb.celery import app
+from earkweb.decorators import requires_parameters, task_logger
+from earkweb.models import InformationPackage
+from eatb import VersionDirFormat
+from eatb.checksum import check_transfer, ChecksumValidation, ChecksumAlgorithm, ChecksumFile
+from eatb.cli import CliExecution, CliCommand, CliCommands
+from eatb.csip_validation import CSIPValidation
+from eatb.file_format import FormatIdentification
+from eatb.metadata import XLINK_NS, METS_NS
+from eatb.metadata.dip_parsed_premis import DIPPremis
+from eatb.metadata.ead import field_namevalue_pairs_per_file
+from eatb.metadata.mets import get_mets_objids_from_basedir
+from eatb.metadata.mets_generator import MetsGenerator
+from eatb.metadata.mets_validation import MetsValidation
+from eatb.metadata.parsed_mets import ParsedMets
+from eatb.metadata.premis_creator import PremisCreator
+from eatb.metadata.premis_generator import PremisGenerator
+from eatb.oais_ip import DeliveryValidation, SIPGenerator, create_sip, create_aip
+from eatb.packaging import ManifestCreation
+from eatb.pairtree_storage import PairtreeStorage, make_storage_data_directory_path
+from eatb.utils.XmlHelper import q
+from eatb.utils.datetime import date_format, current_timestamp
+from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files, \
+    strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks
+from eatb.utils.randomutils import get_unique_id, randomword
+from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
+    get_children_from_storage, get_package_from_storage, get_aip_parent, \
+    create_or_update_state_info_file, store_bag, persist_state, write_inventory, update_status, \
+    update_inventory
+from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
 
-import gettext
 gettext.bindtextdomain('earkweb', os.path.join(root_dir, "locale"))
 gettext.textdomain('earkweb')
 _ = gettext.gettext
@@ -71,6 +67,7 @@ logger = app.log.get_default_logger()
 r = redis.StrictRedis(host=redis_host, port=redis_port, password=redis_password, decode_responses=True)
 
 cli_commands = CliCommands(os.path.join(root_dir, "settings/commands.cfg"))
+
 
 @app.task(bind=True, name="sip_package")
 @requires_parameters("package_name", "uid", "org_nsid")
@@ -93,20 +90,23 @@ def sip_package(self, context, task_log):
     total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
     task_log.info("Total number of files in working directory %d" % total)
     i = 0
+    excludes = ["%s.tar" % package_name, "%s.xml" % package_name]
     for subdir, dirs, files in os.walk(working_dir):
 
         for directory in dirs:
             entry = os.path.join(subdir, directory)
+
             if not os.listdir(entry):
-                tar.add(entry, arcname=os.path.relpath(entry, working_dir))
+                tar.add(entry, arcname=os.path.join(package_name, os.path.relpath(entry, working_dir)))
 
         for file in files:
-            entry = os.path.join(subdir, file)
-            tar.add(entry, arcname=os.path.relpath(entry, working_dir))
-            if i % 10 == 0:
-                perc = (i * 100) / total
-                logger.debug("Packaging progress: %d" % perc)
-                self.update_state(state='PROGRESS', meta={'process_percent': perc})
+            if not file in excludes and not file.startswith("urn+uuid"):
+                entry = os.path.join(subdir, file)
+                tar.add(entry, arcname=os.path.join(package_name, os.path.relpath(entry, working_dir)))
+                if i % 10 == 0:
+                    perc = (i * 100) / total
+                    logger.debug("Packaging progress: %d" % perc)
+                    self.update_state(state='PROGRESS', meta={'process_percent': perc})
             i += 1
     tar.close()
 
@@ -137,8 +137,10 @@ def ingest_pipeline(_, context):
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
         store_original_sip.s(),
-        #aip_migrations.s(),
-        aip_package_mets_creation.s(),
+        # aip_migrations.s(),
+        aip_record_events.s(),
+        aip_package_structure.s(),
+        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
@@ -219,10 +221,10 @@ def validate_working_directory(_, context, task_log):
         task_log.info("Information package METS file validated successfully: %s" % root_mets_path)
     else:
         task_log.info("Information package METS file validated successfully: %s" % root_mets_path)
-        #task_log.error("Error validating package METS file: %s" % root_mets_path)
-        #for err in root_mets_validator.validation_errors:
+        # task_log.error("Error validating package METS file: %s" % root_mets_path)
+        # for err in root_mets_validator.validation_errors:
         #    task_log.error(str(err))
-        #raise ValueError("Error validating package METS file. See processing log for details.")
+        # raise ValueError("Error validating package METS file. See processing log for details.")
 
     # representations folder is mandatory
     representations_path = os.path.join(ip_path, "representations")
@@ -238,7 +240,7 @@ def validate_working_directory(_, context, task_log):
             if os.path.isdir(rep_path):
                 mets_validator = MetsValidation(rep_path)
                 v = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
-                #if not v:
+                # if not v:
                 #    raise ValueError("Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml'))
 
     csip_validation = CSIPValidation()
@@ -490,10 +492,29 @@ def file_migration(self, details):
     return True
 
 
+@app.task(bind=True, name="aip_record_events")
+@requires_parameters("uid", "package_name", "identifier")
+@task_logger
+def aip_record_events(_, context, task_log):
+    task_context = json.loads(context)
+    identifier = task_context["identifier"]
+    working_dir = get_working_dir(task_context["uid"])
+    try:
+        premis = PremisCreator(working_dir)
+        premis.add_agent("urn:eark:software:earkweb:v1.3", "earkweb", "software")
+        premis.add_event("urn:eark:event:ingest:{0}", "success", "urn:eark:software:earkweb:v1.3", identifier)
+        premis.create("metadata/preservation/", "event", "ingest")
+    except Exception as err:
+        task_log.debug(err)
+        tb = traceback.format_exc()
+        task_log.debug(tb)
+    return json.dumps(task_context)
+
+
 @app.task(bind=True, name="aip_package_mets_creation")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
-def aip_package_mets_creation(_, context, task_log):
+def aip_package_structure(_, context, task_log):
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     try:
@@ -590,6 +611,55 @@ def aip_package_mets_creation(_, context, task_log):
     return json.dumps(task_context)
 
 
+@app.task(bind=True, name="aip_package")
+@requires_parameters("package_name", "uid", "identifier", "org_nsid")
+@task_logger
+def aip_packaging(self, context, task_log):
+    task_context = json.loads(context)
+    package_name = task_context["package_name"]
+    identifier = task_context["identifier"].strip()
+    uid = task_context["uid"]
+    working_dir = get_working_dir(uid)
+
+    # pair tree storage
+    pts = PairtreeStorage(config_path_storage)
+    # archive file name
+    safe_identifier_name = to_safe_filename(identifier)
+    archive_file = "%s.tar" % safe_identifier_name
+
+    aip_package_path = os.path.join(working_dir, archive_file)
+
+    tar = tarfile.open(aip_package_path, "w:")
+    task_log.info("Packaging working directory: %s" % working_dir)
+    total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
+    task_log.info("Total number of files in working directory %d" % total)
+    i = 0
+    excludes = ["%s.tar" % package_name, "%s.xml" % package_name, archive_file]
+    for subdir, dirs, files in os.walk(working_dir):
+
+        for directory in dirs:
+            entry = os.path.join(subdir, directory)
+
+            if not os.listdir(entry):
+                tar.add(entry, arcname=os.path.join(safe_identifier_name, os.path.relpath(entry, working_dir)))
+
+        for file in files:
+            if not file in excludes:
+                entry = os.path.join(subdir, file)
+                tar.add(entry, arcname=os.path.join(safe_identifier_name, os.path.relpath(entry, working_dir)))
+                if i % 10 == 0:
+                    perc = (i * 100) / total
+                    logger.debug("Packaging progress: %d" % perc)
+                    # todo: activate
+                    # self.update_state(state='PROGRESS', meta={'process_percent': perc})
+            i += 1
+    tar.close()
+
+    self.update_state(state='PROGRESS', meta={'process_percent': 100})
+
+    return json.dumps(task_context)
+
+
 @app.task(bind=True, name="create_manifest")
 @requires_parameters("uid")
 @task_logger
@@ -612,31 +682,36 @@ def create_manifest(_, context, task_log):
 @task_logger
 def store_original_sip(_, context, task_log):
     task_context = json.loads(context)
-    identifier = task_context["identifier"]
+    identifier = task_context["identifier"].strip()
     package_name = task_context["package_name"]
     uid = task_context["uid"]
     working_dir = get_working_dir(uid)
 
-    # remove sip
-    os.remove(os.path.join(working_dir, "%s.tar" % package_name))
-    os.remove(os.path.join(working_dir, "%s.xml" % package_name))
+    sip = "%s.tar" % package_name
+    sip_path = os.path.join(working_dir, sip)
+    if not os.path.exists(sip_path):
+        raise ValueError("SIP not found: %s" % sip_path)
 
-    # store directory
-    pts = DirectoryPairtreeStorage(config_path_storage)
-    version = pts.store_working_directory(uid, identifier, working_dir)
-    task_context["version"] = version
+    # store original sip
+    pts = PairtreeStorage(config_path_storage)
+    version_0 = VersionDirFormat % 0
+    task_context["version"] = version_0
+    data_dir = os.path.join(pts.get_dir_path_from_id(identifier), "data")
+    storage_dir = os.path.join(data_dir, version_0)
+    task_context["storage_dir"] = storage_dir
+    archive_file = sip
+    aip_path = os.path.join(storage_dir, archive_file)
+    os.makedirs(storage_dir, exist_ok=True)
+    shutil.copy2(sip_path, aip_path)
 
-    # store bag
-    bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version_dir_name = store_bag(
-        version, identifier
-    )
-    task_context["storage_dir"] = bagit_storage_dir
+    write_inventory(identifier, version_0, data_dir, aip_path, archive_file)
+
+    # check successful creation of original sip
+    if not os.path.exists(aip_path):
+        raise ValueError("AIP not created: %s" % aip_path)
 
     # persist state
-    persist_state(identifier, version, bagit_storage_dir, working_dir)
-
-    # write ocfl inventory
-    write_inventory(identifier, version_bag_package_file_path, version, bagit_file_name, version_dir_name)
+    persist_state(identifier, version_0, storage_dir, archive_file, working_dir)
 
     return json.dumps(task_context)
 
@@ -646,25 +721,28 @@ def store_original_sip(_, context, task_log):
 @task_logger
 def store_aip(_, context, task_log):
     task_context = json.loads(context)
-    identifier = task_context["identifier"]
+    identifier = task_context["identifier"].strip()
     uid = task_context["uid"]
     working_dir = get_working_dir(uid)
     action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
-    # store directory
-    pts = DirectoryPairtreeStorage(config_path_storage)
+    # pairtree storage
+    pts = PairtreeStorage(config_path_storage)
 
-    version = pts.store_working_directory(uid, identifier, working_dir)
+    # store aip file
+    aip_file_name = "%s.tar" % to_safe_filename(identifier)
+    source_aip_file = os.path.join(working_dir, aip_file_name)
+    if not os.path.exists(source_aip_file):
+        raise ValueError("Source AIP not found: %s" % source_aip_file)
+    version = pts.store(identifier, source_aip_file)
+    data_dir = os.path.join(pts.get_dir_path_from_id(identifier), "data")
+    storage_dir = os.path.join(data_dir, version)
+    aip_path = os.path.join(storage_dir, aip_file_name)
     task_context["version"] = version
-
-    # store bag
-    bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version_dir_name = store_bag(
-        version, identifier
-    )
-    task_context["storage_dir"] = bagit_storage_dir
+    task_context["storage_dir"] = storage_dir
 
     # persist state
-    patch_data = persist_state(identifier, version, bagit_storage_dir, working_dir)
+    patch_data = persist_state(identifier, version, storage_dir, aip_file_name, working_dir)
 
     # update status db
     try:
@@ -677,7 +755,7 @@ def store_aip(_, context, task_log):
         task_log.warning("Connection to API failed. Status was not updated.")
 
     # update ocfl inventory
-    update_inventory(identifier, version, version_bag_package_file_path, bagit_file_name, action)
+    update_inventory(identifier, version, aip_path, aip_file_name, action)
 
     return json.dumps(task_context)
 
@@ -688,11 +766,13 @@ def store_aip(_, context, task_log):
 def aip_indexing(_, context, task_log):
     task_context = json.loads(context)
 
-    pts = DirectoryPairtreeStorage(config_path_storage)
+    pts = PairtreeStorage(config_path_storage)
     identifier = task_context['identifier']
     version = pts.curr_version(task_context["identifier"])
-    storage_dir = os.path.join(make_storage_data_directory_path(task_context["identifier"], config_path_storage),
-                               version, "content")
+    storage_dir = os.path.join(
+        make_storage_data_directory_path(task_context["identifier"], config_path_storage),
+        version
+    )
 
     if not pts.identifier_object_exists(identifier):
         task_log.warn("Unable to index data set because it is not available in storage.")
@@ -709,15 +789,16 @@ def aip_indexing(_, context, task_log):
     # delete existing records
     submission_url = "http://%s:%d/solr/storagecore1/update/?commit=true" % (solr_host, solr_port)
     delete_response = requests.post(submission_url, data="<delete><query>package:\"%s\"</query></delete>" % identifier,
-                  headers={'Content-Type': 'text/xml'}, verify=verify_certificate)
+                                    headers={'Content-Type': 'text/xml'}, verify=verify_certificate)
     if delete_response.status_code == 200:
         task_log.info("Index records deleted for package: %s" % identifier)
     else:
-        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (delete_response.status_code, delete_response.text))
+        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (
+        delete_response.status_code, delete_response.text))
 
     # initialize solr client
     solr_client = SolrClient(solr_server, "storagecore1")
-    #store_dir = os.path.join(storage_dir)
+    # store_dir = os.path.join(storage_dir)
     package_files = list_files_in_dir(storage_dir)
     for package_file in package_files:
         if package_file.endswith(".tar"):
@@ -1082,7 +1163,7 @@ def dip_store(_, context, task_log):
         raise ValueError("Storage path is not a pairtree storage directory.")
     if "identifier" not in task_context:
         raise ValueError("DIP identifier is not defined.")
-    package_identifier = task_context["identifier"]
+    package_identifier = task_context["identifier"].strip()
     package_file_name = "%s.tar" % task_context["identifier"]
     package_file_path = os.path.join(working_dir, package_file_name)
     if not os.path.exists(package_file_path):
@@ -1118,7 +1199,7 @@ def dip_create_access_copy(self, context, task_log):
         raise ValueError("Storage path is not a pairtree storage directory.")
     if not ("identifier" in task_context.keys() and task_context["identifier"] != ""):
         raise ValueError("DIP identifier is not defined.")
-    package_identifier = task_context["identifier"]
+    package_identifier = task_context["identifier"].strip()
     package_file_name = "%s.tar" % task_context["identifier"]
     package_file_path = os.path.join(working_dir, package_file_name)
     if not os.path.exists(package_file_path):
@@ -1194,7 +1275,7 @@ def checkout_working_copy_from_storage(_, context, task_log):
     metadata_only = 'metadataonly' in task_context and task_context['metadataonly'] == "true"
     task_log.info('Check out metadata only: %s' % metadata_only)
 
-    dpts = DirectoryPairtreeStorage(config_path_storage)
+    dpts = PairtreeStorage(config_path_storage)
     version = dpts.curr_version(identifier)
     archival_package_file = os.path.join(make_storage_data_directory_path(identifier, config_path_storage),
                                          version, to_safe_filename(identifier),
@@ -1287,5 +1368,4 @@ def rename_representation_directory(context):
 
 @app.task(name="backend_available")
 def backend_available():
-    return 5*5
-
+    return 5 * 5

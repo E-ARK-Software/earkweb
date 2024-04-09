@@ -1,7 +1,7 @@
 import json
 import re
 
-from eatb.storage.directorypairtreestorage import make_storage_data_directory_path
+from eatb.pairtree_storage import make_storage_data_directory_path
 from eatb.utils.datetime import get_date_from_iso_str, DT_ISO_FORMAT
 from eatb.utils.fileutils import path_to_dict
 
@@ -306,3 +306,63 @@ def solrif(request, core, operation):
         return HttpResponse(response.text, content_type='text/plain')
     return data
 
+
+@login_required
+@csrf_exempt
+def howto_create_dataset(request):
+    template = loader.get_template('earkweb/howto/create_dataset.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+@login_required
+@csrf_exempt
+def howto_ingest_dataset(request):
+    template = loader.get_template('earkweb/howto/ingest_dataset.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+@login_required
+@csrf_exempt
+def howto_overview(request):
+    template = loader.get_template('earkweb/howto/howto_overview.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_annotate_manually(request):
+    template = loader.get_template('earkweb/howto/annotate_manually.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_batch_annotate(request):
+    template = loader.get_template('earkweb/howto/batch_annotate.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_apply_predefined_labels(request):
+    template = loader.get_template('earkweb/howto/apply_predefined_labels.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_persist_annotations(request):
+    template = loader.get_template('earkweb/howto/persist_annotations.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_add_new_vocabulary(request):
+    template = loader.get_template('earkweb/howto/add_new_vocabulary.html')
+    return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+@csrf_exempt
+def howto_use_the_api(request):
+    template = loader.get_template('earkweb/howto/use_the_api.html')
+    return HttpResponse(template.render(context={}, request=request))

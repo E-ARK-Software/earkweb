@@ -44,19 +44,23 @@
                 setInvalid("packagename");
                 return false;
             } else {
+
+
                 $.ajax({
-                    url: check_folder_url,
                     type: "GET",
-                }).success(function(folder_exists){
-                    if(folder_exists == 'true') {
-                        $( "#msgpackagename" ).html("A submission with this name already exists, please choose another name!");
-                        setInvalid("packagename");
-                    } else {
-                        $( "#msgpackagename" ).html("");
-                        setValid("packagename");
-                        successCallback();
+                    url: check_folder_url,
+                    success: function (folder_exists) {
+                        if(folder_exists == 'true') {
+                            $( "#msgpackagename" ).html("A submission with this name already exists, please choose another name!");
+                            setInvalid("packagename");
+                        } else {
+                            $( "#msgpackagename" ).html("");
+                            setValid("packagename");
+                            successCallback();
+                        }
                     }
                 });
+
             }
         }
     }

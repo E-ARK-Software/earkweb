@@ -37,7 +37,7 @@
           setInterval(function(){get_contents();}, 1000);
           function get_contents() {
             console.log("called");
-            $.get('/earkweb/api/ips/{{ip.uid}}/file-resource/processing.log/', function(data) {
+            $.get('/earkweb/api/ips/{{ip.uid}}/file-resource/metadata/other/processing.log/', function(data) {
                 console.log();
                 var lines = data.split('\n');
                 var newcontent = '';
@@ -67,7 +67,7 @@
     {% include "submission/iptable.html" %}
 
     <div class="row">
-    <div class="span6 w-40" style="padding-left: 15px">
+    <div style="width: 100%; padding-left: 15px">
         <h2 class="main">{% trans 'Ingest pipeline execution' %}</h2>
         {% if 'ERROR' in celery_worker_status %}
 
@@ -77,7 +77,7 @@
 
         {% else %}
 
-        <div>
+        <!--div>
              <p>{% trans 'The processing backend is available' %}:</p>
             <ul>
                 {% for key, value in celery_worker_status.items %}
@@ -85,7 +85,7 @@
                 {% endfor %}
             </ul>
 
-        </div>
+        </div-->
         {% if not flower_status %}
         <div>
         <p style="color: #FF8000">{% trans 'Warning: no task monitoring available because the task monitoring service is not running at' %}: {{ flower_api_endpoint }}</p>
@@ -100,7 +100,7 @@
 
         <div id="ingestjobid" style="padding-top: 20px;"></div>
 
-        <div id="childjobs"></div>
+        <div id="childjobs" style="width: 100%"></div>
 
         <div><p style="padding-top: 20px;" id="errordiv"></p>
         <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>

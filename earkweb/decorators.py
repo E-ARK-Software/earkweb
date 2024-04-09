@@ -37,7 +37,8 @@ def get_task_logger(func, ip_dir):
     """
     Task logger (creates log file in information package directory)
     """
-    logfile = os.path.join(ip_dir, "processing.log")
+    os.makedirs(os.path.join(ip_dir, "metadata/other"), exist_ok=True)
+    logfile = os.path.join(ip_dir, "metadata/other/processing.log")
     if not os.path.exists(logfile):
         logging.shutdown()
 

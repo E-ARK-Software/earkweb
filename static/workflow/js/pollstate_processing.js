@@ -1,7 +1,7 @@
-var ok_sign = ' <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:#169816"/>';
-var err_sign = ' <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:red"/>';
-var pending_sign = ' <span class="glyphicon glyphicon-time" aria-hidden="true" style="color:gray"/>';
-var subitem_sign = '<span class="glyphicon glyphicon-chevron-right" aria-hidden="true" style="color:gray"/> ';
+var ok_sign = ' <span class="fas fa-check-circle" aria-hidden="true" style="color:#169816"/>';
+var err_sign = ' <span class="fas fa-exclamation-circle" aria-hidden="true" style="color:red"/>';
+var pending_sign = ' <span class="fas fa-clock" aria-hidden="true" style="color:gray"/>';
+var subitem_sign = '<span class="fas fa-chevron-right" aria-hidden="true" style="color:gray"/> ';
 
 
 function setFinalState(success, message, t_id) {
@@ -36,7 +36,7 @@ function pollstate(in_task_id) {
                     url: pollingUrl,
                     type: "POST",
                     data: "task_id=" + task_id,
-                }).success(function(resp_data) {
+                    success: function(resp_data) {
                     window.console.log(resp_data);
                     if (resp_data.success) {
                         if (typeof(resp_data.progress) !== "undefined")
@@ -61,6 +61,7 @@ function pollstate(in_task_id) {
                     if (!ready) {
                         PollState(task_id);
                     }
+                }
                 });
             }, 1000);
         }

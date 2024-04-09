@@ -1,4 +1,4 @@
-{% extends "earkweb/base_fileupload.html" %}
+{% extends "earkweb/base.html" %}
 
 {% load static %}
 {% load i18n %}
@@ -36,6 +36,8 @@ function generateId (len) {
 }
 
 function loadDataFiles(repr) {
+
+    console.log("Is it loaded?");
 
     console.log("Loading: "+repr);
 

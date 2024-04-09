@@ -91,9 +91,11 @@ var loadThis = $.parseJSON(dirasjson);
 (function(){
     $('#directorytree')
         .on('open_node.jstree', function (e, data) {
-            $('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-open');
+
+            $('#directorytree').jstree(true).set_icon(data.node.id, 'fas fa-folder-open');
+            console.log(data.node.id)
          }).on('close_node.jstree', function (e, data) {
-            $('#directorytree').jstree(true).set_icon(data.node.id, 'glyphicon glyphicon-folder-close');
+            $('#directorytree').jstree(true).set_icon(data.node.id, 'fas fa-folder');
          }).on('move_node.jstree', function (e, data) {
             origin_path = data.node.data.path;
             target_path = $('#directorytree').jstree().get_node(data.parent).data.path;
@@ -117,13 +119,41 @@ var loadThis = $.parseJSON(dirasjson);
             //"search",
             //"sort",
             //"state",
-            //"types",
+            "types",
             //"unique",
             //"wholerow",
             "changed",
             //"conditionalselect"
-        ], contextmenu: {items: customMenu} });
+        ], contextmenu: {items: customMenu} }).bind('loaded.jstree',function(e,data){
+            $('.jstree-leaf').each(function(){
+                var id   = ($(this).attr('id').split("_"))[0];
+                var text = $(this).children('a').text();
+                console.log(id + " - " + text + "\n");
+                var icon = "fas fa-file";
+                if(text.endsWith("json"))
+                    icon = "fas fa-file-code"
+                else if(text.endsWith("doc") || text.endsWith("docx"))
+                    icon = "fas fa-file-word";
+                else if(text.endsWith("pdf"))
+                    icon = "fas fa-file-pdf";
+                else if(text.endsWith("csv"))
+                    icon = "fas fa-file-csv";
+                else if(text.endsWith("log"))
+                    icon = "fas fa-file-alt";
+                else if(text.endsWith("xml") || text.endsWith("xsd"))
+                    icon = "fas fa-file-code";
+                else if(text.endsWith("tar") || text.endsWith("tar.gz") || text.endsWith("zip"))
+                    icon = "fas fa-file-archive";
+                else
+                    icon = "fas fa-file";
+
+                $('#directorytree').jstree(true).set_icon($(this).attr('id'), icon);
+            });
+        });
         $(document).on('dnd_start.vakata', function (e, data) {
             console.log(data);
         });
+        //$("#directorytree").jstree(true).get_node("j1_2").set_icon(, "/earkwebstatic/earkweb/fontawesome-5.12.1/svgs/regular/angry.svg");
+        //console.log($("#directorytree").jstree(true))
+
 })();

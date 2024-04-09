@@ -29,7 +29,6 @@ from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
 
 from earkweb.views import get_domain_scheme
-from eatb.metadata.parsedead import ParsedEad
 from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
@@ -617,15 +616,15 @@ class InformationPackageTable(tables.Table):
     def render_statusprocess(value):
         if value == "Success":
             return mark_safe(
-                'Success <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>'
+                'Success <span class="fas fa-check-circle" aria-hidden="true" style="color:green"/>'
             )
         elif value == "Error":
             return mark_safe(
-                'Error <span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true" style="color:#91170A"/>'
+                'Error <span class="fas fa-exclamation-circle" aria-hidden="true" style="color:#91170A"/>'
             )
         elif value == "Warning":
             return mark_safe(
-                'Warning <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:#F6A50B"/>'
+                'Warning <span class="fa-exclamation-triangle" aria-hidden="true" style="color:#F6A50B"/>'
             )
         else:
             return value
@@ -641,9 +640,9 @@ def informationpackages_overview(request):
     select ip.id as id, ip.work_dir as path, ip.uid as uid, ip.package_name as package_name, 
     ip.identifier as identifier,
     CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title="Change">
-    <i class="glyphicon glyphicon-edit editcol"></i></a>') as edit,
+    <i class="fas fa-edit editcol"></i></a>') as edit,
     CONCAT('<a href="/earkweb/submission/delete/',ip.id,'/" data-toggle="tooltip" title="Delete">
-    <i class="glyphicon glyphicon-remove editcol"></i></a>') as delcol 
+    <i class="fas fa-trash editcol"></i></a>') as delcol 
     from informationpackage as ip
     where storage_dir='' and 
     (ip.uid like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
@@ -728,6 +727,8 @@ class StartIngestDetail(DetailView):
         context['flower_api_endpoint'] = flower_service_url
         context['django_backend_service_api_url'] = django_backend_service_api_url
 
+        print(flower_service_url)
+
         return context
 
 
@@ -793,7 +794,8 @@ def initialize(request):
     ip = InformationPackage.objects.get(uid=uid)
 
     state_data = json.dumps({"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)})
-    with open(os.path.join(working_dir, "state.json"), 'w') as status_file:
+    os.makedirs(os.path.join(working_dir, "metadata/other"), exist_ok=True)
+    with open(os.path.join(working_dir, "metadata/other/state.json"), 'w') as status_file:
         status_file.write(state_data)
 
     return redirect('submission:upload_step1', pk=ip.pk)

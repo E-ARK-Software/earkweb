@@ -41,6 +41,8 @@
 
 <script>
 
+$(document).ready(function() {
+
 let update_hidden_tags = function() {
         let selected_values = [];
         console.log($('#pp').siblings('.cdt-tags-list').find('.cdt-tags-list-values').children());
@@ -63,8 +65,6 @@ let addTagClickHandlers = function() {
         update_hidden_tags();
       });
     };
-
-$(document).ready(function() {
 
     $( ".cdt-tags-list-value" ).click(function() {
         let $this = $(this);
@@ -181,7 +181,7 @@ $(document).ready(function() {
         <button type="submit" class="btn btn-primary">
             <span class="glyphicon glyphicon-triangle-right"></span> {% trans 'Continue' %}
         </button>
-        <a href="{% url 'submission:overview' %}" class="btn btn-default">{% trans 'Cancel' %}</a>
+        <a href="{% url 'submission:overview' %}" class="btn btn-eark">{% trans 'Cancel' %}</a>
     </div>
 </form>
 

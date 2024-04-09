@@ -5,8 +5,7 @@
 body {
     margin: 0;
     padding: 0;
-    font-size: 12px;
-    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
+
     color: #333;
     background: #fff;
 }
@@ -85,8 +84,6 @@ h5 {
 }
 
 ul li {
-    list-style-type: square;
-    padding: 1px 0;
 }
 
 ul.plainlist {
@@ -102,8 +99,7 @@ li ul {
 }
 
 li, dt, dd {
-    font-size: 11px;
-    line-height: 14px;
+
 }
 
 dt {
@@ -452,7 +448,7 @@ textarea, select, .vTextField {
 
 .button.default, input[type=submit].default, .submit-row input.default {
     border: 2px solid #5b80b2;
-    background: #7CA0C7 url(../img/default-bg.gif) bottom repeat-x;
+    background: #263238;
     font-weight: bold;
     color: #fff;
     float: right;
@@ -501,7 +497,7 @@ textarea, select, .vTextField {
     font-size: 11px;
     text-align: left;
     font-weight: bold;
-    background: #7CA0C7 url(../img/default-bg.gif) top left repeat-x;
+    background: #263238;
     color: #fff;
 }
 

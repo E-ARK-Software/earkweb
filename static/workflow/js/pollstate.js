@@ -1,7 +1,7 @@
-var ok_sign = ' <span class="glyphicon glyphicon-ok-sign" aria-hidden="true" style="color:green"/>';
-var err_sign = ' <span class="glyphicon glyphicon-warning-sign" aria-hidden="true" style="color:red"/>';
-var pending_sign = ' <span class="glyphicon glyphicon-time" aria-hidden="true" style="color:gray"/>';
-var subitem_sign = '<span class="glyphicon glyphicon-chevron-right" aria-hidden="true" style="color:gray"/> ';
+var ok_sign = ' <span class="fas fa-check-circle" aria-hidden="true" style="color:#169816"/>';
+var err_sign = ' <span class="fas fa-exclamation-circle" aria-hidden="true" style="color:red"/>';
+var pending_sign = ' <span class="fas fa-clock" aria-hidden="true" style="color:gray"/>';
+var subitem_sign = '<span class="fas fa-chevron-right" aria-hidden="true" style="color:gray"/> ';
 
 /**
  * Poll task processing state
@@ -21,7 +21,7 @@ function pollstate(in_task_id) {
                     url: "/earkweb/submission/poll_state",
                     type: "POST",
                     data: "task_id=" + task_id,
-                }).success(function(resp_data) {
+                    success: function(resp_data) {
                     window.console.log(resp_data);
                     if (resp_data.success) {
                         var atLeastOnePending = false;
@@ -54,7 +54,7 @@ function pollstate(in_task_id) {
                                 var child_task_item = '<a href="' + link + '" target="new">' + child_task_name + '</a>';
                                 var outcomeSign = (child_status == 'SUCCESS') ? ok_sign : (child_status == 'FAILURE') ? err_sign : pending_sign;
 
-                                var row = '<div class="row"><div class="col-md-6 col-md-offset-0">' + subitem_sign + child_task_item + '</div><div class="col-md-6">' + outcomeSign + '</div></div>';
+                                var row = '<div class="row"><div class="col">' + subitem_sign + child_task_item + '</div><div class="col">' + outcomeSign + '</div></div>';
 
                                 $("#childjobs").append(row);
                             }
@@ -89,7 +89,8 @@ function pollstate(in_task_id) {
                     if (!ready) {
                         PollState(task_id);
                     }
-                });
+                }
+                })
             }, 1000);
         }
         if (!ready) {

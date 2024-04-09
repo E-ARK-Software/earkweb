@@ -3,7 +3,7 @@ from xml.etree.ElementTree import Element, SubElement
 from xml.etree import ElementTree as Etree
 
 from eatb.utils.datetime import current_timestamp
-from eatb.xml.xmlutils import prettify
+from eatb.utils.xmlutils import prettify
 
 from taskbackend.taskconfig import TaskConfig
 

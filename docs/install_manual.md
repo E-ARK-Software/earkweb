@@ -1,8 +1,10 @@
 # Manual installation
 
-## Install dependencies
+## Installation dependencies
 
-### Debian packages
+Installation was tested on Ubuntu 22.04.3 LTS (Jammy Jellyfish)
+
+### Ubuntu packages
 
     sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev summain libicu-dev
 
@@ -45,7 +47,7 @@ Use the following command to install the default JRE on Ubuntu:
 4. Start SolR and create core `storagecore1`
 
         cd ${SOLR_INSTALL_DIR}/solr-${SOLR_VERSION}
-        ./solr start
+        ./bin/solr start
         ./bin/solr create_core -c storagecore1
         
 5. Enable remote streaming
@@ -118,17 +120,13 @@ Use the following command to install the default JRE on Ubuntu:
 
    1. Install fido:
 
-          wget https://github.com/openpreserve/fido/archive/1.3.2-81.tar.gz
-          tar -xzvf 1.3.2-81.tar.gz
-          cd fido-1.3.2-81
-          python setup.py install
+          pip install opf-fido
 
-   2. Update filetype signatures (long running):
+   2. Make sure the required format file `formats-v*.xml` is available in fido's configuration directory `fido/conf/`, 
+      for example in a virtual environment `venv/lib/python3.10/site-packages/fido/conf/formats-v104.xml`.
 
-          cd fido
-          python update_signatures.pymy
 
-    Ghostscript (PDF to PDF/A conversion)
+   Ghostscript (PDF to PDF/A conversion)
 
    1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
     
@@ -203,15 +201,66 @@ Open a Django shell using command `python manage.py shell` and execute the follo
     token = Token.objects.create(user=u)
     token.save()
 
+6. Create localized messages (support for multiple languages)
+
+Make sure that gettext is available, if not install it using the following command:
+
+    sudo apt install gettext
+
+Generate localised messages:
+
+    ./locale/makemessages.sh
+
 Documentation: http://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication
 
 ## Celery distributed task execution 
 
 ### Install message queue and result backend
 
-Install message queue:
+Install RabbitMQ Server
 
-    sudo apt-get install rabbitmq-server
+Make sure the prerequisites are fulfilled:
+
+apt-get install curl gnupg apt-transport-https -y
+
+Add repository signing keys for RabbiMQ main, ErLang, and RabbitMQ PackageCloud repositories respectively:
+
+````
+curl -1sLf "https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA" | sudo gpg --dearmor | sudo tee /usr/share/keyrings/com.rabbitmq.team.gpg > /dev/null
+curl -1sLf "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xf77f1eda57ebb1cc" | sudo gpg --dearmor | sudo tee /usr/share/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg > /dev/null
+curl -1sLf "https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey" | sudo gpg --dearmor | sudo tee /usr/share/keyrings/io.packagecloud.rabbitmq.gpg > /dev/null
+````
+
+Create a new file at /etc/apt/sources.list.d/rabbitmq.list and add the following repositories for ErLang and RabbitMQ respectively that are suited for Ubuntu 22.04 jammy release:
+
+````
+deb [signed-by=/usr/share/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg] http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu jammy main
+deb-src [signed-by=/usr/share/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg] http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu jammy main
+deb [signed-by=/usr/share/keyrings/io.packagecloud.rabbitmq.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ jammy main
+deb-src [signed-by=/usr/share/keyrings/io.packagecloud.rabbitmq.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/ jammy main
+````
+
+Save the file and update the repository listings:
+
+    sudo apt-get update -y
+
+After your repository listings are updated, continue with installing required ErLang packages:
+
+````
+sudo apt-get install -y erlang-base \
+    erlang-asn1 erlang-crypto erlang-eldap erlang-ftp erlang-inets \
+    erlang-mnesia erlang-os-mon erlang-parsetools erlang-public-key \
+    erlang-runtime-tools erlang-snmp erlang-ssl \
+    erlang-syntax-tools erlang-tftp erlang-tools erlang-xmerl
+````
+
+Finally, we can install RabbitMQ server and its dependencies:
+
+    sudo apt-get install rabbitmq-server -y --fix-missing
+
+If all went well, you should see a rabbitmq-server process up and running:
+
+    sudo systemctl status rabbitmq-server
 
 Install result backend database:
 
@@ -236,9 +285,9 @@ Install result backend database:
         
 2. Start flower monitoring service:
 
-    In the development environment, flower can be started using the following command (broker redis):
+    In the development environment, flower is started using the following command (broker redis):
 
-       celery -A earkweb.celery flower --address=127.0.0.1 --port=5555 --broker=redis://localhost
+       celery -A earkweb.celery flower --address=127.0.0.1 --port=5555
        
     or (broker rabbitmq):
     

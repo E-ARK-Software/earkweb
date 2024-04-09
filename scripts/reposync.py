@@ -105,7 +105,7 @@ Note that the storage location value is also unset if the identifier has changed
                 version=0
             )
         if ip:
-            ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "state.json")
+            ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "metadata/other/state.json")
             if os.path.exists(ip_state_doc_path):
                 success("State information available (state.json)")
                 ip_state_info = json.load(open(ip_state_doc_path))

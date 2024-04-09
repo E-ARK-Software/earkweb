@@ -6,29 +6,63 @@
 <html lang="de">
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>earkweb ({{ LANGUAGE_CODE }})</title>
-    
+    <title>{{ repo_title }} ({{ LANGUAGE_CODE }})</title>
+
+	{% block stylesheets %}
+    <!-- Global stylesheets --new -- -->
+	<link href="https://fonts.googleapis.com/css?family=Roboto:400,300,100,500,700,900" rel="stylesheet" type="text/css">
+	<link href="{% static 'public/styles/icons/icomoon/styles.min.css' %}" rel="stylesheet" type="text/css">
+	<link href="{% static 'public/styles/icons/fontawesome/styles.min.css' %}" rel="stylesheet" type="text/css">
+	<link href="{% static 'public/styles/bootstrap.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'public/styles/bootstrap_eark.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'public/styles/layout.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'public/styles/components.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'public/styles/colors.css' %}" rel="stylesheet" type="text/css">
+	<!-- /global stylesheets --new -- -->
+    {% endblock %}
+
+
+    <!-- Core JS files --new -- -->
+	<script src="{% static 'public/js/jquery.min.js' %}"></script>
+	<script src="{% static 'public/js/bootstrap.bundle.min.js' %}"></script>
+	<script src="{% static 'public/js/blockui.min.js' %}"></script>
+	<!-- /core JS files --new -- -->
+
+    <!-- Theme/layout JS files --new -- -->
+	<script src="{% static 'public/js/app.js' %}"></script>
+    <!-- /theme/layout JS files --new -- -->
+
+	<!-- Page specific JS files --new -- -->
+	<script src="{% static 'public/js/startseite/bootbox.js' %}"></script>
+	<!-- /page specific JS files --new -- -->
+
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 
-    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script>
+    <!--script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery-1.11.2.js' %}"></script-->
     <script type="text/javascript" src="{% static 'earkweb/jquery-ui-1.13.0/jquery-ui.js' %}"></script>
-    <script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script>
+    <!--script type="text/javascript" src="{% static 'earkweb/jquery-1.11.2/jquery.form.min.js' %}"></script-->
 
+	<!-- jQuery extension functions -->
     <script type="text/javascript" src="{% static 'js/base.js' %}"></script>
 
-    {% block stylesheets %}
-      <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,400i,600,600i,700,700i" rel="stylesheet">
-      <link rel="stylesheet" type="text/css" href="{% static '/earkweb/fontawesome-5.12.1/css/all.min.css' %}">
-    <!-- jquery ui style sheet -->
-    <link rel="stylesheet" href="{% static "earkweb/jquery-ui-1.13.0/jquery-ui.css" %}" type="text/css" />
-    <!-- main style sheet -->
-    <link rel="stylesheet" href="{% static "earkweb/stylesheets/main.css" %}" type="text/css" />
-    <link rel="stylesheet" href="{% static "earkweb/css/glyphicons.css" %}" type="text/css" />
-    {% endblock %}
+
+	<link href="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/css/fileinput.css" %}" media="all" rel="stylesheet" type="text/css"/>
+    <!--link rel="stylesheet" type="text/css" href="{% static '/earkweb/fontawesome-5.12.1/css/all.min.css' %}"-->
+    <link href="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/themes/explorer-fa/theme.css" %}" media="all" rel="stylesheet" type="text/css"/>
+    <!--script src="{% static "earkweb/jquery-3.3.1/jquery-3.3.1.min.js" %}"></script-->
+
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/js/plugins/sortable.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/js/fileinput.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/js/locales/fr.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/js/locales/es.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/themes/explorer-fa/theme.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-fileinput-v5.2.7-0/themes/fa/theme.js" type="text/javascript" %}"></script>
+    <script src="{% static "earkweb/bootstrap-4.0.0/js/bootstrap.min.js" type="text/javascript" %}"></script>
+
+
 
     {% comment %} 
     The 'extra' block allows defining additional header elements, such as 
@@ -36,142 +70,372 @@
     {% endcomment %}
     {% block extra_head %}{% endblock %}
 
-    <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css" />
+    <link rel="stylesheet" href="{% static "earkweb/css/base.css" %}" type="text/css"/>
 
-    <link rel="stylesheet" media="screen" href="{% static "earkweb/stylesheets/global.css" %}">
+    <!--link rel="stylesheet" media="screen" href="{% static "earkweb/stylesheets/global.css" %}" /-->
 
   </head>
 
-  <body>
+  <body class="custom-scrollbars">
 
-         <header>
-	      <nav class="navbar navbar-expand-xl navbar-dark bg-primary navbar-fixed-top" style="padding-top:15px">
+	<!-- Main navbar -->
+	<div class="navbar navbar-expand-md navbar-eark navbar-static">
+		<div>
+			<a href="/earkweb/" class="d-inline-block">
+				<img src="data:image/png;base64,{{ logo }}" style="height: 40px; padding: 2px">
+			</a>
+		</div>
+		<div class="d-inline-block" style="padding-top:10px; margin-right: 9rem"><span style="margin-left: 5px; font-size:1.0vw;font-style: italic; color:white">{{ repo_title }}</span></div>
+		<div class="d-md-none" style="">
+			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-mobile">
+				<i class="icon-tree5"></i>
+			</button>
+			<button class="navbar-toggler sidebar-mobile-main-toggle" type="button">
+				<i class="icon-paragraph-justify3"></i>
+			</button>
+		</div>
 
-              <div class="jh-logo-container float-left">
-                  <a aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler float-right" data-target="#navbarResponsive" data-toggle="collapse" href="javascript:void(0);">
-                      <i class="fa fa-bars"></i> </a> <a class="navbar-brand logo float-left" href="#/">
-                  <span class="navbar-title">
-                      <span><img src="data:image/png;base64,{{ logo }}" style="padding-bottom:7px; padding-right:8px"> <i>{{ repo_title }}</i></span></span>
-                  <span class="navbar-title" style="color:red"></span>
-                  </a>
-              </div>
+		<div class="collapse navbar-collapse" id="navbar-mobile">
+			<ul class="navbar-nav mr-md-auto">
+				<li class="nav-item" style="margin-left: -10px">
+					<a href="#" class="navbar-nav-link sidebar-control sidebar-main-toggle d-none d-md-block">
+						<i class="icon-paragraph-justify3"></i>
+					</a>
+				</li>
+			</ul>
 
-              <div class="navbar-collapse collapse" id="navbarResponsive">
-                  <ul class="navbar-nav ml-auto">
+			<ul class="navbar-nav">
+				{% if user.is_authenticated %}
+				<li class="nav-item dropdown">
+					<a href="#" class="navbar-nav-link dropdown-toggle caret-0" data-toggle="dropdown">
+						<i class="fas fa-language"></i>
+						<span class="d-md-none ml-2">Language</span>
+					</a>
+					<div class="dropdown-menu dropdown-menu-right">
 
-                    {% for item in menu %}
-
-                    <li class="nav-item {% if item.subItems %} dropdown{% endif %} pointer text-nowrap">
-
-
-                    <a aria-haspopup="true" class="nav-link {% if item.subItems %} dropdown-toggle{% endif %} text-nowrap" href="{{ item.path }}{% if not item.subItems %}#{% endif %}" aria-expanded="false" {% if item.subItems %}role="button" data-toggle="dropdown"{% endif %}>
-                        <span><i aria-hidden="true" class="fa {{ item.icon }}"></i> <span>{{ item.label }}</span></span>
-                    </a>
-                    {% if item.subItems %}
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                      {% for subItem in item.subItems %}
-                            <a class="dropdown-item" href="{{ subItem.path }}"><span><i aria-hidden="true" class="fa {{ subItem.icon }}"></i> {{ subItem.label }}</a>
-                      {% endfor %}
-                    </div>
-                    {% endif %}
-                    </li>
-
-                    {% endfor %}
-
-
-                    {% include "earkweb/navbar.html" %}
-
-
-                    <li class="nav-item dropdown pointer text-nowrap">
-                      <a class="nav-link dropdown-toggle" href="#" id="language" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i aria-hidden="true" class="fa fa-flag"></i> {% trans 'Language' %}
-                      </a>
-                      <div class="dropdown-menu dropdown-menu-right">
-
-                        {% get_available_languages as languages %}
+						{% get_available_languages as languages %}
                         {% for lang_code, lang_name in languages %}
 
                         <a href="{% url 'activate_language' lang_code %}" class="dropdown-item">
                           {% if lang_code == LANGUAGE_CODE %}
-                            <i class="glyphicon glyphicon-check"></i>&nbsp;&nbsp;
+                            <i class="fas fa-check-square"></i>
                           {% else %}
-                            <i class="glyphicon glyphicon-unchecked"></i>&nbsp;&nbsp;
+                            <i class="far fa-square"></i>&nbsp;&nbsp;
                           {% endif %}
                           {{ lang_name }} ({{ lang_code }})
                         </a>
 
                         {% endfor %}
-                      </div>
-                    </li>
 
-                    <li class="nav-item dropdown pointer text-nowrap">
+					</div>
+				</li>
 
-                      {% if user.is_authenticated %}
+				<li class="nav-item dropdown">
+					<a href="#" class="navbar-nav-link dropdown-toggle caret-0" data-toggle="dropdown">
+						<i class="fas fa-question"></i>
+						<span class="d-md-none ml-2">Help</span>
+					</a>
+					<div class="dropdown-menu dropdown-menu-right dropdown-content">
+						<div class="dropdown-content-header">
+							<span class="font-weight-semibold">Help</span>
+						</div>
+						<div class="dropdown-content-body">
+							<a class="dropdown-item" href="/earkweb/howto-create-dataset/">How-to create a submission information package (SIP)</a>
+							<a class="dropdown-item" href="/earkweb/howto-ingest/">How to create an archival information package (AIP)</a>
+							<a class="dropdown-item" href="/earkweb/howto-use-the-api/">How-to use the API</a>
+						</div>
+					</div>
+				</li>
+				{% endif %}
 
-                      <a class="nav-link dropdown-toggle" href="#" id="access1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <img alt="Avatar" class="profile-image img-circle" src="{% static 'earkweb/images/user_woman.png' %}" width="30" height="30"></span>
-                        {{ user.get_username }}
-                      </a>
-                      <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <i aria-hidden="true" class="fa fa-fw fa-sign-out"></i>
-                            <a href="/earkweb/accounts/logout">{% trans 'log out' %}</a>
-                      </div>
+				<li class="nav-item dropdown dropdown-user">
+
+					{% if user.is_authenticated %}
+
+					  <a href="#" class="navbar-nav-link d-flex align-items-center dropdown-toggle" data-toggle="dropdown">
+						<img src="{% static 'earkweb/images/user_woman.png' %}" class="rounded-circle mr-2" height="34" alt="">
+						<span>{{ user.get_username }}</span>
+					  </a>
+
+					  <div class="dropdown-menu dropdown-menu-right">
+						<!--a href="#" class="dropdown-item"><i class="icon-user-plus"></i> My profile</a-->
+						<!--a href="#" class="dropdown-item"><i class="icon-cog5"></i> Account settings</a-->
+						<!--div class="dropdown-divider"></div-->
+						<a href="/earkweb/accounts/logout" class="dropdown-item"><i class="icon-switch2"></i> {% trans 'log out' %}</a>
+					  </div>
+
+
                       {% else %}
 
-                      <a class="nav-link dropdown-toggle" href="#" id="access2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {% trans 'Access' %}
-                      </a>
+					  <a href="#" class="navbar-nav-link d-flex align-items-center dropdown-toggle" id="access2" data-toggle="dropdown">
+						<img src="{% static 'earkweb/images/user_woman.png' %}" class="rounded-circle mr-2" height="34" alt="">
+						<span>{% trans 'Access' %}</span>
+					  </a>
+
                       <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                         <i aria-hidden="true" class="fa fa-fw fa-sign-in"></i>
-                            <a href="/earkweb/accounts/login">{% trans 'log in' %}</a>
+						    <a href="/earkweb/accounts/login" class="dropdown-item"><i class="fa-solid fa-user"></i> {% trans 'log in' %}</a>
                       </div>
 
                       {% endif %}
 
-                    </li>
-                  </ul>
 
-              </div>
-          </nav>
-      </header>
 
-    <div class="container-fluid">
-          <div class="card jh-card mb-auto">
-                  <div class="content">
-                      {% block content %}{% endblock %}
-                  </div>
-          </div>
-          <div class="mt-1">
-                  <div class="footer">
-                      <span>
-                          <a href="{% url 'version' %}">Version {{ sw_version }} ({{ sw_version_date }})</a>
-                      </span>
-                  </div>
-          </div>
-      </div>
 
-    <script src="{% static "earkweb/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "earkweb/bootbox-4.4.0/bootbox.js" %}"></script>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<!-- /main navbar -->
 
-    <script>
+	<!-- Page content -->
+	<div class="page-content">
+
+		<!-- Main sidebar -->
+		<div class="sidebar sidebar-dark eark-sidebar sidebar-main sidebar-expand-md">
+
+			<!-- Sidebar mobile toggler -->
+			<div class="sidebar-mobile-toggler text-center">
+				<a href="#" class="sidebar-mobile-main-toggle">
+					<i class="icon-arrow-left8"></i>
+				</a>
+				Navigation
+				<a href="#" class="sidebar-mobile-expand">
+					<i class="icon-screen-full"></i>
+					<i class="icon-screen-normal"></i>
+				</a>
+			</div>
+			<!-- /sidebar mobile toggler -->
+
+
+			<!-- Sidebar content -->
+			<div class="sidebar-content">
+
+				<!-- User menu -->
+				<!--div class="sidebar-user " style="margin-bottom: 5.5rem; margin-top: 5.5rem;">
+
+				</div-->
+				<!-- /user menu -->
+
+
+				<!-- Main navigation -->
+				<div class="card card-sidebar-mobile" style="margin-top: 4.5rem;">
+					<ul class="nav nav-sidebar" data-nav-type="accordion">
+
+						<!-- Main -->
+						<li id="home" class="nav-item">
+							<a id="home-item" href="/earkweb/" class="nav-link active">
+								<i class="icon-home4"></i>
+								<span>
+									{% trans 'eArchiving Repository' %}
+								</span>
+							</a>
+						</li>
+
+						{% if user.is_authenticated %}
+
+						{% if request.user.is_superuser or request.user.is_staff or request.user.is_superuser  %}
+
+						<li id="administration" class="nav-item nav-item-submenu">
+							<a href="#" class="nav-link"><i class="fas fa-wrench"></i></i> <span id="mi-administration">{% trans 'Administration' %}</span></a>
+							<ul class="nav nav-group-sub" data-submenu-title="Administration">
+								<li class="nav-item"><a href="/earkweb/administration/dashboard" class="nav-link"><span id="mi-dashboard">{% trans 'Dashboard' %}</span></a></li>
+								<li class="nav-item"><a href="/earkweb/admin" class="nav-link"><span id="mi-site-admin">{% trans 'Site Administration' %}</span></a></li>
+								<li class="nav-item"><a href="/earkweb/api/" class="nav-link"><span id="mi-rest-api">{% trans 'REST API' %}</span></a></li>
+							</ul>
+						</li>
+
+						{% endif %}
+
+						<li id="submission" class="nav-item nav-item-submenu">
+							<a href="#" class="nav-link"><i class="fas fa-boxes"></i> <span id="mi-submission">{% trans 'Submission' %}</span></a>
+							<ul class="nav nav-group-sub" data-submenu-title="Data sets">
+								<li id="ni-submission-start" class="nav-item"><a href="/earkweb/submission/start" class="nav-link">{% trans 'NavNewSubmission' %}</a></li>
+								<li id="ni-submission-overview" class="nav-item"><a href="/earkweb/submission/overview" class="nav-link">{% trans 'NavOpenSubmissions' %}</a></li>
+							</ul>
+						</li>
+
+						<li id="management" class="nav-item nav-item-submenu">
+							<a href="#" class="nav-link"><i class="fas fa-archive"></i> <span id="mi-management">{% trans 'Package Management' %}</span></a>
+							<ul class="nav nav-group-sub" data-submenu-title="Data sets">
+								<li id="ni-management-overview" class="nav-item"><a href="/earkweb/management/overview" class="nav-link">{% trans 'NavIngestedPackages' %}</a></li>
+							</ul>
+						</li>
+
+						<li id="access" class="nav-item nav-item-submenu">
+							<a href="#" class="nav-link"><i class="fas fa-search"></i> <span id="mi-search">{% trans 'Search & Access' %}</span></a>
+							<ul class="nav nav-group-sub" data-submenu-title="Data sets">
+								<li id="ni-search" class="nav-item"><a href="/earkweb/access/search" class="nav-link">{% trans 'Search' %}</a></li>
+								<li id="ni-indexing-status" class="nav-item"><a href="/earkweb/access/indexing-status" class="nav-link">{% trans 'Indexing status' %}</a></li>
+							</ul>
+						</li>
+
+						<li id="help" class="nav-item nav-item-submenu">
+							<a href="#" class="nav-link"><i class="fas fa-question"></i> <span id="mi-help">{% trans 'Help' %}</span></a>
+							<ul class="nav nav-group-sub" data-submenu-title="{% trans 'Help' %}">
+								<li id="ni-howto-create-dataset" class="nav-item"><a href="/earkweb/howto-create-dataset/" class="nav-link">{% trans 'How-to create a submission information package (SIP)' %}</a></li>
+								<li id="ni-howto-ingest-dataset" class="nav-item"><a href="/earkweb/howto-ingest-dataset/" class="nav-link">{% trans 'How to create an archival information package (AIP)' %}</a></li>
+								<li id="ni-howto-use-the-api" class="nav-item"><a href="/earkweb/howto-use-the-api/" class="nav-link">{% trans 'How-to use the API' %}</a></li>
+							</ul>
+						</li>
+
+						{% endif %}
+					</ul>
+				</div>
+				<!-- /main navigation -->
+
+			</div>
+			<!-- /sidebar content -->
+
+		</div>
+		<!-- /main sidebar -->
+
+
+		<!-- Main content -->
+		<div class="content-wrapper">
+
+            <div class="content-inner">
+                <!-- Page header -->
+                <div class="page-header page-header-light">
+
+                    <div class="breadcrumb-line breadcrumb-line-light header-elements-md-inline">
+                        <div class="d-flex">
+                            <div class="breadcrumb">
+                                <span id="br-level-0" class="breadcrumb-item active"><i class="icon-home2 mr-2"></i> <a href="/earkweb/home">{% trans 'eArchiving Repository' %}</a></span>
+								<span id="br-level-1" class="breadcrumb-item active"> </span>
+								<span id="br-level-2" class="breadcrumb-item active"> </span>
+                            </div>
+
+                            <a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <!-- /page header -->
+
+
+                <!-- Content area -->
+                <div class="content">
+                    <div class="card card-body">
+
+						{% block content %}{% endblock %}
+
+                    </div>
+
+                </div>
+                <!-- /content area -->
+                <!-- Footer -->
+                <div class="navbar navbar-expand-lg navbar-light">
+                    <div class="text-center d-lg-none w-100">
+                        <button type="button" class="navbar-toggler dropdown-toggle" data-toggle="collapse" data-target="#navbar-footer">
+                            <i class="icon-unfold mr-2"></i>
+                            Footer
+                        </button>
+                    </div>
+
+                    <div class="navbar-collapse collapse" id="navbar-footer">
+					<span class="navbar-text">
+						&copy; 2017-2024. <a href="https://www.e-ark-foundation.eu">E-ARK</a> Version {{ sw_version }} ({{ sw_version_date }})
+					</span>
+                    </div>
+                </div>
+                <!-- /footer -->
+            </div>
+
+		</div>
+		<!-- /main content -->
+
+	</div>
+	<!-- /page content -->
+<script>
         $(document).ready(function(){
-            $('nav a').removeClass('active');
+            $('a').removeClass('active');
                 var url = window.location.href;
                 switch(url) {
-                  case (url.match(/administration/) || {}).input:
+                  case (url.match(/home/) || {}).input:
+                    $('#home > a').addClass('active');
+                    $('#br-level-1').hide();
+                    $('#br-level-2').hide();
+                    break;
+                  case (url.match(/admin|api/) || {}).input:
                     $('#administration > a').addClass('active');
+                    $('#br-level-1').html("<a href='/earkweb/administration'>"+$('#mi-administration').text()+"</a>");
+                    $('#br-level-1').show();
+                    switch(url) {
+                    	case (url.match(/dashboard/) || {}).input:
+							$('#br-level-2').text($('#mi-dashboard').text());
+							$('#br-level-2').show();
+							break;
+                    	case (url.match(/admin$/) || {}).input:
+							$('#br-level-2').text($('#mi-site-admin').text());
+							$('#br-level-2').show();
+							break;
+                    	case (url.match(/api/) || {}).input:
+							$('#br-level-2').text($('#mi-rest-api').text());
+							$('#br-level-2').show();
+							break;
+                    }
                     break;
                   case (url.match(/submission/) || {}).input:
                     $('#submission > a').addClass('active');
+                    $('#br-level-1').html("<a href='/earkweb/submission'>"+$('#mi-submission').text()+"</a>");
+                    $('#br-level-1').show();
+                    switch(url) {
+                    	case (url.match(/submission\/start/) || {}).input:
+                    	$('#br-level-2').html($('#ni-submission-start').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    	case (url.match(/submission\/overview/) || {}).input:
+                    	$('#br-level-2').html($('#ni-submission-overview').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    }
                     break;
                   case (url.match(/management/) || {}).input:
                     $('#management > a').addClass('active');
+                    $('#br-level-1').html("<a href='/earkweb/management'>"+$('#mi-management').text()+"</a>");
+                    $('#br-level-1').show();
+                    switch(url) {
+                    	case (url.match(/management\/overview/) || {}).input:
+                    	$('#br-level-2').html($('#ni-management-overview').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    }
                     break;
                   case (url.match(/access/) || {}).input:
                     $('#access > a').addClass('active');
+                    $('#br-level-1').html("<a href='/earkweb/access'>"+$('#mi-search').text()+"</a>");
+                    $('#br-level-1').show();
+                    switch(url) {
+                    	case (url.match(/access\/search/) || {}).input:
+                    	$('#br-level-2').html($('#ni-search').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    	case (url.match(/access\/indexing-status/) || {}).input:
+                    	$('#br-level-2').html($('#ni-indexing-status').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    }
+                    break;
+                  case (url.match(/howto-*/) || {}).input:
+                    $('#help > a').addClass('active');
+                    $('#br-level-1').html("<a href='/earkweb/howto'>"+$('#mi-help').text()+"</a>");
+                    $('#br-level-1').show();
+                    switch(url) {
+                    	case (url.match(/howto-use-the-api/) || {}).input:
+                    	$('#br-level-2').html($('#ni-howto-use-the-api').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    	case (url.match(/howto-create-dataset/) || {}).input:
+                    	$('#br-level-2').html($('#ni-howto-create-dataset').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    }
                     break;
                 }
         });
     </script>
-  </body>
+</body>
+
+{% block after_body %}{% endblock %}
+
 </html>

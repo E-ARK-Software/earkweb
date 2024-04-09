@@ -11,16 +11,15 @@ import bagit
 from celery.result import AsyncResult
 
 from api.util import get_representation_ids_by_label
-from eatb.metadata.XmlHelper import q
-from eatb.packaging.package_creator import create_package
-from eatb.packaging.packaged_container import TarContainer
-from eatb.storage.checksum import check_transfer, get_sha512_hash, get_hash_values
-from eatb.storage.directorypairtreestorage import make_storage_directory_path, make_storage_data_directory_path
-from eatb.storage.pairtreestorage import PairtreeStorage
+from eatb.checksum import check_transfer, get_sha512_hash, get_hash_values
+from eatb.csip_validation import XmlValidation
+from eatb.packaging import TarContainer, create_package
+from eatb.pairtree_storage import PairtreeStorage, make_storage_directory_path, make_storage_data_directory_path
+from eatb.utils.XmlHelper import q
+
 from eatb.utils.datetime import date_format, DT_ISO_FORMAT, ts_date, DT_ISO_FMT_SEC_PREC
 from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_prefixes, remove_protocol, sub_dirs, \
     read_file_content, rec_find_files, to_safe_filename, read_and_load_json_file
-from eatb.xml.xmlvalidation import XmlValidation
 from lxml import etree
 
 from earkweb.models import InternalIdentifier, InformationPackage
@@ -469,7 +468,7 @@ def create_or_update_state_info_file(working_dir, info=None):
         info = {}
     assert isinstance(info, dict)
     result_info = {}
-    state_info_file = os.path.join(working_dir, "state.json")
+    state_info_file = os.path.join(working_dir, "metadata/other/state.json")
     if os.path.exists(state_info_file):
         file_content = read_file_content(state_info_file)
         if file_content and file_content != "":
@@ -565,6 +564,8 @@ def store_bag(version, identifier):
         version_content_dir,
         bag_name
     )
+    if not os.path.exists(bagit_storage_dir):
+        os.mkdir(bagit_storage_dir)
     # storage dir to bagit
     bag = bagit.make_bag(bagit_storage_dir, {'Contact-Name': 'E-ARK'})
 
@@ -578,23 +579,24 @@ def store_bag(version, identifier):
     return bagit_storage_dir, version_bag_package_file_path, bagit_file_name, version
 
 
-def persist_state(identifier, version, bagit_storage_dir, working_dir):
+def persist_state(identifier, version, storage_dir, file_name, working_dir):
     patch_data = {
         "identifier": identifier,
-        "version": re.sub("\D", "", version),
-        "storage_dir": bagit_storage_dir,
+        "version": int(re.sub("\D", "", version)),
+        "storage_dir": storage_dir,
+        "file_name": file_name,
         "last_change": date_format(datetime.utcnow()),
     }
-    json_data = json.dumps(patch_data)
-    with open(os.path.join(working_dir, "state.json"), 'w') as inventory_file:
+    json_data = json.dumps(patch_data, indent=4)
+    with open(os.path.join(working_dir, "metadata/other/state.json"), 'w') as inventory_file:
         inventory_file.write(json_data)
     return patch_data
 
 
-def write_inventory(identifier, version_bag_package_file_path, version, bagit_file_name, version_dir_name):
+def write_inventory(identifier, version, version_dir_name, aip_path, archive_file):
     aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
-    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(version_bag_package_file_path)
-    ocfl_package_file_path = os.path.join(version, "content", bagit_file_name)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(aip_path)
+    ocfl_package_file_path = os.path.join(version, archive_file)
     ocfl = {
         "digestAlgorithm": "sha512",
         "fixity": {
@@ -605,14 +607,14 @@ def write_inventory(identifier, version_bag_package_file_path, version, bagit_fi
                 hashval_sha256: [ocfl_package_file_path]
             }
         },
-        "head": version_dir_name,
+        "head": version,
         "id": identifier,
         "manifest": {
             hashval_sha512: [ocfl_package_file_path]
         },
         "type": "https://ocfl.io/1.0/spec/#inventory",
         "versions": {
-            version_dir_name: {
+            version: {
                 "created": date_format(datetime.utcnow()),
                 "message": "Original SIP",
                 "state": {
@@ -640,12 +642,12 @@ def update_status(uid, patch_data):
                               verify=verify_certificate)
 
 
-def update_inventory(identifier, version, version_bag_package_file_path, bagit_file_name, action):
+def update_inventory(identifier, version, aip_path, archive_file, action):
     aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
     inventory_file_name = "inventory.json"
     inventory_file_path = os.path.join(aip_storage_root, inventory_file_name)
-    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(version_bag_package_file_path)
-    ocfl_package_file_path = os.path.join(version, "content", "bag00001", "data", bagit_file_name)
+    hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(aip_path)
+    ocfl_package_file_path = os.path.join(version, "data", archive_file)
     inventory_json = read_and_load_json_file(inventory_file_path)
     inventory_json["fixity"]["md5"][hashval_md5] = [ocfl_package_file_path]
     inventory_json["fixity"]["sha256"][hashval_sha256] = [ocfl_package_file_path]

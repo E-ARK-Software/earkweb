@@ -7,8 +7,9 @@ function updateTable(filterword) {
         url: "/earkweb/management/ips_table",
         type: "POST",
         data: "filterword=" + filterword,
-    }).success(function(table_html){
-        $('#ips-table').html(table_html);
+        success: function(table_html){
+            $('#ips-table').html(table_html);
+        }
     });
 }
 $( document ).ready(function() {

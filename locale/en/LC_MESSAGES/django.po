@@ -692,7 +692,7 @@ msgstr "Information package management"
 
 #: templates/earkweb/navbar.html:45
 msgid "NavIngestedPackages"
-msgstr "Information package management"
+msgstr "Archived information packages"
 
 #: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"

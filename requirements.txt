@@ -19,7 +19,6 @@ pika==1.2.0
 xmltodict==0.12.0
 py-dateutil==2.2
 pycountry==20.7.3
-# python-magic==0.4.15
 rdflib==6.1.1
 drf-yasg==1.20.0
 djangorestframework-api-key==2.1.0
@@ -28,12 +27,10 @@ uwsgi
 importlib_resources
 PyPDF2==1.26.0
 bagit==1.8.1
-PyICU==2.8
+cchardet==2.1.7
 # eatb
--e git://github.com/E-ARK-Software/eatb.git#egg=eatb
-#-e eatb
+-e eatb
 # python-magic
--e git://github.com/ahupp/python-magic.git#egg=python-magic
-# fido (patched release 1.4.1)
-git+git://github.com/openpreserve/fido.git@a82e85d89f4ef3805d7289615a6c356cff12b37b
+python-magic==0.4.27
+opf-fido==1.6.1
 

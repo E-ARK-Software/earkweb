@@ -23,7 +23,10 @@
 
     <p>{% trans 'Working copy deleted: ' %} {{ uid }}</p>
 
-    <p><a href="{% url 'management:overview' %}" title='Back to overview'>{% trans 'Back to overview' %}</a></p>
+    <p>&nbsp;</p>
+    <a data-toggle="tooltip" title="Back to the overview" href="{% url 'management:overview'  %}" class="btn btn-eark">
+        {% trans 'Back' %}
+    </a>
 
     {% endif %}
 

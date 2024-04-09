@@ -5,7 +5,8 @@ from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
 import pytz
-from eatb.format.formatidentification import FormatIdentification
+
+from eatb.file_format import FormatIdentification
 from eatb.utils import randomutils
 from eatb.utils.datetime import current_date
 from datetime import datetime

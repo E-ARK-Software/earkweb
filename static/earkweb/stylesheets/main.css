@@ -9784,6 +9784,9 @@ a.text-dark:hover {
 .fa-file-word:before {
  content:"\F1C2"
 }
+.fa-file-json:before {
+ content:"\F1C2"
+}
 .fa-fill:before {
  content:"\F575"
 }

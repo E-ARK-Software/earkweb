@@ -14,7 +14,7 @@ django.setup()
 from taskbackend.tasks import validate_working_directory
 from taskbackend.tasks import descriptive_metadata_validation
 from taskbackend.tasks import aip_migrations
-from taskbackend.tasks import aip_package_mets_creation
+from taskbackend.tasks import aip_package_structure
 from taskbackend.tasks import create_manifest
 #from taskbackend.tasks import package_original_sip
 from taskbackend.tasks import store_original_sip

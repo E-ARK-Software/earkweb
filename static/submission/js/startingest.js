@@ -7,8 +7,9 @@ function updateTable() {
         url: "/earkweb/submission/ip_detail_table",
         type: "POST",
         data: "pkg_id="+current_ip,
-    }).success(function(table_html){
-        $('#sip-detail-table').html(table_html);
+        success: function(table_html){
+            $('#sip-detail-table').html(table_html);
+        }
     });
 }
 

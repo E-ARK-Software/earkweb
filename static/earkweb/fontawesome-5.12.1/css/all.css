@@ -1617,6 +1617,9 @@ readers do not read off random characters that represent icons */
 .fa-file-word:before {
   content: "\f1c2"; }
 
+.fa-file-json:before {
+  content: "\f1c2"; }
+
 .fa-fill:before {
   content: "\f575"; }
 
