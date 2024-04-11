@@ -139,7 +139,7 @@ def ingest_pipeline(_, context):
         store_original_sip.s(),
         # aip_migrations.s(),
         aip_record_events.s(),
-        aip_package_structure.s(),
+        aip_record_structure.s(),
         aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
@@ -214,7 +214,7 @@ def validate_working_directory(_, context, task_log):
     # package METS file validation
     root_mets_path = os.path.join(ip_path, "METS.xml")
     mets_schema_file = os.path.join(root_dir, "static/schemas/IP.xsd")
-    premis_schema_file = os.path.join(root_dir, "static/schemas/premis-v2-2.xsd")
+    premis_schema_file = os.path.join(root_dir, "static/schemas/premis-v3-0.xsd")
     root_mets_validator = MetsValidation(ip_path, mets_schema_file=mets_schema_file,
                                          premis_schema_file=premis_schema_file)
     if root_mets_validator.validate_mets(root_mets_path):
@@ -511,10 +511,10 @@ def aip_record_events(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="aip_package_mets_creation")
+@app.task(bind=True, name="aip_record_structure")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
-def aip_package_structure(_, context, task_log):
+def aip_record_structure(_, context, task_log):
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     try:
@@ -611,7 +611,7 @@ def aip_package_structure(_, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="aip_package")
+@app.task(bind=True, name="aip_packaging")
 @requires_parameters("package_name", "uid", "identifier", "org_nsid")
 @task_logger
 def aip_packaging(self, context, task_log):
