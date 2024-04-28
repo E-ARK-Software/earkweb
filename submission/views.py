@@ -267,7 +267,12 @@ def upload_step1(request, pk):
                 'package_name': ip.package_name,
                 'external_id': ip.external_id,
                 'title': md_properties["title"],
-                'description': md_properties["description"]
+                'description': md_properties["description"],
+                'latlngobj': md_properties["latlngobj"],
+                'publication_date': md_properties["publication_date"],
+                'last_revision_date': md_properties["last_revision_date"],
+                'creation_date': md_properties["creation_date"]
+
             })
         else:
             form = MetaFormStep1(initial={
@@ -278,7 +283,8 @@ def upload_step1(request, pk):
             'form': form,
             'ip': ip,
             'tags': [val.name for val in ip.tags.all()],
-            'user_generated_tags': user_generated_tags
+            'user_generated_tags': user_generated_tags,
+            'latlngobj': request.session['md_properties']["latlngobj"]
         })
 
 

@@ -58,6 +58,15 @@ class MetaFormStep1(forms.Form):
     external_id = forms.CharField(widget=forms.HiddenInput(), required=False)
     title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
     description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
+    publication_date =  forms.CharField(label=_('Publication date'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('dd.mm.yyyy'), 'onclick': "$('#id_publication_date').datepicker({dateFormat:'dd.mm.yy',changeYear: true, yearRange: '-200:+00'});$('#id_publication_date').datepicker('show');"}), required=False)
+    last_revision_date = forms.CharField(label=_('Last revision date'), max_length=100, widget=forms.TextInput(
+        attrs={'placeholder': _('dd.mm.yyyy'),
+               'onclick': "$('#id_last_revision_date').datepicker({dateFormat:'dd.mm.yy',changeYear: true, yearRange: '-200:+00'});$('#id_last_revision_date').datepicker('show');"}),
+                                       required=False)
+    creation_date = forms.CharField(label=_('Creation date'), max_length=100, widget=forms.TextInput(
+        attrs={'placeholder': _('dd.mm.yyyy'),
+               'onclick': "$('#id_creation_date').datepicker({dateFormat:'dd.mm.yy',changeYear: true, yearRange: '-200:+00'});$('#id_creation_date').datepicker('show');"}),
+                                       required=False)
     tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
         'placeholder': _('Please enter 2 characters to get tag suggestions or write a custom tag and press enter to add it'),
         'id': 'pp',

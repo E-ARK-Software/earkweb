@@ -7,6 +7,18 @@
 
 {% block extra_head %}
 
+<link rel="stylesheet" href="{% static 'earkweb/leaflet/leaflet.css' %}" />
+ <!--link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/-->
+
+ <!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="{% static 'earkweb/leaflet/leaflet.js' %}"></script>
+ <!--script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script-->
+
+
 <script type="text/javascript" src="{% static 'submission/js/submission.js' %}"></script>
 <style>
 .cdt-tags-list-value {
@@ -38,6 +50,8 @@
 }
 
 </style>
+
+
 
 <script>
 
@@ -96,7 +110,6 @@ let addTagClickHandlers = function() {
         tags_input.keydown(function(e) {
                 if(e.keyCode === 13){
                     e.preventDefault();
-
                    $(this).siblings('.cdt-tags-list').children('.cdt-tags-list-values').append('<div class="cdt-tags-list-value" data-custom="true"><div class="selection-label">' + $(this).val() + '</div></div>');
                    addTagClickHandlers();
                    $(this).val('');
@@ -105,8 +118,162 @@ let addTagClickHandlers = function() {
                 }
         });
     //});
-});
 
+    // leaflet map initialisation
+    // set up the map
+    window.map = new L.Map('map');
+
+    // create the tile layer with correct attribution
+    var osmUrl='http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    var osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
+    var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 20, attribution: osmAttrib});
+
+    // start the map in Vienna
+    map.setView(new L.LatLng(48.26909, 16.42686),11);
+    map.addLayer(osm);
+
+    // location object
+    const Location = {
+      label: "",
+      lat: 0.0,
+      lng: 0.0,
+      zoomLevel: 0,
+      locationUncertainty: 0,
+      locationUncertaintyRadius: 0,
+      marker: undefined,
+      circle: undefined,
+      toString() {
+        return `{label: "${this.label}", lat: ${this.lat}, lng: ${this.lng}, zoomLevel: ${this.zoomLevel}, locationUncertainty: ${this.locationUncertainty}, locationUncertaintyRadius: ${this.locationUncertaintyRadius}}`;
+
+      }
+    };
+
+    // existing markers
+    const jsEscape = (string) => {
+      return string.replace(new RegExp("'", 'g'),"\\'");
+    };
+
+    const decodeUnicodeEntities = (data) => {
+      return unescape(jsEscape(data));
+    };
+
+    // current map objects
+    window.currentLocationLabel;
+    window.currentLocation = Object.create(Location);
+    window.locations = {};
+
+    var existingLatLng = eval(decodeUnicodeEntities("{{ latlngobj|escapejs }}"));
+    if(existingLatLng) {
+        existingLatLng.forEach(function(latLngObj) {
+
+            var currLoc = Object.create(Location);
+            currLoc.label = latLngObj.label;
+            currLoc.locationUncertainty = latLngObj.locationUncertainty;
+            currLoc.locationUncertaintyRadius = latLngObj.locationUncertaintyRadius;
+
+            currLoc.marker = new L.marker([latLngObj.lat, latLngObj.lng], {
+               title: latLngObj.label,
+               clickable: true,
+               draggable: true
+            }).addTo(map);
+            currLoc.marker.bindTooltip(latLngObj.label, { permanent: true, direction: 'right' });
+            currLoc.circle = new L.circle([latLngObj.lat, latLngObj.lng], {
+                color: 'blue',
+                fillColor: 'blue',
+                fillOpacity: 0.3,
+                radius: latLngObj.locationUncertaintyRadius
+                }).addTo(map);
+            console.log(currLoc);
+            window.locations[latLngObj.label] = currLoc;
+        });
+    }
+
+    // context menu html
+    html = `
+    <div class="form-group ui-widget">
+        <label for="location">Location name</label>
+        <input style="width:200px" class="form-control ui-autocomplete-input" id="location" type="text" value=""/>
+        <label for="locslider">Location uncertainty</label>
+        <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
+    </div>
+    `;
+
+    // map context menu
+    map.on('contextmenu',(e) => {
+        L.popup()
+        .setLatLng(e.latlng)
+        .setContent(html)
+        .addTo(map)
+        .openOn(map);
+
+        map.addEventListener("popupclose", e => {
+          var objStr = window.currentLocation.toString();
+          window.locations[window.currentLocation.label] = window.currentLocation;
+          window.currentLocation = Object.create(Location);
+          var persistedLocations = "";
+          var persistedLocationsArr = [];
+          for (const [key, value] of Object.entries(window.locations)) {
+            if(key != "") {
+              persistedLocationsArr.push(value.toString());
+            }
+          }
+          persistedLocations = persistedLocationsArr.join(", ");
+          $('#latlngobj')[0].value = "["+persistedLocations+"]";
+
+        });
+
+        // marker
+        window.currentLocation.marker = L.marker([e.latlng.lat, e.latlng.lng], {
+           title: "undefined",
+           clickable: true,
+           draggable: true
+        }).addTo(map);
+        window.currentLocation.marker.bindTooltip("undefined", { permanent: true, direction: 'right' });
+        window.currentLocation.lat = e.latlng.lat;
+        window.currentLocation.lng = e.latlng.lng;
+        window.currentLocation.zoomLevel = e.target._zoom;
+
+        // set location label
+        $( "#location" ).on( "keyup", function(e) {
+            window.currentLocation.marker.setTooltipContent($('#location')[0].value);
+            window.currentLocation.label = $('#location')[0].value
+        });
+
+        // slider (location uncertainty)
+        $( function(e) {
+            $( "#locslider" ).slider({
+            range:"min",
+              min: 0,
+              max: 100,
+              value: 10,
+                change: function( event, ui ) {
+                    createCircle(ui.value);
+                    window.currentLocation.locationUncertainty = ui.value;
+                }
+            });
+        });
+
+        function createCircle(radiusFactor) {
+            if (window.currentLocation.circle != undefined) {
+                map.removeLayer(window.currentLocation.circle);
+            }
+            var r = (200000/Math.pow(2, window.currentLocation.zoomLevel)) * radiusFactor;
+            window.currentLocation.locationUncertaintyRadius = r;
+            window.currentLocation.circle = L.circle([e.latlng.lat, e.latlng.lng], {
+                color: 'blue',
+                fillColor: 'blue',
+                fillOpacity: 0.3,
+                radius: r
+                }).addTo(map);
+
+        };
+    });
+
+    // slider
+    $( function() {
+        $( "#slider" ).slider();
+    });
+});
 </script>
 
 
@@ -114,6 +281,12 @@ let addTagClickHandlers = function() {
 <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
 
 <link rel="stylesheet" href="{% static "submission/css/start.css" %}" type="text/css" />
+
+
+<style>
+    #map { height: 400px; }
+</style>
+
 
 {% endblock %}
 
@@ -131,6 +304,7 @@ let addTagClickHandlers = function() {
     {% for field in form.visible_fields %}
     {% if field.name == 'tags' %}
     <div class="form-group ui-widget">
+
         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
         {% render_field field class="form-control" %}
         <div class="cdt-tags-list"><div id="taglist" class="cdt-tags-list-values">
@@ -162,6 +336,16 @@ let addTagClickHandlers = function() {
     </div>
     {% endif %}
     {% endfor %}
+
+    {% if "step1" in request.path %}
+    <div class="form-group">
+        <label style="display:block; margin-top:10px" for="map">Locations</label>
+        <div id="map"></div>
+        <p style="font-style: italic">Right click to add locations.</p>
+        <label for="latlngobj">Latitude/Longitude/Location uncertainty</label>
+        <input class="form-control ui-autocomplete-input" type="text" id="latlngobj" name="latlngobj" value="{{ latlngobj }}">
+    </div>
+    {% endif %}
 
     {% if form.errors %}
     {% for field in form %}
@@ -232,4 +416,7 @@ function onInvalidTag(e){
 
 </script>
 
+{% endblock %}
+
+{% block after_body %}
 {% endblock %}
