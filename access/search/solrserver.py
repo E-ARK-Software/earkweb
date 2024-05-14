@@ -8,6 +8,7 @@ def default_reporter(percent):
 
 class SolrServer(object):
 
+    protocol = None
     server = None
     port = None
 

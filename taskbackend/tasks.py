@@ -793,7 +793,7 @@ def aip_indexing(_, context, task_log):
         return json.dumps(task_context)
 
     # delete existing records
-    submission_url = "http://%s:%d/solr/storagecore1/update/?commit=true" % (solr_host, solr_port)
+    submission_url = "%s://%s:%d/solr/storagecore1/update/?commit=true" % (solr_protocol, solr_host, solr_port)
     delete_response = requests.post(submission_url, data="<delete><query>package:\"%s\"</query></delete>" % identifier,
                                     headers={'Content-Type': 'text/xml'}, verify=verify_certificate)
     if delete_response.status_code == 200:

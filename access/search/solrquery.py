@@ -27,7 +27,7 @@ class SolrQuery(object):
         @rtype: string
         @return: base url
         """
-        return "http://%s:%d/solr/" % (self.solr_server.server, self.solr_server.port)
+        return "%s://%s:%d/solr/" % (self.solr_server.protocol, self.solr_server.server, self.solr_server.port)
 
     def get_select_pattern(self, core):
         """
@@ -39,7 +39,7 @@ class SolrQuery(object):
         @rtype: string
         @return: select url pattern
         """
-        qurl = "http://%s:%d/solr/%s/select?q={0}&wt=json" % (self.solr_server.server, self.solr_server.port, core)
+        qurl = "%s://%s:%d/solr/%s/select?q={0}&wt=json" % (self.solr_server.protocol, self.solr_server.server, self.solr_server.port, core)
         return qurl
 
 
