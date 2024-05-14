@@ -593,7 +593,7 @@ def persist_state(identifier, version, storage_dir, file_name, working_dir):
     return patch_data
 
 
-def write_inventory(identifier, version, version_dir_name, aip_path, archive_file):
+def write_inventory(identifier, version, aip_path, archive_file):
     aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
     hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(aip_path)
     ocfl_package_file_path = os.path.join(version, archive_file)
