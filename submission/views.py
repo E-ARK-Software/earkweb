@@ -268,7 +268,7 @@ def upload_step1(request, pk):
                 'external_id': ip.external_id,
                 'title': md_properties["title"],
                 'description': md_properties["description"],
-                'latlngobj': md_properties["latlngobj"],
+                'latlngobj': md_properties["latlngobj"] if "latlngobj" in request.session['md_properties'] else "",
                 'publication_date': md_properties["publication_date"],
                 'last_revision_date': md_properties["last_revision_date"],
                 'creation_date': md_properties["creation_date"]
@@ -284,7 +284,7 @@ def upload_step1(request, pk):
             'ip': ip,
             'tags': [val.name for val in ip.tags.all()],
             'user_generated_tags': user_generated_tags,
-            'latlngobj': request.session['md_properties']["latlngobj"] if "md_properties" in request.session.keys() else {}
+            'latlngobj': request.session['md_properties']["latlngobj"] if "md_properties" in request.session.keys() and "latlngobj" in request.session['md_properties'] else {}
         })
 
 
