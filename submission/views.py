@@ -284,7 +284,7 @@ def upload_step1(request, pk):
             'ip': ip,
             'tags': [val.name for val in ip.tags.all()],
             'user_generated_tags': user_generated_tags,
-            'latlngobj': request.session['md_properties']["latlngobj"]
+            'latlngobj': if 'md_properties' in request.session.keys() request.session['md_properties']["latlngobj"] else {}
         })
 
 
