@@ -155,6 +155,9 @@ def update_pipeline(_, context):
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
+        aip_record_events.s(),
+        aip_record_structure.s(),
+        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
