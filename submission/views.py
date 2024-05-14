@@ -269,10 +269,9 @@ def upload_step1(request, pk):
                 'title': md_properties["title"],
                 'description': md_properties["description"],
                 'latlngobj': md_properties["latlngobj"] if "latlngobj" in request.session['md_properties'] else "",
-                'publication_date': md_properties["publication_date"],
-                'last_revision_date': md_properties["last_revision_date"],
-                'creation_date': md_properties["creation_date"]
-
+                'publication_date': md_properties["publication_date"] if "publication_date" in request.session['md_properties'] else "",
+                'last_revision_date': md_properties["last_revision_date"] if "last_revision_date" in request.session['md_properties'] else "",
+                'creation_date': md_properties["creation_date"] if "creation_date" in request.session['md_properties'] else ""
             })
         else:
             form = MetaFormStep1(initial={
