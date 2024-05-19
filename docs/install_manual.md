@@ -6,7 +6,7 @@ Installation was tested on Ubuntu 22.04.3 LTS (Jammy Jellyfish)
 
 ### Ubuntu packages
 
-    sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev summain libicu-dev
+    sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev libicu-dev
 
 ### Message queue and result backend
 
