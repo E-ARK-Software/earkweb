@@ -223,7 +223,9 @@ Install RabbitMQ Server
 
 Make sure the prerequisites are fulfilled:
 
-apt-get install curl gnupg apt-transport-https -y
+```
+sudo apt-get install curl gnupg apt-transport-https -y
+```
 
 Add repository signing keys for RabbiMQ main, ErLang, and RabbitMQ PackageCloud repositories respectively:
 
