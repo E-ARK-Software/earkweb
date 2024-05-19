@@ -91,4 +91,14 @@ The search parameter `search` can then be passed to the viewer, e.g. as `GET` pa
 And in `viewer.js` a base64 string is added as parameter before calling `getDocument`:
 
     parameters['data'] = window.pdfData
+
+# Backup
+
+## Backup database
+
+Backup database using mysqldump:
+
+```sql
+mysqldump --no-tablespaces -u repo -p repodb > repodb_20240519.sql
+```
     
