@@ -36,7 +36,7 @@ Use the following command to install the default JRE on Ubuntu:
   
 2. Create SOLR_HOME directory:
     
-       SOLR_HOME = "/var/data/solr"
+       SOLR_HOME="/var/data/solr"
        sudo mkdir -p ${SOLR_HOME}
        sudo chown ${USER}:`id -gn` ${SOLR_HOME}
     
