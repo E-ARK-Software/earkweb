@@ -43,6 +43,7 @@ class SolrQuery(object):
         return qurl
 
 
+
 class TestSolrQuery(unittest.TestCase):
 
     @classmethod

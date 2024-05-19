@@ -882,7 +882,7 @@ def solr_update_metadata(_, context, task_log):
         # solr interface configuration
         solr_base_url = '%s://%s:%s/solr/%s/' % (solr_protocol, solr_host, solr_port, solr_core)
         solr = SolrUtility()
-        if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') is 200:
+        if solr.availability(solr_base_url=solr_base_url, solr_unique_key='id') == 200:
             for k in result.keys():
                 safe_urn_identifier = (task_context['identifier']).replace(":", "\\:")
                 entry_path = k.replace(working_dir, '')

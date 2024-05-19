@@ -106,6 +106,11 @@ class MetaFormStep1(forms.Form):
 
 class MetaFormStep2(forms.Form):
 
+    latlngobj = forms.CharField(label=_('Location metadata'), max_length=4096, widget=forms.Textarea(attrs={'rows': '2'}))
+
+
+class MetaFormStep3(forms.Form):
+
     contact_point = forms.CharField(label=_('Contact'), max_length=255,
                                     widget=forms.TextInput(attrs ={'placeholder': _('Contact')}))
     contact_email = forms.EmailField(label=_('Contact email'),
@@ -120,6 +125,11 @@ class MetaFormStep2(forms.Form):
 
 class MetaFormStep4(forms.Form):
 
+    documentation_description = forms.CharField(label=_('Documentation description'), max_length=4096, widget=forms.Textarea(attrs={'rows': '2'}))
+
+
+class MetaFormStep5(forms.Form):
+
     distribution_label = forms.CharField(label=_('Representation label'), max_length=50, widget=forms.TextInput(
         attrs={'placeholder': _('Representation label')}))
 
@@ -130,4 +140,4 @@ class MetaFormStep4(forms.Form):
     distribution_description = forms.CharField(label=_('Representation description'), max_length=4096, widget=forms.Textarea(attrs={'rows': '2'}))
 
     def __init__(self, *args, **kwargs):
-        super(MetaFormStep4, self).__init__(*args, **kwargs)
+        super(MetaFormStep5, self).__init__(*args, **kwargs)

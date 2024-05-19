@@ -51,12 +51,9 @@
 
 </style>
 
-
-
+{% if "step1" in request.path %}
 <script>
-
 $(document).ready(function() {
-
 let update_hidden_tags = function() {
         let selected_values = [];
         console.log($('#pp').siblings('.cdt-tags-list').find('.cdt-tags-list-values').children());
@@ -118,6 +115,13 @@ let addTagClickHandlers = function() {
                 }
         });
     //});
+});
+</script>
+{% endif %}
+
+{% if "step2" in request.path %}
+<script>
+$(document).ready(function() {
 
     // leaflet map initialisation
     // set up the map
@@ -275,7 +279,7 @@ let addTagClickHandlers = function() {
     });
 });
 </script>
-
+{% endif %}
 
 
 <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
@@ -337,7 +341,7 @@ let addTagClickHandlers = function() {
     {% endif %}
     {% endfor %}
 
-    {% if "step1" in request.path %}
+    {% if "step2" in request.path %}
     <div class="form-group">
         <label style="display:block; margin-top:10px" for="map">Locations</label>
         <div id="map"></div>
@@ -345,6 +349,18 @@ let addTagClickHandlers = function() {
         <label for="latlngobj">Latitude/Longitude/Location uncertainty</label>
         <input class="form-control ui-autocomplete-input" type="text" id="latlngobj" name="latlngobj" value="{{ latlngobj }}">
     </div>
+    {% endif %}
+
+    {% if "step4" in request.path %}
+    <form id="datauploadform" enctype="multipart/form-data" method="post">
+        <input type="hidden" name="packagename" value="{{ ip.package_name }}"/>
+        <input type="hidden" name="uid" value="{{ ip.uid }}"/>
+        <input type="hidden" name="pk" value="{{ pk }}"/>
+        <input type="hidden" name="rep" value="{{ rep }}"/>
+        <div class="file-loading">
+            <input id="kv-explorer" type="file" multiple data-min-file-count="1">
+        </div>
+    </form>
     {% endif %}
 
     {% if form.errors %}

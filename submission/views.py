@@ -48,7 +48,8 @@ from taskbackend.taskutils import extract_and_remove_package, update_states_from
     get_celery_worker_status, flower_is_running, get_task_info_from_child_tasks
 
 from rdflib import Literal
-from submission.forms import MetaFormStep1, MetaFormStep2, TinyUploadFileForm, MetaFormStep4
+from submission.forms import MetaFormStep1, MetaFormStep2, TinyUploadFileForm, MetaFormStep4, MetaFormStep3, \
+    MetaFormStep5
 
 from config.configuration import django_service_host
 from config.configuration import django_service_port
@@ -298,6 +299,33 @@ def upload_step2(request, pk):
         data4 = {key: Literal(val[0]) if isinstance(val, list) else Literal(val) for key, val in data3.items()}
         if form.is_valid():
             request.session['step2'] = data4
+            url = "/earkweb/submission/upload_step3/%s/" % (str(pk))
+            return HttpResponseRedirect(url)
+        else:
+            errors = ['error1']
+            return render(request, 'submission/upload_mdform.html', {'form': form, 'errors': errors})
+    else:
+        if 'md_properties' in request.session:
+            md_properties = request.session['md_properties']
+            form = MetaFormStep2(initial={
+                'latlngobj': request.session['md_properties']["latlngobj"] if "md_properties" in request.session.keys() and "latlngobj" in request.session['md_properties'] else {}
+            })
+        else:
+            form = MetaFormStep2()
+    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip})
+
+
+def upload_step3(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+
+    if request.method == 'POST':
+
+        form = MetaFormStep3(request.POST)
+        data2 = request.POST
+        data3 = dict(data2.items())
+        data4 = {key: Literal(val[0]) if isinstance(val, list) else Literal(val) for key, val in data3.items()}
+        if form.is_valid():
+            request.session['step3'] = data4
             url = "/earkweb/submission/upload_step4/%s/" % (str(pk))
             return HttpResponseRedirect(url)
         else:
@@ -311,7 +339,7 @@ def upload_step2(request, pk):
             publisher = md_properties["publisher"] if "publisher" in md_properties else ""
             publisher_email = md_properties["publisher_email"] if "publisher_email" in md_properties else ""
             language = md_properties["language"] if "language" in md_properties else ""
-            form = MetaFormStep2(initial={
+            form = MetaFormStep3(initial={
                 'contact_point': contact_point,
                 'contact_email': contact_email,
                 'publisher': publisher,
@@ -320,12 +348,41 @@ def upload_step2(request, pk):
 
             })
         else:
-            form = MetaFormStep2()
+            form = MetaFormStep3()
+    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip})
+
+
+def upload_step4(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+
+    if request.method == 'POST':
+
+        form = MetaFormStep4(request.POST)
+        data2 = request.POST
+        data3 = dict(data2.items())
+        data4 = {key: Literal(val[0]) if isinstance(val, list) else Literal(val) for key, val in data3.items()}
+        if form.is_valid():
+            request.session['step4'] = data4
+            url = "/earkweb/submission/upload_step5/%s/" % (str(pk))
+            return HttpResponseRedirect(url)
+        else:
+            errors = ['error1']
+            return render(request, 'submission/upload_mdform.html', {'form': form, 'errors': errors})
+    else:
+        if 'md_properties' in request.session:
+            md_properties = request.session['md_properties']
+            documentation_description = md_properties["documentation_description"] if "documentation_description" in md_properties else ""
+
+            form = MetaFormStep4(initial={
+                'documentation_description': documentation_description
+            })
+        else:
+            form = MetaFormStep4()
     return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip})
 
 
 @login_required
-def upload_step4(request, pk):
+def upload_step5(request, pk):
     ip = InformationPackage.objects.get(pk=pk)
 
     template = loader.get_template('submission/upload_distributions.html')
@@ -364,15 +421,15 @@ def upload_step4(request, pk):
         repr_dir_names = list(reprs_qs.values_list('identifier', flat=True))
         if repname in reprs:
             curr_repr = reprs[repname]
-            form = MetaFormStep4(initial={
+            form = MetaFormStep5(initial={
                     'distribution_description': curr_repr['description'],
                     'distribution_label': curr_repr['label'],
                     'access_rights': curr_repr['accessRights'],
                 })
         else:
-            form = MetaFormStep4(request.POST)
+            form = MetaFormStep5(request.POST)
     else:
-        form = MetaFormStep4(request.POST)
+        form = MetaFormStep5(request.POST)
 
     context = {
         'uid': ip.uid,
@@ -392,7 +449,7 @@ def upload_step4(request, pk):
 
 
 @login_required
-def upload_step4_rep(request, pk, rep):
+def upload_step5_rep(request, pk, rep):
     # create representation if it does not exist
     ip = InformationPackage.objects.get(pk=pk)
     exists = Representation.objects.filter(ip=ip, identifier=rep)
