@@ -143,18 +143,20 @@ Use the following command to install the default JRE on Ubuntu:
 6. Create directories and files making sure the user running earkweb has rights to read and write (you have to replace 
 `$USER` and `$GROUP` or set the variables  accordingly):
 
-        sudo mkdir -p /var/data/earkweb
-        sudo chown -R $USER:$GROUP /var/data/earkweb/
+        sudo mkdir -p /var/data/repo
+        sudo chown -R $USER:$GROUP /var/data/repo/
                
-        mkdir -p /var/data/earkweb/storage/pairtree_root
-        touch /var/data/earkweb/storage/pairtree_version0_1
+        mkdir -p /var/data/repo/storage/pairtree_root
+        touch /var/data/repo/storage/pairtree_version0_1
        
-        sudo mkdir -p /var/log/earkweb
-        sudo chown $USER:$GROUP /var/log/earkweb
+        sudo mkdir -p /var/log/repo
+        sudo chown $USER:$GROUP /var/log/repo
+   
         mkdir -p /var/log/celery
+        sudo chown $USER:$GROUP /var/log/repo
         
         
-7. Rename sample config file `settings/settings.cfg.default` to `settings/settings.cfg` and adapt settings according to your environment.
+8. Rename sample config file `settings/settings.cfg.default` to `settings/settings.cfg` and adapt settings according to your environment.
 
 ## Create and initialize database
 cd 
