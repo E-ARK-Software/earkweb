@@ -87,7 +87,7 @@ Use the following command to install the default JRE on Ubuntu:
         
 7. Run configuration script
 
-       python3 ./utils/scripts/init_solr.py
+       python3 ./scripts/init_solr.py
        
 ## earkweb 
 
