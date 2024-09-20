@@ -11,14 +11,167 @@
         h1.title { font-size: 2em; }
        h1.main { font-size: 1.3em; }
     </style>
+ <style>
+    /* Ensure the container takes up full width of the card body */
+    .container {
+        display: flex;
+        flex-wrap: nowrap; /* Prevent wrapping */
+        width: 100%; /* Full width of the parent (card-body) */
+        min-width: 1400px;
+        margin: 0;
+        padding: 0;
+    }
 
+    .column {
+        flex: 1; /* Each column takes equal space */
+        min-width: 700px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    /* Ensure columns do not exceed the container width */
+    .container {
+        overflow: hidden; /* Prevent overflow */
+    }
+
+    /* Optional: Styling for visibility */
+    .column {
+        border: 0px solid #ffffff;
+        background-color: #ffffff;
+    }
+
+    /* Remove padding from card-body for full width usage */
+    .card-body {
+        padding: 0; /* Remove default padding to use full width */
+    }
+    .image-container {
+            position: relative;
+            width: 100%; /* Full width of the parent */
+            padding-bottom: 50%; /* Aspect ratio of 2:1 (height = 50% of width) */
+            background-color: #ffffff; /* Placeholder color */
+        }
+
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensure the image fits within the container while maintaining aspect ratio */
+        }
+</style>
+     <script src="{% static 'js/Chart.min.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 
-<h1 class="title">{{repo_title}}</h1>
+<div class="container">
+    <div class="column">
+        <h2>Number of submissions and ingests</h2>
+        <canvas id="myChart" style="height: 400px; width: 100%;"></canvas>        
+        <script type="text/javascript">
+            $.get('{% url "line_chart_json" %}', function(data) {
+                var ctx = $("#myChart").get(0).getContext("2d");
+                new Chart(ctx, {
+                    type: 'line', data: data
+                });
+            });
+        </script>
+    </div>
+    <div class="column">
+        <h2>Number of files per mime-type</h2>
+        <canvas id="pie-chart"></canvas>
+    </div>
+</div>
 
-    <p>{% trans 'InitialWelcome' %}</p>
-    {% trans 'disclaimerText' %}
+<div class="container">
+    <div class="column">
+        <h2>Word Cloud</h2>
+        <div class="image-container">
+            <img src="{{ MEDIA_URL }}wordcloud/wordcloud.png" alt="Word Cloud" style="background-color: white;">
+        </div>
+        
+    </div>
+    <div class="column">
+        <h2>Size distribution by mime-type</h2>
+        <canvas id="pie-chart2"></canvas>
+    </div>
+</div>
+
+<script>
+    function convertBytesToHumanReadable(bytes) {
+    if (bytes === 0) return '0 B';
+
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = parseFloat((bytes / Math.pow(1024, i)).toFixed(2));
+    return size + ' ' + sizes[i];
+}
+    var config = {
+    type: 'pie',
+    data: {
+        datasets: [{
+        data: {{ data|safe }},
+        backgroundColor: [
+    '#8B4513', // Saddle Brown
+    '#CD5C5C', // Indian Red
+    '#A52A2A', // Brown
+    '#8B0000', // Dark Red
+    '#B22222'  // Fire Brick
+],
+        label: 'Mime-type distribution'
+        }],
+        labels: {{ labels|safe }}
+    },
+    options: {
+        responsive: true
+    }
+    };
+
+     // Configuration for the second pie chart
+     var config2 = {
+        type: 'pie',
+        data: {
+            datasets: [{
+                data: {{ file_size_data.data|safe }},
+                backgroundColor: [
+    '#964B00', // Brown
+    '#8B0000', // Dark Red
+    '#8B4513', // Saddle Brown
+    '#800000', // Maroon
+    '#A52A2A'  // Brown
+],
+                label: 'File Size Distribution per mime-type'
+            }],
+            labels: {{ file_size_data.labels|safe }}
+        },
+        options: {
+            responsive: true,
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        var dataset = data.datasets[tooltipItem.datasetIndex];
+                        var label = data.labels[tooltipItem.index];
+                        var value = dataset.data[tooltipItem.index];
+                        return label + ': ' + convertBytesToHumanReadable(value);
+                    }
+                }
+            }
+        }
+    };
+
+
+
+    window.onload = function() {
+    var ctx = document.getElementById('pie-chart').getContext('2d');
+    window.myPie = new Chart(ctx, config);
+
+    // Render the second pie chart
+    var ctx2 = document.getElementById('pie-chart2').getContext('2d');
+    window.myPie2 = new Chart(ctx2, config2);
+
+    };
+
+</script>
 
 {% endblock %}

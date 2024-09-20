@@ -8,6 +8,28 @@
 
 {% block extra_head %}
 <style>
+/* Basic styling for the button */
+#hoverButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Styling for the popup */
+.popup {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: styling for the popup when visible */
+.popup.visible {
+    display: block;
+}
+
 .help-block {
     font-size: 80%
 }
@@ -36,8 +58,6 @@ function generateId (len) {
 }
 
 function loadDataFiles(repr) {
-
-    console.log("Is it loaded?");
 
     console.log("Loading: "+repr);
 
@@ -108,7 +128,7 @@ function loadDataFiles(repr) {
                     maxFileCount: 50,
                     maxFileSize: 102400,
                     'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
-'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'gml', 'xsd'],
+'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'json', 'jsonl', 'gml', 'xsd', 'mp3', 'wav'],
                     'theme': 'explorer-fa',
                     'uploadUrl': '/earkweb/submission/upload',
                     overwriteInitial: false,
@@ -129,9 +149,11 @@ function loadDataFiles(repr) {
                     'txt': '<i class="fas fa-file-alt text-primary"></i>',
                     'mov': '<i class="fas fa-file-video text-primary"></i>',
                     'mp3': '<i class="fas fa-file-audio text-primary"></i>',
+                    'wav': '<i class="fas fa-file-audio text-primary"></i>',
                     'csv': '<i class="fas fa-file-csv text-primary"></i>',
                     'xml': '<i class="fas fa-file-code text-primary"></i>',
                     'json': '<i class="fas fa-file-code text-primary"></i>',
+                    'jsonl': '<i class="fas fa-file-code text-primary"></i>',
                     'gml': '<i class="fas fa-atlas text-primary"></i>',
                     'xsd': '<i class="fas fa-file-code text-primary"></i>',
                     'shp': '<i class="fas fa-atlas text-primary"></i>',
@@ -559,6 +581,7 @@ function delRep(rep, url) {
             <div class="file-loading">
                 <input id="kv-explorer" type="file" multiple data-min-file-count="1">
             </div>
+            <div id="popup" class="popup">Make sure to upload all data files before finalizing!</div>
         </form>
 
     </div>
@@ -600,6 +623,33 @@ function delRep(rep, url) {
 
 
 
+    });
+
+    $(document).ready(function() {
+        const $button = $('#finalizebtn');
+        const $popup = $('#popup');
+
+        $button.hover(
+            function() {
+                // Get button's position and dimensions
+                const rect = this.getBoundingClientRect();
+                const popupWidth = $popup.outerWidth();
+                const popupHeight = $popup.outerHeight();
+
+                // Position the popup above the button (or adjust as needed)
+                $popup.css({
+                    left: `${(rect.left/2) + (rect.width / 2) - (popupWidth / 2) - 38}px`,
+                    top: `${rect.top}px`
+                });
+
+                // Show the popup
+                $popup.addClass('visible');
+            },
+            function() {
+                // Hide the popup
+                $popup.removeClass('visible');
+            }
+        );
     });
 </script>
 {% endblock %}

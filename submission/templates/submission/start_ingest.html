@@ -67,60 +67,74 @@
     {% include "submission/iptable.html" %}
 
     <div class="row">
-    <div style="width: 100%; padding-left: 15px">
-        <h2 class="main">{% trans 'Ingest pipeline execution' %}</h2>
-        {% if 'ERROR' in celery_worker_status %}
+        <button id="starting" type="submit" class="btn btn-primary" style="margin-top: 15px;margin-left: 10px;margin-bottom: 0px;">
+            <i class="glyphicon glyphicon-save"></i> {% trans 'Archive information package' %}
+        </button>    
 
-        <div>
-        <p  style="color: red">{% trans 'The processing backend is not available' %}: {{ celery_worker_status.items.0.1 }}</p>
-        </div>
+        <div  class="container-fluid mt-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- First Column Content -->
+                    <div class="card">
+                        <div class="card-header"><h3>{% trans 'Ingest pipeline execution' %}</h3></div>
+                        <div class="card-body">
+                            {% if 'ERROR' in celery_worker_status %}
 
-        {% else %}
+                            <div>
+                            <p  style="color: red">{% trans 'The processing backend is not available' %}: {{ celery_worker_status.items.0.1 }}</p>
+                            </div>
 
-        <!--div>
-             <p>{% trans 'The processing backend is available' %}:</p>
-            <ul>
-                {% for key, value in celery_worker_status.items %}
-                <li style="color: #169816">Worker {{key}}</li>
-                {% endfor %}
-            </ul>
+                            {% else %}
 
-        </div-->
-        {% if not flower_status %}
-        <div>
-        <p style="color: #FF8000">{% trans 'Warning: no task monitoring available because the task monitoring service is not running at' %}: {{ flower_api_endpoint }}</p>
-        </div>
-        {% endif %}
+                            <!--div>
+                                <p>{% trans 'The processing backend is available' %}:</p>
+                                <ul>
+                                    {% for key, value in celery_worker_status.items %}
+                                    <li style="color: #169816">Worker {{key}}</li>
+                                    {% endfor %}
+                                </ul>
 
-        <button id="starting" type="submit" class="btn btn-primary">
-          <i class="glyphicon glyphicon-save"></i> {% trans 'Archive information package' %}
-        </button>
+                            </div-->
+                            {% if not flower_status %}
+                            <div>
+                            <p style="color: #FF8000">{% trans 'Warning: no task monitoring available because the task monitoring service is not running at' %}: {{ flower_api_endpoint }}</p>
+                            </div>
+                            {% endif %}                        
 
-        <div id="confirmation" style="padding-top: 20px;"></div>
+                            <div id="confirmation" style="padding-top: 20px;"></div>
 
-        <div id="ingestjobid" style="padding-top: 20px;"></div>
+                            <div id="ingestjobid" style="padding-top: 20px;"></div>
 
-        <div id="childjobs" style="width: 100%"></div>
+                            <div id="childjobs" style="width: 100%"></div>
 
-        <div><p style="padding-top: 20px;" id="errordiv"></p>
-        <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
-        </div>
+                            <div><p style="padding-top: 20px;" id="errordiv"></p>
+                            <p style="visibility:hidden; border: 1px solid red" id="error"><span id="errmsg"></span>: <span id="errdetail"></span></p>
+                            </div>
 
-        {% endif %}
-    </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <!-- Second Column Content -->
+                    <div class="card">
+                        <div class="card-header"><h3>{% trans 'Processing log' %}</h3></div>
+                        <div class="card-body">
+                            <div id="termynal" data-termynal style="overflow:scroll; height:300px; width: 100%">
 
-    <div class="span6 w-60" style="padding-left: 30px">
-        <h2 class="main">{% trans 'Processing log' %}</h2>
-        <div id="termynal" data-termynal style="overflow:scroll; height:300px; width: 1000px">
+                            </div>
 
-        </div>
-
-        <script type="text/javascript" src="{% static 'earkweb/termynal/termynal.js' %}" data-termynal-container="#termynal"></script>
-         <div class="form-check" style="left: -30px">
-          <label for="follow-log-entries">
-            Follow log entries
-          </label>
-          <input type="checkbox" id="follow-log-entries"  style="margin-top: 8px" checked>
+                            <script type="text/javascript" src="{% static 'earkweb/termynal/termynal.js' %}" data-termynal-container="#termynal"></script>
+                            <div class="form-check" style="left: -30px">
+                            <label for="follow-log-entries">
+                                Follow log entries
+                            </label>
+                            <input type="checkbox" id="follow-log-entries"  style="margin-top: 8px" checked>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -71,3 +71,4 @@ venv
 eatb
 fido
 python-magic
+celerybeat-schedule

@@ -1,21 +1,25 @@
 #!/usr/bin/env python
 # coding=UTF-8
-import requests
-import json
-
 import datetime
+import json
+import requests
+from config.configuration import flower_path
+from config.configuration import flower_port
+from config.configuration import flower_host
+from config.configuration import flower_user
+from config.configuration import flower_password
+from config.configuration import verify_certificate
 
-from config.configuration import flower_path, flower_port, flower_host, verify_certificate, \
-    flower_host
-
-
+ 
 def get_task_info(task_id):
+    """Get task information from flower"""
     flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
-    print(flower_request_url)
     response = requests.get(flower_request_url,
-                            verify=verify_certificate, headers={'Connection': 'close'})
+                            verify=verify_certificate, 
+                            headers={'Connection': 'close'}, 
+                            timeout=10,
+                            auth=(flower_user, flower_password))
     tasks_json = json.loads(response.text)
-    print(tasks_json)
     task_json = tasks_json[task_id]
     task_name = task_json['name']
     task_runtime = None
@@ -23,7 +27,6 @@ def get_task_info(task_id):
         task_runtime = round(task_json['runtime'], 2)
     uid = None
     if 'args' in task_json:
-
         from ast import literal_eval
         tpl = literal_eval(task_json["args"])
         if isinstance(tpl[0], dict):
@@ -46,7 +49,11 @@ def get_task_info(task_id):
 
 def get_task_list(task_id, exclude_tasks:list=None):
     flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
-    response = requests.get(flower_request_url, verify=verify_certificate, headers={'Connection': 'close'})
+    response = requests.get(flower_request_url, 
+                            verify=verify_certificate, 
+                            headers={'Connection': 'close'}, 
+                            timeout=10,
+                            auth=(flower_user, flower_password))
     tasks_json = json.loads(response.text)
     task_ids = []
     if task_id in tasks_json:

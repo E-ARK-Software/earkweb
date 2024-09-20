@@ -1,6 +1,8 @@
+"""backend tasks"""
 import datetime
 import fnmatch
 import gettext
+import io
 import json
 import os
 import shutil
@@ -13,18 +15,26 @@ from os import walk
 
 import redis
 import requests
-from celery import chain, group
+from celery import chain, group, shared_task
+
 # from celery.task import Task
 
 from lxml import etree, objectify
 
-import eatb.pairtree_storage
+from django.conf import settings
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import pysolr
+
+from config.configuration import solr_core_url
+
 from access.search.solrclient import SolrClient, default_reporter
 from access.search.solrquery import SolrQuery
 from access.search.solrserver import SolrServer
-from config.configuration import config_path_storage, config_path_work, solr_protocol, solr_host, solr_port, \
-    solr_core, representations_directory, verify_certificate, redis_host, redis_port, redis_password, commands, \
-    root_dir, metadata_file_pattern_ead, django_service_protocol, django_service_host, django_service_port, \
+from config.configuration import config_path_storage, config_path_work, solr_protocol, \
+    solr_host, solr_port, solr_core, representations_directory, verify_certificate, \
+    redis_host, redis_port, redis_password, commands, root_dir, metadata_file_pattern_ead, \
+    django_service_protocol, django_service_host, django_service_port, \
     backend_api_key
 from earkweb.celery import app
 from earkweb.decorators import requires_parameters, task_logger
@@ -43,7 +53,7 @@ from eatb.metadata.mets_validation import MetsValidation
 from eatb.metadata.parsed_mets import ParsedMets
 from eatb.metadata.premis_creator import PremisCreator
 from eatb.metadata.premis_generator import PremisGenerator
-from eatb.oais_ip import DeliveryValidation, SIPGenerator, create_sip, create_aip
+from eatb.oais_ip import DeliveryValidation, SIPGenerator, create_sip
 from eatb.packaging import ManifestCreation
 from eatb.pairtree_storage import PairtreeStorage, make_storage_data_directory_path
 from eatb.utils.XmlHelper import q
@@ -51,9 +61,10 @@ from eatb.utils.datetime import date_format, current_timestamp
 from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files, \
     strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks
 from eatb.utils.randomutils import get_unique_id, randomword
+from earkweb.views import clean_metadata
 from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
     get_children_from_storage, get_package_from_storage, get_aip_parent, \
-    create_or_update_state_info_file, store_bag, persist_state, write_inventory, update_status, \
+    create_or_update_state_info_file, persist_state, write_inventory, update_status, \
     update_inventory
 from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
@@ -73,6 +84,34 @@ cli_commands = CliCommands(os.path.join(root_dir, "settings/commands.cfg"))
 @requires_parameters("package_name", "uid", "org_nsid")
 @task_logger
 def sip_package(self, context, task_log):
+    """
+    This task creates a Submission Information Package (SIP) from the provided context.
+
+    Parameters:
+    self (Task): The task instance (passed automatically by the Celery framework).
+    context (str): A JSON string containing task parameters such as 'package_name' and 'uid'.
+    task_log (Logger): A logger instance for logging task-related messages.
+
+    Task Parameters in Context:
+    - package_name (str): The name of the package to be created.
+    - uid (str): The unique identifier for the package.
+    - org_nsid (str): The organizational namespace identifier (required by decorator).
+
+    The task performs the following steps:
+    1. Parses the context JSON string to extract task parameters.
+    2. Creates a working directory for the package if it doesn't already exist.
+    3. Calls the `create_sip` function to create the SIP.
+    4. Packages the working directory into a tar file, ensuring files are not duplicated.
+    5. Generates a delivery METS file for the SIP.
+    6. Sends a PATCH request to update the status information on a remote server.
+    7. Updates the task state to 'PROGRESS' and reports the packaging progress.
+
+    The final state of the task is updated, and the function returns the context as a 
+    JSON string.
+
+    Returns:
+    str: The context JSON string.
+    """
     task_context = json.loads(context)
     package_name = task_context["package_name"]
     uid = task_context["uid"]
@@ -117,10 +156,15 @@ def sip_package(self, context, task_log):
     patch_data = {
         "last_change": date_format(datetime.datetime.utcnow())
     }
-    url = "%s://%s:%s/earkweb/api/ips/%s/" % (
-        django_service_protocol, django_service_host, django_service_port, task_context["uid"])
-    response = requests.patch(url, data=patch_data, headers={'Authorization': 'Api-Key %s' % backend_api_key},
-                              verify=verify_certificate)
+    rp = (django_service_protocol, django_service_host, django_service_port, task_context["uid"])
+    url = f"{rp[0]}://{rp[1]}:{rp[2]}/earkweb/api/ips/{rp[3]}/"
+    response = requests.patch(
+        url, 
+        data=patch_data, 
+        headers={'Authorization': 'Api-Key %s' % backend_api_key},
+        verify=verify_certificate, 
+        timeout=10
+    )
     print("Status information updated: %s (%d)" % (response.text, response.status_code))
 
     self.update_state(state='PROGRESS', meta={'process_percent': 100})
@@ -131,6 +175,25 @@ def sip_package(self, context, task_log):
 @app.task(bind=True, name="ingest_pipeline")
 @requires_parameters("uid")
 def ingest_pipeline(_, context):
+    """
+    Ingests a pipeline by performing a series of chained tasks on the provided context.
+
+    This function executes the following tasks sequentially:
+    1. Validate the working directory.
+    2. Perform descriptive metadata validation.
+    3. Store the original SIP.
+    4. Record AIP events.
+    5. Record AIP structure.
+    6. Package the AIP.
+    7. Store the AIP.
+    8. Index the AIP.
+
+    Parameters:
+    context (str): A JSON string containing the task context, which must include a "uid".
+
+    Returns:
+    result: The result of the chained tasks executed asynchronously.
+    """
     task_context = json.loads(context)
     check_required_params(task_context, ["uid"])
     result = chain(
@@ -150,6 +213,24 @@ def ingest_pipeline(_, context):
 @app.task(bind=True, name="update_pipeline")
 @requires_parameters("uid")
 def update_pipeline(_, context):
+    """
+    Task to update the pipeline with the provided context.
+
+    This task performs the following steps in a chain:
+    1. Validate the working directory.
+    2. Validate descriptive metadata.
+    3. Record AIP events.
+    4. Record AIP structure.
+    5. Package the AIP.
+    6. Store the AIP.
+    7. Index the AIP.
+
+    Parameters:
+    context (str): JSON-encoded string containing the task context. Must include 'uid'.
+
+    Returns:
+    AsyncResult: The result of the chained tasks.
+    """
     task_context = json.loads(context)
     check_required_params(task_context, ["uid"])
     result = chain(
@@ -168,6 +249,24 @@ def update_pipeline(_, context):
 @requires_parameters("uid", "package_name")
 @task_logger
 def validate_working_directory(_, context, task_log):
+    """
+    Validates the working directory for the specified information package.
+
+    This function performs several validation steps:
+    1. Checks for the existence of the delivery XML file and the corresponding package file.
+    2. Verifies the checksum of the SIP tar file against the expected checksum in the delivery XML file.
+    3. Ensures the working directory contains an information package or the package is within a subfolder.
+    4. Validates the METS file of the information package using the specified schema files.
+    5. Ensures the presence of the representations folder.
+    6. Validates the METS files within each representation folder.
+    7. Performs CSIP validation on the information package.
+
+    Raises:
+        ValueError: If any validation step fails.
+
+    Returns:
+        str: The JSON-encoded task context.
+    """
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     package_name = task_context["package_name"]
@@ -244,7 +343,9 @@ def validate_working_directory(_, context, task_log):
                 mets_validator = MetsValidation(rep_path)
                 v = mets_validator.validate_mets(os.path.join(rep_path, 'METS.xml'))
                 # if not v:
-                #    raise ValueError("Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml'))
+                #    raise ValueError(
+                #       "Representation METS file is not valid: %s" % os.path.join(rep_path, 'METS.xml')
+                #    )
 
     csip_validation = CSIPValidation()
     csip_validation.validate(ip_path)
@@ -268,6 +369,23 @@ def validate_working_directory(_, context, task_log):
 @requires_parameters("uid")
 @task_logger
 def descriptive_metadata_validation(_, context, task_log):
+    """
+    Validate descriptive metadata files in the specified working directory.
+
+    This task looks for EAD metadata files in the 'metadata' directory of the
+    working directory associated with the given UID. It logs the discovery of
+    each EAD file and validates each file using the `validate_ead_metadata`
+    function. If no EAD metadata files are found, it logs an informational
+    message. If all files are valid, it logs a success message. If any file
+    is invalid, it logs a warning message.
+
+    Parameters:
+    - context (str): JSON string containing the task context, including the UID.
+    - task_log (TaskLogger): Logger object for logging task progress and results.
+
+    Returns:
+    - str: JSON string of the updated task context.
+    """
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     metadata_dir = os.path.join(working_dir, 'metadata/')
@@ -294,6 +412,29 @@ def descriptive_metadata_validation(_, context, task_log):
 @requires_parameters("uid")
 @task_logger
 def aip_migrations(self, context, task_log):
+    """
+    This Celery task handles the migration of Archival Information Packages (AIPs) to new formats
+    as defined by migration policies. The task performs the following steps:
+
+    1. Parses the input context to extract the UID and sets up working directories.
+    2. Creates necessary directories for storing metadata and migration logs.
+    3. Defines migration policies for specific file formats (e.g., PDF, GIF).
+    4. Identifies the representations in the submission folder.
+    5. For each representation, identifies the files, checks their formats, and
+    queues migration tasks according to the policies.
+    6. Waits for all queued migration tasks to complete.
+    7. Generates an XML log of the migration processes.
+    8. Copies XML schema files to the working directory.
+    9. Generates PREMIS metadata and METS files for each migrated representation.
+
+    Args:
+        self: The task instance (injected by Celery).
+        context (str): A JSON string containing the task context, including the UID.
+        task_log (logging.Logger): Logger for recording task progress and issues.
+
+    Returns:
+        str: JSON string of the task context, updated as needed.
+    """
     software = "earkweb"
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
@@ -482,6 +623,21 @@ def aip_migrations(self, context, task_log):
 
 @app.task(bind=True, name="file_migration")
 def file_migration(self, details):
+    """
+    Executes a file migration task using the provided details.
+
+    Args:
+        self: Reference to the current task instance.
+        details (dict): A dictionary containing the following keys:
+            - 'targetrep': The target repository for the migration.
+            - 'commandline': The command line arguments to execute.
+
+    Raises:
+        ValueError: If the 'commandline' parameter is empty.
+
+    Returns:
+        bool: True if the command line execution is successful.
+    """
     # filename = details['filename']
     # taskid = details['taskid']
     self.targetrep = details['targetrep']
@@ -518,6 +674,28 @@ def aip_record_events(_, context, task_log):
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def aip_record_structure(_, context, task_log):
+    """
+    Task to record AIP (Archival Information Package) events using the given context.
+
+    This task parses the context to retrieve the 'identifier' and 'uid', constructs the
+    working directory path, and creates a Premis event. The event includes adding an agent
+    and an event record for the ingest process, and then creates the necessary metadata.
+
+    If an exception occurs during the process, it logs the error and the traceback for debugging.
+
+    Parameters:
+    - _: Unused positional argument required by the task binding.
+    - context (str): JSON string containing the task context with necessary parameters.
+    - task_log (logging.Logger): Logger for logging task-related information.
+
+    Returns:
+    - str: JSON string containing the task context.
+
+    Expected context keys:
+    - "uid": Unique identifier for the task.
+    - "package_name": Name of the package being processed.
+    - "identifier": Identifier for the event being recorded.
+    """
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     try:
@@ -618,6 +796,41 @@ def aip_record_structure(_, context, task_log):
 @requires_parameters("package_name", "uid", "identifier", "org_nsid")
 @task_logger
 def aip_packaging(self, context, task_log):
+    """
+    Packages the contents of a working directory into a tar archive for AIP (Archival Information Package).
+
+    This task reads the necessary parameters from the context, prepares the working directory, and packages
+    its contents into a tar file, excluding specific files. It logs progress and updates the task state.
+
+    Parameters:
+        self (Task): The bound task instance.
+        context (str): A JSON string containing the context with required parameters.
+        task_log (Logger): The task-specific logger instance for logging progress and information.
+
+    Context Parameters:
+        package_name (str): The name of the package.
+        uid (str): The unique identifier for the package.
+        identifier (str): A specific identifier for the package.
+        org_nsid (str): The organization namespace ID.
+
+    Workflow:
+        1. Load and parse the context.
+        2. Prepare the working directory and pair tree storage.
+        3. Create a safe filename for the archive.
+        4. Create a tar archive and add files from the working directory.
+        5. Exclude specified files from the archive.
+        6. Log the packaging progress.
+        7. Update the task state to 'PROGRESS' and include the progress percentage.
+        8. Return the task context as a JSON string.
+
+    Returns:
+        str: The JSON-encoded task context.
+
+    Logs:
+        - Info level logs for packaging start and total files in the directory.
+        - Debug level logs for packaging progress every 10 files.
+        - Warning level logs if status information is not updated.
+    """
     task_context = json.loads(context)
     package_name = task_context["package_name"]
     identifier = task_context["identifier"].strip()
@@ -633,9 +846,9 @@ def aip_packaging(self, context, task_log):
     aip_package_path = os.path.join(working_dir, archive_file)
 
     tar = tarfile.open(aip_package_path, "w:")
-    task_log.info("Packaging working directory: %s" % working_dir)
+    task_log.info("Packaging working directory: %s", working_dir)
     total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
-    task_log.info("Total number of files in working directory %d" % total)
+    task_log.info("Total number of files in working directory %d", total)
     i = 0
     excludes = ["%s.tar" % package_name, "%s.xml" % package_name, archive_file]
     for subdir, dirs, files in os.walk(working_dir):
@@ -652,7 +865,7 @@ def aip_packaging(self, context, task_log):
                 tar.add(entry, arcname=os.path.join(safe_identifier_name, os.path.relpath(entry, working_dir)))
                 if i % 10 == 0:
                     perc = (i * 100) / total
-                    logger.debug("Packaging progress: %d" % perc)
+                    logger.debug("Packaging progress: %d", perc)
                     # todo: activate
                     # self.update_state(state='PROGRESS', meta={'process_percent': perc})
             i += 1
@@ -707,7 +920,7 @@ def store_original_sip(_, context, task_log):
     os.makedirs(storage_dir, exist_ok=True)
     shutil.copy2(sip_path, aip_path)
 
-    write_inventory(identifier, version_0, data_dir, aip_path, archive_file)
+    write_inventory(identifier, version_0, aip_path, archive_file)
 
     # check successful creation of original sip
     if not os.path.exists(aip_path):
@@ -753,12 +966,12 @@ def store_aip(_, context, task_log):
         if response.status_code == 200:
             task_log.info("Status information updated")
         else:
-            task_log.warning("Status information not updated: %s (%d)" % (response.text, response.status_code))
+            task_log.warning(f"Status information not updated: {response.text} ({response.status_code})")
     except requests.exceptions.ConnectionError as err:
-        task_log.warning("Connection to API failed. Status was not updated.")
+        task_log.warning("Connection to API failed. Status was not updated.", err)
 
     # update ocfl inventory
-    if action == "update":
+    if action == "update" and os.path.exists(os.path.join(data_dir, "inventory.json")):
         update_inventory(identifier, version, aip_path, aip_file_name, action)
     else:
         write_inventory(identifier, version, aip_path, aip_file_name)
@@ -1261,8 +1474,10 @@ def initialize_working_directory(context):
     working_dir = os.path.join(config_path_work, uid)
     os.makedirs(os.path.join(working_dir, 'distributions'), exist_ok=True)
     os.makedirs(os.path.join(working_dir, 'metadata'), exist_ok=True)
+    # pylint: disable-next=no-member
     InformationPackage.objects.create(work_dir=os.path.join(config_path_work, uid), uid=uid,
                                       package_name=package_name, user=username, version=0)
+    # pylint: disable-next=no-member
     InformationPackage.objects.get(uid=uid)
     task_context["uid"] = uid
     create_or_update_state_info_file(working_dir, task_context)
@@ -1370,6 +1585,55 @@ def rename_representation_directory(context):
         raise ValueError("Process id: %s, renaming directory failed. The new directory does not exist: %s"
                          % (uid, new_representation_directory))
     return json.dumps(task_context)
+
+
+@app.task(name='generate_wordcloud_task')
+def generate_wordcloud_task():
+    """Generate word cloud"""
+    solr = pysolr.Solr(solr_core_url, timeout=10)
+    filter_query = 'path:*/representations/*/data/*'
+    
+    results = solr.search('*:*', **{
+        'fq': filter_query,
+        'fl': 'content,path',
+        'rows': 1000
+    })
+    
+    try:
+        all_content = ' '.join(
+            [clean_metadata(' '.join(doc['content'])) if isinstance(doc.get('content', ''), list)
+             else clean_metadata(doc.get('content', '')) for doc in results]
+        )
+    except KeyError as e:
+        logger.error(f"KeyError: {e}")
+        all_content = ''
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        all_content = ''
+    
+    if not all_content.strip():
+        logger.info("No content found for word cloud generation")
+        return
+    
+    # Generate word cloud
+    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_content)
+
+    # Save the word cloud image to a static/media directory
+    image_path = os.path.join(settings.MEDIA_ROOT, 'wordcloud', 'wordcloud.png')
+    os.makedirs(os.path.dirname(image_path), exist_ok=True)
+    
+    buffer = io.BytesIO()
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    
+    with open(image_path, 'wb') as f:
+        f.write(buffer.getvalue())
+    
+    logger.info(f"Word cloud image saved at {image_path}")
+
 
 
 @app.task(name="backend_available")

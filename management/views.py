@@ -28,7 +28,7 @@ from util.djangoutils import get_user_api_token
 
 logger = logging.getLogger(__name__)
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 
 @login_required

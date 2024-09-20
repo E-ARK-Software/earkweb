@@ -88,7 +88,9 @@
 var dirasjson=`{{ dirasjson | safe }}`;
 var django_backend_service_api_url = "{{ django_backend_service_api_url }}";
 var uid='{{ uid }}';
-var identifier='{{ identifier }}';</script>
+var identifier='{{ identifier }}';
+var encoded_identifier = '{{ identifier | encode_id }}';
+</script>
 <script src="{% static 'earkweb/js/workingarea2.js' %}"></script>
 
 <p id="event_result"></p>

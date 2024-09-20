@@ -45,6 +45,8 @@ repo_catalogue_modified = config.get('repo', 'repo_catalogue_modified')
 
 _conf_repr_dir = config.get('repo', 'representations_directory')
 representations_directory = _conf_repr_dir if _conf_repr_dir else "representations"
+_conf_documentation_dir = config.get('repo', 'documentation_directory')
+documentation_directory = _conf_documentation_dir if _conf_documentation_dir else "documentation"
 metadata_directory = _conf_repr_dir if _conf_repr_dir else "metadata"
 node_namespace_id = config.get('repo', 'node_namespace_id')
 
@@ -107,6 +109,8 @@ flower_protocol = config.get('server', 'flower_protocol')
 flower_host = config.get('server', 'flower_host')
 flower_port = int(config.get('server', 'flower_port'))
 flower_path = config.get('server', 'flower_path')
+flower_user = config.get('server', 'flower_user')
+flower_password = config.get('server', 'flower_password')
 flower_service_url = '%s://%s:%s%s' % (flower_protocol, flower_host, flower_port, flower_path)
 
 # repo data directories
@@ -127,6 +131,9 @@ config_max_http_download = config.getint('limits', 'config_max_http_download')
 
 dip_download_base_url = config.get('access', 'dip_download_base_url')
 dip_download_path = config.get('access', 'dip_download_path')
+
+media_root = config.get('media', 'media_root')
+media_url = config.get('media', 'media_url')
 
 commands = {
     'gpg_passphrase_encrypt_file':

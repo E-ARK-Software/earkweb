@@ -4,11 +4,12 @@
 function previewfile(node) {
     if(node.data) {
         var ip_work_dir_sub_path = node.data.path;
-        if(typeof identifier !== 'undefined' && identifier != '') {
+        if(typeof encoded_identifier !== 'undefined' && encoded_identifier != '') {
             ip_work_dir_sub_path = ip_work_dir_sub_path.replace("../", "");
-            ip_work_dir_sub_path = identifier + "/" + ip_work_dir_sub_path;
+            ip_work_dir_sub_path = encoded_identifier + "/" + ip_work_dir_sub_path;
         }
         var mimetype = node.data.mimetype;
+    
         var url = "/earkweb/read-file/" + ip_work_dir_sub_path + "/";
         window.open(url,'file view','directories=no,titlebar=no,toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=1000,height=800');
     }
@@ -63,7 +64,7 @@ function customMenu(node) {
         deleteItem: {
             label: "Delete",
             action: function () {
-                console.log(node.data.path);
+                // console.log("node.data.path: "+node.data.path);
                 //$('#directorytree').delete_node(node);
                 $.ajax({
                     url: '/earkweb/api/ips/'+uid+'/file-resource/'+node.data.path.replace(uid+'/','')+'/',
@@ -93,14 +94,15 @@ var loadThis = $.parseJSON(dirasjson);
         .on('open_node.jstree', function (e, data) {
 
             $('#directorytree').jstree(true).set_icon(data.node.id, 'fas fa-folder-open');
-            console.log(data.node.id)
+            // console.log("data.node.id: "+data.node.id)
+            // console.log(data.node);
          }).on('close_node.jstree', function (e, data) {
             $('#directorytree').jstree(true).set_icon(data.node.id, 'fas fa-folder');
          }).on('move_node.jstree', function (e, data) {
             origin_path = data.node.data.path;
             target_path = $('#directorytree').jstree().get_node(data.parent).data.path;
-            console.log("Original path: "+origin_path);
-            console.log("Target path: "+target_path);
+            // console.log("Original path: "+origin_path);
+            // console.log("Target path: "+target_path);
          }).on('dblclick.jstree', function (e) {
             var node = $('#directorytree').jstree(true).get_node(e.target);
             // preview/download enabled for all types
@@ -128,7 +130,7 @@ var loadThis = $.parseJSON(dirasjson);
             $('.jstree-leaf').each(function(){
                 var id   = ($(this).attr('id').split("_"))[0];
                 var text = $(this).children('a').text();
-                console.log(id + " - " + text + "\n");
+                // console.log("id + text: "+ id + " - " + text + "\n");
                 var icon = "fas fa-file";
                 if(text.endsWith("json"))
                     icon = "fas fa-file-code"
@@ -151,7 +153,7 @@ var loadThis = $.parseJSON(dirasjson);
             });
         });
         $(document).on('dnd_start.vakata', function (e, data) {
-            console.log(data);
+            // console.log("data: "+data);
         });
         //$("#directorytree").jstree(true).get_node("j1_2").set_icon(, "/earkwebstatic/earkweb/fontawesome-5.12.1/svgs/regular/angry.svg");
         //console.log($("#directorytree").jstree(true))

@@ -71,6 +71,7 @@ def create_package(request, uid):
     """
     if request.method == "POST":
         try:
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
             logger.info("Package creation task for process id: %s started by user %s" % (ip.uid, user.username))
@@ -84,6 +85,7 @@ def create_package(request, uid):
             except AttributeError:
                 errdetail = """An error occurred, the task was not initiated."""
                 data = {"success": False, "errmsg": "Error ", "errdetail": errdetail}
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
@@ -116,6 +118,7 @@ def start_ingest(request, uid):
     if request.method == "POST":
         try:
             # selected_ip = request.POST['selected_ip']
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
             user = User.objects.get(pk=request.user.pk)
             logger.info("Task processing for process id: %s started by user %s" % (ip.uid, user.username))
@@ -128,6 +131,7 @@ def start_ingest(request, uid):
                 "identifier": identifier, "md_format": "METS"
             }
             data = execute_task(task_input)
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             return JsonResponse({
                 "success": False, "errmsg": "Information package record not found",
@@ -169,6 +173,7 @@ def checkout_working_copy(request, identifier):
     metadata_only = True if data and 'metadataonly' in data and data['metadataonly'] == "true" else False
     reset_aip = request.query_params and 'reset' in request.query_params and request.query_params['reset'] == "true"
     try:
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(identifier=identifier)
         try:
             u = User.objects.get(username=request.user)
@@ -192,8 +197,10 @@ def checkout_working_copy(request, identifier):
                 {"message": "Checkout request submitted successfully.", "job_id": job.id, "uid": uid},
                 status=201
             )
+        # pylint: disable-next=no-member
         except User.DoesNotExist:
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+    # pylint: disable-next=no-member
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "Object does not exist"}, status=404)
 
@@ -209,6 +216,7 @@ def do_informationpackage_representation(request, uid, representation_id):
     delete a representation
     """
     try:
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(uid=uid)
         try:
             u = User.objects.get(username=request.user)
@@ -221,8 +229,10 @@ def do_informationpackage_representation(request, uid, representation_id):
                 {"message": "Representation deletion request submitted successfully.", "job_id": job.id},
                 status=200
             )
+        # pylint: disable-next=no-member
         except User.DoesNotExist:
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+    # pylint: disable-next=no-member
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "object does not exist"}, status=404)
 
@@ -238,6 +248,7 @@ def rename_representation(request, uid, representation):
     rename representation
     """
     try:
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(uid=uid)
 
         new_representation_dir = request.GET.get('new_representation_dir', None)
@@ -256,8 +267,10 @@ def rename_representation(request, uid, representation):
                 {"message": "Rename representation request submitted successfully.", "job_id": job.id},
                 status=200
             )
+        # pylint: disable-next=no-member
         except User.DoesNotExist:
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+    # pylint: disable-next=no-member
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "object does not exist"}, status=404)
 
@@ -317,6 +330,7 @@ def identifiers_by_extuid(request):
                 return JsonResponse("No input provided", status=400)
             extuidcsl = request.body.decode('utf-8')
             extuids = extuidcsl.split(",")
+            # pylint: disable-next=no-member
             ips = list(InformationPackage.objects.filter(extuid__in=extuids).values_list(
                 "external_id", "uid", "identifier", "deleted")
             )
@@ -347,6 +361,7 @@ def index_informationpackage(request, identifier):
         http://127.0.0.1:8000/earkweb/api/index/ait:3a274aaf091368aea1df4fb2f03b13bf69c78e93
     """
     try:
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(identifier=identifier)
         try:
             u = User.objects.get(username=request.user)
@@ -357,8 +372,10 @@ def index_informationpackage(request, identifier):
                 return JsonResponse({"message": "Data asset does not exist in storage."}, status=404)
             job = aip_indexing.delay(('{"identifier": "%s"}' % identifier))
             return JsonResponse({"message": "Indexing request submitted successfully.", "job_id": job.id}, status=201)
+        # pylint: disable-next=no-member
         except User.DoesNotExist:
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+    # pylint: disable-next=no-member
     except InformationPackage.DoesNotExist:
         return JsonResponse({"message": "object does not exist"}, status=404)
 
@@ -434,11 +451,13 @@ def do_working_dir_file_resource(request, uid, ip_sub_file_path):
         return read_file(file_path)
     elif request.method == 'DELETE':
         try:
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
             try:
                 u = User.objects.get(username=request.user)
                 #if u != ip.user:
                 #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
+            # pylint: disable-next=no-member
             except User.DoesNotExist:
                 return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
             try:
@@ -458,6 +477,7 @@ def do_working_dir_file_resource(request, uid, ip_sub_file_path):
                     return HttpResponseForbidden({"message": "Unable to remove file"})
             except OSError:
                 return HttpResponseForbidden()
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             return HttpResponseNotFound("Information package object not found in database")
     else:
@@ -500,6 +520,24 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
 
 
 def read_file(file_path):
+    """
+    Reads a file from the given file path and returns an HTTP response with its content.
+
+    Args:
+        file_path (str): The path to the file to be read.
+
+    Returns:
+        HttpResponse: An HTTP response containing the file content.
+        
+        - HttpResponseNotFound: If the file does not exist.
+        - HttpResponseBadRequest: If the file path does not point to a regular file.
+        - HttpResponseForbidden: If the file size exceeds the configured maximum download limit.
+        - FileResponse: If the file is one of the supported archive types (.tar, .tar.gz, .zip).
+        - HttpResponse: If the file size is within the limit and its content is text-based or matches specific patterns.
+        
+    Raises:
+        OSError: If an I/O operation fails while reading the file.
+    """
     if not os.path.exists(file_path):
         return HttpResponseNotFound("File not found %s" % file_path)
     elif not os.path.isfile(file_path):
@@ -512,21 +550,22 @@ def read_file(file_path):
                 "Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_http_download))
         if file_path.lower().endswith(('.tar', '.tar.gz', 'zip')):
             stream = open(file_path, 'rb')
-            response = FileResponse(stream, content_type=mime)
+            response = FileResponse(stream, content_type=mime, as_attachment=True)
             response['Content-Disposition'] = "attachment; filename=%s" % os.path.basename(file_path)
             return response
         if file_size <= file_size_limit:
-            if mime.startswith("text/"):
+            if mime.startswith("text/") or "0=ocfl_object_1.0" in file_path or "inventory.json.sha512" in file_path:
                 mime = "text/plain;charset=utf-8"
-
                 stream = open(file_path, 'rb')
                 bytes = stream.read()
                 #encoding = CharsetDetector(bytes).detect().getName()
                 encoding = cchardet.detect(bytes)['encoding']
                 file_content = bytes.decode(encoding).encode('utf-8')
+                response = HttpResponse(file_content, content_type=mime)
             else:
                 file_content = read_file_content(file_path)
-            return HttpResponse(file_content, content_type=mime)
+                response = HttpResponse(file_content, content_type=mime)
+            return response
         else:
             return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" %
                                          (file_size, file_size_limit))
@@ -652,14 +691,16 @@ def directory_json(request, area, item):
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
     if area in ["work", "storage"]:
         try:
-            ip = InformationPackage.objects.get(uid=item) if area == "work" else \
-                InformationPackage.objects.get(identifier=item, version=re.sub("\D", "", version))
+            # pylint: disable-next=no-member
+            ip = InformationPackage.objects.get(uid=item) if area == "work" else InformationPackage.objects.get(identifier=item, version=re.sub("\D", "", version))
             try:
                 u = User.objects.get(username=request.user)
                 if u != ip.user:
                     return JsonResponse({"message": "Unauthorized. Access to this directory is not permitted."}, status=403)
+            # pylint: disable-next=no-member
             except User.DoesNotExist:
                 return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             return JsonResponse({"message": "process does not exist"}, status=404)
         item_path = to_safe_filename(item)
@@ -696,6 +737,7 @@ def submissions_list(request):
     """
 
     if request.method == 'GET':
+        # pylint: disable-next=no-member
         snippets = InformationPackage.objects.all()
         serializer = InformationPackageSerializer(snippets, many=True)
         return JsonResponse(serializer.data, safe=False)
@@ -712,10 +754,12 @@ def submissions_list(request):
             return JsonResponse(error, status=400)
         uid = str(uuid4())
         path = os.path.join(config_path_work, uid)
+        # pylint: disable-next=no-member
         ips = InformationPackage.objects.filter(package_name=uid)
         if ips.count() > 0:
             error = {"message": "Duplicate entry. A submission process with the given UUID already exists "}
             return JsonResponse(error, status=400)
+        # pylint: disable-next=no-member
         ips = InformationPackage.objects.filter(package_name=data['package_name'])
         if ips.count() > 0:
             error = {"message": "Duplicate entry. A submission process with the given name already exists"}
@@ -740,6 +784,7 @@ def submissions_list(request):
 
         serializer = InformationPackageSerializer(data=data)
         if serializer.is_valid():
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.create(uid=uid, identifier='',
                                                    package_name=data['package_name'],
                                                    work_dir=path, user=request.user, version=0, external_id=extuid)
@@ -776,7 +821,9 @@ def submission_detail(request, uid):
     Delete submission details
     """
     try:
+        # pylint: disable-next=no-member
         info_obj = InformationPackage.objects.get(uid=uid)
+    # pylint: disable-next=no-member
     except InformationPackage.DoesNotExist:
         return HttpResponse(status=404)
     if request.method == 'GET':
@@ -787,6 +834,7 @@ def submission_detail(request, uid):
         serializer = InformationPackageSerializer(info_obj, data=data)
         if serializer.is_valid():
             serializer.save()
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=info_obj.uid)
             if "last_change" in data:
                 ip.created = parser.parse(data["last_change"])
@@ -843,6 +891,7 @@ def int_id_list(request):
 
     """
     if request.method == 'GET':
+        # pylint: disable-next=no-member
         snippet = InternalIdentifier.objects.filter(used=False)[:1]
         if len(snippet) == 0:
             return JsonResponse({"error": "No unused identifier available"}, status=404)
@@ -868,8 +917,10 @@ def int_id_list(request):
                 return JsonResponse(error, status=400)
             data['org_nsid'] = None
             try:
+                # pylint: disable-next=no-member
                 user = RepoUser.objects.get(pk=request.user.pk)
                 data['org_nsid'] = user.org_nsid
+            # pylint: disable-next=no-member
             except RepoUser.DoesNotExist:
                 pass
             if not data['org_nsid']:
@@ -883,6 +934,7 @@ def int_id_list(request):
                                     "alphanumeric characters. "
                                     "It must start with a character and can have a maximum length of 20 characters)"}
                 return JsonResponse(error, status=500)
+            # pylint: disable-next=no-member
             ids = InternalIdentifier.objects.filter(org_nsid=data['org_nsid'], identifier=data['identifier'])
             if ids.count() > 0:
                 error = {"message": "Duplicate entry. The identifier already exists for the organization's namespace. "}
@@ -912,6 +964,7 @@ def get_ip_states(request):
         try:
             enddate = date.today()
             startdate = enddate - timedelta(days=7)
+            # pylint: disable-next=no-member
             ips = InformationPackage.objects.filter(created__range=[startdate, enddate])
             logger.debug(ips.query)
             for ip in ips:
@@ -936,7 +989,7 @@ def get_ip_states(request):
                 results[ip.uid] = result
             return JsonResponse(results, status=200)
         except Exception as err:
-            logger.debug("Error", err)
+            logger.debug("Error: %s", err)
             error = {"message": "An error occurred"}
             return JsonResponse(error, status=500)
 
@@ -956,6 +1009,7 @@ def get_ip_state(request, uid):
     """
     if request.method == 'GET':
         try:
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
             result = {}
             working_dir = os.path.join(config_path_work, ip.uid)
@@ -976,6 +1030,7 @@ def get_ip_state(request, uid):
                         "detail": "State file not found at: %s" % ip_state_file_path}
                     }
             return JsonResponse(result, status=200)
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             error = {"message": "An error occurred"}
             return JsonResponse(error, status=500)
@@ -991,6 +1046,7 @@ def representations_list(request):
 
     List representations of authenticated user
     """
+    # pylint: disable-next=no-member
     reps_qs = Representation.objects.select_related('ip').filter(ip__user=request.user.pk).order_by('-created')
     representations = {
         representations_directory: [
@@ -1053,7 +1109,9 @@ class UploadFile(APIView):
 
         # get information package object
         try:
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
+        # pylint: disable-next=no-member
         except InformationPackage.DoesNotExist:
             return JsonResponse({"message": "The information package does not exist: %s" % uid}, status=400)
 
@@ -1061,6 +1119,7 @@ class UploadFile(APIView):
 
         if datatype == "data" and not representation:
             representation = str(uuid4())
+            # pylint: disable-next=no-member
             reprec = Representation.objects.create(ip=ip, identifier=representation)
             reprec.save()
 
@@ -1106,8 +1165,11 @@ class UploadFile(APIView):
                     if "representations" in parsed_md:
                         for r, v in parsed_md["representations"].items():
                             try:
+                                # pylint: disable-next=no-member
                                 reprec = Representation.objects.get(ip=ip, identifier=r)
+                            # pylint: disable-next=no-member
                             except Representation.DoesNotExist:
+                                # pylint: disable-next=no-member
                                 reprec = Representation.objects.create(ip=ip, identifier=r)
                             if "distribution_label" in v:
                                 reprec.label = v["distribution_label"]
@@ -1122,6 +1184,7 @@ class UploadFile(APIView):
                                         status=status.HTTP_400_BAD_REQUEST)
 
         # updating last change date
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(uid=uid)
 
         # using local time (converted to UTC in DB)
@@ -1165,8 +1228,10 @@ class InformationPackages(generics.ListCreateAPIView):
         """
         if self.request.user.id:
             #return InformationPackage.objects.filter(user=self.request.user.id)
+            # pylint: disable-next=no-member
             return InformationPackage.objects.filter()
         else:
+            # pylint: disable-next=no-member
             return InformationPackage.objects.all()
 
 
@@ -1189,6 +1254,7 @@ class InfPackDetail(generics.RetrieveUpdateDestroyAPIView):
     Delete registered information package
     """
     lookup_field = 'uid'
+    # pylint: disable-next=no-member
     queryset = InformationPackage.objects.all()
     serializer_class = InformationPackageSerializer
     authentication_classes = (TokenAuthentication, SessionAuthentication,)

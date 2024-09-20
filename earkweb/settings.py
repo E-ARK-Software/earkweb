@@ -7,6 +7,8 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))  # noqa: E402
 from socket import gethostname, gethostbyname
 
+CELERY_IMPORTS = ('taskbackend.tasks',)
+
 LOGLEVEL = os.environ.get('LOGLEVEL', 'ERROR')
 
 
@@ -63,7 +65,9 @@ LOGGING = {
 import logging.config
 logging.config.dictConfig(LOGGING)
 
-from config.configuration import django_secret_key, logfile_celery_proc
+from config.configuration import django_secret_key
+from config.configuration import logfile_celery_proc
+from config.configuration import django_service_url
 from config.configuration import rabbitmq_host
 from config.configuration import rabbitmq_port
 from config.configuration import rabbitmq_user
@@ -76,6 +80,8 @@ from config.configuration import mysql_password
 from config.configuration import mysql_db
 from config.configuration import redis_host
 from config.configuration import redis_port
+from config.configuration import media_url
+from config.configuration import media_root
 
 LANGUAGE_CODE = 'en'
 
@@ -142,12 +148,13 @@ CELERY_RESULT_BACKEND = "redis://:%s@%s:%d/0" % (redis_password, redis_host, red
 BROKER_CONNECTION_TIMEOUT = 10
 BROKER_POOL_LIMIT = 100
 CELERY_REDIS_MAX_CONNECTIONS = 20
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 CELERY_DEFAULT_QUEUE = 'ingestqueue'
 CELERY_TASK_DEFAULT_QUEUE = 'ingestqueue'
 CELERY_IGNORE_RESULT = False
-TEST_RUNNER = 'djcelery.contrib.test_runner.CeleryTestSuiteRunner'
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 CELERYD_POOL_RESTARTS = True
 
 
@@ -155,22 +162,11 @@ CELERYD_POOL_RESTARTS = True
 #CELERY_ALWAYS_EAGER = True
 
 from celery.schedules import crontab
-from datetime import timedelta
 
 CELERYBEAT_SCHEDULE = {
-    "CheckProcFiles-every-60-seconds": {
-        "task": "monitoring.tasks.CheckProcFilesTask",
-        "schedule": timedelta(seconds=60),
-        "kwargs": {
-                'proc_log_path': logfile_celery_proc,
-        }
-    },
-    "CheckStorageMediums-everyday-07:00": {
-        "task": "monitoring.tasks.CheckStorageMediumsTask",
-        "schedule": crontab(hour=7, minute=0),
-        "kwargs": {
-                'email': "admin",
-        }
+    "generate_wordcloud_every_two_minutes": {
+        'task': 'generate_wordcloud_task',
+        'schedule': crontab(minute='*/1'),
     },
 }
 
@@ -192,6 +188,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_oai_pmh',
+    'django_celery_beat',
+    'django_celery_results',
     'bootstrapform',
     'earkweb',
     'administration',
@@ -201,6 +200,7 @@ INSTALLED_APPS = (
     'management',
     'health',
     'resourcesync',
+    'oai_pmh',
     'api',
     'django_tables2',
     'taggit',
@@ -211,8 +211,16 @@ INSTALLED_APPS = (
     'widget_tweaks',
     'requests',
     'drf_yasg',
+    'chartjs',
 )
 
+
+# OAI
+OAI_PMH = {
+    'REPOSITORY_NAME': 'earkweb',
+    'BASE_URL': django_service_url
+    # Add other settings as required by the app
+}
 
 TEMPLATES[0]['OPTIONS']['context_processors'].append("earkweb.context_processors.environment_variables")
 TEMPLATES[0]['OPTIONS']['context_processors'].append('django.template.context_processors.i18n')
@@ -315,3 +323,7 @@ LANGUAGES = [
 
 STATIC_URL = '/earkwebstatic/'
 STATIC_ROOT = '/var/www/data/earkwebstatic/'
+
+
+MEDIA_URL = media_url
+MEDIA_ROOT = media_root

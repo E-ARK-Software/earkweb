@@ -5,11 +5,12 @@
 *earkweb* is a repository for archiving digital objects. It offers basic functions for ingest, management and 
 dissemination of information packages. 
 
+![earkweb start page](./docs/img/earkweb_screenshot.png)
+
 ## Software architecture
 
-*earkweb* consists of a frontend web application together with a task execution system based on 
-[Celery](http://www.celeryproject.org) which allows synchronous and asynchronous processing of information packages by 
-means of processing units which are called “tasks”. 
+*earkweb* is a web application with a  task execution backend based on 
+[Celery](http://www.celeryproject.org) which supports the parallel processing of information. 
 
 The following diagram illustrates the component architecture.
 

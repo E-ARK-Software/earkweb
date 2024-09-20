@@ -26,7 +26,9 @@ from config.configuration import solr_port
 from config.configuration import config_path_storage
 from earkweb.models import InformationPackage, Representation
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
+
+
 
 from util.djangoutils import error_resp, get_user_api_token
 from util import service_available
@@ -48,6 +50,7 @@ def indexingstatus(request):
     """
     if not service_available(solr_core_ping_url):
         return render(request, 'earkweb/error.html', {'header': 'SolR server unavailable', 'message': "Required service is not available at: %s" % solr_core_ping_url})
+    # pylint: disable-next=no-member
     queryset=InformationPackage.objects.extra(where=["storage_dir != ''"]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
@@ -91,7 +94,7 @@ class InformationPackageDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['config_path_work'] = config_path_work
-
+        # pylint: disable-next=no-member
         distributions = Representation.objects.filter(ip_id=self.object.pk).values()
         context['distributions'] = distributions
         return context
@@ -157,12 +160,12 @@ def reindex_storage(request):
     """
     data = {"success": False, "errmsg": "undefined"}
     try:
-        if request.is_ajax():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             #job = index_aip_storage.delay(dir)
             #data = {"success": True, "id": job.id}
             return {}
     except Exception as err:
-        data = {"success": False, "errmsg": err.message}
+        data = {"success": False, "errmsg": str(err)}
         tb = traceback.format_exc()
         logging.error(str(tb))
     return JsonResponse(data)

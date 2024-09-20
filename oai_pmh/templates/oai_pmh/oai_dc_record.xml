@@ -1,0 +1,19 @@
+{% autoescape off %}
+<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
+    <dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">{{ title }}</dc:title>
+    <dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">{{ creator }}</dc:creator>
+    <dc:subject xmlns:dc="http://purl.org/dc/elements/1.1/">{{ subject }}</dc:subject>
+    <dc:description xmlns:dc="http://purl.org/dc/elements/1.1/">{{ description }}</dc:description>
+    <dc:publisher xmlns:dc="http://purl.org/dc/elements/1.1/">{{ publisher }}</dc:publisher>
+    <dc:contributor xmlns:dc="http://purl.org/dc/elements/1.1/">{{ contributor }}</dc:contributor>
+    <dc:date xmlns:dc="http://purl.org/dc/elements/1.1/">{{ date }}</dc:date>
+    <dc:type xmlns:dc="http://purl.org/dc/elements/1.1/">{{ type }}</dc:type>
+    <dc:format xmlns:dc="http://purl.org/dc/elements/1.1/">{{ format }}</dc:format>
+    <dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/">{{ identifier }}</dc:identifier>
+    <dc:source xmlns:dc="http://purl.org/dc/elements/1.1/">{{ source }}</dc:source>
+    <dc:language xmlns:dc="http://purl.org/dc/elements/1.1/">{{ language }}</dc:language>
+    <dc:relation xmlns:dc="http://purl.org/dc/elements/1.1/">{{ relation }}</dc:relation>
+    <dc:coverage xmlns:dc="http://purl.org/dc/elements/1.1/">{{ coverage }}</dc:coverage>
+    <dc:rights xmlns:dc="http://purl.org/dc/elements/1.1/">{{ rights }}</dc:rights>
+</oai_dc:dc>
+{% endautoescape %}

@@ -9,6 +9,7 @@ repo_description = Repository
 repo_catalogue_issued = 2020-01-01T12:00:00Z
 repo_catalogue_modified = 2020-02-01T12:00:00Z
 representations_directory = representations
+documentation_directory = documentation
 metadata_directory = metadata
 sw_version = 1.3
 sw_version_date = 08.01.2024
@@ -54,6 +55,8 @@ flower_host = localhost
 flower_host = flower
 flower_port = 5555
 flower_path = /flower/
+flower_user = repo
+flower_password = repo
 
 [limits]
 config_max_filesize_viewer = 4194304
@@ -71,6 +74,11 @@ metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
 [access]
 dip_download_base_url = http://localhost/repo/download
 dip_download_path = /www/repo/download
+
+[media]
+media_root = /var/www/repo/media/
+media_url = /media/
+
 
 [system]
 backend_api_key = sBafmMkE.6Mwuj6q8eRfpN9LHBd5NU7vNcIJjVikQ

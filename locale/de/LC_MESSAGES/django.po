@@ -3,12 +3,13 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#: templates/earkweb/howto/use_the_api.html:76
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-14 17:07+0100\n"
+"POT-Creation-Date: 2024-06-04 09:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,12 +19,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: access/templates/access/about_module.html:2 templates/earkweb/navbar.html:52
+#: access/templates/access/about_module.html:2 templates/earkweb/base.html:267
+#: templates/earkweb/navbar.html:52
 msgid "Search & Access"
 msgstr "Suche & Zugriff"
 
 #: access/templates/access/detail.html:40
-#: access/templates/access/search.html:52
+#: access/templates/access/search.html:56
 #: management/templates/management/detail.html:40
 #: management/templates/management/iptable.html:23
 #: management/templates/management/render_network.html:51
@@ -47,7 +49,7 @@ msgstr "Bezeichner"
 #: management/templates/management/iptable.html:7
 #: submission/templates/submission/detail.html:97
 #: submission/templates/submission/iptable.html:7
-#: submission/templates/submission/start.html:32
+#: submission/templates/submission/start.html:30
 msgid "Label"
 msgstr "Bezeichner"
 
@@ -69,14 +71,15 @@ msgstr "Zugriffsrechte"
 msgid "Save changes"
 msgstr "Änderungen speichern"
 
-#: access/templates/access/index.html:16 access/templates/access/search.html:96
-#: templates/earkweb/navbar.html:55
+#: access/templates/access/index.html:16
+#: access/templates/access/search.html:104 templates/admin/search_form.html:7
+#: templates/earkweb/base.html:269 templates/earkweb/navbar.html:55
 msgid "Search"
 msgstr "Suche"
 
 #: access/templates/access/index.html:18
 #: access/templates/access/indexing_status.html:22
-#: templates/earkweb/navbar.html:56
+#: templates/earkweb/base.html:270 templates/earkweb/navbar.html:56
 msgid "Indexing status"
 msgstr "Indexierungsstatus"
 
@@ -84,41 +87,55 @@ msgstr "Indexierungsstatus"
 msgid "Indexing status of archived information packages."
 msgstr "Indizierungsstatus archivierter Informationspakete"
 
-#: access/templates/access/search.html:39
+#: access/templates/access/search.html:43
 msgid "Full-text search"
 msgstr "Volltext-Suche"
 
-#: access/templates/access/search.html:46
+#: access/templates/access/search.html:50
 msgid "Search term"
 msgstr "Suchbegriff"
 
-#: access/templates/access/search.html:54
+#: access/templates/access/search.html:58
 msgid "Identifier of the information package"
 msgstr "Bezeichner des Informationspakets"
 
-#: access/templates/access/search.html:59
+#: access/templates/access/search.html:63
 msgid "Content type"
 msgstr "Inhaltstyp"
 
-#: access/templates/access/search.html:79
+#: access/templates/access/search.html:84
 msgid "Sort"
 msgstr "Sortieren"
 
-#: access/templates/access/search.html:82
+#: access/templates/access/search.html:87
 msgid "Relevance"
 msgstr "Relevanz"
 
-#: access/templates/access/search.html:83
+#: access/templates/access/search.html:88
+#, fuzzy
+#| msgid "size (ascending)"
+msgid "date (ascending)"
+msgstr "Größe (aufsteigend)"
+
+#: access/templates/access/search.html:89
+#, fuzzy
+#| msgid "size (descending)"
+msgid "date (descending)"
+msgstr "Größe (absteigend)"
+
+#: access/templates/access/search.html:90
 msgid "size (ascending)"
 msgstr "Größe (aufsteigend)"
 
-#: access/templates/access/search.html:84
+#: access/templates/access/search.html:91
 msgid "size (descending)"
 msgstr "Größe (absteigend)"
 
-#: access/templates/access/search.html:89
-msgid "Only information packages"
-msgstr "Nur Informationspakete"
+#: access/templates/access/search.html:97
+#, fuzzy
+#| msgid "Content type"
+msgid "Content files only"
+msgstr "Inhaltstyp"
 
 #: access/views.py:63 submission/templates/submission/iptable.html:37
 msgid "Last change"
@@ -133,7 +150,7 @@ msgid "BackendAdministration"
 msgstr "Backend-Administration"
 
 #: administration/templates/administration/backendadmin.html:22
-#: templates/earkweb/navbar.html:13
+#: templates/earkweb/base.html:243 templates/earkweb/navbar.html:13
 msgid "Dashboard"
 msgstr ""
 
@@ -160,21 +177,29 @@ msgstr "Der Prozess wurde erfolgreich im Hintergrund ausgeführt"
 msgid "The backend task execution did not deliver the expected result"
 msgstr "Der Prozess hat nicht das erwartete Ergebnis geliefert"
 
-#: earkweb/settings.py:308
+#: earkweb/settings.py:321
 msgid "English"
 msgstr "Englisch"
 
-#: earkweb/settings.py:309
+#: earkweb/settings.py:322
 msgid "Spanish"
 msgstr ""
 
-#: earkweb/settings.py:310
+#: earkweb/settings.py:323
 msgid "German"
 msgstr "Deutsch"
 
 #: earkweb/templates/earkweb/workingarea2.html:55
 msgid "WorkingDirectory"
 msgstr "Arbeitsverzeichnis"
+
+#: earkweb/templates/earkweb/workingarea2.html:101
+#: management/templates/management/deleted.html:28
+#: management/templates/management/detail.html:104
+#: submission/templates/submission/deleted.html:26
+#: submission/templates/submission/detail.html:111
+msgid "Back"
+msgstr "Zurück"
 
 #: management/templates/management/about_module.html:2
 msgid "DataManagementTitle"
@@ -216,7 +241,7 @@ msgstr "Der Prozess der Informationspaket-Erstellung wurde gestartet"
 
 #: management/templates/management/checkout_confirm.html:39
 #: submission/templates/submission/ip_creation_process.html:66
-#: submission/templates/submission/start_ingest.html:91
+#: submission/templates/submission/start_ingest.html:100
 msgid ""
 "Warning: no task monitoring available because the task monitoring service is "
 "not running at"
@@ -241,11 +266,6 @@ msgstr "Bestätigung der Löschung"
 msgid "Working copy deleted: "
 msgstr "Arbeitskopie gelöscht"
 
-#: management/templates/management/deleted.html:26
-#: submission/templates/submission/deleted.html:25
-msgid "Back to overview"
-msgstr "Zur&uuml;ck zur Übersicht"
-
 #: management/templates/management/detail.html:46
 #: submission/templates/submission/detail.html:53
 msgid "Descriptive metadata"
@@ -266,8 +286,8 @@ msgstr "Tags"
 msgid "Contact point"
 msgstr "Kontakt"
 
-#: management/templates/management/detail.html:75 submission/forms.py:104
-#: submission/forms.py:105 submission/templates/submission/detail.html:82
+#: management/templates/management/detail.html:75 submission/forms.py:113
+#: submission/forms.py:114 submission/templates/submission/detail.html:82
 msgid "Maintainer"
 msgstr "BetreuerIn"
 
@@ -277,11 +297,6 @@ msgstr "BetreuerIn"
 #| msgid "MainInitialLanguage"
 msgid "Main language"
 msgstr "Hauptsprache"
-
-#: management/templates/management/detail.html:104
-#: submission/templates/submission/detail.html:111
-msgid "Back"
-msgstr "Zurück"
 
 #: management/templates/management/iptable.html:11 management/views.py:155
 msgid "WorkingCopy"
@@ -340,7 +355,17 @@ msgstr "Beschreibung des Informationspakets"
 msgid "Data set description"
 msgstr "Beschreibung"
 
+#: submission/forms.py:61
+#, fuzzy
+#| msgid "CreationDateTime"
+msgid "Original creation date"
+msgstr "Erstellungszeitpunkt"
+
 #: submission/forms.py:62
+msgid "dd.mm.yyyy"
+msgstr ""
+
+#: submission/forms.py:66
 msgid ""
 "Please enter 2 characters to get tag suggestions or write a custom tag and "
 "press enter to add it"
@@ -349,15 +374,15 @@ msgstr ""
 "Sie ein benutzerdefiniertes Tag und drücken Sie die Eingabetaste, um es "
 "hinzuzufügen"
 
-#: submission/forms.py:72
+#: submission/forms.py:76
 msgid "PleaseAddNameOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:73 submission/forms.py:89 submission/forms.py:94
+#: submission/forms.py:77 submission/forms.py:93 submission/forms.py:98
 msgid "ModifyInitialValue"
 msgstr "Ändern"
 
-#: submission/forms.py:75
+#: submission/forms.py:79
 msgid ""
 "Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
 "('.') are allowed."
@@ -365,53 +390,96 @@ msgstr ""
 "Es sind nur alphanumerische Zeichen plus Bindestrich ('-'), Unterstrich "
 "('_') und Punkt ('.') Erlaubt."
 
-#: submission/forms.py:88
+#: submission/forms.py:92
 #, fuzzy
 #| msgid "PleaseAddNameOfPackage"
 msgid "PleaseAddTitleOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:100 submission/forms.py:101
+#: submission/forms.py:109 submission/forms.py:110
 #, fuzzy
 #| msgid "ContactOfPackage"
 msgid "Contact"
 msgstr "Kontaktstelle"
 
-#: submission/forms.py:102
+#: submission/forms.py:111
 #, fuzzy
 #| msgid "ContactEmailOfPackage"
 msgid "Contact email"
 msgstr "Email der Kontaktstelle"
 
-#: submission/forms.py:106
+#: submission/forms.py:115
 msgid "MaintainerEmail"
 msgstr "Email BetreuerIn"
 
-#: submission/forms.py:108
+#: submission/forms.py:117
 msgid "MainLanguageOfPackage"
 msgstr "Hauptsprache"
 
-#: submission/forms.py:109
+#: submission/forms.py:118
 msgid "MainInitialLanguage"
 msgstr "Deutsch"
 
-#: submission/forms.py:114 submission/forms.py:115
+#: submission/forms.py:127 submission/forms.py:128
 msgid "Representation label"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/forms.py:117
+#: submission/forms.py:130
 msgid "AccessRightsField"
 msgstr "Zugriffsrecht"
 
-#: submission/forms.py:118
-msgid "DistributionAccessRightsValueFree"
-msgstr "Frei (Kein Vertrag erforderlich)"
+#: submission/forms.py:132
+msgid "RestrictedAccess"
+msgstr "Eingeschränkter Zugriff"
 
-#: submission/forms.py:118
-msgid "DistributionAccessRightsValueLimited"
-msgstr "Zugriffsbeschränkt (Vertrag erforderlich)"
+#: submission/forms.py:133
+msgid "CreativeCommonsAttribution"
+msgstr "Creative Commons Namensnennung"
 
-#: submission/forms.py:121
+#: submission/forms.py:134
+msgid "CreativeCommonsAttributionShareAlike"
+msgstr "Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen"
+
+#: submission/forms.py:135
+msgid "CreativeCommonsAttributionNoDerivatives"
+msgstr "Creative Commons Namensnennung - Keine Bearbeitungen"
+
+#: submission/forms.py:136
+msgid "CreativeCommonsAttributionNonCommercial"
+msgstr "Creative Commons Namensnennung - Nicht kommerziell"
+
+#: submission/forms.py:137
+msgid "CreativeCommonsAttributionNonCommercialShareAlike"
+msgstr ""
+"Creative Commons Namensnennung - Nicht kommerziell - Weitergabe unter "
+"gleichen Bedingungen"
+
+#: submission/forms.py:138
+msgid "CreativeCommonsAttributionNonCommercialNoDerivatives"
+msgstr ""
+"Creative Commons Namensnennung - Nicht kommerziell - Keine Bearbeitungen"
+
+#: submission/forms.py:139
+msgid "CreativeCommonsZero"
+msgstr "Creative Commons Zero (Gemeinfreiheitserklärung)"
+
+#: submission/forms.py:140
+msgid "GNUGeneralPublicLicensev3.0"
+msgstr "GNU General Public License v3.0"
+
+#: submission/forms.py:141
+msgid "MITLicense"
+msgstr "MIT-Lizenz"
+
+#: submission/forms.py:142
+msgid "ApacheLicense2.0"
+msgstr "Apache-Lizenz 2.0"
+
+#: submission/forms.py:143
+msgid "BSD3ClauseLicense"
+msgstr "BSD-3-Klausel-Lizenz"
+
+#: submission/forms.py:147
 msgid "Representation description"
 msgstr "Beschreibung der Repräsentation"
 
@@ -426,6 +494,10 @@ msgstr "Bestätigung der Löschung"
 #: submission/templates/submission/deleted.html:23
 msgid "Information package working directory deleted"
 msgstr "Arbeitsverzeichnis des Informationspakets gelöscht"
+
+#: submission/templates/submission/deleted.html:25
+msgid "Back to overview"
+msgstr "Zur&uuml;ck zur Übersicht"
 
 #: submission/templates/submission/detail.html:47
 msgid "Data Set"
@@ -469,7 +541,8 @@ msgstr "Externer identifier"
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:21 submission/views.py:592
+#: submission/templates/submission/iptable.html:21 submission/views.py:745
+#: templates/earkweb/howto/ingest_dataset.html:59
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
 
@@ -489,23 +562,23 @@ msgstr "Informationspakete in Bearbeitung"
 msgid "SearchInternalLabelOrIdentifier"
 msgstr "Nach internem Bezeichner oder Prozess-Kennung filtern"
 
-#: submission/templates/submission/start.html:21
-#: templates/earkweb/navbar.html:32
+#: submission/templates/submission/start.html:19
+#: templates/earkweb/base.html:254 templates/earkweb/navbar.html:32
 msgid "NavNewSubmission"
 msgstr "Neues Informationspaket erstellen"
 
-#: submission/templates/submission/start.html:23
+#: submission/templates/submission/start.html:21
 msgid "EnterInternalLabelAndOptionalExternalId"
 msgstr ""
 "Bitte einen Bezeichner für das Informationspaket angeben. Optional kann eine "
 "externe ID hinzugefügt werden."
 
-#: submission/templates/submission/start.html:41
+#: submission/templates/submission/start.html:39
 msgid "External identifier (optional)"
 msgstr "Externer identifier"
 
-#: submission/templates/submission/start.html:56
-#: submission/templates/submission/upload_mdform.html:182
+#: submission/templates/submission/start.html:54
+#: submission/templates/submission/upload_mdform.html:663
 msgid "Continue"
 msgstr "Weiter"
 
@@ -518,27 +591,27 @@ msgid "Ingest pipeline terminated!"
 msgstr "Der Ingest-Workflow ist abgeschlossen!"
 
 #: submission/templates/submission/start_ingest.html:65
-#: submission/templates/submission/start_ingest.html:96
+#: submission/templates/submission/start_ingest.html:71
 #: submission/templates/submission/upload_finalize.html:65
 msgid "Archive information package"
 msgstr "Informationspaket archivieren"
 
-#: submission/templates/submission/start_ingest.html:71
+#: submission/templates/submission/start_ingest.html:79
 #, fuzzy
 #| msgid "Ingest pipeline terminated!"
 msgid "Ingest pipeline execution"
 msgstr "Der Ingest-Workflow ist abgeschlossen!"
 
-#: submission/templates/submission/start_ingest.html:75
+#: submission/templates/submission/start_ingest.html:84
 msgid "The processing backend is not available"
 msgstr ""
 "Der Service für die Vearbeitung der Informationspakete ist nicht verfügbar"
 
-#: submission/templates/submission/start_ingest.html:81
+#: submission/templates/submission/start_ingest.html:90
 msgid "The processing backend is available"
 msgstr "Der Service für die Vearbeitung der Informationspakete ist verfügbar"
 
-#: submission/templates/submission/start_ingest.html:113
+#: submission/templates/submission/start_ingest.html:121
 #, fuzzy
 #| msgid "Process ID"
 msgid "Processing log"
@@ -548,27 +621,27 @@ msgstr "Prozess-ID"
 msgid "Upload data"
 msgstr "Daten hochladen"
 
-#: submission/templates/submission/upload_distributions.html:506
+#: submission/templates/submission/upload_distributions.html:505
 msgid "Create representations and upload data"
 msgstr "Repräsentationen anlegen und Daten-Dateien hochladen"
 
-#: submission/templates/submission/upload_distributions.html:522
+#: submission/templates/submission/upload_distributions.html:521
 msgid "Representation ID"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/templates/submission/upload_distributions.html:528
+#: submission/templates/submission/upload_distributions.html:526
 msgid "Create another representation"
 msgstr "Weitere Repräsentation anlegen"
 
-#: submission/templates/submission/upload_distributions.html:534
+#: submission/templates/submission/upload_distributions.html:532
 msgid "Switch to other representation"
 msgstr "Zu Repräsentation wechseln"
 
-#: submission/templates/submission/upload_distributions.html:544
+#: submission/templates/submission/upload_distributions.html:542
 msgid "Delete distribution"
 msgstr "Repräsentation l&ouml;schen"
 
-#: submission/templates/submission/upload_distributions.html:594
+#: submission/templates/submission/upload_distributions.html:593
 msgid "Create information package"
 msgstr "Neues Informationspaket erstellen"
 
@@ -580,49 +653,524 @@ msgstr "Informationspaket erstellt"
 msgid "The information package was created successfully"
 msgstr "Das Informationspaket wurde erfolgreich erstellt"
 
-#: submission/templates/submission/upload_mdform.html:122
+#: submission/templates/submission/upload_mdform.html:485
+msgid "Add location"
+msgstr ""
+
+#: submission/templates/submission/upload_mdform.html:576
 msgid "Information package metadata"
 msgstr "Informationspaket-Metadaten"
 
-#: submission/templates/submission/upload_mdform.html:184
+#: submission/templates/submission/upload_mdform.html:579
+msgid ""
+"Upload supplementary documentation necessary to understand, manage, and "
+"preserve the digital information contained within the package. The files "
+"will be stored in the \"documentation\" folder in the root of the "
+"information package."
+msgstr ""
+
+#: submission/templates/submission/upload_mdform.html:665
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: submission/views.py:589
+#: submission/views.py:742
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:593
+#: submission/views.py:746
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:594
+#: submission/views.py:747
 msgid "Data Set Label"
 msgstr "Bezeichner des Informationspakets"
 
-#: submission/views.py:596
+#: submission/views.py:749 templates/admin/app_list.html:28
+#: templates/admin/edit_inline/stacked.html:16
+#: templates/admin/edit_inline/tabular.html:38
+#: templates/admin/widgets/related_widget_wrapper.html:11
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:597
+#: submission/views.py:750
+msgid "Ingest"
+msgstr ""
+
+#: submission/views.py:751 templates/admin/delete_confirmation.html:18
+#: templates/admin/submit_line.html:7
+#: templates/admin/widgets/related_widget_wrapper.html:25
 msgid "Delete"
 msgstr "Löschen"
 
-#: templates/earkweb/base.html:88 templates/earkweb/base_fileupload.html:79
-msgid "Language"
-msgstr "Sprache"
+#: templates/admin/404.html:4 templates/admin/404.html:8
+msgid "Page not found"
+msgstr ""
 
-#: templates/earkweb/base.html:118 templates/earkweb/base_fileupload.html:109
+#: templates/admin/404.html:10
+msgid "We’re sorry, but the requested page could not be found."
+msgstr ""
+
+#: templates/admin/500.html:6 templates/admin/app_index.html:9
+#: templates/admin/auth/user/change_password.html:10
+#: templates/admin/base.html:66 templates/admin/change_form.html:18
+#: templates/admin/change_list.html:31
+#: templates/admin/delete_confirmation.html:14
+#: templates/admin/delete_selected_confirmation.html:14
+#: templates/admin/invalid_setup.html:6 templates/admin/object_history.html:6
+msgid "Home"
+msgstr ""
+
+#: templates/admin/500.html:7
+msgid "Server error"
+msgstr ""
+
+#: templates/admin/500.html:11
+msgid "Server error (500)"
+msgstr ""
+
+#: templates/admin/500.html:14
+msgid "Server Error <em>(500)</em>"
+msgstr ""
+
+#: templates/admin/500.html:15
+msgid ""
+"There’s been an error. It’s been reported to the site administrators via "
+"email and should be fixed shortly. Thanks for your patience."
+msgstr ""
+
+#: templates/admin/actions.html:8
+msgid "Run the selected action"
+msgstr ""
+
+#: templates/admin/actions.html:8
+msgid "Go"
+msgstr ""
+
+#: templates/admin/actions.html:16
+msgid "Click here to select the objects across all pages"
+msgstr ""
+
+#: templates/admin/actions.html:16
+#, python-format
+msgid "Select all %(total_count)s %(module_name)s"
+msgstr ""
+
+#: templates/admin/actions.html:18
+msgid "Clear selection"
+msgstr ""
+
+#: templates/admin/app_list.html:8
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr ""
+
+#: templates/admin/app_list.html:19
+#: templates/admin/widgets/related_widget_wrapper.html:18
+msgid "Add"
+msgstr ""
+
+#: templates/admin/app_list.html:26 templates/admin/edit_inline/stacked.html:16
+#: templates/admin/edit_inline/tabular.html:38
+msgid "View"
+msgstr ""
+
+#: templates/admin/app_list.html:39
+msgid "You don’t have permission to view or edit anything."
+msgstr ""
+
+#: templates/admin/auth/user/add_form.html:6
+msgid ""
+"First, enter a username and password. Then, you’ll be able to edit more user "
+"options."
+msgstr ""
+
+#: templates/admin/auth/user/add_form.html:8
+msgid "Enter a username and password."
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:14
+#: templates/admin/auth/user/change_password.html:52
+#: templates/admin/base.html:54
+msgid "Change password"
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:25
+#: templates/admin/change_form.html:43 templates/admin/change_list.html:51
+#: templates/admin/login.html:23
+msgid "Please correct the error below."
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:25
+#: templates/admin/change_form.html:43 templates/admin/change_list.html:51
+#: templates/admin/login.html:23
+msgid "Please correct the errors below."
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:29
+#, python-format
+msgid "Enter a new password for the user <strong>%(username)s</strong>."
+msgstr ""
+
+#: templates/admin/base.html:40
+#, fuzzy
+#| msgid "InitialWelcome"
+msgid "Welcome,"
+msgstr ""
+"Die <span class = emph>eArchiving-Referenzimplementierung</span> ist die "
+"aktuelle Implementierung der E-ARK-Spezifikationen zu Demonstrationszwecken. "
+"In dieser Umgebung können Sie die Erstellung von Informationspaketen testen "
+"und dabei Ihre eigenen Daten und Metadaten verwenden. Anschließend können "
+"sie die erstellten Informationspakete zur genaueren Begutachtung "
+"herunterladen."
+
+#: templates/admin/base.html:45
+msgid "View site"
+msgstr ""
+
+#: templates/admin/base.html:50
+#, fuzzy
+#| msgid "Django Documentation"
+msgid "Documentation"
+msgstr "Django Dokumentation"
+
+#: templates/admin/base.html:56
+#, fuzzy
+#| msgid "log out"
+msgid "Log out"
+msgstr "ausloggen"
+
+#: templates/admin/base_site.html:3
+#, fuzzy
+#| msgid "Django Administration"
+msgid "Django site admin"
+msgstr "Django Administration"
+
+#: templates/admin/base_site.html:6
+#, fuzzy
+#| msgid "Django Administration"
+msgid "Django administration"
+msgstr "Django Administration"
+
+#: templates/admin/change_form.html:21
+#: templates/admin/change_list_object_tools.html:8
+#, python-format
+msgid "Add %(name)s"
+msgstr ""
+
+#: templates/admin/change_form_object_tools.html:5
+#: templates/admin/object_history.html:10
+msgid "History"
+msgstr ""
+
+#: templates/admin/change_form_object_tools.html:7
+#: templates/admin/edit_inline/stacked.html:18
+#: templates/admin/edit_inline/tabular.html:40
+msgid "View on site"
+msgstr ""
+
+#: templates/admin/change_list.html:76
+msgid "Filter"
+msgstr ""
+
+#: templates/admin/change_list.html:78
+msgid "Clear all filters"
+msgstr ""
+
+#: templates/admin/change_list_results.html:17
+msgid "Remove from sorting"
+msgstr ""
+
+#: templates/admin/change_list_results.html:18
+#, python-format
+msgid "Sorting priority: %(priority_number)s"
+msgstr ""
+
+#: templates/admin/change_list_results.html:19
+msgid "Toggle sorting"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:24
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would result in deleting "
+"related objects, but your account doesn't have permission to delete the "
+"following types of objects:"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:31
+#, python-format
+msgid ""
+"Deleting the %(object_name)s '%(escaped_object)s' would require deleting the "
+"following protected related objects:"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:38
+#, python-format
+msgid ""
+"Are you sure you want to delete the %(object_name)s \"%(escaped_object)s\"? "
+"All of the following related items will be deleted:"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:40
+#: templates/admin/delete_selected_confirmation.html:39
+msgid "Objects"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:47
+#: templates/admin/delete_selected_confirmation.html:50
+msgid "Yes, I’m sure"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:48
+#: templates/admin/delete_selected_confirmation.html:51
+msgid "No, take me back"
+msgstr ""
+
+#: templates/admin/delete_selected_confirmation.html:17
+msgid "Delete multiple objects"
+msgstr ""
+
+#: templates/admin/delete_selected_confirmation.html:23
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would result in deleting related "
+"objects, but your account doesn't have permission to delete the following "
+"types of objects:"
+msgstr ""
+
+#: templates/admin/delete_selected_confirmation.html:30
+#, python-format
+msgid ""
+"Deleting the selected %(objects_name)s would require deleting the following "
+"protected related objects:"
+msgstr ""
+
+#: templates/admin/delete_selected_confirmation.html:37
+#, python-format
+msgid ""
+"Are you sure you want to delete the selected %(objects_name)s? All of the "
+"following objects and their related items will be deleted:"
+msgstr ""
+
+#: templates/admin/edit_inline/tabular.html:24
+#, fuzzy
+#| msgid "Delete"
+msgid "Delete?"
+msgstr "Löschen"
+
+#: templates/admin/filter.html:2
+#, python-format
+msgid " By %(filter_title)s "
+msgstr ""
+
+#: templates/admin/includes/object_delete_summary.html:2
+msgid "Summary"
+msgstr ""
+
+#: templates/admin/index.html:23
+#, fuzzy
+#| msgid "Representations"
+msgid "Recent actions"
+msgstr "Repräsentationen"
+
+#: templates/admin/index.html:24
+msgid "My actions"
+msgstr ""
+
+#: templates/admin/index.html:28
+msgid "None available"
+msgstr ""
+
+#: templates/admin/index.html:42
+msgid "Unknown content"
+msgstr ""
+
+#: templates/admin/invalid_setup.html:12
+msgid ""
+"Something’s wrong with your database installation. Make sure the appropriate "
+"database tables have been created, and make sure the database is readable by "
+"the appropriate user."
+msgstr ""
+
+#: templates/admin/login.html:39
+#, python-format
+msgid ""
+"You are authenticated as %(username)s, but are not authorized to access this "
+"page. Would you like to login to a different account?"
+msgstr ""
+
+#: templates/admin/login.html:59
+msgid "Forgotten your password or username?"
+msgstr ""
+
+#: templates/admin/login.html:63
+#, fuzzy
+#| msgid "log in"
+msgid "Log in"
+msgstr "einloggen"
+
+#: templates/admin/nav_sidebar.html:2
+msgid "Toggle navigation"
+msgstr ""
+
+#: templates/admin/object_history.html:22
+msgid "Date/time"
+msgstr ""
+
+#: templates/admin/object_history.html:23
+msgid "User"
+msgstr ""
+
+#: templates/admin/object_history.html:24
+msgid "Action"
+msgstr ""
+
+#: templates/admin/object_history.html:38
+msgid ""
+"This object doesn’t have a change history. It probably wasn’t added via this "
+"admin site."
+msgstr ""
+
+#: templates/admin/pagination.html:10 templates/admin/search_form.html:9
+msgid "Show all"
+msgstr ""
+
+#: templates/admin/pagination.html:11 templates/admin/submit_line.html:4
+msgid "Save"
+msgstr ""
+
+#: templates/admin/popup_response.html:3
+msgid "Popup closing…"
+msgstr ""
+
+#: templates/admin/search_form.html:9
+#, python-format
+msgid "%(counter)s result"
+msgid_plural "%(counter)s results"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/search_form.html:9
+#, python-format
+msgid "%(full_result_count)s total"
+msgstr ""
+
+#: templates/admin/submit_line.html:9
+#, fuzzy
+#| msgid "Save changes"
+msgid "Save as new"
+msgstr "Änderungen speichern"
+
+#: templates/admin/submit_line.html:10
+msgid "Save and add another"
+msgstr ""
+
+#: templates/admin/submit_line.html:11
+msgid "Save and continue editing"
+msgstr ""
+
+#: templates/admin/submit_line.html:11
+#, fuzzy
+#| msgid "Save changes"
+msgid "Save and view"
+msgstr "Änderungen speichern"
+
+#: templates/admin/submit_line.html:12
+msgid "Close"
+msgstr ""
+
+#: templates/admin/widgets/related_widget_wrapper.html:10
+#, python-format
+msgid "Change selected %(model)s"
+msgstr ""
+
+#: templates/admin/widgets/related_widget_wrapper.html:17
+#, python-format
+msgid "Add another %(model)s"
+msgstr ""
+
+#: templates/admin/widgets/related_widget_wrapper.html:24
+#, python-format
+msgid "Delete selected %(model)s"
+msgstr ""
+
+#: templates/earkweb/base.html:165 templates/earkweb/base_bak.html:118
+#: templates/earkweb/base_fileupload.html:110
 msgid "log out"
 msgstr "ausloggen"
 
-#: templates/earkweb/base.html:123 templates/earkweb/base_fileupload.html:114
+#: templates/earkweb/base.html:173 templates/earkweb/base_bak.html:123
+#: templates/earkweb/base_fileupload.html:115
 msgid "Access"
 msgstr "Benutzung"
 
-#: templates/earkweb/base.html:127 templates/earkweb/base_fileupload.html:118
+#: templates/earkweb/base.html:178 templates/earkweb/base_bak.html:127
+#: templates/earkweb/base_fileupload.html:119
 msgid "log in"
 msgstr "einloggen"
+
+#: templates/earkweb/base.html:231 templates/earkweb/base.html:305
+msgid "eArchiving Repository"
+msgstr ""
+
+#: templates/earkweb/base.html:241 templates/earkweb/navbar.html:9
+msgid "Administration"
+msgstr "Administration"
+
+#: templates/earkweb/base.html:244
+#, fuzzy
+#| msgid "Administration"
+msgid "Site Administration"
+msgstr "Administration"
+
+#: templates/earkweb/base.html:245
+msgid "REST API"
+msgstr ""
+
+#: templates/earkweb/base.html:252 templates/earkweb/navbar.html:28
+msgid "Submission"
+msgstr "Informationspaket-Erstellung"
+
+#: templates/earkweb/base.html:255 templates/earkweb/navbar.html:33
+msgid "NavOpenSubmissions"
+msgstr "Informationspakete in Bearbeitung"
+
+#: templates/earkweb/base.html:260 templates/earkweb/navbar.html:41
+msgid "Package Management"
+msgstr "Dataset-Management"
+
+#: templates/earkweb/base.html:262 templates/earkweb/navbar.html:45
+msgid "NavIngestedPackages"
+msgstr "Archivierte Informationspakete"
+
+#: templates/earkweb/base.html:275 templates/earkweb/base.html:276
+#: templates/earkweb/howto/create_dataset.html:17
+#: templates/earkweb/howto/howto_overview.html:17
+#: templates/earkweb/howto/ingest_dataset.html:17
+#: templates/earkweb/howto/use_the_api.html:15
+msgid "Help"
+msgstr ""
+
+#: templates/earkweb/base.html:277
+#, fuzzy
+#| msgid "Review submission information package"
+msgid "How-to create a submission information package (SIP)"
+msgstr "Informationspaket überprüfen"
+
+#: templates/earkweb/base.html:278
+#: templates/earkweb/howto/ingest_dataset.html:19
+#, fuzzy
+#| msgid "Create new information package"
+msgid "How to create an archival information package (AIP)"
+msgstr "Neues Informationspaket erstellen"
+
+#: templates/earkweb/base.html:279
+msgid "How-to use the API"
+msgstr ""
+
+#: templates/earkweb/base_bak.html:88 templates/earkweb/base_fileupload.html:80
+msgid "Language"
+msgstr "Sprache"
 
 #: templates/earkweb/error.html:12
 msgid "Error"
@@ -638,7 +1186,7 @@ msgstr ""
 "sie die erstellten Informationspakete zur genaueren Begutachtung "
 "herunterladen."
 
-#: templates/earkweb/home.html:22
+#: templates/earkweb/home.html:72
 msgid "disclaimerText"
 msgstr ""
 "<p><emph>Haftungsausschluss</emph>: Bitte beachten Sie, dass die eArchiving-"
@@ -651,8 +1199,8 @@ msgstr ""
 "</ li> \t \t \t <li> OpenDocumentTabellenkalkulation (* .ods) </li> \t \t \t "
 "<li> OpenDocument-Textdokument (* .odt) </li> \t \t\t <li> Microsoft Word "
 "Open XML (* .docx) </li> \t \t \t <li> Microsoft Word-Dokument(* .doc) </ "
-"li> \t \t \t <li> Microsoft Excel 97-2003-Arbeitsblatt (* .xls) </li> \t \t"
-"\t <li> Microsoft Excel Open XML-Tabelle (* .xlsx) </li> \t \t \t <li> "
+"li> \t \t \t <li> Microsoft Excel 97-2003-Arbeitsblatt (* .xls) </li> \t "
+"\t\t <li> Microsoft Excel Open XML-Tabelle (* .xlsx) </li> \t \t \t <li> "
 "KommaGetrennte Werte (* .csv) </li> \t \t </ul> \t </li> \t <li> Bildformate "
 "\t \t <ul> \t \t\t <li> Gemeinsame fotografische Expertengruppe (* .jpg, * ."
 "jpeg) </li> \t \t \t <li> TagBilddateiformat (* .tif, * .tiff) </li> \t \t "
@@ -668,25 +1216,289 @@ msgstr ""
 "hochzuladen. Bitte beachten Sie, dass die Daten auf täglich nachts (3 Uhr "
 "morgens MEZ) gelöscht werden. </p>"
 
-#: templates/earkweb/navbar.html:9
-msgid "Administration"
-msgstr "Administration"
+#: templates/earkweb/howto/create_dataset.html:19
+#, fuzzy
+#| msgid "Review submission information package"
+msgid "How to create a submission information package (SIP)"
+msgstr "Informationspaket überprüfen"
 
-#: templates/earkweb/navbar.html:28
-msgid "Submission"
-msgstr "Informationspaket-Erstellung"
+#: templates/earkweb/howto/create_dataset.html:21
+msgid ""
+"Select 'Information package creation' from the menu, then select 'Create new "
+"information package'"
+msgstr ""
 
-#: templates/earkweb/navbar.html:33
-msgid "NavOpenSubmissions"
-msgstr "Informationspakete in Bearbeitung"
+#: templates/earkweb/howto/create_dataset.html:24
+#, fuzzy
+#| msgid "Create information package"
+msgid "Choose a label for the information package"
+msgstr "Neues Informationspaket erstellen"
 
-#: templates/earkweb/navbar.html:41
-msgid "Package Management"
-msgstr "Dataset-Management"
+#: templates/earkweb/howto/create_dataset.html:29
+msgid "Fill out data set title, description, and tags"
+msgstr ""
 
-#: templates/earkweb/navbar.html:45
-msgid "NavIngestedPackages"
-msgstr "Archivierte Informationspakete"
+#: templates/earkweb/howto/create_dataset.html:30
+msgid ""
+"Tags are suggested from the Eurovocs vocabulary. The vocabulary can be "
+"adapted in the 'Administration/Site Administration' section."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:33
+msgid ""
+"Fill out main contact and maintainer metadata and the main language of the "
+"information package"
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:34
+msgid ""
+"'Contact' is the person responsible for the data set to be asked regarding "
+"re-use and ethical or legal questions, and the 'maintainer' is the person in "
+"charge of technical issues, e.g. regarding encryption, data formats, etc."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:37
+#, fuzzy
+#| msgid "Identifier of the information package"
+msgid "Define a representation of the information package."
+msgstr "Bezeichner des Informationspakets"
+
+#: templates/earkweb/howto/create_dataset.html:40
+msgid "Select files to upload"
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:44
+msgid ""
+"<span style='color:red; font-weight: bold'>Important</span>: Press the "
+"'upload' button on the bottom right of the file upload field to upload files "
+"of the representation."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:45
+msgid ""
+"Note that data upload is discarded if the 'Upload' button is not clicked."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:46
+msgid ""
+"After uploading the data files, click on 'Finish data upload' to finalize "
+"data set creation."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:49
+#, fuzzy
+#| msgid "Overview of information package"
+msgid "Review information package"
+msgstr "Informationspakete-Übersicht"
+
+#: templates/earkweb/howto/create_dataset.html:50
+msgid ""
+"In this step the created information package can be reviewed. Click on 'Edit "
+"data set' to make any changes."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:53
+msgid ""
+"Open the 'ead.xml' file, for example, to inspect metadata of the information "
+"package."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:54
+msgid ""
+"Double-click on a file to open it in a pop-up window or a tool that can "
+"visualize the data (depends on browser configuration and system). Right "
+"click and choose 'delete' to remove a file."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:57
+msgid "Review other uploaded files."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:58
+msgid ""
+"Double-click on a PDF file, for example, opens the file in a pop-up window."
+msgstr ""
+
+#: templates/earkweb/howto/create_dataset.html:61
+#, fuzzy
+#| msgid "Information package title"
+msgid "Information package overview"
+msgstr "Titel des Informationspakets"
+
+#: templates/earkweb/howto/create_dataset.html:62
+msgid ""
+"The new information package can be accessed in the 'Information package "
+"creation' / 'Information packages in process' section if anything needs to "
+"be changed."
+msgstr ""
+
+#: templates/earkweb/howto/howto_overview.html:19
+#, fuzzy
+#| msgid "Overview of information package"
+msgid "Overview about how-to pages"
+msgstr "Informationspakete-Übersicht"
+
+#: templates/earkweb/howto/ingest_dataset.html:23
+#, fuzzy
+#| msgid "Submission information package creation process is running."
+msgid "Submission Information Package creation finalised"
+msgstr "Informationspaket-Erstellung abschließen"
+
+#: templates/earkweb/howto/ingest_dataset.html:30
+#, fuzzy
+#| msgid "Archived Information Package"
+msgid "Start Archiving the Information Package"
+msgstr "Archiviertes Informationspaket"
+
+#: templates/earkweb/howto/ingest_dataset.html:38
+#, fuzzy
+#| msgid "Archived Information Package"
+msgid "Archiving the Information Package started"
+msgstr "Archiviertes Informationspaket"
+
+#: templates/earkweb/howto/ingest_dataset.html:45
+#, fuzzy
+#| msgid "Archived Information Package"
+msgid "Archiving the Information Package terminated"
+msgstr "Archiviertes Informationspaket"
+
+#: templates/earkweb/howto/ingest_dataset.html:51
+#, fuzzy
+#| msgid "Identifier of the information package"
+msgid "Creating a new version of the Archival Information Package"
+msgstr "Bezeichner des Informationspakets"
+
+#: templates/earkweb/howto/ingest_dataset.html:64
+#, fuzzy
+#| msgid "PackageDirectory"
+msgid "AIP Directory"
+msgstr "Informationspaket-Verzeichnis"
+
+#: templates/earkweb/howto/use_the_api.html:17
+msgid "How to use the API"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:19
+msgid "Swagger REST API"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:21
+msgid ""
+"The Data Set Repository provides a REST API using the <a target='_blank' "
+"href='https://swagger.io'>Swagger</a> framework for API provisioning."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:23
+msgid ""
+"The API is generated automatically using the <a target='_blank' "
+"href='https://django-rest-swagger.readthedocs.io/en/latest'>Django REST "
+"Swagger framework</a> which allows implementation and documentation of the "
+"API by using annotations and comments of API view functions."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:25
+msgid ""
+"The swagger API UI is actionable, i.e. it is possible to test API calls "
+"using the web user interface and following the API documentation available "
+"in the DSR menu at “Administration > REST API” or at: http://{server-name}:"
+"{server-port}/dsr/api Web request tools, such as  <a target='_blank' "
+"href='https://en.wikipedia.org/wiki/CURL'>cURL</a> can be used to test the "
+"API functions."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:29
+msgid ""
+"The logged-in user is authenticated and can directly use the swagger API UI. "
+"To use the API with other clients, each user has a token which can be looked "
+"up in the Site Administration in the section 'Auth Token/Tokens'."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:31
+msgid ""
+"For example, to list information about all data sets, the cURL command using "
+"token-based authentication would be:"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:35
+msgid "The procedure for data set creation using the API"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:37
+#, fuzzy
+#| msgid "Identifier of the information package"
+msgid "Initialise a new data package"
+msgstr "Bezeichner des Informationspakets"
+
+#: templates/earkweb/howto/use_the_api.html:41
+msgid ""
+"In case of success the HTTP response code is '201 CREATED' and a new process "
+"ID (`process_id`) is returned which is required for uploading data in a "
+"subsequent step."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:51
+#, fuzzy
+#| msgid "Upload data"
+msgid "Upload data file"
+msgstr "Daten hochladen"
+
+#: templates/earkweb/howto/use_the_api.html:52
+msgid ""
+"Upload data file (here a CSV file /home/$user/datafile.csv (note that the "
+"process ID  (`process_id`) returned by the previous request is used in this "
+"request to identify the target data set where the files are going to be "
+"uploaded)."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:54
+msgid ""
+"For the first file of a representation only the process ID (`process_id`, "
+"here: `73483984-debd-4d04-a14c-5acb11167719`) needs to be provided and the "
+"representation ID can be omitted:"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:58
+msgid ""
+"This will generate a random UUID identifier (`representationId`) for the "
+"representation which is returned as part of the response message in case of "
+"success:"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:68
+msgid ""
+"Additionally, the `sha256` hash sum allows verifying if the file was "
+"uploaded correctly."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:71
+msgid ""
+"If a file needs to be added to a representation, the representation ID "
+"(`representationId`,  here: `5ed2c8b6-4f4b-46f7-a1f3-192472a76a41`) is given "
+"as a parameter after the process ID."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:98
+msgid ""
+"Note that if metadata for representations should be added, the "
+"representation ID in the metadata file must match the ID of the "
+"corresponding representation, e.g. as in this example, the one created "
+"previously: `5ed2c8b6-4f4b-46f7-a1f3-192472a76a41`."
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:101
+msgid "An example for a metadata upload request is the following:"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:108
+msgid "which returns a similar response as the data file upload:"
+msgstr ""
+
+#: templates/earkweb/howto/use_the_api.html:118
+msgid ""
+"File upload does not have to be done via this API. It is possible to just "
+"create the data folders and transfer the data using other means of file "
+"transfer (scp, rsync, etc.)."
+msgstr ""
 
 #: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"
@@ -700,6 +1512,15 @@ msgstr "Keine Blockchain-Identifikatoren verfügbar"
 #: util/djangoutils.py:40
 msgid "An error occurred"
 msgstr "Es ist ein Fehler aufgetreten"
+
+#~ msgid "DistributionAccessRightsValueFree"
+#~ msgstr "Frei (Kein Vertrag erforderlich)"
+
+#~ msgid "DistributionAccessRightsValueLimited"
+#~ msgstr "Zugriffsbeschränkt (Vertrag erforderlich)"
+
+#~ msgid "Only information packages"
+#~ msgstr "Nur Informationspakete"
 
 #~ msgid "Duration"
 #~ msgstr "Dauer"
@@ -718,9 +1539,6 @@ msgstr "Es ist ein Fehler aufgetreten"
 
 #~ msgid "yes,no,maybe"
 #~ msgstr "ja,nein, vielleich"
-
-#~ msgid "Django Documentation"
-#~ msgstr "Django Dokumentation"
 
 #~ msgid "ThisWorkDirShowsContentOf"
 #~ msgstr "Dieses Verzeichnis zeigt den Inhalt des Informationspakets"

@@ -33,8 +33,11 @@ from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
 from eatb.utils.fileutils import get_immediate_subdirectories, find_files
+from urllib.parse import quote, unquote
+from eatb.utils.fileutils import to_safe_filename, from_safe_filename
+from eatb.utils.fileutils import encode_identifier, decode_identifier
 
-from config.configuration import representations_directory, \
+from config.configuration import documentation_directory, representations_directory, \
     django_backend_service_host, django_backend_service_port, flower_service_url, node_namespace_id, \
     package_access_url_pattern, repo_identifier, repo_title, repo_description, repo_catalogue_issued, \
     repo_catalogue_modified, \
@@ -57,13 +60,14 @@ from config.configuration import django_service_port
 from earkweb.models import InformationPackage
 from itertools import chain
 
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from util.flowerapiclient import get_task_info, get_task_list
 
 logger = logging.getLogger(__name__)
 
 # get eurovoc terms
+# pylint: disable-next=no-member
 eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
 
 
@@ -71,6 +75,7 @@ eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
 @csrf_exempt
 def ip_detail_table(request):
     pkg_id = request.POST['pkg_id']
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pkg_id)
     context = {
         "ip": ip,
@@ -82,6 +87,7 @@ def ip_detail_table(request):
 @login_required
 def start(request):
     template = loader.get_template('submission/start.html')
+    # pylint: disable-next=no-member
     int_ids = InternalIdentifier.objects.filter(user=request.user.id, used=0)
     int_ids_values = int_ids.values()
     num_blockchain_ids = len([i for i in int_ids_values if i['is_blockchain_id'] == 1])
@@ -122,10 +128,13 @@ def upload(request):
             # distribution metadata
             rep = request.POST["rep"]
             # get information package
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=request.POST["uid"])
             try:
+                # pylint: disable-next=no-member
                 reprec = Representation.objects.get(ip=ip, identifier=rep)
             except ObjectDoesNotExist:
+                # pylint: disable-next=no-member
                 reprec = Representation.objects.create(ip=ip, identifier=rep)
             reprec.accessRights = request.POST["access_rights"]
             reprec.description = request.POST["distribution_description"]
@@ -144,6 +153,7 @@ def upload(request):
                 reps_in_session = {rep: rep_info}
             request.session['representations'] = reps_in_session
 
+            # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=request.POST['uid'])
             u = User.objects.get(username=request.user)
             # if u != ip.user:
@@ -180,14 +190,63 @@ def upload(request):
     return HttpResponse(template.render(context=context, request=request))
 
 
-def upload_step1(request, pk):
+@login_required
+@csrf_exempt
+def ip_upload(request):
+    """Upload files to information package"""
+    if request.method == "POST":
+        posted_files = request.FILES
+        if 'file_data' not in posted_files:
+            return JsonResponse({'error': "No files available"}, status=500)
+        else:
+            # get information package
+            # pylint: disable-next=no-member
+            ip = InformationPackage.objects.get(uid=request.POST["uid"])
+            # pylint: disable-next=unused-variable
+            u = User.objects.get(username=request.user)
+            # if u != ip.user:
+            #    return JsonResponse({'error': "Unauthorized. Operation is not permitted."}, status=500)
+            ip_work_dir = os.path.join(config_path_work, ip.uid)
 
+            file_data = posted_files['file_data']
+            filename = file_data.name
+            target_directory = os.path.join(ip_work_dir, "documentation")
+            file_path = os.path.join(ip_work_dir, "documentation", filename)
+            if not os.path.exists(target_directory):
+                os.makedirs(target_directory, exist_ok=True)
+
+            with open(file_path, 'wb+') as destination:
+                for chunk in posted_files['file_data'].chunks():
+                    destination.write(chunk)
+
+            file_upload_resp = {
+                "ver": "1.0",
+                "ret": True,
+                "errcode": 0,
+                "data": {
+                    "status": "upload success",
+                    "originalFilename": filename,
+                    "fileName": filename,
+                    "fileType": "image/jpg",
+                    "fileSize": 255997
+                }
+
+            }
+            return JsonResponse(file_upload_resp, status=201)
+    else:
+        template = loader.get_template('submission/upload.html')
+    context = {
+    }
+    return HttpResponse(template.render(context=context, request=request))
+
+def upload_step1(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     if "package_name" in request.POST and request.POST["package_name"] != ip.package_name:
         ip.package_name = request.POST["package_name"]
         ip.save()
     if "external_id" in request.POST and request.POST["external_id"] != ip.external_id:
-        ip.external_id = request.POST["external_id"]
+        ip.external_id = encode_identifier(request.POST["external_id"])
         ip.save()
     user_api_token = get_user_api_token(request.user)
     dir_info_request_url = "%s/ips/%s/dir-json" % (django_backend_service_api_url, ip.uid)
@@ -202,6 +261,7 @@ def upload_step1(request, pk):
                 folders = folder_list[0]
                 folder_names = [folder['text'] for folder in folders]
                 for fn in folder_names:
+                    # pylint: disable-next=no-member
                     obj, created = Representation.objects.get_or_create(identifier=fn, ip=ip)
                     if created:
                         obj.save()
@@ -269,10 +329,8 @@ def upload_step1(request, pk):
                 'external_id': ip.external_id,
                 'title': md_properties["title"],
                 'description': md_properties["description"],
-                'latlngobj': md_properties["latlngobj"] if "latlngobj" in request.session['md_properties'] else "",
-                'publication_date': md_properties["publication_date"] if "publication_date" in request.session['md_properties'] else "",
-                'last_revision_date': md_properties["last_revision_date"] if "last_revision_date" in request.session['md_properties'] else "",
-                'creation_date': md_properties["creation_date"] if "creation_date" in request.session['md_properties'] else ""
+                'locations': md_properties["locations"] if "locations" in request.session['md_properties'] else "{}",
+                'original_creation_date': md_properties["original_creation_date"] if "original_creation_date" in request.session['md_properties'] else ""
             })
         else:
             form = MetaFormStep1(initial={
@@ -284,13 +342,14 @@ def upload_step1(request, pk):
             'ip': ip,
             'tags': [val.name for val in ip.tags.all()],
             'user_generated_tags': user_generated_tags,
-            'latlngobj': request.session['md_properties']["latlngobj"] if "md_properties" in request.session.keys() and "latlngobj" in request.session['md_properties'] else {}
+            'locations': request.session['md_properties']["locations"] if "md_properties" in request.session.keys() and "locations" in request.session['md_properties'] else {}
         })
 
 
 def upload_step2(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
-
+    loc_strs = "[]"
     if request.method == 'POST':
 
         form = MetaFormStep2(request.POST)
@@ -307,15 +366,19 @@ def upload_step2(request, pk):
     else:
         if 'md_properties' in request.session:
             md_properties = request.session['md_properties']
+            loc_strs = request.session['md_properties']["locations"] if "md_properties" in request.session.keys() and "locations" in request.session['md_properties'] else '[]'
             form = MetaFormStep2(initial={
-                'latlngobj': request.session['md_properties']["latlngobj"] if "md_properties" in request.session.keys() and "latlngobj" in request.session['md_properties'] else {}
+                'locations': loc_strs
             })
         else:
             form = MetaFormStep2()
-    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip})
+    #locs['locations'] = loc_list
+    json_dict = json.loads(loc_strs)
+    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip, 'locations': json.dumps(json_dict)})
 
 
 def upload_step3(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
 
     if request.method == 'POST':
@@ -353,6 +416,7 @@ def upload_step3(request, pk):
 
 
 def upload_step4(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
 
     if request.method == 'POST':
@@ -378,16 +442,18 @@ def upload_step4(request, pk):
             })
         else:
             form = MetaFormStep4()
-    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip})
+    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip, 'django_backend_service_url': django_backend_service_url})
 
 
 @login_required
 def upload_step5(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
 
     template = loader.get_template('submission/upload_distributions.html')
     upload_file_form = TinyUploadFileForm()
 
+    # pylint: disable-next=no-member
     reprs_qs = Representation.objects.filter(ip=ip).order_by('id')
 
     # get representation from session or first reprsentation otherwise
@@ -402,12 +468,15 @@ def upload_step5(request, pk):
         if representation_dirs:
             repname = representation_dirs[0]
             try:
+                # pylint: disable-next=no-member
                 Representation.objects.get(ip=ip, identifier=repname)
             except ObjectDoesNotExist:
+                # pylint: disable-next=no-member
                 Representation.objects.create(ip=ip, identifier=repname)
         else:
             repname = get_unused_identifier(request.user.id)
 
+    # pylint: disable-next=no-member
     reprs_qs = Representation.objects.filter(ip=ip).order_by('id')
 
     repr_dir_names = None
@@ -451,9 +520,12 @@ def upload_step5(request, pk):
 @login_required
 def upload_step5_rep(request, pk, rep):
     # create representation if it does not exist
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
+    # pylint: disable-next=no-member
     exists = Representation.objects.filter(ip=ip, identifier=rep)
     if not exists:
+        # pylint: disable-next=no-member
         result = Representation.objects.create(ip=ip, identifier=rep)
         result.save()
     request.session['rep'] = rep
@@ -462,11 +534,14 @@ def upload_step5_rep(request, pk, rep):
 
 @login_required
 def updatedistrmd(request):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=request.POST['pk'])
     rep = request.POST['rep']
     try:
+        # pylint: disable-next=no-member
         result = Representation.objects.get(ip=ip, identifier=rep)
     except ObjectDoesNotExist:
+        # pylint: disable-next=no-member
         result = Representation.objects.create(ip=ip, identifier=rep)
     param_name = request.POST['param_name']
     param_value = request.POST['param_value']
@@ -486,6 +561,7 @@ def updatedistrmd(request):
 def ip_creation_process(request, pk):
     try:
         # get ip
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(pk=pk)
 
         finalization_time = date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT) #  current_timestamp(fmt=DT_ISO_FORMAT)
@@ -498,6 +574,8 @@ def ip_creation_process(request, pk):
             chain(
                 request.session['step1'].items(),
                 request.session['step2'].items(),
+                request.session['step3'].items(),
+                request.session['step4'].items(),
                 {"uid": ip.uid}.items(),
                 {'currdate': ts_date(fmt=DT_ISO_FORMAT), 'date': ts_date(fmt=DATE_DMY), "last_change": finalization_time,
                  "created": finalization_time,
@@ -507,6 +585,7 @@ def ip_creation_process(request, pk):
             )
         )
 
+        # pylint: disable-next=no-member
         reprecords = Representation.objects.filter(ip=ip)
         repinfo = {reprecord.identifier: {
             'distribution_label': reprecord.label,
@@ -536,6 +615,8 @@ def ip_creation_process(request, pk):
         basic_metadata.pop('csrfmiddlewaretoken', None)
         basic_metadata.pop('hidden_user_tags', None)
         basic_metadata.pop('currdate', None)
+        basic_metadata.pop('pk', None)
+        basic_metadata.pop('rep', None)
         basic_metadata_s = json.dumps(basic_metadata)
 
         ip.basic_metadata = basic_metadata_s
@@ -553,6 +634,13 @@ def ip_creation_process(request, pk):
             del basic_metadata["lang_alpha_3"]
         if "landing_page" in basic_metadata:
             del basic_metadata["landing_page"]
+        if "pk" in basic_metadata:
+            del basic_metadata["pk"]
+        if "rep" in basic_metadata:
+            del basic_metadata["rep"]
+
+        #  convert the JSON string into a Python list 
+        basic_metadata["locations"] = json.loads(basic_metadata["locations"])
 
         basic_metadata["tags"] = [val.name for val in ip.tags.all()]
         basic_metadata_to_be_stored = dict_keys_underscore_to_camel(basic_metadata)
@@ -612,12 +700,13 @@ def ip_creation_process(request, pk):
         template = loader.get_template('submission/ip_creation_process.html')
         return HttpResponse(template.render(context=context, request=request))
     except FileNotFoundError as err:
-        logger.error("Missing file", err)
+        logger.error("Missing file %s" % str(err))
 
 
 @login_required
 def upload_finalize(request, pk):
     # get ip
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
     url = "%s://%s/earkweb/api/ips/%s/dir-json" % (
@@ -658,16 +747,21 @@ class InformationPackageTable(tables.Table):
     package_name = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name=_('Data Set Label'), orderable=True)
 
     edit = tables.LinkColumn('%s:ip_detail' % area, kwargs={'pk': A('pk')}, verbose_name=_('Change'), orderable=False)
+    ingest = tables.LinkColumn('%s:startingest' % area, kwargs={'pk': A('pk')}, verbose_name=_('Ingest'), orderable=False)
     delcol = tables.LinkColumn('%s:delete' % area, kwargs={'pk': A('pk')}, verbose_name=_('Delete'), orderable=False)
 
     class Meta:
         model = InformationPackage
-        fields = ('package_name', 'uid', 'last_change', 'edit', 'delcol')
+        fields = ('package_name', 'uid', 'last_change', 'edit', 'ingest', 'delcol')
         attrs = {'class': 'table table-striped table-bordered table-condensed'}
         row_attrs = {'data-id': lambda record: record.pk}
 
     @staticmethod
     def render_edit(value):
+        return mark_safe(value)
+    
+    @staticmethod
+    def render_ingest(value):
         return mark_safe(value)
 
     @staticmethod
@@ -703,6 +797,8 @@ def informationpackages_overview(request):
     ip.identifier as identifier,
     CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title="Change">
     <i class="fas fa-edit editcol"></i></a>') as edit,
+    CONCAT('<a href="/earkweb/submission/ips/',ip.id,'/startingest" data-toggle="tooltip" title="Ingest">
+    <i class="fas fa-box editcol"></i></a>') as ingest,
     CONCAT('<a href="/earkweb/submission/delete/',ip.id,'/" data-toggle="tooltip" title="Delete">
     <i class="fas fa-trash editcol"></i></a>') as delcol 
     from informationpackage as ip
@@ -713,6 +809,7 @@ def informationpackages_overview(request):
     """.format(filterword, areacode)
     # user_id={0} and, request.user.pk
     print(sql_query)
+    # pylint: disable-next=no-member
     queryset = InformationPackage.objects.raw(sql_query)
     table = InformationPackageTable(queryset)
     RequestConfig(request, paginate={'per_page': 8}).configure(table)
@@ -727,6 +824,7 @@ def informationpackages_overview(request):
 
 @login_required
 def sip_detail_rep(request, pk, rep):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('submission/detail.html')
     upload_file_form = TinyUploadFileForm()
@@ -762,8 +860,12 @@ class InformationPackageDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super(InformationPackageDetail, self).get_context_data(**kwargs)
         context['config_path_work'] = config_path_work
-        context['metadata'] = json.loads(self.object.basic_metadata)
+        try:
+            context['metadata'] = json.loads(self.object.basic_metadata)
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.error(f"Error loading metadata: {e}")
 
+        # pylint: disable-next=no-member
         distributions = Representation.objects.filter(ip_id=self.object.pk).values()
         context['distributions'] = distributions
         return context
@@ -789,14 +891,13 @@ class StartIngestDetail(DetailView):
         context['flower_api_endpoint'] = flower_service_url
         context['django_backend_service_api_url'] = django_backend_service_api_url
 
-        print(flower_service_url)
-
         return context
 
 
 @login_required
 @csrf_exempt
 def add_file(request, uid, subfolder):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(uid=uid)
     repname = ""
     if 'rep' in request.POST:
@@ -836,6 +937,7 @@ def upload_aip(ip_work_dir, upload_path, f):
             destination.write(chunk)
     destination.close()
     if f.name.endswith(".tar"):
+        # pylint: disable-next=no-member
         async_res = extract_and_remove_package.delay(
             destination_file, upload_path, os.path.join(ip_work_dir, 'metadata/sip_creation.log'))
         print("Package extraction task '%s' to extract package '%s' to working directory: %s" % (
@@ -846,13 +948,18 @@ def upload_aip(ip_work_dir, upload_path, f):
 @require_http_methods(["POST"])
 def initialize(request):
     package_name = request.POST["packagename"]
-    extuid = request.POST["extuid"]
+    extuid = encode_identifier(request.POST["extuid"])
     uid = get_unique_id()
     working_dir = os.path.join(config_path_work, uid)
+    os.makedirs(os.path.join(working_dir, documentation_directory), exist_ok=True)
     os.makedirs(os.path.join(working_dir, representations_directory), exist_ok=True)
     os.makedirs(os.path.join(working_dir, metadata_directory), exist_ok=True)
+    
+    # pylint: disable-next=no-member
     InformationPackage.objects.create(work_dir=os.path.join(config_path_work, uid), uid=uid,
                                       package_name=package_name, external_id=extuid, user=request.user, version=0)
+    
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(uid=uid)
 
     state_data = json.dumps({"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)})
@@ -869,6 +976,7 @@ def initialize(request):
 
 @login_required
 def delete(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     template = loader.get_template('submission/deleted.html')
     if ip.uid:
@@ -885,9 +993,11 @@ def delete(request, pk):
 @login_required
 @csrf_exempt
 def add_representation(request, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     # representation = request.POST['representation']
     representation = get_unused_identifier(request.user.id)
+    # pylint: disable-next=no-member
     reprec = Representation.objects.create(ip=ip, identifier=representation, accessRights='free')
     reprec.save()
     data = {"success": True, "representation": representation}
@@ -897,6 +1007,7 @@ def add_representation(request, pk):
 @login_required
 @csrf_exempt
 def del_representation(request, uid, representation_id):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(uid=uid)
     if request.user != ip.user:
         return HttpResponseForbidden("Permission denied to delete this object")
@@ -906,6 +1017,7 @@ def del_representation(request, uid, representation_id):
         if os.path.exists(distribution_dir):
             shutil.rmtree(distribution_dir)
         if not os.path.exists(distribution_dir):
+            # pylint: disable-next=no-member
             reprec = Representation.objects.get(ip=ip, identifier=representation_id)
             reprec.delete()
             return JsonResponse({"success": True})
@@ -919,6 +1031,7 @@ def del_representation(request, uid, representation_id):
 @login_required
 @csrf_exempt
 def ip_by_primary_key(_, pk):
+    # pylint: disable-next=no-member
     ip = InformationPackage.objects.get(pk=pk)
     return HttpResponse(ip.uid)
 
@@ -961,33 +1074,33 @@ def ins_file(request, uid, subfolder):
     return HttpResponse("success")
 
 
-@login_required
-@csrf_exempt
-def poll_state(request):
-    data = {"success": False, "errmsg": "Unknown error"}
-    try:
-        if request.is_ajax():
-            if 'task_id' in request.POST.keys() and request.POST['task_id']:
-                task_id = request.POST['task_id']
-                task = AsyncResult(task_id)
-                if task.state == "SUCCESS":
-                    aggr_log = '\n'.join(task.result.log)
-                    aggr_err = '\n'.join(task.result.err)
-                    data = {
-                        "success": True, "result": task.result.success,
-                        "state": task.state, "log": aggr_log, "err": aggr_err
-                    }
-                elif task.state == "PROGRESS":
-                    data = {"success": True, "result": task.state, "state": task.state, "info": task.info}
-            else:
-                data = {"success": False, "errmsg": "No task_id in the request"}
-        else:
-            data = {"success": False, "errmsg": "Not ajax"}
-    except Exception as err:
-        data = {"success": False, "errmsg": str(err)}
-        tb = traceback.format_exc()
-        logging.error(str(tb))
-    return JsonResponse(data)
+# @login_required
+# @csrf_exempt
+# def poll_state(request):
+#     data = {"success": False, "errmsg": "Unknown error"}
+#     try:
+#         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#             if 'task_id' in request.POST.keys() and request.POST['task_id']:
+#                 task_id = request.POST['task_id']
+#                 task = AsyncResult(task_id)
+#                 if task.state == "SUCCESS":
+#                     aggr_log = '\n'.join(task.result.log)
+#                     aggr_err = '\n'.join(task.result.err)
+#                     data = {
+#                         "success": True, "result": task.result.success,
+#                         "state": task.state, "log": aggr_log, "err": aggr_err
+#                     }
+#                 elif task.state == "PROGRESS":
+#                     data = {"success": True, "result": task.state, "state": task.state, "info": task.info}
+#             else:
+#                 data = {"success": False, "errmsg": "No task_id in the request"}
+#         else:
+#             data = {"success": False, "errmsg": "Not ajax"}
+#     except Exception as err:
+#         data = {"success": False, "errmsg": str(err)}
+#         tb = traceback.format_exc()
+#         logging.error(str(tb))
+#     return JsonResponse(data)
 
 
 class SipCreationBatchView(ListView):
@@ -997,7 +1110,7 @@ class SipCreationBatchView(ListView):
     model = InformationPackage
     template_name = 'sipcreator/batch.html'
     context_object_name = 'sips'
-
+    # pylint: disable-next=no-member
     queryset = InformationPackage.objects.all().order_by('last_change')
 
     @method_decorator(login_required)
@@ -1021,18 +1134,28 @@ def apply_task(request):
     """
     try:
         selected_ip = request.POST['selected_ip']
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(pk=selected_ip)
         user = User.objects.get(pk=request.user.pk)
-        logger.info("Task processing for process id: %s started by user %s" % (ip.uid, user.username))
+        logger.info("Task processing for process id: %s started by user %s", ip.uid, user.username)
         # the task is an update task if the object already has an identifier
-        is_update_task = ip.identifier
-        # identifier assignment (urn:uuid:<uuid>)
-        identifier = ip.identifier if ip.identifier else "urn:uuid:%s" % uuid.uuid4().__str__()
+        is_update_task = bool(ip.identifier)
+        # identifier assignment
+        identifier = decode_identifier(ip.external_id) if ip.external_id else ip.identifier \
+            if ip.identifier else "urn:uuid:%s" % str(uuid.uuid4())
+        encoded_identifier = encode_identifier(identifier) 
+        ip.external_id = encoded_identifier
         ip.identifier = identifier
         ip.save()
         task_input = {
-            "uid": ip.uid, "package_name": ip.package_name, "org_nsid": node_namespace_id,
-            "identifier": identifier, "md_format": "METS", "is_update_task": is_update_task}
+            "uid": ip.uid, 
+            "package_name": ip.package_name, 
+            "org_nsid": node_namespace_id,
+            "identifier": identifier,
+            "encoded_identifier": encoded_identifier,
+            "md_format": "METS", 
+            "is_update_task": is_update_task
+        }
         data = execute_task(task_input)
     except Exception as err:
         tb = traceback.format_exc()
@@ -1055,7 +1178,7 @@ def poll_state(request):
     @return: JSON response (task state metadata)
     """
     try:
-        if request.is_ajax():
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             if 'task_id' in request.POST.keys() and request.POST['task_id']:
                 task_id = request.POST['task_id']
                 task = AsyncResult(task_id)
@@ -1063,6 +1186,7 @@ def poll_state(request):
                 if task.state == "SUCCESS":
                     child_task_ids, task_status_from_result = get_task_info_from_child_tasks(task)
                     uid = task_info["uid"]
+                    # pylint: disable-next=no-member
                     ip = InformationPackage.objects.get(uid=uid)
                     if "storage_dir" in task_status_from_result:
                         ip.storage_loc = task_status_from_result["storage_dir"]

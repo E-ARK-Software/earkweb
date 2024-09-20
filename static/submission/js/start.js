@@ -72,11 +72,12 @@
     }).focus(function() {
        checkPackageName(function() {});
     });
-    function validURI(value) {
-        return /^((http|https?|ftp):\/\/|(doi|handle|info):)[a-z0-9-_./?:~]{5,500}$/i.test(value);
+    const uriPattern = /^(https?:\/\/[^\s/$.?#].[^\s]*|doi:\d{2}\.\d{4,9}\/[-._;()/:A-Z0-9]+|handle:[^\s]+|info:[^\s]+)$/i;
+    function validateURI(uri) {
+        return uriPattern.test(uri);
     }
     $( "#extuid" ).keyup(function() {
-        var isValidURI = validURI($(this).val());
+        var isValidURI = validateURI($(this).val());
         window.console.log(isValidURI);
         if($(this).val() == '' || isValidURI) {
             setValid("extuid");

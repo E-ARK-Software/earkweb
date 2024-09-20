@@ -6,6 +6,7 @@
 {% load widget_tweaks %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
 <link rel="stylesheet" href="{% static 'earkweb/leaflet/leaflet.css' %}" />
  <!--link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -51,8 +52,83 @@
 
 </style>
 
+{% if "step2" in request.path %}
+<script>
+    const existingLocations = JSON.parse("{{ locations | escapejs }}");
+    console.log(existingLocations)
+</script>
+
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script>
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0,
+              v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+function MapLocation(label, lat, lng, zoomLevel, locationUncertainty=0, locationUncertaintyRadius=0) {
+    this.identifier = "urn:eark:location:" + generateUUID();
+    this.label = label;
+    this.coordinates = { lat: lat, lng: lng };
+    this.zoomLevel = zoomLevel;
+    this.locationUncertainty = locationUncertainty;
+    this.locationUncertaintyRadius = locationUncertaintyRadius;
+}
+MapLocation.prototype.toString = function() {
+    return JSON.stringify({
+        identifier: this.identifier,
+        label: this.label,
+        coordinates: this.coordinates,
+        zoomLevel: this.zoomLevel,
+        locationUncertainty: this.locationUncertainty,
+        locationUncertaintyRadius: this.locationUncertaintyRadius
+    });
+};
+MapLocation.fromString = function(str) {
+    const obj = JSON.parse(str);
+    return new MapLocation(
+        obj.identifier,
+        obj.label,
+        obj.coordinates.lat,
+        obj.coordinates.lng,
+        obj.zoomLevel,
+        obj.locationUncertainty,
+        obj.locationUncertaintyRadius
+    );
+};
+
+function persistLocations() {
+    // persist locations
+    let persistedLocationsArr = [];
+    for (const [key, value] of Object.entries(window.locationsRecord)) {       
+        if (value instanceof MapLocation) {
+             persistedLocationsArr.push(value.toString());
+        }
+    }
+    persistedLocations = persistedLocationsArr.join(", ");
+    $('#locations')[0].value = "[" + persistedLocations + "]";
+}
+
+function handleLocationEvent() {
+        // store current location in locations dictionary
+        if (!(window.currentLocation.label in window.locationsRecord)) {
+            let loc = window.currentLocation;
+            window.locationsRecord[window.currentLocation.label] = new MapLocation(
+                loc.label, loc.lat, loc.lng, loc.zoomLevel, loc.locationUncertainty, loc.locationUncertaintyRadius
+            );
+            persistLocations();
+        }
+
+        // reset current location object
+        window.currentLocation = Object.create(Location);
+}
+</script>
+{% endif %}
+
 {% if "step1" in request.path %}
 <script>
+
 $(document).ready(function() {
 let update_hidden_tags = function() {
         let selected_values = [];
@@ -119,6 +195,192 @@ let addTagClickHandlers = function() {
 </script>
 {% endif %}
 
+{% if "step4" in request.path %}
+<style>
+/* Basic styling for the button */
+#hoverButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* Styling for the popup */
+.popup {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid black;
+    padding: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: styling for the popup when visible */
+.popup.visible {
+    display: block;
+}
+</style>
+<script>
+function loadDataFiles(ipTargetDirectory) {
+
+    $.ajax({
+        type: 'GET',
+        url: '/earkweb/api/ips/{{ ip.uid }}/dir-json',
+        data: {
+
+        },
+        success: function(data){
+            console.log(JSON.stringify(data));
+            var targetDir = data.data.children.filter(obj => {
+              return obj.text === ipTargetDirectory;
+            })
+
+            var datafiles = targetDir[0]['children'];
+            console.log(datafiles.length);
+
+            initPrev = [];
+            initPrevConfig = [];
+
+            if(datafiles.length > 0) {
+
+                var datafiles_arr = datafiles;
+
+                var mimeTypes = [];
+
+                var pv_file_paths = [];
+                function appendFilePaths(path, dfarr) {
+                    for (df of dfarr) {
+                        var curr_path = path ? path+"/"+df.text : df.text;
+                        if(!df.children) {
+                            pv_file_paths.push(curr_path);
+                            mimeTypes.push(df.data);
+                        } else {
+
+                            appendFilePaths(curr_path, df.children);
+                        }
+                    }
+                }
+                appendFilePaths(null, datafiles_arr);
+                pv_file_paths.sort();
+                obj = [];
+                for (var key in mimeTypes) {
+                    console.log('Download URL: {{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']);
+                    var downloadUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path'];
+                    var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']+'/';
+                    caption = mimeTypes[key]['path'].replace('{{ ip.uid }}/'+ipTargetDirectory+'/', '');
+                    initPrev.push(mimeTypes[key]['mimetype']);
+                    console.log(mimeTypes[key]['path'].replace('{{ ip.uid }}/'+ipTargetDirectory+'/', ''));
+                    initPrevConfig.push({caption: caption, filetype: mimeTypes[key]['mimetype'], downloadUrl: downloadUrl, key: mimeTypes[key]['path'], previewAsData: false, 'showPreview': false, url: deleteUrl});
+                }
+
+            }
+
+            $("#kv-explorer").fileinput({
+                minFileCount: 1,
+                maxFileCount: 50,
+                maxFileSize: 102400,
+                'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
+'odt', 'docx', 'doc', 'xml', 'txt', 'md', 'xls', 'xlsx', 'gml', 'xsd'],
+                'theme': 'explorer-fa',
+                'uploadUrl': '/earkweb/submission/ip_upload',
+                overwriteInitial: false,
+                allowedPreviewTypes: ['image'],
+                initialPreviewAsData: false,
+                initialPreview: initPrev,
+                initialPreviewConfig: initPrevConfig,
+                preferIconicPreview: true, // this will force thumbnails to display icons for following file extensions
+                previewFileIconSettings: { // configure your icon file extensions
+                'doc': '<i class="fas fa-file-word text-primary"></i>',
+                'odt': '<i class="fas fa-file-word text-primary"></i>',
+                'xls': '<i class="fas fa-file-excel text-primary"></i>',
+                'ods': '<i class="fas fa-file-excel text-primary"></i>',
+                'ppt': '<i class="fas fa-file-powerpoint text-primary"></i>',
+                'pdf': '<i class="fas fa-file-pdf text-primary"></i>',
+                'zip': '<i class="fas fa-file-archive text-primary"></i>',
+                'htm': '<i class="fas fa-file-code text-primary"></i>',
+                'txt': '<i class="fas fa-file-alt text-primary"></i>',
+                'md': '<i class="fas fa-file-alt text-primary"></i>',
+                'mov': '<i class="fas fa-file-video text-primary"></i>',
+                'mp3': '<i class="fas fa-file-audio text-primary"></i>',
+                'csv': '<i class="fas fa-file-csv text-primary"></i>',
+                'xml': '<i class="fas fa-file-code text-primary"></i>',
+                'json': '<i class="fas fa-file-code text-primary"></i>',
+                'gml': '<i class="fas fa-atlas text-primary"></i>',
+                'xsd': '<i class="fas fa-file-code text-primary"></i>',
+                'shp': '<i class="fas fa-atlas text-primary"></i>',
+                'shx': '<i class="fas fa-atlas text-primary"></i>',
+                'sql': '<i class="fas fa-database text-primary"></i>',
+
+                // note for these file types below no extension determination logic
+                // has been configured (the keys itself will be used as extensions)
+                'jpg': '<i class="fas fa-file-image text-danger"></i>',
+                'gif': '<i class="fas fa-file-image text-muted"></i>',
+                'png': '<i class="fas fa-file-image text-primary"></i>'
+            },
+            previewFileExtSettings: { // configure the logic for determining icon file extensions
+                'csv': function(ext) {
+                    return ext.match(/(csv)$/i);
+                },
+                'doc': function(ext) {
+                    return ext.match(/(doc|docx)$/i);
+                },
+                'ods': function(ext) {
+                    return ext.match(/(ods)$/i);
+                },
+                'odt': function(ext) {
+                    return ext.match(/(odt)$/i);
+                },
+                'xls': function(ext) {
+                    return ext.match(/(xls|xlsx)$/i);
+                },
+                'ppt': function(ext) {
+                    return ext.match(/(ppt|pptx)$/i);
+                },
+                'zip': function(ext) {
+                    return ext.match(/(zip|rar|tar|gzip|gz|7z|xz)$/i);
+                },
+                'htm': function(ext) {
+                    return ext.match(/(htm|html)$/i);
+                },
+                'txt': function(ext) {
+                    return ext.match(/(txt|ini|java|php|js|css)$/i);
+                },
+                'mov': function(ext) {
+                    return ext.match(/(avi|mpg|mkv|mov|mp4|3gp|webm|wmv)$/i);
+                },
+                'mp3': function(ext) {
+                    return ext.match(/(mp3|wav)$/i);
+                }
+            },
+                uploadExtraData: function (previewId, index) {
+                var info = {
+                    "uid": "{{ ip.uid }}",
+                    "distribution_description": $('#id_distribution_description').val(),
+                    "offer": $('#id_offer').val(),
+                    "access_rights": $('#id_access_rights').val(),
+                };
+                return info;
+                }
+            });
+
+            $('button[title="View Details"]').css("display", "none");
+            $('span[title="Move / Rearrange"]').css("display", "none");
+
+
+        },
+        error: function(data){
+            window.console.log("an error occurred");
+        }
+    });
+}
+
+$(document).ready(function() {
+    var documentationIpTargetDirectory = "documentation";
+    loadDataFiles(documentationIpTargetDirectory);
+});
+</script>
+{% endif %}
+
+
 {% if "step2" in request.path %}
 <script>
 $(document).ready(function() {
@@ -136,6 +398,23 @@ $(document).ready(function() {
     map.setView(new L.LatLng(48.26909, 16.42686),11);
     map.addLayer(osm);
 
+    // Add the geocoder control to the map
+    var geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false
+        })
+        .on('markgeocode', function(e) {
+            var bbox = e.geocode.bbox;
+            var poly = L.polygon([
+                bbox.getSouthEast(),
+                bbox.getNorthEast(),
+                bbox.getNorthWest(),
+                bbox.getSouthWest()
+            ]).addTo(map);
+            map.fitBounds(poly.getBounds());
+        })
+        .addTo(window.map);
+
+
     // location object
     const Location = {
       label: "",
@@ -145,11 +424,7 @@ $(document).ready(function() {
       locationUncertainty: 0,
       locationUncertaintyRadius: 0,
       marker: undefined,
-      circle: undefined,
-      toString() {
-        return `{label: "${this.label}", lat: ${this.lat}, lng: ${this.lng}, zoomLevel: ${this.zoomLevel}, locationUncertainty: ${this.locationUncertainty}, locationUncertaintyRadius: ${this.locationUncertaintyRadius}}`;
-
-      }
+      circle: undefined
     };
 
     // existing markers
@@ -162,35 +437,44 @@ $(document).ready(function() {
     };
 
     // current map objects
-    window.currentLocationLabel;
     window.currentLocation = Object.create(Location);
-    window.locations = {};
+    window.locationsRecord = {};
 
-    var existingLatLng = eval(decodeUnicodeEntities("{{ latlngobj|escapejs }}"));
-    if(existingLatLng) {
-        existingLatLng.forEach(function(latLngObj) {
-
+    if(existingLocations.length > 0) {
+        for (const item of existingLocations) {
             var currLoc = Object.create(Location);
-            currLoc.label = latLngObj.label;
-            currLoc.locationUncertainty = latLngObj.locationUncertainty;
-            currLoc.locationUncertaintyRadius = latLngObj.locationUncertaintyRadius;
+            currLoc.label = item.label;
+            currLoc.locationUncertainty = item.locationUncertainty;
+            currLoc.locationUncertaintyRadius = item.locationUncertaintyRadius;
 
-            currLoc.marker = new L.marker([latLngObj.lat, latLngObj.lng], {
-               title: latLngObj.label,
-               clickable: true,
-               draggable: true
+            currLoc.marker = new L.marker([item.coordinates.lat, item.coordinates.lng], {
+                title: item.label,
+                clickable: true,
+                draggable: true
             }).addTo(map);
-            currLoc.marker.bindTooltip(latLngObj.label, { permanent: true, direction: 'right' });
-            currLoc.circle = new L.circle([latLngObj.lat, latLngObj.lng], {
+            currLoc.marker.bindTooltip(item.label, { permanent: true, direction: 'right' });
+            currLoc.circle = new L.circle([item.coordinates.lat, item.coordinates.lng], {
                 color: 'blue',
                 fillColor: 'blue',
                 fillOpacity: 0.3,
-                radius: latLngObj.locationUncertaintyRadius
+                radius: item.locationUncertaintyRadius
                 }).addTo(map);
             console.log(currLoc);
-            window.locations[latLngObj.label] = currLoc;
-        });
+            window.locationsRecord[item.label] = currLoc;
+        }
     }
+
+    $('#add_location_btn').bind('click', function(event) {
+        // Prevent the default form submission behavior
+        event.preventDefault();
+        console.log("hey, you clicked me")
+
+        // Call your event handler function
+        handleLocationEvent();
+
+        // Return false to ensure the form is not submitted
+        return false;
+    });
 
     // context menu html
     html = `
@@ -199,9 +483,10 @@ $(document).ready(function() {
         <input style="width:200px" class="form-control ui-autocomplete-input" id="location" type="text" value=""/>
         <label for="locslider">Location uncertainty</label>
         <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
+        <button id="add_location_btn" class="btn btn-primary" type="button">{% trans 'Add location' %}</button>
     </div>
     `;
-
+    
     // map context menu
     map.on('contextmenu',(e) => {
         L.popup()
@@ -211,19 +496,7 @@ $(document).ready(function() {
         .openOn(map);
 
         map.addEventListener("popupclose", e => {
-          var objStr = window.currentLocation.toString();
-          window.locations[window.currentLocation.label] = window.currentLocation;
-          window.currentLocation = Object.create(Location);
-          var persistedLocations = "";
-          var persistedLocationsArr = [];
-          for (const [key, value] of Object.entries(window.locations)) {
-            if(key != "") {
-              persistedLocationsArr.push(value.toString());
-            }
-          }
-          persistedLocations = persistedLocationsArr.join(", ");
-          $('#latlngobj')[0].value = "["+persistedLocations+"]";
-
+            //handleLocationEvent();
         });
 
         // marker
@@ -273,10 +546,15 @@ $(document).ready(function() {
         };
     });
 
+    
+
     // slider
     $( function() {
         $( "#slider" ).slider();
     });
+    if($('#locations').val() === "") {
+        $('#locations').val('{}')
+    }
 });
 </script>
 {% endif %}
@@ -297,6 +575,10 @@ $(document).ready(function() {
 {% block content %}
 
 <h2>{% trans 'Information package metadata' %}</h2>
+
+{% if "step4" in request.path %}
+<p>{% trans 'Upload supplementary documentation necessary to understand, manage, and preserve the digital information contained within the package. The files will be stored in the "documentation" folder in the root of the information package.' %}</p>
+{% endif %}
 
 <form name="mdform" method="post">
     {% csrf_token %}
@@ -346,21 +628,21 @@ $(document).ready(function() {
         <label style="display:block; margin-top:10px" for="map">Locations</label>
         <div id="map"></div>
         <p style="font-style: italic">Right click to add locations.</p>
-        <label for="latlngobj">Latitude/Longitude/Location uncertainty</label>
-        <input class="form-control ui-autocomplete-input" type="text" id="latlngobj" name="latlngobj" value="{{ latlngobj }}">
+        <label for="locations">Latitude/Longitude/Location uncertainty</label>
+        <input class="form-control ui-autocomplete-input" type="text" id="locations" name="locations" value="{{ locations }}">
     </div>
     {% endif %}
 
     {% if "step4" in request.path %}
-    <form id="datauploadform" enctype="multipart/form-data" method="post">
         <input type="hidden" name="packagename" value="{{ ip.package_name }}"/>
         <input type="hidden" name="uid" value="{{ ip.uid }}"/>
         <input type="hidden" name="pk" value="{{ pk }}"/>
         <input type="hidden" name="rep" value="{{ rep }}"/>
         <div class="file-loading">
-            <input id="kv-explorer" type="file" multiple data-min-file-count="1">
+            <input id="kv-explorer" type="file" multiple data-min-file-count="0">
         </div>
-    </form>
+        <div id="popup" class="popup">Make sure to upload all data files before continuing!</div>
+
     {% endif %}
 
     {% if form.errors %}
@@ -378,7 +660,7 @@ $(document).ready(function() {
     {% endif %}
 
     <div class="form-group">
-        <button type="submit" class="btn btn-primary">
+        <button id="continuebtn" type="submit" class="btn btn-primary">
             <span class="glyphicon glyphicon-triangle-right"></span> {% trans 'Continue' %}
         </button>
         <a href="{% url 'submission:overview' %}" class="btn btn-eark">{% trans 'Cancel' %}</a>
@@ -391,6 +673,24 @@ $(document).ready(function() {
 
 <script type="text/javascript" src="{% static 'earkweb/tagify/tagify.min.js' %}"></script>
 <link rel="stylesheet" href="{% static "earkweb/tagify/tagify.css" %}" type="text/css" />
+
+<script>
+
+$(document).ready(function() {
+    $(document).on('click', '#add_location_btn', function(event) {
+            // Prevent the default form submission behavior
+            event.preventDefault();
+
+            // Call your event handler function
+            handleLocationEvent();
+
+            window.map.closePopup();
+
+            // Return false to ensure the form is not submitted
+            return false;
+        });
+});
+</script>
 <!--
 <input name="tags" placeholder="write some tags" value="css, html, javascript, css">
 
@@ -431,6 +731,37 @@ function onInvalidTag(e){
 -->
 
 </script>
+
+{% if "step4" in request.path %}
+<script>
+$(document).ready(function() {
+    const $button = $('#continuebtn');
+    const $popup = $('#popup');
+
+    $button.hover(
+        function() {
+            // Get button's position and dimensions
+            const rect = this.getBoundingClientRect();
+            const popupWidth = $popup.outerWidth();
+            const popupHeight = $popup.outerHeight();
+
+            // Position the popup above the button (or adjust as needed)
+            $popup.css({
+                left: `${(rect.left / 2) + (rect.width / 2) - (popupWidth / 2)-16}px`,
+                top: `${rect.top - popupHeight - 130}px`
+            });
+
+            // Show the popup
+            $popup.addClass('visible');
+        },
+        function() {
+            // Hide the popup
+            $popup.removeClass('visible');
+        }
+    );
+});
+</script>
+{% endif %}
 
 {% endblock %}
 

@@ -23,11 +23,18 @@ from eatb.utils.fileutils import fsize, FileBinaryDataChunks, locate, strip_pref
 from lxml import etree
 
 from earkweb.models import InternalIdentifier, InformationPackage
-from taskbackend.ip_state import IpState
 from taskbackend.tasklogger import TaskLogger
-from config.configuration import config_path_work, flower_service_url, \
-    verify_certificate, representations_directory, flower_service_url, config_path_storage, \
-    django_service_protocol, django_service_host, django_service_port, backend_api_key
+from config.configuration import config_path_work
+from config.configuration import verify_certificate
+from config.configuration import representations_directory
+from config.configuration import flower_service_url
+from config.configuration import flower_user
+from config.configuration import flower_password
+from config.configuration import config_path_storage
+from config.configuration import django_service_protocol
+from config.configuration import django_service_host
+from config.configuration import django_service_port
+from config.configuration import backend_api_key
 from subprocess import Popen, PIPE
 from config.configuration import django_backend_service_host, django_backend_service_port
 import logging
@@ -165,6 +172,14 @@ def get_identifier(org_nsid):
     return "%s:%s" % (org_nsid, intid.identifier)
 
 
+def is_content_data_path(path):
+    """Check if a given information package path is a content data path"""
+    subs = (representations_directory,)
+    expr = f'.*{subs[0]}/[a-zA-Z0-9-_]+/data.*'
+    pattern = re.compile(expr)
+    return bool(pattern.match(path))
+
+
 def get_celery_worker_status():
     ERROR_KEY = "ERROR"
     try:
@@ -187,8 +202,9 @@ def get_celery_worker_status():
 
 
 def flower_is_running():
+    """Check if the flower service is running"""
     try:
-        response = requests.get(flower_service_url, verify=verify_certificate)
+        response = requests.get(flower_service_url, verify=verify_certificate, timeout=10, auth=(flower_user, flower_password))
         if response.status_code == 200:
             return True
         else:

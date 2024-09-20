@@ -12,6 +12,7 @@ from eatb.utils.datetime import current_date
 from datetime import datetime
 from access.search.solrdocparams import SolrDocParams
 from config.configuration import verify_certificate, representations_directory, metadata_directory
+from taskbackend.taskutils import is_content_data_path
 
 logger = logging.getLogger(__name__)
 import os
@@ -171,7 +172,6 @@ class SolrClient(object):
         for t in tfile:
             tfile.extract(t, extract_dir)
             afile = os.path.join(extract_dir, t.name)
-
             if os.path.exists(afile) and os.path.isfile(afile):
                 params = SolrDocParams(afile).get_params()
                 params['literal.package'] = identifier

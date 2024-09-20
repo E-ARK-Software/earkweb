@@ -16,6 +16,7 @@ import json
 class RepoUser(models.Model):
     class Meta:
         db_table = 'repouser'
+    id = models.AutoField(primary_key=True)    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     org_nsid = models.CharField(max_length=100)
     confirmed = models.BooleanField(default=False)
@@ -35,7 +36,7 @@ class InformationPackage(models.Model):
     version = models.IntegerField()
     work_dir = models.CharField(max_length=4096)
     storage_dir = models.CharField(max_length=4096)
-    basic_metadata = models.TextField(blank=True, null=True)
+    basic_metadata = models.TextField(blank=True, null=True, max_length=8192)
     last_change = models.DateTimeField(auto_now_add=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, blank=True)
     deleted = models.BooleanField(default=False)
@@ -93,6 +94,7 @@ class InternalIdentifier(models.Model):
 
 
 class UploadedFile(models.Model):
+    id = models.AutoField(primary_key=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, blank=True)
     creation_datetime = models.DateTimeField(auto_created=True, blank=True, null=True)
     title = models.CharField(max_length=100)
@@ -139,3 +141,5 @@ class TestModel(models.Model):
 
     def __str__(self):
         return self.id
+
+# pylint: disable=no-member
