@@ -23,7 +23,7 @@ pycountry==23.12.11
 rdflib==7.0.0
 drf-yasg==1.21.7
 simplejson
-uwsgi=2.0.25.1
+uwsgi==2.0.25.1
 importlib_resources=6.4.0
 PyPDF2==3.0.1
 bagit==1.8.1
