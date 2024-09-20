@@ -7,10 +7,30 @@ dissemination of information packages.
 
 ![earkweb start page](./docs/img/earkweb_screenshot.png)
 
-## Software architecture
+## Overview
 
 *earkweb* is a web application with a  task execution backend based on 
 [Celery](http://www.celeryproject.org) which supports the parallel processing of information. 
+
+### Services used
+
+#### Celery 
+
+Celery is an open-source, distributed task queue that allows you to run time-consuming or periodic tasks in the background.
+
+#### Celery beat
+
+Celery Beat is a scheduler that runs alongside Celery workers to execute periodic tasks at specified intervals.
+
+#### Flower (Celery)
+
+Flower is a real-time web-based monitoring tool for Celery that provides detailed insights into task progress, worker status, and system performance.
+
+#### Apache Solr
+
+Apache Solr is an open-source search platform built on Apache Lucene, designed for full-text search and indexing capabilities.
+
+### Architecture
 
 The following diagram illustrates the component architecture.
 
