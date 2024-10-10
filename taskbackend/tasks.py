@@ -971,10 +971,12 @@ def store_aip(_, context, task_log):
         task_log.warning("Connection to API failed. Status was not updated.", err)
 
     # update ocfl inventory
-    if action == "update" and os.path.exists(os.path.join(data_dir, "inventory.json")):
+    if os.path.exists(os.path.join(data_dir, "inventory.json")):
         update_inventory(identifier, version, aip_path, aip_file_name, action)
+        task_log.info("ocfl inventory updated")
     else:
         write_inventory(identifier, version, aip_path, aip_file_name)
+        task_log.info("ocfl inventory created")
 
     return json.dumps(task_context)
 

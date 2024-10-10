@@ -6,6 +6,7 @@ import tarfile
 from datetime import datetime
 from json import JSONDecodeError
 from typing import List
+import tempfile
 
 import bagit
 from celery.result import AsyncResult
@@ -609,6 +610,33 @@ def persist_state(identifier, version, storage_dir, file_name, working_dir):
     return patch_data
 
 
+import hashlib
+import tarfile
+import json
+import os
+from datetime import datetime
+
+def get_hash_values(file):
+    """
+    Get MD5/SHA256/SHA512 hash
+    :param file: Path to file
+    :return: MD5/SHA256/SHA512 hash
+    """
+    blocksize = 65536
+    hashval_sha256 = hashlib.sha256()
+    hashval_md5 = hashlib.md5()
+    hashval_sha512 = hashlib.sha512()
+    with open(file, 'rb') as file:
+        while True:
+            buf = file.read(blocksize)
+            if not buf:
+                break
+            hashval_md5.update(buf)
+            hashval_sha256.update(buf)
+            hashval_sha512.update(buf)
+    return hashval_md5.hexdigest(), hashval_sha256.hexdigest(), hashval_sha512.hexdigest()
+
+
 def write_inventory(identifier, version, aip_path, archive_file):
     aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
     hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(aip_path)
@@ -639,16 +667,87 @@ def write_inventory(identifier, version, aip_path, archive_file):
             }
         }
     }
+    
     ocfl_object_file_name = "0=ocfl_object_1.0"
     with open(os.path.join(aip_storage_root, ocfl_object_file_name), 'w') as ocfl_object_file:
         ocfl_object_file.write("ocfl_object_1.0")
+    
     inventory_file_name = "inventory.json"
     inventory_file_path = os.path.join(aip_storage_root, inventory_file_name)
     with open(inventory_file_path, 'w') as inventory_file:
         inventory_file.write(json.dumps(ocfl, indent=4))
+    
+    # Compute SHA512 hash of inventory.json and write it to inventory.json.sha512
     inventory_file_sha512 = get_sha512_hash(inventory_file_path)
     with open(os.path.join(aip_storage_root, "inventory.json.sha512"), 'w') as checksum_inventory:
         checksum_inventory.write("%s %s" % (inventory_file_sha512, inventory_file_name))
+
+    # Generate inventory_content.json
+    inventory_content = {
+        "digestAlgorithm": "sha512",
+        "fixity": {
+            "md5": {},
+            "sha256": {}
+        },
+        "id": identifier,
+        "manifest": {},
+        "type": "https://ocfl.io/1.0/spec/#inventory_content",
+        "versions": {
+            version: {
+                "created": date_format(datetime.utcnow()),
+                "message": "Original TAR content",
+                "state": {}
+            }
+        }
+    }
+
+    # Open the TAR file and read the entries
+    temp_dir_path = tempfile.mkdtemp()
+    with tarfile.open(aip_path, 'r') as tar:
+        for member in tar.getmembers():
+            if member.isfile():  # Only process files, not directories
+                extracted_file = tar.extractfile(member)
+                file_contents = extracted_file.read()
+
+                # Create temporary file to compute hash
+                temp_file_path = os.path.join(temp_dir_path, member.name)
+                
+                directory = os.path.dirname(temp_file_path)
+                if directory:  # To ensure it's not an empty string in case of a file in the current directory
+                    os.makedirs(directory, exist_ok=True)
+                with open(temp_file_path, 'wb') as temp_file:
+                    temp_file.write(file_contents)
+
+                if not os.path.exists(temp_file_path):
+                    raise("Temporary file was not created successfully: %s" % temp_file_path)
+                
+                # Compute hashes for the file
+                file_md5, file_sha256, file_sha512 = get_hash_values(temp_file_path)
+
+                # Relative path to be used in inventory_content.json
+                relative_file_path = os.path.join(version, member.name)
+
+                # Add hashes to fixity section
+                inventory_content["fixity"]["md5"][file_md5] = [relative_file_path]
+                inventory_content["fixity"]["sha256"][file_sha256] = [relative_file_path]
+
+                # Add hash to manifest and state sections
+                inventory_content["manifest"][file_sha512] = [relative_file_path]
+                inventory_content["versions"][version]["state"][file_sha512] = [relative_file_path]
+
+                # Remove the temporary file
+                os.remove(temp_file_path)
+
+    # Write the inventory_content.json
+    inventory_content_file_name = "inventory_content.json"
+    inventory_content_file_path = os.path.join(aip_storage_root, inventory_content_file_name)
+    with open(inventory_content_file_path, 'w') as inventory_content_file:
+        inventory_content_file.write(json.dumps(inventory_content, indent=4))
+
+    # Compute SHA512 hash of inventory_content.json and write it to inventory_content.json.sha512
+    inventory_content_file_sha512 = get_sha512_hash(inventory_content_file_path)
+    with open(os.path.join(aip_storage_root, "inventory_content.json.sha512"), 'w') as checksum_inventory_content:
+        checksum_inventory_content.write("%s %s" % (inventory_content_file_sha512, inventory_content_file_name))
 
 
 def update_status(uid, patch_data):
@@ -658,12 +757,21 @@ def update_status(uid, patch_data):
                               verify=verify_certificate)
 
 
+
 def update_inventory(identifier, version, aip_path, archive_file, action):
     aip_storage_root = make_storage_data_directory_path(identifier, config_path_storage)
+    
+    # Paths for inventory.json and inventory_content.json
     inventory_file_name = "inventory.json"
     inventory_file_path = os.path.join(aip_storage_root, inventory_file_name)
+    inventory_content_file_name = "inventory_content.json"
+    inventory_content_file_path = os.path.join(aip_storage_root, inventory_content_file_name)
+
+    # Compute hash values for the archive file
     hashval_md5, hashval_sha256, hashval_sha512 = get_hash_values(aip_path)
     ocfl_package_file_path = os.path.join(version, "data", archive_file)
+
+    # Update inventory.json
     inventory_json = read_and_load_json_file(inventory_file_path)
     inventory_json["fixity"]["md5"][hashval_md5] = [ocfl_package_file_path]
     inventory_json["fixity"]["sha256"][hashval_sha256] = [ocfl_package_file_path]
@@ -676,5 +784,62 @@ def update_inventory(identifier, version, aip_path, archive_file, action):
             hashval_sha512: [ocfl_package_file_path]
         }
     }
+
+    # Save the updated inventory.json
     with open(inventory_file_path, 'w') as inventory_file:
         inventory_file.write(json.dumps(inventory_json, indent=4))
+
+    # Update inventory_content.json
+    inventory_content_json = read_and_load_json_file(inventory_content_file_path)
+    
+    # Ensure the "versions" key exists and contains the version
+    if "versions" not in inventory_content_json:
+        inventory_content_json["versions"] = {}
+    if version not in inventory_content_json["versions"]:
+        inventory_content_json["versions"][version] = {
+            "state": {}
+        }
+    if "state" not in inventory_content_json["versions"][version]:
+        inventory_content_json["versions"][version]["state"] = {}
+
+    temp_dir_path = tempfile.mkdtemp()
+    with tarfile.open(aip_path, 'r') as tar:
+        for member in tar.getmembers():
+            if member.isfile():  # Only process regular files
+                extracted_file = tar.extractfile(member)
+                file_contents = extracted_file.read()
+
+                # Create a temporary file to calculate hash values for the file contents
+                temp_file_path = os.path.join(temp_dir_path, member.name)
+
+                directory = os.path.dirname(temp_file_path)
+                if directory:  # To ensure it's not an empty string in case of a file in the current directory
+                    os.makedirs(directory, exist_ok=True)
+                    
+                with open(temp_file_path, 'wb') as temp_file:
+                    temp_file.write(file_contents)
+
+                if not os.path.exists(temp_file_path):
+                    raise Exception(f"Temporary file was not created successfully: {temp_file_path}")
+
+                # Compute the hash values for the extracted file
+                file_md5, file_sha256, file_sha512 = get_hash_values(temp_file_path)
+
+                # Relative path for the file in the inventory
+                relative_file_path = os.path.join(version, member.name)
+
+                # Update fixity for the file in inventory_content.json
+                inventory_content_json["fixity"]["md5"][file_md5] = [relative_file_path]
+                inventory_content_json["fixity"]["sha256"][file_sha256] = [relative_file_path]
+
+                # Update manifest and state in inventory_content.json
+                inventory_content_json["manifest"][file_sha512] = [relative_file_path]
+                inventory_content_json["versions"][version]["state"][file_sha512] = [relative_file_path]
+
+                # Clean up the temporary file
+                os.remove(temp_file_path)
+
+    # Save the updated inventory_content.json
+    with open(inventory_content_file_path, 'w') as inventory_content_file:
+        inventory_content_file.write(json.dumps(inventory_content_json, indent=4))
+
