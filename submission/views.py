@@ -44,6 +44,7 @@ from config.configuration import documentation_directory, representations_direct
     verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, root_dir
 from config.configuration import config_path_work
 from earkweb.models import Representation, InternalIdentifier, Vocabulary
+from eatb.utils.stringutils import safe_path_string
 from taskbackend.taskexecution import execute_task
 from util.custom_exceptions import ResourceNotAvailable, AuthenticationError
 from util.djangoutils import get_unused_identifier, get_user_api_token
@@ -670,6 +671,73 @@ def ip_creation_process(request, pk):
             os.makedirs(target_dir, exist_ok=True)
         with open(ead_target_path, 'w') as md_file:
             md_file.write(ead_content)
+
+        from rdflib import Graph, Literal, Namespace, URIRef
+        from rdflib.namespace import DC, DCTERMS
+        import urllib.parse
+
+        # Create graph
+        g = Graph()
+
+        # Namespaces
+        EX = Namespace(f"http://e-ark-foundation.eu/resource/{ip.uid}/")
+        g.bind("dc", DC)
+        g.bind("dcterms", DCTERMS)
+
+        # URI for parent resource (Ybbs in your example)
+        safe_title = urllib.parse.quote(basic_metadata["title"], safe='')
+        parent_resource_uri = URIRef(EX[safe_title])
+
+        # Add Dublin Core elements for parent resource
+        g.add((parent_resource_uri, DC.title, Literal(basic_metadata["title"])))
+        g.add((parent_resource_uri, DC.creator, Literal(basic_metadata["contact_point"])))
+        g.add((parent_resource_uri, DC.description, Literal(basic_metadata["description"])))
+        g.add((parent_resource_uri, DC.date, Literal(basic_metadata["created"])))
+
+        # Add spatio-temporal data
+        for location in basic_metadata["locations"]:
+            label = location['label']
+            coordinates = location['coordinates']
+            lat = coordinates['lat']
+            lng = coordinates['lng']
+            zoom_level = location['zoomLevel']
+            location_uncertainty = location['locationUncertainty']
+            uncertainty_radius = location['locationUncertaintyRadius']
+            spatial_info = f"{label}, {lat}, {lng} ({zoom_level}, {location_uncertainty}, {uncertainty_radius})"
+            g.add((parent_resource_uri, DCTERMS.spatial, Literal(spatial_info)))
+            g.add((parent_resource_uri, DCTERMS.temporal, Literal(basic_metadata["created"])))
+
+        # Add child representations and hasPart relationships
+        for rep_id, rep_data in basic_metadata["representations"].items():
+            child_resource_uri = URIRef(EX[rep_id])  # URI for the child (e.g., PDF representation)
+            
+            # Add metadata for each child resource (representation)
+            g.add((child_resource_uri, DCTERMS.title, Literal(rep_data["distribution_label"])))
+            g.add((child_resource_uri, DCTERMS.description, Literal(rep_data["distribution_description"])))
+            g.add((child_resource_uri, DCTERMS.rights, Literal(rep_data["access_rights"])))
+            
+            # Add file items for each representation
+            for file_path in rep_data["file_items"]:
+                file_uri = URIRef(EX[urllib.parse.quote(file_path)])
+                g.add((child_resource_uri, DCTERMS.hasPart, file_uri))
+
+            # Link the child resource to the parent using hasPart
+            g.add((parent_resource_uri, DCTERMS.hasPart, child_resource_uri))
+            # Optionally, add the reverse relationship (isPartOf) from child to parent
+            g.add((child_resource_uri, DCTERMS.isPartOf, parent_resource_uri))
+
+        # Add producer and publisher
+        g.add((parent_resource_uri, DCTERMS.contributor, Literal(basic_metadata["contact_point"])))
+        g.add((parent_resource_uri, DCTERMS.publisher, Literal(basic_metadata["publisher"])))
+
+        # Add license
+        g.add((parent_resource_uri, DCTERMS.license, URIRef("https://creativecommons.org/licenses/by/4.0/")))
+
+        # Serialize graph to Turtle file
+        ttl_target_path = os.path.join(config_path_work, ip.uid, "metadata", 'metadata.ttl')
+        g.serialize(ttl_target_path, format="turtle")
+
+        logging.info(f"Turtle file written to: {ttl_target_path}")
 
         from taskbackend.tasks import sip_package
         task_input = {
