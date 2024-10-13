@@ -6,7 +6,7 @@ Installation was tested on Ubuntu 22.04.3 LTS (Jammy Jellyfish)
 
 ### Ubuntu packages
 
-    sudo apt-get install python3 python3-dev python3-virtualenv build-essential default-libmysqlclient-dev libicu-dev
+    sudo apt-get install python3 python3-dev python3-pip python3-virtualenv build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev
 
 ### Message queue and result backend
 
@@ -102,11 +102,12 @@ Use the following command to install the default JRE on Ubuntu:
 2. Create virtual environment (python)
 
        virtualenv -p python3 venv
+       source venv/bin/activate 
 
 4. Install additional python packages:
 
        pip3 install -r requirements.txt
-       
+
    Note that local library dependencies can be installed using pip with the '-e' parameter. In this case changes in the 
    dependant library take effect immediately:
 
@@ -159,7 +160,7 @@ Use the following command to install the default JRE on Ubuntu:
 8. Rename sample config file `settings/settings.cfg.default` to `settings/settings.cfg` and adapt settings according to your environment.
 
 ## Create and initialize database
-cd 
+
 1. Prepare databases (one main database for the frontend (earkweb) and one for the celery backend (celerydb):
 
     Install mysql database if not available on your system:

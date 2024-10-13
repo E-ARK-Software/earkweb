@@ -67,10 +67,6 @@ from util.flowerapiclient import get_task_info, get_task_list
 
 logger = logging.getLogger(__name__)
 
-# get eurovoc terms
-# pylint: disable-next=no-member
-eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
-
 
 @login_required
 @csrf_exempt
@@ -1282,7 +1278,7 @@ def poll_state(request):
     return JsonResponse(data, status=200)
 
 def get_autocomplete(request):
-
+    eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
     terms = eurovoc_terms
     if "term" in request.GET and request.GET["term"]:
         suggested_terms = [term for term in terms if term.startswith(request.GET["term"])]
@@ -1292,4 +1288,5 @@ def get_autocomplete(request):
 
 
 def get_autocomplete_tags(request):
+    eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
     return JsonResponse(eurovoc_terms, safe=False)
