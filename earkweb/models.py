@@ -36,7 +36,7 @@ class InformationPackage(models.Model):
     version = models.IntegerField()
     work_dir = models.CharField(max_length=4096)
     storage_dir = models.CharField(max_length=4096)
-    basic_metadata = models.TextField(blank=True, null=True, max_length=8192)
+    basic_metadata = models.TextField(blank=True, null=True)
     last_change = models.DateTimeField(auto_now_add=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, blank=True)
     deleted = models.BooleanField(default=False)
