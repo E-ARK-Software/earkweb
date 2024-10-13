@@ -290,6 +290,7 @@ DATABASES = {
         'PORT': str(mysql_port),
         'OPTIONS': {
             # "init_command": "SET storage_engine=MyISAM",
+            'charset': 'utf8mb4',
             "init_command": "SET default_storage_engine=MyISAM",
         }
     }
