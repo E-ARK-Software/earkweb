@@ -8,8 +8,7 @@ import traceback
 from json import JSONDecodeError
 
 import magic
-#from _icu import CharsetDetector
-import cchardet
+import charset_normalizer
 from dateutil import parser
 from datetime import date, timedelta, datetime
 from django.contrib.auth.models import User
@@ -559,7 +558,7 @@ def read_file(file_path):
                 stream = open(file_path, 'rb')
                 bytes = stream.read()
                 #encoding = CharsetDetector(bytes).detect().getName()
-                encoding = cchardet.detect(bytes)['encoding']
+                encoding = charset_normalizer.detect(bytes)['encoding']
                 file_content = bytes.decode(encoding).encode('utf-8')
                 response = HttpResponse(file_content, content_type=mime)
             else:
