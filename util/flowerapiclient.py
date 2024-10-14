@@ -49,7 +49,7 @@ def get_task_info(task_id):
 
 
 def get_task_list(task_id, exclude_tasks:list=None):
-    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
+    flower_request_url = f"{flower_protocol}://{flower_host}:{flower_port}{flower_path}api/tasks"
     response = requests.get(flower_request_url, 
                             verify=verify_certificate, 
                             headers={'Connection': 'close'}, 
