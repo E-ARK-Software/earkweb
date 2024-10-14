@@ -56,6 +56,7 @@ solr_core = storagecore1
 flower_protocol = http
 flower_host = localhost
 flower_port = 5555
+# flower path must begin and end with a slash
 flower_path = /
 flower_user = repo
 flower_password = repo

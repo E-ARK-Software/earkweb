@@ -8,12 +8,13 @@ from config.configuration import flower_port
 from config.configuration import flower_host
 from config.configuration import flower_user
 from config.configuration import flower_password
+from config.configuration import flower_protocol
 from config.configuration import verify_certificate
 
  
 def get_task_info(task_id):
     """Get task information from flower"""
-    flower_request_url = 'http://%s:%s%sapi/tasks' % (flower_host, flower_port, flower_path)
+    flower_request_url = f"{flower_protocol}://{flower_host}:{flower_port}{flower_path}api/tasks"
     response = requests.get(flower_request_url,
                             verify=verify_certificate, 
                             headers={'Connection': 'close'}, 
