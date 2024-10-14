@@ -665,7 +665,7 @@ def ip_creation_process(request, pk):
         target_dir = os.path.dirname(ead_target_path)
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
-        with open(ead_target_path, 'w') as md_file:
+        with open(ead_target_path, 'w', encoding='utf-8') as md_file:
             md_file.write(ead_content)
 
         from rdflib import Graph, Literal, Namespace, URIRef
