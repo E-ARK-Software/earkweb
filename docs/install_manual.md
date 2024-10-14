@@ -2,21 +2,13 @@
 
 ## Installation dependencies
 
-Installation was tested on Ubuntu 22.04.3 LTS (Jammy Jellyfish)
+Installation was tested on Ubuntu 24.04.1 LTS (Noble Numbat)
 
 ### Ubuntu packages
 
     sudo apt-get install python3 python3-dev python3-pip python3-virtualenv build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev
 
-### Message queue and result backend
-
-Install result backend database:
-
-    sudo apt-get install redis-server
-
 ### SolR
-
-This section only applies if SolR is used as a search module.
     
 Note: SolR version 8.4.1 requires at least Java 8 (current version: [Java 13](https://www.oracle.com/java/technologies/javase-jdk13-downloads.html)).
 
@@ -93,7 +85,9 @@ Use the following command to install the default JRE on Ubuntu:
 
 1. Checkout project
 
-       git clone $repository/earkweb
+    [earkweb repository on Github](https://github.com/E-ARK-Software/earkweb)
+
+       git clone git@github.com:E-ARK-Software/earkweb.git
         
     Change to earkweb directory:
 
@@ -107,11 +101,6 @@ Use the following command to install the default JRE on Ubuntu:
 4. Install additional python packages:
 
        pip3 install -r requirements.txt
-
-   Note that local library dependencies can be installed using pip with the '-e' parameter. In this case changes in the 
-   dependant library take effect immediately:
-
-       pip install -e ../otherlib/.    
         
 5. Manually install additional packages:
 
@@ -125,21 +114,6 @@ Use the following command to install the default JRE on Ubuntu:
 
    2. Make sure the required format file `formats-v*.xml` is available in fido's configuration directory `fido/conf/`, 
       for example in a virtual environment `venv/lib/python3.10/site-packages/fido/conf/formats-v104.xml`.
-
-
-   Ghostscript (PDF to PDF/A conversion)
-
-   1. Download: [Ghostscript 9.18] (http://downloads.ghostscript.com/public/ghostscript-9.18.tar.gz):
-    
-        wget http://downloads.ghostscript.com/public/old-gs-releases/ghostscript-9.18.tar.gz
-
-   2. Installation: [how to install] (http://www.ghostscript.com/doc/9.18/Install.htm):
-
-        tar -xzf ghostscript-9.18.tar.gz
-        cd ghostscript-9.18
-        ./configure
-        make
-        sudo make install
         
 6. Create directories and files making sure the user running earkweb has rights to read and write (you have to replace 
 `$USER` and `$GROUP` or set the variables  accordingly):
@@ -214,13 +188,21 @@ Generate localised messages:
 
     ./locale/makemessages.sh
 
+Make sure that the static directory exists (as defined by STATIC_ROOT in settings.py) and run the command to copy static files:
+
+    python manage.py collectstatic
+
 Documentation: http://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication
 
 ## Celery distributed task execution 
 
 ### Install message queue and result backend
 
-Install RabbitMQ Server
+#### Install RabbitMQ Server
+
+Install RabbitMQ message queue
+
+[Installing on Debian and Ubuntu](https://www.rabbitmq.com/docs/install-debian#installation-methods)
 
 Make sure the prerequisites are fulfilled:
 
@@ -267,7 +249,7 @@ If all went well, you should see a rabbitmq-server process up and running:
 
     sudo systemctl status rabbitmq-server
 
-Install result backend database:
+#### Install result backend
 
     sudo apt-get install redis-server
 
@@ -304,7 +286,7 @@ This section explains how to run *earkweb* in development mode.
 
 1. Change to the *earkweb* directory:
 
-       cd <earkweb_install_path>/earkweb
+       cd /path/where/earkweb/is/installed/earkweb
         
 2. Start web application
 
@@ -329,3 +311,5 @@ This section explains how to run *earkweb* in development mode.
     http://127.0.0.1:8000/earkweb/adminrest_framework_api_key/apikey/
     
     And make sure it matches the parameter `backend_api_key` in the configuration file `settings/settings.cfg`. 
+
+Please look at the [admin notes](admin_notes.md) if you want to set up the services in a production environment.

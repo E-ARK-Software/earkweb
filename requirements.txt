@@ -6,7 +6,7 @@ django-tables2==2.7.0
 django-widget-tweaks==1.5.0
 django-formtools==2.5.1
 django-bootstrap-form==3.4
-djangorestframework==3.15.1
+djangorestframework==3.15.2
 djangorestframework-api-key==3.0.0
 django-taggit==6.1.0
 django-taggit-autosuggest==0.3.8
@@ -27,7 +27,7 @@ uwsgi==2.0.25.1
 importlib_resources==6.4.0
 PyPDF2==3.0.1
 bagit==1.8.1
-cchardet==2.1.7
+charset-normalizer==3.4.0
 eatb==0.2.4
 python-magic==0.4.27
 opf-fido==1.6.1
