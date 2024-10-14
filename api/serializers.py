@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 class InformationPackageSerializer(serializers.Serializer):
-    uid = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="UUID of the information package")
+    uid = serializers.CharField(required=False, allow_blank=True, max_length=255, help_text="UUID of the information package")
     work_dir = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Path to the working copy of the information package")
-    package_name = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
-    external_id = serializers.CharField(required=False, allow_blank=True, max_length=200, help_text="Name of the information package")
-    identifier = serializers.CharField(required=False, allow_blank=True, max_length=50, help_text="Local identifier of the data set")
+    package_name = serializers.CharField(required=False, allow_blank=True, max_length=255, help_text="Name of the information package")
+    external_id = serializers.CharField(required=False, allow_blank=True, max_length=255, help_text="Name of the information package")
+    identifier = serializers.CharField(required=False, allow_blank=True, max_length=255, help_text="Local identifier of the data set")
     version = serializers.IntegerField(required=False, help_text="Version of the data set")
     storage_dir = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Storage location of the data set")
     basic_metadata = serializers.CharField(required=False, allow_blank=True, max_length=4096, help_text="Basic metadata in JSON format")
