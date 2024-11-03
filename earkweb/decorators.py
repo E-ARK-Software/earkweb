@@ -66,12 +66,15 @@ def task_logger(f):
             context = json.loads(task_input)
         else:
             context = task_input
-        uid = context["uid"]
-        ip_dir = os.path.join(config_path_work, uid)
-        log_dir = ip_dir
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir, exist_ok=True)
-        task_log = get_task_logger(f, ip_dir)
+        uid = context["uid"] if "uid" in context else None
+        if uid:
+            ip_dir = os.path.join(config_path_work, uid)
+            log_dir = ip_dir
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            task_log = get_task_logger(f, ip_dir)
+        else:
+            task_log = logging
         kwds["task_log"] = task_log
         try:
             task_log.info("============ Task %s ============" % task.name)
@@ -79,9 +82,10 @@ def task_logger(f):
             for param, value in input_params.items():
                 task_log.debug("Input parameter '%s': %s" % (param, value))
             result = f(*args, **kwds)
-            result_params = json.loads(result)
-            for param, value in result_params.items():
-                task_log.debug("Output parameter '%s': %s" % (param, value))
+            if uid:
+                result_params = json.loads(result)
+                for param, value in result_params.items():
+                    task_log.debug("Output parameter '%s': %s" % (param, value))
         except Exception as ex:
             task_log.error("Exception {0}".format(ex))
             raise ex

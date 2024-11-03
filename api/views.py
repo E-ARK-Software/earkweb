@@ -370,7 +370,7 @@ def index_informationpackage(request, identifier):
             if not dpts.identifier_object_exists(identifier):
                 return JsonResponse({"message": "Data asset does not exist in storage."}, status=404)
             job = aip_indexing.delay(('{"identifier": "%s"}' % identifier))
-            return JsonResponse({"message": "Indexing request submitted successfully.", "job_id": job.id}, status=201)
+            return JsonResponse({"message": "Job submitted", "job_id": job.id}, status=201)
         # pylint: disable-next=no-member
         except User.DoesNotExist:
             return JsonResponse({"message": "Internal error: user does not exist"}, status=500)

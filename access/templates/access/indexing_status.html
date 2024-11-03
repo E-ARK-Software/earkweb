@@ -12,6 +12,80 @@
 
     <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
     <!--<link rel="stylesheet" href="{% static 'earkweb/bootstrap-notify/bootstrap-notify.css' %}" type="text/css" />-->
+    
+    <script type="text/javascript">
+        var flower_service_url = '{{flower_service_url}}';
+        $(document).ready(function() {
+            $('.start-indexing-btn').on('click', function() {
+                var pk = $(this).data('id');
+                var button = $(this);
+                var statusDiv = $("#indexing-status-" + pk);
+
+                // Disable button and show loading text
+                button.prop('disabled', true).text('Indexing...');
+
+                var url = "{% url 'access:start-indexing' pk=0 %}".replace('0', pk);
+                console.log("AJAX request URL: ", url);  // Debugging the URL
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    headers: { "X-CSRFToken": "{{ csrf_token }}" },
+                    success: function(response) {
+                        if (response.message && response.job_id) {
+                            // Display success message with task link
+                            statusDiv.html('<span class="success"><a href="'+flower_service_url+'task/' + response.job_id + '">' + response.message + '<a/></span>');
+
+                            // Invoke checkTaskStatus function to monitor the status
+                            checkTaskStatus(response.job_id, pk);
+                        } else {
+                            statusDiv.text('Indexing completed.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("AJAX Error: " + status);
+                        console.log("Error Message: " + error);
+                        console.log("Status Code: " + xhr.status);
+                        console.log("Response Text: " + xhr.responseText);
+
+                        statusDiv.html('<span class="error">Error: ' + xhr.status + ' - ' + error + '</span>');
+
+                        // Re-enable the button in case of error (for retry)
+                        button.prop('disabled', false).text('Start Indexing');
+                    }
+                });
+            });
+        });
+
+        function checkTaskStatus(task_id, pk) {
+            var startIndexingUrl = "{% url 'access:indexing-task-status' task_id=0 %}".replace('0', task_id);
+            $.ajax({
+                url: startIndexingUrl,
+                type: 'GET',
+                success: function(response) {
+                    if (response.status === 'SUCCESS') {
+                        $("#indexing-status-" + pk).text('Indexing completed.');
+                        $("#start-indexing-" + pk).prop('disabled', false).text('Re-index');
+                    } else if (response.status === 'FAILURE') {
+                        $("#indexing-status-" + pk).html('<span class="error">Error: <a href="'+flower_service_url+'task/' + task_id + '" target="new">failed task<a/></span>');
+                        
+                        $("#start-indexing-" + pk).prop('disabled', false).text('Retry Indexing');
+                    } else {
+                        setTimeout(function() {
+                            checkTaskStatus(task_id, pk);
+                        }, 2000);  // Poll every 2 seconds
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log("Error fetching task status: ", error);
+                    $("#indexing-status-" + pk).text('Error checking status.');
+                }
+            });
+        }
+    </script>
 
 {% endblock %}
 

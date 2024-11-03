@@ -24,22 +24,22 @@ from taskbackend.tasks import aip_packaging
 from taskbackend.tasks import aip_record_events
 
 
-context = {"uid": "dfe6ace2-7180-4f70-bd8c-aea88ee7d7ca", "identifier": "urn:uuid:ce64bc1e-a4d0-4a8d-abad-263d2e656793", "package_name": "mona.lisa.001", "org_nsid": "earkweb"}
+#context = {"uid": "dfe6ace2-7180-4f70-bd8c-aea88ee7d7ca", "identifier": "urn:uuid:ce64bc1e-a4d0-4a8d-abad-263d2e656793", "package_name": "mona.lisa.001", "org_nsid": "earkweb"}
+('{"identifier": "https://doi.org/10.5281/zenodo.3736"}',)
 
-
+context = {"identifier": "https://doi.org/10.5281/zenodo.3736"}
 #sip_package(json.dumps(context))
 
 #store_original_sip(json.dumps(context))
 
-aip_record_events(json.dumps(context))
+#aip_record_events(json.dumps(context))
 
 #aip_package_structure(json.dumps(context))
 
 #aip_package(json.dumps(context))
 
 #store_aip(json.dumps(context))
-
-#aip_indexing(json.dumps(context))
+aip_indexing(json.dumps(context))
 
 
 

@@ -61,7 +61,7 @@ urlpatterns = [
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_working_dir_file_resource),
 
-    re_path(r'^ips/(?P<identifier>[a-zA-Z0-9\_\-\:\.,=+]{20,200})/(?P<entry>[0-9a-zA-Z_\-/\. \:]{3,500})/stream/$',
+    re_path(r'^ips/(?P<identifier>.+?)/(?P<entry>[0-9a-zA-Z_\-/\. \:]{3,500})/stream/$',
         views.package_entry_from_backend, name='read_container_package_entry'),
 
     re_path(r'^ips/status/$', views.get_ip_states),
@@ -77,18 +77,17 @@ urlpatterns = [
 
     # endpoints which require direct access to the storage backend
 
-    # (?P<identifier>[a-z0-9\-:/\.,=+]{20,80})
-    re_path(r'^ips/(?P<identifier>[a-zA-Z0-9\_\-\:/\.,=+]{20,200})/file-resource/(?P<ip_sub_file_path>.*)/$',
+    re_path(r'^ips/(?P<identifier>.+?)/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_storage_file_resource),
 
-    re_path(r'^storage/ips/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/dir-json$', views.do_storage_dir_json),
-    re_path(r'^storage/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/%s/$' % representations_directory,
+    re_path(r'^storage/ips/(?P<identifier>.+?)/dir-json$', views.do_storage_dir_json),
+    re_path(r'^storage/(?P<identifier>.+?)/%s/$' % representations_directory,
         views.get_ip_representations_info, name='storage_identifier_representations'),
-    re_path(r'^storage/ips/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/index/$', views.index_informationpackage),
+    re_path(r'^ips/(?P<identifier>.+?)/index/$', views.index_informationpackage),
 
     # endpoints which require direct access to both, working area and storage backend
 
-    re_path(r'^ips/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/checkout-working-copy/$',
+    re_path(r'^ips/(?P<identifier>.+?)/checkout-working-copy/$',
         views.checkout_working_copy),
 
 ]

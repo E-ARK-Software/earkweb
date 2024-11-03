@@ -4,16 +4,19 @@ import logging
 
 import xmltodict
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.generic import DetailView
 from django_tables2 import RequestConfig
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.http import HttpResponse, StreamingHttpResponse, Http404
 from django.template import loader
 from django.http import JsonResponse
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
+from requests.auth import HTTPBasicAuth
 import requests
 from django.contrib.auth.models import User
 
@@ -24,6 +27,9 @@ from config.configuration import django_service_host
 from config.configuration import solr_core
 from config.configuration import solr_port
 from config.configuration import config_path_storage
+from config.configuration import flower_service_url
+from config.configuration import flower_user
+from config.configuration import flower_password
 from earkweb.models import InformationPackage, Representation
 
 from django.utils.translation import gettext_lazy as _
@@ -32,6 +38,9 @@ from django.utils.translation import gettext_lazy as _
 
 from util.djangoutils import error_resp, get_user_api_token
 from util import service_available
+
+from celery.result import AsyncResult
+
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +63,12 @@ def indexingstatus(request):
     queryset=InformationPackage.objects.extra(where=["storage_dir != ''"]).order_by('-last_change')
     table = IndexingStatusTable(queryset)
     RequestConfig(request, paginate={'per_page': 10}).configure(table)
-    return render(request, 'access/indexing_status.html', {'informationpackage': table})
+    return render(request, 'access/indexing_status.html', {
+        'informationpackage': table,
+        'flower_service_url': flower_service_url,
+        'flower_user': flower_user,
+        'flower_password': flower_password
+    })
 
 
 class IndexingStatusTable(tables.Table):
@@ -64,18 +78,137 @@ class IndexingStatusTable(tables.Table):
     identifier = tables.LinkColumn('access:asset', args={A('identifier')}, verbose_name=_('Identifier'))
 
     last_change = tables.DateTimeColumn(format="d.m.Y H:i:s", verbose_name=_('Last change'))
-    num_indexed_docs_storage = tables.Column(verbose_name=_('Number of indexed documents'))
+    num_indexed_docs_storage = tables.Column(verbose_name=_('Indexed'))
+    indexing_action = tables.TemplateColumn(template_name='access/action_buttons.html', verbose_name=_('Action'), orderable=False)
+    indexing_status = tables.TemplateColumn(template_name='access/indexing_status_div.html', verbose_name=_('Status'), orderable=False)
 
     class Meta:
         model = InformationPackage
-        fields = ('identifier', 'last_change', 'num_indexed_docs_storage')
+        fields = ('identifier', 'last_change', 'num_indexed_docs_storage', 'indexing_action')
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed'}
         row_attrs = {'data-id': lambda record: record.pk}
 
     @staticmethod
     def render_num_indexed_docs_storage(value):
+        """render number of indexed docs"""
         return mark_safe('<b>%s</b>' % value)
+    
+    def render_indexing_action(self, record):
+        """Render button"""
+        print(f"Rendering indexing action for record: {record.pk}") 
+        button_html = render_to_string('access/indexing_status_button.html', {'record': record})
+        return mark_safe(button_html)
+    
+    def render_indexing_status(self, record):
+        """Render status div"""
+        print(f"Rendering indexing action for record: {record.pk}") 
+        status_div_html = render_to_string('access/indexing_status_div.html', {'record': record})
+        return mark_safe(status_div_html)
 
+
+import time
+import requests
+from requests.auth import HTTPBasicAuth
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+@require_POST
+def start_indexing(request, pk):
+    logger.info(f"start_indexing called, pk: {pk}")
+    try:
+        # Fetch InformationPackage instance
+        ip = InformationPackage.objects.get(id=pk)
+        
+        # Prepare external API URL for indexing
+        url = f"{django_service_url}/api/ips/{ip.identifier}/index/"
+        logger.info(f"Indexing URL: {url}")
+        
+        # Get user API token for authorization
+        user_api_token = get_user_api_token(request.user)
+        
+        # Send request to external API to start indexing
+        response = requests.post(url, headers={'Authorization': f'Token {user_api_token}'}, verify=verify_certificate)
+        
+        if response.status_code != 201:
+            return JsonResponse(response.json(), status=response.status_code)
+
+        # Assuming the external API response includes a Celery task ID (job_id) 
+        job_id = response.json().get('job_id')
+        if not job_id:
+            return JsonResponse({"message": "Job ID not found in response"}, status=500)
+
+        # Flower task info URL
+        flower_url = f'{flower_service_url}api/task/info/{job_id}'
+        
+        # Retry fetching task info from Flower
+        max_retries = 5
+        delay = 2  # Start with a 2-second delay
+        for attempt in range(max_retries):
+            flower_response = requests.get(flower_url, auth=HTTPBasicAuth(flower_user, flower_password))
+
+            if flower_response.status_code == 200:
+                task_info = flower_response.json()
+                return JsonResponse({
+                    "message": "Indexing started",
+                    "job_id": job_id,
+                    "status": task_info.get('state'),
+                    "info": task_info
+                })
+            elif flower_response.status_code == 404:
+                # Task not yet registered, wait and retry
+                logger.info(f"Task not found in Flower, retrying... (attempt {attempt + 1})")
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                return JsonResponse({
+                    "message": "Indexing started but failed to fetch status from Flower.",
+                    "job_id": job_id,
+                    "flower_error": flower_response.text
+                }, status=flower_response.status_code)
+        
+        # If we exhaust retries without success
+        return JsonResponse({
+            "message": "Indexing started but task info could not be fetched from Flower.",
+            "job_id": job_id,
+            "error": "Task not found after retries."
+        }, status=404)
+        
+    except InformationPackage.DoesNotExist:
+        return JsonResponse({"message": "Information package does not exist"}, status=404)
+    except Exception as e:
+        logger.error(f"Error during indexing: {str(e)}")
+        return JsonResponse({"message": "Internal server error"}, status=500)
+
+
+
+def indexing_task_status(request, task_id):
+    """Get celery task status from flower"""
+    # Flower task info URL
+    flower_url = f'{flower_service_url}api/task/info/{task_id}'
+    
+    # Flower authentication details (replace with your actual credentials)
+    # flower_user = f'{flower_user}'
+    # flower_password = f'{flower_password}'
+
+    try:
+        # Make an authenticated GET request to Flower's API to get task status
+        response = requests.get(flower_url, auth=HTTPBasicAuth(flower_user, flower_password))
+        
+        # If the request is successful, pass the data back as JSON
+        if response.status_code == 200:
+            task_info = response.json()
+            return JsonResponse({
+                "status": task_info.get('state'),
+                "result": task_info.get('result'),
+                "info": task_info
+            })
+        else:
+            return JsonResponse({"error": "Failed to fetch task status from Flower."}, status=response.status_code)
+
+    except requests.exceptions.RequestException as e:
+        # Handle any network-related errors
+        return JsonResponse({"error": str(e)}, status=500)
+    
 
 class InformationPackageDetail(DetailView):
     """
@@ -169,3 +302,13 @@ def reindex_storage(request):
         tb = traceback.format_exc()
         logging.error(str(tb))
     return JsonResponse(data)
+
+
+
+@login_required
+def index_package(request):
+    template = loader.get_template('access/index_package.html')
+    context = {
+        
+    }
+    return HttpResponse(template.render(context=context, request=request))

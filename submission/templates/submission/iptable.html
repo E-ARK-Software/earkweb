@@ -10,7 +10,7 @@
                 {% if ip.external_id %}
                 <tr>
                     <td>{% trans 'External identifier' %}</td>
-                    <td>{{ ip.external_id | decode_id }}</td>
+                    <td>{{ ip.external_id | decode_identifier }}</td>
                 </tr>
                 {% endif %}
                 <tr>

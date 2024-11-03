@@ -254,6 +254,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'earkweb.middleware.JsonApi404Middleware',
 ]
 
 CORS_ORIGIN_ALLOW_ALL = True

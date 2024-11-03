@@ -660,7 +660,7 @@ def aip_record_events(_, context, task_log):
     working_dir = get_working_dir(task_context["uid"])
     try:
         premis = PremisCreator(working_dir)
-        premis.add_agent("urn:eark:software:earkweb:v1.3", "earkweb", "software")
+        premis.add_agent("urn:eark:software:earkweb:v2.0", "earkweb", "software")
         premis.add_event("urn:eark:event:ingest:{0}", "success", "urn:eark:software:earkweb:v1.3", identifier)
         premis.create("metadata/preservation/", "event", "ingest")
     except Exception as err:
@@ -984,7 +984,9 @@ def store_aip(_, context, task_log):
 @app.task(bind=True, name="aip_indexing")
 @requires_parameters("identifier")
 @task_logger
-def aip_indexing(_, context, task_log):
+def aip_indexing(_, context, task_log=None):
+    if not task_log:
+        task_log = logger
     task_context = json.loads(context)
 
     pts = PairtreeStorage(config_path_storage)
@@ -1002,17 +1004,20 @@ def aip_indexing(_, context, task_log):
     # check solr server availability
     solr_server = SolrServer(solr_protocol, solr_host, solr_port)
     sq = SolrQuery(solr_server)
-    solr_response = requests.get(sq.get_base_url(), verify=verify_certificate)
+    base_url = sq.get_base_url()
+    task_log.info(f"SolR base URL: {base_url}")
+    solr_response = requests.get(base_url, verify=verify_certificate, timeout=5)
     if not solr_response.status_code == 200:
-        task_log.warn("Information package cannot be indexed because SolR is not available at: %s" % sq.get_base_url())
+        task_log.warn(f"Information package cannot be indexed because SolR is not available at: {base_url}")
         return json.dumps(task_context)
 
     # delete existing records
-    submission_url = "%s://%s:%d/solr/storagecore1/update/?commit=true" % (solr_protocol, solr_host, solr_port)
-    delete_response = requests.post(submission_url, data="<delete><query>package:\"%s\"</query></delete>" % identifier,
-                                    headers={'Content-Type': 'text/xml'}, verify=verify_certificate)
+    submission_url = f"{solr_protocol}://{solr_host}:{solr_port}/solr/storagecore1/update/?commit=true"
+    task_log.info(f"Submission URL: {submission_url}")
+    delete_response = requests.post(submission_url, data=f"<delete><query>package:\"{identifier}\"</query></delete>",
+                                    headers={'Content-Type': 'text/xml'}, verify=verify_certificate, timeout=5)
     if delete_response.status_code == 200:
-        task_log.info("Index records deleted for package: %s" % identifier)
+        task_log.info(f"Index records deleted for package: {identifier}")
     else:
         task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (
         delete_response.status_code, delete_response.text))
