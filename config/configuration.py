@@ -119,6 +119,9 @@ config_path_work = config.get('paths', 'config_path_work')
 config_path_storage = config.get('paths', 'config_path_storage')
 config_path_access = config.get('paths', 'config_path_access')
 
+# web server configuration
+static_root = config.get('web', 'static_root')
+
 # EAD metadata file pattern
 metadata_file_pattern_ead =  config.get('metadata', 'metadata_file_pattern_ead')
 

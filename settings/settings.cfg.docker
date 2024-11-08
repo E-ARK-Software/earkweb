@@ -62,6 +62,9 @@ flower_password = repo
 config_max_filesize_viewer = 4194304
 config_max_http_download = 2147484000
 
+[web]
+static_root = /var/www/data/earkwebstatic/
+
 [paths]
 config_path_reception = /var/data/repo/reception
 config_path_work = /var/data/repo/work

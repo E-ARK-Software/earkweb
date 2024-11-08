@@ -82,6 +82,7 @@ from config.configuration import redis_host
 from config.configuration import redis_port
 from config.configuration import media_url
 from config.configuration import media_root
+from config.configuration import static_root
 
 LANGUAGE_CODE = 'en'
 
@@ -323,7 +324,7 @@ LANGUAGES = [
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/earkwebstatic/'
-STATIC_ROOT = '/var/www/data/earkwebstatic/'
+STATIC_ROOT = static_root
 
 
 MEDIA_URL = media_url
