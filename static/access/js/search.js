@@ -87,9 +87,9 @@ function askSolr(start) {
     packageQuery += " AND " + identifier_field + ':"' + package + '"';
   }
 
-  if($('#submission_data_only').prop('checked')) {
-    packageQuery += " AND is_content_data:true";
-  }
+  //if($('#submission_data_only').prop('checked')) {
+  //  packageQuery += " AND is_content_data:true";
+  //}
 
   if($('#exclude_migrated_data').prop('checked')) {
     packageQuery += " AND NOT path:*_mig-*";

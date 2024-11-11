@@ -14,4 +14,5 @@ urlpatterns = [
     re_path(r'^indexing-status$', views.indexingstatus, name='indexing-status'),
     re_path(r'^reindex-storage/$', views.reindex_storage, name='reindex-storage'), 
     re_path(r'^start-indexing/(?P<pk>\d+)$', views.start_indexing, name='start-indexing'),
+    re_path(r'^num-indexed/(?P<pk>\d+)$', views.num_indexed, name='num-indexed'),
 ]

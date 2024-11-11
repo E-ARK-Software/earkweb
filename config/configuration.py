@@ -37,7 +37,7 @@ backend_api_key = config.get('system', "backend_api_key")
 
 # repository
 logo = config.get('repo', 'logo')
-repo_identifier = config.get('repo', 'repo_identifier')
+repo_id = config.get('repo', 'repo_id')
 repo_title = config.get('repo', 'repo_title')
 repo_description = config.get('repo', 'repo_description')
 repo_catalogue_issued = config.get('repo', 'repo_catalogue_issued')
@@ -49,6 +49,7 @@ _conf_documentation_dir = config.get('repo', 'documentation_directory')
 documentation_directory = _conf_documentation_dir if _conf_documentation_dir else "documentation"
 metadata_directory = _conf_repr_dir if _conf_repr_dir else "metadata"
 node_namespace_id = config.get('repo', 'node_namespace_id')
+urn_file_pattern = config.get('repo', 'urn_file_pattern')
 
 # logfiles
 logfile_ui = config.get('logs', 'logfile_ui')
@@ -132,8 +133,15 @@ max_submissions_web_client = 50
 file_size_limit = config.getint('limits', 'config_max_filesize_viewer')
 config_max_http_download = config.getint('limits', 'config_max_http_download')
 
+# access
 dip_download_base_url = config.get('access', 'dip_download_base_url')
 dip_download_path = config.get('access', 'dip_download_path')
+# Read the comma-separated string
+metadata_fields_indexing = config.get('access', 'metadata_fields_indexing')
+# Convert it to a list by splitting on the comma
+metadata_fields_list = [field.strip() for field in metadata_fields_indexing.split(',')]
+# data directory pattern
+data_directory_pattern = config.get('access', 'data_directory_pattern')
 
 media_root = config.get('media', 'media_root')
 media_url = config.get('media', 'media_url')

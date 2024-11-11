@@ -8,6 +8,24 @@
 
 {% block extra_head %}
 <style>
+
+.filedesc {
+     color: dark-gray;
+     font-style:italic;
+     font-size:80%;
+     padding-left:3px
+}
+
+#context-menu {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    z-index: 500;
+}
+
+
 /* Basic styling for the button */
 #hoverButton {
     padding: 10px 20px;
@@ -68,7 +86,6 @@ function loadDataFiles(repr) {
 
             },
             success: function(data){
-                console.log(JSON.stringify(data));
                 var representations = data.data.children.filter(obj => {
                   return obj.text === '{{representations_directory}}';
                 })
@@ -76,7 +93,6 @@ function loadDataFiles(repr) {
                 var datafiles = representations[0]['children'].filter(obj => {
                   return obj.text === repr
                 })
-                console.log(datafiles.length);
 
                 initPrev = [];
                 initPrevConfig = [];
@@ -117,7 +133,6 @@ function loadDataFiles(repr) {
                         var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']+'/';
                         caption = mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/'+repr+'/data/', '');
                         initPrev.push(mimeTypes[key]['mimetype']);
-                        console.log(mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/'+repr+'/', ''));
                         initPrevConfig.push({caption: caption, filetype: mimeTypes[key]['mimetype'], downloadUrl: downloadUrl, key: mimeTypes[key]['path'], previewAsData: false, 'showPreview': false, url: deleteUrl});
                     }
 
@@ -216,6 +231,16 @@ function loadDataFiles(repr) {
                 $('button[title="View Details"]').css("display", "none");
                 $('span[title="Move / Rearrange"]').css("display", "none");
 
+                var rps = {{ representations | safe  }};
+                var fileMetadata = JSON.parse(rps[$('#repval').val()]['file_metadata']);
+                // iterate file metadata and add descriptions to filenames
+                $.each(fileMetadata, function(filename, description) {
+                    // Find the div with the matching title attribute
+                    const $div = $(`.explorer-caption[title="${filename}"]`);
+                    if ($div.length) {
+                        $div.after(`<span class="filedesc">${description}</span>`);
+                    }
+                });
 
             },
             error: function(data){
@@ -263,7 +288,6 @@ $( document ).ready(function() {
             return false;
         } else {
             var regex = new RegExp('^[a-zA-Z][a-zA-Z0-9_\.\-]{2,200}$');
-            window.console.log(pn.val());
             if(!regex.test(pn.val())) {
                 var msg = 'Representation Label <span style="color: red; font-weight: normal">(Invalid characters in label!)</span>';
                 elm.html(msg);
@@ -586,6 +610,13 @@ function delRep(rep, url) {
 
     </div>
 
+    <!-- Context Menu (initially hidden) -->
+    <div id="context-menu" style="display:none; position: absolute;">
+        <label for="file-description">Description:</label>
+        <input type="text" id="file-description">
+        <button id="context-ok">OK</button>
+    </div>
+
     <div id="updateandfinalize">
         <div class="form-group" style="padding-top:20px">
             <form method="post" action="/earkweb/submission/ip_creation_process/{{pk}}/">
@@ -651,6 +682,82 @@ function delRep(rep, url) {
             }
         );
     });
+
+    
+    $(document).ready(function() {
+    // Handle right-click event at the document level
+    $(document).on("contextmenu", function(event) {
+      
+        // Check if the right-clicked element is an .explorer-caption
+        if ($(event.target).hasClass("explorer-caption")) {
+            event.preventDefault();
+
+            // Position and show context menu at the cursor location
+            $('#context-menu').css({
+                display: 'block',
+                left: (event.pageX - 200) + 'px', // adjust as needed
+                top: (event.pageY - 130) + 'px'
+            });
+       
+
+            // Store the filename for use when "OK" is clicked
+            const filename = $(event.target).attr('title');
+            $('#context-menu').data('filename', filename);
+        } else {
+            // Hide the context menu if clicked outside .explorer-caption
+            $('#context-menu').hide();
+        }
+    });
+
+    // Hide context menu on click outside
+    $(document).click(function(event) {
+        if (!$(event.target).closest('#context-menu').length) {
+            $('#context-menu').hide();
+        }
+    });
+
+    // Send description via AJAX on "OK" button click
+    $('#context-ok').click(function(event) {
+        event.preventDefault();
+
+        const description = $('#file-description').val();
+        const filename = $('#context-menu').data('filename');
+
+        const valueToSend = {};
+        valueToSend[filename] = description;
+
+        $.ajax({
+            url: '/earkweb/submission/updatedistrmd',  
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+                'pk': '{{ pk }}',
+                'rep': $('#repval').val(),
+                'param_name': 'file_metadata',
+                'param_value': JSON.stringify(valueToSend),
+            },
+            success: function(response) {
+                $('#context-menu').hide();
+                const filename = Object.keys(valueToSend)[0];
+                const description = valueToSend[filename];
+
+                const $div = $(`.explorer-caption[title="${filename}"]`);
+
+                // If the description span already exists, update it; otherwise, add a new one
+                if ($div.next('.filedesc').length) {
+                    $div.next('.filedesc').text(description);
+                } else {
+                    $div.after(`<span class="filedesc">${description}</span>`);
+                }
+            },
+            error: function(error) {
+                alert('Error saving description.');
+            }
+        });
+    });
+});
+
+
 </script>
 {% endblock %}
 

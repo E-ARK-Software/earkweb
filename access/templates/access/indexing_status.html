@@ -69,6 +69,7 @@
                     if (response.status === 'SUCCESS') {
                         $("#indexing-status-" + pk).text('Indexing completed.');
                         $("#start-indexing-" + pk).prop('disabled', false).text('Re-index');
+                        updateValue(pk);
                     } else if (response.status === 'FAILURE') {
                         $("#indexing-status-" + pk).html('<span class="error">Error: <a href="'+flower_service_url+'task/' + task_id + '" target="new">failed task<a/></span>');
                         
@@ -85,6 +86,17 @@
                 }
             });
         }
+
+        function updateValue(pk) {
+            var valueId = "val-"+pk;
+            var valueUpdateUrl = "{% url 'access:num-indexed' pk=0 %}".replace('0', pk);
+            fetch(valueUpdateUrl)
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById(valueId).innerHTML = html;
+                })
+                .catch(error => console.log('Error:', error));
+        }
     </script>
 
 {% endblock %}
@@ -98,7 +110,9 @@
 
     <p>{% trans 'Indexing status of archived information packages.' %}</p>
 
-    {% render_table informationpackage %}
+    <div id="informationpackage-table">
+        {% render_table informationpackage %}
+    </div>
 
     <script>
         $( "#reindexbtn" ).click(function() {

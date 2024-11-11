@@ -39,7 +39,7 @@ from eatb.utils.fileutils import encode_identifier, decode_identifier
 
 from config.configuration import documentation_directory, representations_directory, \
     django_backend_service_host, django_backend_service_port, flower_service_url, node_namespace_id, \
-    package_access_url_pattern, repo_identifier, repo_title, repo_description, repo_catalogue_issued, \
+    package_access_url_pattern, repo_id, repo_title, repo_description, repo_catalogue_issued, \
     repo_catalogue_modified, \
     verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, root_dir
 from config.configuration import config_path_work
@@ -481,7 +481,7 @@ def upload_step5(request, pk):
     if repname:
         reprs = {
             r['identifier']: r for r in list(
-                reprs_qs.values("id", "identifier", "label", "description", "license", "accessRights")
+                reprs_qs.values("id", "identifier", "label", "description", "license", "accessRights", "file_metadata")
             )
         }
         repr_dir_names = list(reprs_qs.values_list('identifier', flat=True))
@@ -549,6 +549,19 @@ def updatedistrmd(request):
         result.description = param_value
     if param_name == "access_rights":
         result.accessRights = param_value
+    if param_name == "file_metadata":
+        # Parse param_value from JSON string to dictionary
+        param_value_dict = json.loads(param_value)
+
+        # Load existing JSON metadata if it exists, otherwise start with an empty dictionary
+        file_metadata = json.loads(result.file_metadata) if result.file_metadata else {}
+
+        # Merge or update the JSON metadata
+        for key, value in param_value_dict.items():
+            file_metadata[key] = value  # This will add or update the key with the new value
+
+        # Save the updated JSON back to the database field
+        result.file_metadata = json.dumps(file_metadata)  # Convert dict to JSON string
     result.save()
 
     return JsonResponse(result_dict)
@@ -584,14 +597,25 @@ def ip_creation_process(request, pk):
 
         # pylint: disable-next=no-member
         reprecords = Representation.objects.filter(ip=ip)
-        repinfo = {reprecord.identifier: {
-            'distribution_label': reprecord.label,
-            'distribution_description': reprecord.description,
-            'access_rights': reprecord.accessRights,
-            'file_items': [f.replace(os.path.join(config_path_work, ip.uid), "").strip("/")
-                           for f in find_files(os.path.join(config_path_work, ip.uid, representations_directory,
-                                                            reprecord.identifier, "data"), "*")]
-        } for reprecord in reprecords}
+        repinfo = {}
+        for reprecord in reprecords:
+            try:
+                file_metadata = json.loads(reprecord.file_metadata) if isinstance(reprecord.file_metadata, str) else reprecord.file_metadata
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decoding JSON for file_metadata in {reprecord.identifier}: {e}")
+                file_metadata = {}  
+
+            # Now construct the repinfo dictionary
+            repinfo[reprecord.identifier] = {
+                'distribution_label': reprecord.label,
+                'distribution_description': reprecord.description,
+                'access_rights': reprecord.accessRights,
+                'file_metadata': file_metadata,  # This will be valid JSON or an empty dict if there was an error
+                'file_items': [
+                    f.replace(os.path.join(config_path_work, ip.uid), "").strip("/")
+                    for f in find_files(os.path.join(config_path_work, ip.uid, representations_directory, reprecord.identifier, "data"), "*")
+                ]
+            }
 
 
         if reprecords:
@@ -600,7 +624,7 @@ def ip_creation_process(request, pk):
         basic_metadata = context
 
         context["node_namespace_id"] = node_namespace_id
-        context["repo_identifier"] = repo_identifier
+        context["repo_id"] = repo_id
         context["repo_title"] = repo_title
         context["repo_description"] = repo_description
         context["repo_catalogue_issued"] = repo_catalogue_issued

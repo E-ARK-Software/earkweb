@@ -5,10 +5,21 @@ from venv import logger
 from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from earkweb.models import InformationPackage
 from config.configuration import django_service_url
+from config.configuration import solr_core_url
 from eatb.utils.datetime import date_format
 import xml.etree.ElementTree as ET
 
 from eatb.utils.datetime import DT_ISO_FORMAT, current_timestamp
+
+import pysolr
+from django.utils.safestring import mark_safe
+import xml.etree.ElementTree as ET
+import logging
+
+# Initialisiere das pysolr-Objekt (passe die Solr-URL an)
+solr = pysolr.Solr(solr_core_url, always_commit=True)
+
+logger = logging.getLogger(__name__)
 
 
 ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
@@ -107,31 +118,58 @@ def list_metadata_formats(request):
 
     return xml_response(root)
 
-def list_identifiers():
+
+def list_identifiers(request):
     """
-    Handle the OAI-PMH ListIdentifiers request.
+    Handle the OAI-PMH ListIdentifiers request with pagination support using resumption tokens.
+
+    Parameters:
+    request (HttpRequest): The incoming HTTP request.
 
     Returns:
-    HttpResponse: The ListIdentifiers response containing headers for records.
+    HttpResponse: The ListIdentifiers response containing headers for records with a resumption token for pagination.
     """
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
     response_date = ET.SubElement(root, 'responseDate')
     response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
 
     list_identifiers = ET.SubElement(root, 'ListIdentifiers')
+
+    # Retrieve the resumption token from the request, if present
+    resumption_token = request.GET.get('resumptionToken')
+    page_size = 10  # Define how many records to return per page
+    start_index = int(resumption_token) if resumption_token else 0
+
+    # Query InformationPackage objects for identifiers
     # pylint: disable-next=no-member
-    for ip in InformationPackage.objects.exclude(identifier='').exclude(storage_dir=''):
+    packages = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='')[start_index:start_index + page_size]
+
+    for ip in packages:
         header = ET.SubElement(list_identifiers, 'header')
         identifier = ET.SubElement(header, 'identifier')
         identifier.text = ip.identifier
         datestamp = ET.SubElement(header, 'datestamp')
         datestamp.text = date_format(ip.last_change)
 
+    # If there are more records to fetch, create a resumption token
+    next_index = start_index + page_size
+    total_records = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='').count()
+    if next_index < total_records:
+        resumption_token_elem = ET.SubElement(list_identifiers, 'resumptionToken')
+        resumption_token_elem.text = str(next_index)
+        resumption_token_elem.set('cursor', str(start_index))
+        resumption_token_elem.set('completeListSize', str(total_records))
+    else:
+        # If there are no more records, resumptionToken should be empty
+        resumption_token_elem = ET.SubElement(list_identifiers, 'resumptionToken')
+        resumption_token_elem.text = ''
+
     return xml_response(root)
+
 
 def get_record(request):
     """
-    Handle the OAI-PMH GetRecord request.
+    Handle the OAI-PMH GetRecord request using Solr.
 
     Parameters:
     request (HttpRequest): The incoming HTTP request.
@@ -147,14 +185,19 @@ def get_record(request):
 
     if metadata_prefix != 'oai_dc':
         return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported by the item or by the repository.')
-    # pylint: disable-next=no-member
-    ips = InformationPackage.objects.filter(identifier=identifier).order_by('-id')
-    if len(ips) == 0:
-        return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
-    if len(ips) > 1:
-        logger.warning("More than one record exists for identifier: %s" % identifier)
-    ip = ips[0]
 
+    # Solr query to find the document based on identifier
+    solr_query = f'package:"{identifier}"'
+    results = solr.search(solr_query)
+
+    # Check if any documents were found
+    if not results.docs:
+        return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
+
+    # Use the first document as the main record
+    doc = results.docs[0]
+
+    # OAI-PMH XML structure
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
     response_date = ET.SubElement(root, 'responseDate')
     response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
@@ -163,69 +206,62 @@ def get_record(request):
     record_elem = ET.SubElement(get_record, 'record')
     header = ET.SubElement(record_elem, 'header')
     identifier_elem = ET.SubElement(header, 'identifier')
-    identifier_elem.text = ip.identifier
+    identifier_elem.text = doc.get('id', 'Unknown ID')
     datestamp = ET.SubElement(header, 'datestamp')
-    datestamp.text = date_format(ip.last_change)
+    datestamp.text = doc.get('indexdate', 'Unknown Date')
 
+    # Metadata section
     metadata = ET.SubElement(record_elem, 'metadata')
+    oai_dc = ET.SubElement(metadata, 'oai_dc:dc', xmlns="http://www.openarchives.org/OAI/2.0/oai_dc/")
+    ns = "http://purl.org/dc/elements/1.1/"
 
-    record_json = {
-        "title": "Example Record 1",
-        "creator": "John Doe",
-        "subject": "Example Subject",
-        "description": "This is an example description for the metadata record.",
-        "publisher": "Example Publisher",
-        "contributor": "Jane Smith",
-        "date": "2024-05-14",
-        "type": "Text",
-        "format": "application/pdf",
-        "identifier": "urn:uuid:53e8aeb7-034b-499b-a965-30df02f06970",
-        "source": "Example Source",
-        "language": "en",
-        "relation": "http://example.org/related-resource",
-        "coverage": "World",
-        "rights": "Example Rights Statement"
+    # Title or file description (depending on availability)
+    title_text = doc.get('filedescription', doc.get('title', ['No title'])[0])
+    title = ET.SubElement(oai_dc, f'{{{ns}}}title')
+    title.text = title_text
+
+    # Populate other Dublin Core fields
+    fields = {
+        'creator': 'publisher',
+        'date': 'archivedate',
+        'identifier': 'uid',
+        'format': 'content_type',
+        'description': 'description',
     }
 
-    metadata.append(ET.fromstring("""<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">
-                    <dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">Example Record 1</dc:title>
-                    <dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">John Doe</dc:creator>
-                    <dc:subject xmlns:dc="http://purl.org/dc/elements/1.1/">Example Subject</dc:subject>
-                    <dc:description xmlns:dc="http://purl.org/dc/elements/1.1/">This is an example description for the metadata record.</dc:description>
-                    <dc:publisher xmlns:dc="http://purl.org/dc/elements/1.1/">Example Publisher</dc:publisher>
-                    <dc:contributor xmlns:dc="http://purl.org/dc/elements/1.1/">Jane Smith</dc:contributor>
-                    <dc:date xmlns:dc="http://purl.org/dc/elements/1.1/">2024-05-14</dc:date>
-                    <dc:type xmlns:dc="http://purl.org/dc/elements/1.1/">Text</dc:type>
-                    <dc:format xmlns:dc="http://purl.org/dc/elements/1.1/">application/pdf</dc:format>
-                    <dc:identifier xmlns:dc="http://purl.org/dc/elements/1.1/">urn:uuid:53e8aeb7-034b-499b-a965-30df02f06970</dc:identifier>
-                    <dc:source xmlns:dc="http://purl.org/dc/elements/1.1/">Example Source</dc:source>
-                    <dc:language xmlns:dc="http://purl.org/dc/elements/1.1/">en</dc:language>
-                    <dc:relation xmlns:dc="http://purl.org/dc/elements/1.1/">http://example.org/related-resource</dc:relation>
-                    <dc:coverage xmlns:dc="http://purl.org/dc/elements/1.1/">World</dc:coverage>
-                    <dc:rights xmlns:dc="http://purl.org/dc/elements/1.1/">Example Rights Statement</dc:rights>
-                </oai_dc:dc>"""''))
+    for dc_field, solr_field in fields.items():
+        value = doc.get(solr_field, [''])[0]
+        if value:
+            elem = ET.SubElement(oai_dc, f'{{{ns}}}{dc_field}')
+            elem.text = value
 
-    return xml_response(root)
+    # Optional additional fields
+    publisher = ET.SubElement(oai_dc, f'{{{ns}}}publisher')
+    publisher.text = doc.get('publisher', ['Unknown Publisher'])[0]
+    
+    # Prepare response
+    xml_data = ET.tostring(root, encoding='utf-8')
+    return HttpResponse(xml_data, content_type='text/xml')
 
 def error_response(code, message):
     """
-    Generate an error response.
+    Generate an OAI-PMH error response.
 
     Parameters:
     code (str): The OAI-PMH error code.
     message (str): The error message.
 
     Returns:
-    HttpResponse: The error response.
+    HttpResponse: The error response as XML.
     """
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
-    response_date = ET.SubElement(root, 'responseDate')
-    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
-    
-    error = ET.SubElement(root, 'error', code=code)
-    error.text = message
+    error_elem = ET.SubElement(root, 'error', code=code)
+    error_elem.text = message
+    return HttpResponse(ET.tostring(root, encoding='utf-8'), content_type='text/xml')
 
-    return xml_response(root)
+def current_timestamp(fmt):
+    # Implement timestamp formatting here (or use Django's utilities)
+    pass
 
 def bad_verb():
     """

@@ -1030,7 +1030,7 @@ def aip_indexing(_, context, task_log=None):
         if package_file.endswith(".tar"):
             task_log.info("Indexing %s" % package_file)
             results = solr_client.post_tar_file(os.path.join(storage_dir, package_file),
-                                                identifier, version, default_reporter)
+                                                identifier, version, default_reporter, task_log=task_log)
             task_log.info("Total number of files posted: %d" % len(results))
             num_ok = sum(1 for result in results if result['status'] == 200)
             task_log.info("Number of files posted successfully: %d" % num_ok)

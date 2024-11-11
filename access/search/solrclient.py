@@ -1,18 +1,21 @@
 """Solr client"""
 import logging
 import re
+import tarfile
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
 import pytz
-
+from urllib.parse import quote
 from eatb.file_format import FormatIdentification
 from eatb.utils import randomutils
 from eatb.utils.datetime import current_date
 from datetime import datetime
 from access.search.solrdocparams import SolrDocParams
-from config.configuration import verify_certificate, representations_directory, metadata_directory
-from taskbackend.taskutils import is_content_data_path
+from config.configuration import verify_certificate, representations_directory, metadata_directory, \
+    metadata_fields_list, data_directory_pattern, node_namespace_id, repo_id, urn_file_pattern
+from eatb.utils.fileutils import to_safe_filename
+from taskbackend.taskutils import is_content_data_path, find_metadata_file 
 
 logger = logging.getLogger(__name__)
 import os
@@ -145,7 +148,9 @@ class SolrClient(object):
         _, status = self.update(docs)
         return status
 
-    def post_tar_file(self, tar_file_path, identifier, version, progress_reporter=default_reporter):
+    
+
+    def post_tar_file(self, tar_file_path, identifier, version, progress_reporter=default_reporter, task_log=None):
         """
         Iterate over tar file and post documents it contains to Solr API (extract)
 
@@ -159,48 +164,103 @@ class SolrClient(object):
         @return: Return list of urls and return codes
         """
         progress_reporter(0)
-        import tarfile
         tfile = tarfile.open(tar_file_path, 'r')
         extract_dir = '/tmp/temp-' + randomutils.randomword(10)
         results = []
 
+        # Define regex pattern to match files under */representations/*/data/*
+        data_directory_regex = re.compile(data_directory_pattern)
+        #data_path_pattern = re.compile(r'.*/representations/.+/data/.*')
+
+        task_log = task_log if task_log else logger
+        
+        # Check for metadata.json and load it if present
+        metadata = {}
+        try:
+            tfile.extractall(extract_dir)
+            metadata_file_path = find_metadata_file(extract_dir)
+            if metadata_file_path and os.path.exists(metadata_file_path):
+                with open(metadata_file_path, 'r', encoding='utf-8') as f:
+                    metadata = json.load(f)
+                    task_log.info("Loaded metadata.json successfully.")
+                    
+                # Log each main level metadata key
+                for key, value in metadata.items():
+                    task_log.debug(f"Main metadata entry '{key}': {value}")
+                    
+            else:
+                task_log.info("metadata.json not found in extracted files.")
+        
+        except json.JSONDecodeError as e:
+            task_log.error(f"Failed to parse metadata.json: {e}")
+
+        # Get number of files in tar
         numfiles = sum(1 for tarinfo in tfile if tarinfo.isreg())
-        logger.debug("Number of files in tarfile: %s " % numfiles)
+        task_log.debug("Number of files in tarfile: %s " % numfiles)
 
         num = 0
-
         for t in tfile:
-            tfile.extract(t, extract_dir)
             afile = os.path.join(extract_dir, t.name)
-            if os.path.exists(afile) and os.path.isfile(afile):
-                params = SolrDocParams(afile).get_params()
+            task_log.info(afile)
+            if os.path.isfile(afile) and data_directory_regex.match(afile):
+                params = SolrDocParams(afile).get_params()      
                 params['literal.package'] = identifier
                 params['literal.path'] = t.name
                 params['literal.size'] = t.size
-                params['literal.is_metadata'] = bool(re.search("/%s/" % metadata_directory, afile))
-                params['literal.is_content_data'] = bool(re.search("/%s/[-0-9a-z]{36,36}/data" % representations_directory, afile))
                 params['literal.indexdate'] = current_date(time_zone_id='UTC')
                 params['literal.archivedate'] = datetime.fromtimestamp(os.path.getctime(tar_file_path)).astimezone(pytz.UTC)
                 params['literal.version'] = int(re.search(r'\d+', version).group(0))
+                
+                # 2. Add descriptions from file_metadata if they match the filename
+                if 'representations' in metadata:
+                    for rep_id, rep_data in metadata['representations'].items():
+                        if 'file_metadata' in rep_data:
+                            file_metadata = rep_data['file_metadata']
+                            filename = os.path.basename(t.name)
+                            if filename in file_metadata:
+                                params['literal.filedescription'] = file_metadata[filename]
+                                # Define the parameters you want to substitute
+                                urn_params = {
+                                    'node_namespace_id': node_namespace_id,
+                                    'repo_id': repo_id,
+                                    'encoded_package_id': quote(identifier, safe=''),
+                                    'representation_id': rep_id,
+                                    'encoded_file_path': quote(filename, safe='')
+                                }
+                                urn = urn_file_pattern.format(**urn_params)
+                                params['literal.identifier'] = urn
+                                params['literal.representation'] = repo_id
+                                task_log.debug(f"Added description for '{filename}': {file_metadata[filename]}")
+
+                # 3. Add main level metadata entries
+                selected_main_keys = metadata_fields_list
+                for main_key, main_value in metadata.items():
+                    if main_key != "representations" and main_key in selected_main_keys:  # Skip representations as it's processed separately
+                        params[f'literal.{main_key}'] = main_value
+                        task_log.debug(f"Added main level metadata '{main_key}': {main_value}")
+
                 files = {'file': ('userfile', open(afile, 'rb'))}
                 post_url = '%s/update/extract?%s' % (self.url, urlencode(params))
                 response = requests.post(post_url, files=files, verify=verify_certificate)
                 result = {"url": post_url, "status": response.status_code}
+
                 if response.status_code != 200:
                     status = self.post_file_document(afile, identifier, t.name)
                     if status == 200:
-                        logger.info("posting file failed for url '%s' with status code: %d (posted plain document instead)" % (post_url, response.status_code))
+                        task_log.info("Posting file failed for URL '%s' with status code: %d. Posted plain document instead." % (post_url, response.status_code))
                     else:
-                        logger.info("Unable to create document for url '%s'" % (post_url))
+                        task_log.info("Unable to create document for URL '%s'" % post_url)
                 results.append(result)
                 num += 1
                 percent = num * 100 / numfiles
                 progress_reporter(percent)
-            self.commit()
-            logger.debug("Files extracted to %s" % extract_dir)
-            shutil.rmtree(extract_dir)
+
+        self.commit()
+        logger.info(f"Extract directory: {extract_dir}")
+        #shutil.rmtree(extract_dir)
         progress_reporter(100)
         return results
+
 
     def commit(self):
         """

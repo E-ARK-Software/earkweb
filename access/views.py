@@ -88,10 +88,10 @@ class IndexingStatusTable(tables.Table):
         attrs = {'class': 'paleblue table table-striped table-bordered table-condensed'}
         row_attrs = {'data-id': lambda record: record.pk}
 
-    @staticmethod
-    def render_num_indexed_docs_storage(value):
-        """render number of indexed docs"""
-        return mark_safe('<b>%s</b>' % value)
+    def render_num_indexed_docs_storage(self, value, record):
+        """Render number of indexed docs with record information"""
+        pk = record.pk  # Access the primary key of the current record
+        return mark_safe(f'<b id="val-{pk}">{value}</b>')
     
     def render_indexing_action(self, record):
         """Render button"""
@@ -312,3 +312,13 @@ def index_package(request):
         
     }
     return HttpResponse(template.render(context=context, request=request))
+
+
+@login_required
+def num_indexed(request, pk):
+    ip = InformationPackage.objects.get(pk=pk)
+    context = {
+        'num_indexed': ip.num_indexed_docs_storage
+    }
+    template = loader.get_template('access/num_index_value.html')
+    return HttpResponse(template.render(context=context, request=request)) 

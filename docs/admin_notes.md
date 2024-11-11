@@ -216,3 +216,44 @@ organisation namespace.
 Script for indexing the repository:
 
     python util/index-aip-storage.py
+
+## URN structure
+
+The URN uses package identifier, representation identifier (UUID), and file path to structure the file URN as follows:
+
+    urn:<node-namespace-id>:<repo-id>:<encoded-package-id>:<representation-id>:<encoded-file-path>
+
+1. **Namespace** (*node-namespace-id*): for example, e-ark-foundation.eu — The authority issuing the URN.
+2. **Repository Identifier** (*repo-id*): Repository which belongs to the namespace, for example "demo" for the demonstration repository.
+3. **Package Identifier** (*encoded-package-id*): Encoded URL into a format compatible with URNs. Characters like :/ are replaced with safe 
+    characters such as + for colon and = for slashes.
+    For example, a DOI URL, such as https://doi.org/10.5281/zenodo.3736, is encoded to:
+
+    ```
+    https+==doi.org=10.5281=zenodo.3736
+    ```
+4. **Representation Identifier** (*representation-id*): The UUID of the representation is directly included as it already meets URN format requirements.
+
+5. **File Path** (*encoded-file-path*): The file path within the representation is encoded the same way as the package identifier. For instance, my_image.png or 
+    subfolder/my_image.png would translate as follows:
+
+    `my_image.png` remains `my_image.png` and
+    `subfolder/my_image.png` becomes `subfolder=my_image.png`
+
+### Example URN
+
+An example URN for a file in the repository with the following values:
+
+1. `node-namespace-id=e-ark-foundation.eu`
+2. `repo-id=demo`
+3. `representation-id=52bfc365-601c-4546-92e4-88ac9f21e2be`
+3. `encoded-file-path=my_image.png`
+
+according to these rules is as follows:
+
+    urn:e-ark-foundation.eu:demo:https+==doi.org=10.5281=zenodo.3736:52bfc365-601c-4546-92e4-88ac9f21e2be:my_image.png
+
+
+    
+
+

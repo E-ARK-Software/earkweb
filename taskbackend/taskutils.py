@@ -843,3 +843,10 @@ def update_inventory(identifier, version, aip_path, archive_file, action):
     with open(inventory_content_file_path, 'w') as inventory_content_file:
         inventory_content_file.write(json.dumps(inventory_content_json, indent=4))
 
+
+def find_metadata_file(directory, filename="metadata.json"):
+    """Recursively search for the specified file in the given directory."""
+    for root, _, files in os.walk(directory):
+        if filename in files:
+            return os.path.join(root, filename)
+    return None
