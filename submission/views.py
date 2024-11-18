@@ -728,23 +728,24 @@ def ip_creation_process(request, pk):
             g.add((parent_resource_uri, DCTERMS.temporal, Literal(basic_metadata["created"])))
 
         # Add child representations and hasPart relationships
-        for rep_id, rep_data in basic_metadata["representations"].items():
-            child_resource_uri = URIRef(EX[rep_id])  # URI for the child (e.g., PDF representation)
-            
-            # Add metadata for each child resource (representation)
-            g.add((child_resource_uri, DCTERMS.title, Literal(rep_data["distribution_label"])))
-            g.add((child_resource_uri, DCTERMS.description, Literal(rep_data["distribution_description"])))
-            g.add((child_resource_uri, DCTERMS.rights, Literal(rep_data["access_rights"])))
-            
-            # Add file items for each representation
-            for file_path in rep_data["file_items"]:
-                file_uri = URIRef(EX[urllib.parse.quote(file_path)])
-                g.add((child_resource_uri, DCTERMS.hasPart, file_uri))
+        if "representations" in basic_metadata:
+            for rep_id, rep_data in basic_metadata["representations"].items():
+                child_resource_uri = URIRef(EX[rep_id])  # URI for the child (e.g., PDF representation)
+                
+                # Add metadata for each child resource (representation)
+                g.add((child_resource_uri, DCTERMS.title, Literal(rep_data["distribution_label"])))
+                g.add((child_resource_uri, DCTERMS.description, Literal(rep_data["distribution_description"])))
+                g.add((child_resource_uri, DCTERMS.rights, Literal(rep_data["access_rights"])))
+                
+                # Add file items for each representation
+                for file_path in rep_data["file_items"]:
+                    file_uri = URIRef(EX[urllib.parse.quote(file_path)])
+                    g.add((child_resource_uri, DCTERMS.hasPart, file_uri))
 
-            # Link the child resource to the parent using hasPart
-            g.add((parent_resource_uri, DCTERMS.hasPart, child_resource_uri))
-            # Optionally, add the reverse relationship (isPartOf) from child to parent
-            g.add((child_resource_uri, DCTERMS.isPartOf, parent_resource_uri))
+                # Link the child resource to the parent using hasPart
+                g.add((parent_resource_uri, DCTERMS.hasPart, child_resource_uri))
+                # Optionally, add the reverse relationship (isPartOf) from child to parent
+                g.add((child_resource_uri, DCTERMS.isPartOf, parent_resource_uri))
 
         # Add producer and publisher
         g.add((parent_resource_uri, DCTERMS.contributor, Literal(basic_metadata["contact_point"])))
