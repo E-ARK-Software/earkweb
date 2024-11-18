@@ -72,7 +72,7 @@
     }).focus(function() {
        checkPackageName(function() {});
     });
-    const uriPattern = /^(https?:\/\/[^\s/$.?#].[^\s]*|doi:\d{2}\.\d{4,9}\/[-._;()/:A-Z0-9]+|handle:[^\s]+|info:[^\s]+)$/i;
+    const uriPattern = /^(https?:\/\/[^\s/$.?#].[^\s]*|(?:doi:)?\d{2}\.\d{4,9}\/[-._;()/:a-zA-Z0-9]+|(?:handle:)?[^\s]+|info:[^\s]+)$/i;
     function validateURI(uri) {
         return uriPattern.test(uri);
     }

@@ -6,7 +6,7 @@ from django.http import HttpResponse, HttpResponseNotFound, JsonResponse
 from earkweb.models import InformationPackage
 from config.configuration import django_service_url
 from config.configuration import solr_core_url
-from eatb.utils.datetime import date_format
+from eatb.utils.datetime import date_format, current_timestamp
 import xml.etree.ElementTree as ET
 
 from eatb.utils.datetime import DT_ISO_FORMAT, current_timestamp
@@ -21,24 +21,8 @@ solr = pysolr.Solr(solr_core_url, always_commit=True)
 
 logger = logging.getLogger(__name__)
 
-
 ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
 ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
-
-
-# Dummy data for the repository
-RECORDS = {
-    'oai:example.org:1': {
-        'identifier': 'oai:example.org:1',
-        'datestamp': '2023-01-01',
-        'metadata': '<oai_dc:title xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">Example Record 1</oai_dc:title>',
-    },
-    'oai:example.org:2': {
-        'identifier': 'oai:example.org:2',
-        'datestamp': '2023-02-01',
-        'metadata': '<oai_dc:title xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/">Example Record 2</oai_dc:title>',
-    },
-}
 
 def oai_pmh(request):
     """
@@ -57,7 +41,7 @@ def oai_pmh(request):
     elif verb == 'ListMetadataFormats':
         return list_metadata_formats(request)
     elif verb == 'ListIdentifiers':
-        return list_identifiers()
+        return list_identifiers(request)
     elif verb == 'GetRecord':
         return get_record(request)
     else:
@@ -197,30 +181,41 @@ def get_record(request):
     # Use the first document as the main record
     doc = results.docs[0]
 
-    # OAI-PMH XML structure
+    # Registriere die benötigten Namespaces
+    ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
+    ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
+
+    # OAI-PMH XML-Struktur
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
     response_date = ET.SubElement(root, 'responseDate')
     response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
+
+    # Request-Element hinzufügen
+    request_elem = ET.SubElement(root, 'request', verb='GetRecord', identifier=identifier, metadataPrefix=metadata_prefix)
+    request_elem.text = request.build_absolute_uri()
 
     get_record = ET.SubElement(root, 'GetRecord')
     record_elem = ET.SubElement(get_record, 'record')
     header = ET.SubElement(record_elem, 'header')
     identifier_elem = ET.SubElement(header, 'identifier')
-    identifier_elem.text = doc.get('id', 'Unknown ID')
+    identifier_elem.text = str(doc.get('id', 'Unknown ID'))
     datestamp = ET.SubElement(header, 'datestamp')
-    datestamp.text = doc.get('indexdate', 'Unknown Date')
+    datestamp.text = str(doc.get('indexdate', 'Unknown Date'))
 
-    # Metadata section
+    # Metadata-Sektion
     metadata = ET.SubElement(record_elem, 'metadata')
-    oai_dc = ET.SubElement(metadata, 'oai_dc:dc', xmlns="http://www.openarchives.org/OAI/2.0/oai_dc/")
-    ns = "http://purl.org/dc/elements/1.1/"
+    # Verwende ET.QName für korrektes Namespacing
+    oai_dc = ET.SubElement(metadata, ET.QName('http://www.openarchives.org/OAI/2.0/oai_dc/', 'dc'))
 
-    # Title or file description (depending on availability)
-    title_text = doc.get('filedescription', doc.get('title', ['No title'])[0])
-    title = ET.SubElement(oai_dc, f'{{{ns}}}title')
+    dc_namespace = "http://purl.org/dc/elements/1.1/"
+
+    # Titel oder Dateibeschreibung (je nach Verfügbarkeit)
+    title_field = doc.get('filedescription', doc.get('title', ['No title']))
+    title_text = title_field[0] if isinstance(title_field, list) else str(title_field)
+    title = ET.SubElement(oai_dc, ET.QName(dc_namespace, 'title'))
     title.text = title_text
 
-    # Populate other Dublin Core fields
+    # Weitere Dublin Core Felder
     fields = {
         'creator': 'publisher',
         'date': 'archivedate',
@@ -230,38 +225,44 @@ def get_record(request):
     }
 
     for dc_field, solr_field in fields.items():
-        value = doc.get(solr_field, [''])[0]
+        value = doc.get(solr_field, [''])
+        value = value[0] if isinstance(value, list) else str(value)
         if value:
-            elem = ET.SubElement(oai_dc, f'{{{ns}}}{dc_field}')
+            elem = ET.SubElement(oai_dc, ET.QName(dc_namespace, dc_field))
             elem.text = value
 
-    # Optional additional fields
-    publisher = ET.SubElement(oai_dc, f'{{{ns}}}publisher')
-    publisher.text = doc.get('publisher', ['Unknown Publisher'])[0]
-    
-    # Prepare response
-    xml_data = ET.tostring(root, encoding='utf-8')
+    # Optionales zusätzliches Feld
+    publisher_field = doc.get('publisher', ['Unknown Publisher'])
+    publisher_text = publisher_field[0] if isinstance(publisher_field, list) else str(publisher_field)
+    publisher = ET.SubElement(oai_dc, ET.QName(dc_namespace, 'publisher'))
+    publisher.text = publisher_text
+
+    # XML-Daten serialisieren
+    try:
+        xml_data = ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    except Exception as e:
+        return error_response('internalError', f'An error occurred while generating XML: {str(e)}')
+
     return HttpResponse(xml_data, content_type='text/xml')
+
 
 def error_response(code, message):
     """
-    Generate an OAI-PMH error response.
-
-    Parameters:
-    code (str): The OAI-PMH error code.
-    message (str): The error message.
-
-    Returns:
-    HttpResponse: The error response as XML.
+    Erzeugt eine OAI-PMH Fehlerantwort.
     """
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
-    error_elem = ET.SubElement(root, 'error', code=code)
-    error_elem.text = message
-    return HttpResponse(ET.tostring(root, encoding='utf-8'), content_type='text/xml')
+    response_date = ET.SubElement(root, 'responseDate')
+    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
+    
+    request_elem = ET.SubElement(root, 'request', verb='GetRecord')
+    request_elem.text = 'http://example.com/oai'  # Ersetze dies durch die tatsächliche URL
+    
+    error = ET.SubElement(root, 'error', code=code)
+    error.text = message
+    
+    xml_data = ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    return HttpResponse(xml_data, content_type='text/xml')
 
-def current_timestamp(fmt):
-    # Implement timestamp formatting here (or use Django's utilities)
-    pass
 
 def bad_verb():
     """

@@ -38,7 +38,7 @@
 
                     <label for="extuid" class="control-label col-xs-3">{% trans 'External identifier (optional)' %}</label>
                     <div class="col-xs-6">
-                        <input type="text" class="form-control" id="extuid" name="extuid" placeholder="doi:10.1000/182" value="{{ ip.extuid }}" data-toggle="tooltip" title="Optionally provide an external unique identifier. The identifier must be a valid URI.">
+                        <input type="text" class="form-control" id="extuid" name="extuid" placeholder="10.1000/182" value="{{ ip.extuid }}" data-toggle="tooltip" title="Optionally provide an external unique identifier. The identifier must be a valid URI.">
                     </div>
 
                 </div>
@@ -59,6 +59,85 @@
 
     </div>
 
-    <script type="text/javascript" src="{% static 'submission/js/start.js' %}"></script>
+    <script type="text/javascript">
+        /**
+         * Start creating SIP
+         */
+        (function(){
+
+        function setValid(elmid) {
+            $( "#"+elmid ).removeClass("error");
+            $( "#"+elmid ).addClass("ok");
+            $('#initialize').removeAttr("disabled");
+        }
+
+        function setInvalid(elmid) {
+            $( "#"+elmid ).addClass("error");
+            $( "#"+elmid ).removeClass("ok");
+            $('#initialize').attr("disabled", "disabled");
+        }
+
+        $('#initialize').attr("disabled", "disabled");
+        
+        function checkPackageName(successCallback) {
+            var pn = $( "#packagename" );
+            var check_folder_url = "/earkweb/check_submission_exists/" + pn.val()
+            window.console.log(check_folder_url);
+            if (pn.val().length < 3) {
+                $( "#msgpackagename" ).html("The package name must consist of at least 3 characters!");
+                setInvalid("packagename");
+                return false;
+            } else {
+                $( "#msgpackagename" ).html("");
+                var regex = new RegExp('^[a-zA-Z0-9\.\\-_]*$');
+                if(!regex.test(pn.val())) {
+                    $( "#msgpackagename" ).html("Invalid characters in submission name!");
+                    setInvalid("packagename");
+                    return false;
+                } else {
+
+
+                    $.ajax({
+                        type: "GET",
+                        url: check_folder_url,
+                        success: function (folder_exists) {
+                            if(folder_exists == 'true') {
+                                $( "#msgpackagename" ).html("A submission with this name already exists, please choose another name!");
+                                setInvalid("packagename");
+                            } else {
+                                $( "#msgpackagename" ).html("");
+                                setValid("packagename");
+                                successCallback();
+                            }
+                        }
+                    });
+
+                }
+            }
+        }
+        /**
+         * Continously check if folder for data set exists
+         */
+        $( "#packagename" ).keyup(function() {
+        checkPackageName(function() {});
+        }).focus(function() {
+        checkPackageName(function() {});
+        });
+        const uriPattern = /^(https?:\/\/[^\s/$.?#].[^\s]*|(?:doi:)?\d{2}\.\d{4,9}\/[-._;()/:a-zA-Z0-9]+|(?:handle:)?[^\s]+|info:[^\s]+)$/i;
+        function validateURI(uri) {
+            return uriPattern.test(uri);
+        }
+        $( "#extuid" ).keyup(function() {
+            var isValidURI = validateURI($(this).val());
+            window.console.log(isValidURI);
+            if($(this).val() == '' || isValidURI) {
+                setValid("extuid");
+            } else {
+                setInvalid("extuid");
+            }
+        });
+        })();
+
+    </script>
 
 {% endblock %}
