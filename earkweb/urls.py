@@ -34,7 +34,7 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     re_path(r'^check_folder_exists/(?P<folder>[0-0a-zA-Z_/]{3,200})/$', views.check_folder_exists, name='check_folder_exists'),
     re_path(r'^check_submission_exists/(?P<package_name>[0-9a-zA-Z-_/\.]{3,200})/$', views.check_submission_exists, name='check_submission_exists'),
-    re_path(r'^check_identifier_exists/(?P<identifier>[0-9a-zA-Z-_/\.\:]{3,200})/$', views.check_identifier_exists, name='check_identifier_exists'),
+    re_path(r'^check_identifier_exists/(?P<identifier>[0-9a-zA-Z-_/\.\:]{1,200})/$', views.check_identifier_exists, name='check_identifier_exists'),
     re_path(r'^read-file/(?P<ip_sub_file_path>.*)/$', views.read_file, name='read-file'),
     re_path(r'^get_directory_json/$', views.get_directory_json, name='get_directory_json'),
     re_path(r'^get_storage_directory_json$', views.get_storage_directory_json, name='get_storage_directory_json'),
@@ -49,6 +49,10 @@ urlpatterns = [
     path('wordcloud/', views.WordCloudView.as_view(), name='wordcloud'),
     path('chart', views.line_chart, name='line_chart'),
     path('chartJSON', views.line_chart_json, name='line_chart_json'),
+
+    re_path(r'^oai-pmh/$', views.oai_pmh, name='oai-pmh'),
+
+    re_path(r'^resource-sync/$', views.resource_sync, name='resource-sync'),
 ]
 
 urlpatterns = [

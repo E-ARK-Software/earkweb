@@ -5,50 +5,44 @@
 {% load i18n %}
 
 {% block extra_head %}
-
-    <!-- override style of h1.main to include the module description in h2 style -->
     <style type="text/css" media=screen>
         h1.title { font-size: 2em; }
        h1.main { font-size: 1.3em; }
     </style>
  <style>
-    /* Ensure the container takes up full width of the card body */
     .container {
         display: flex;
-        flex-wrap: nowrap; /* Prevent wrapping */
-        width: 100%; /* Full width of the parent (card-body) */
+        flex-wrap: nowrap; 
+        width: 100%; 
         min-width: 1400px;
         margin: 0;
         padding: 0;
     }
 
     .column {
-        flex: 1; /* Each column takes equal space */
+        flex: 1; 
         min-width: 700px;
         padding: 10px;
         box-sizing: border-box;
     }
 
-    /* Ensure columns do not exceed the container width */
     .container {
-        overflow: hidden; /* Prevent overflow */
+        overflow: hidden;
     }
 
-    /* Optional: Styling for visibility */
     .column {
         border: 0px solid #ffffff;
         background-color: #ffffff;
     }
 
-    /* Remove padding from card-body for full width usage */
     .card-body {
-        padding: 0; /* Remove default padding to use full width */
+        padding: 0; 
     }
     .image-container {
             position: relative;
-            width: 100%; /* Full width of the parent */
-            padding-bottom: 50%; /* Aspect ratio of 2:1 (height = 50% of width) */
-            background-color: #ffffff; /* Placeholder color */
+            width: 100%; 
+            padding-bottom: 50%; 
+            background-color: #ffffff; 
         }
 
         .image-container img {
@@ -57,7 +51,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Ensure the image fits within the container while maintaining aspect ratio */
+            object-fit: contain; 
         }
 </style>
      <script src="{% static 'js/Chart.min.js' %}"></script>
@@ -113,12 +107,12 @@
         datasets: [{
         data: {{ data|safe }},
         backgroundColor: [
-    '#8B4513', // Saddle Brown
-    '#CD5C5C', // Indian Red
-    '#A52A2A', // Brown
-    '#8B0000', // Dark Red
-    '#B22222'  // Fire Brick
-],
+            '#8B4513', // Saddle Brown
+            '#CD5C5C', // Indian Red
+            '#A52A2A', // Brown
+            '#8B0000', // Dark Red
+            '#B22222'  // Fire Brick
+        ],
         label: 'Mime-type distribution'
         }],
         labels: {{ labels|safe }}
@@ -135,12 +129,12 @@
             datasets: [{
                 data: {{ file_size_data.data|safe }},
                 backgroundColor: [
-    '#964B00', // Brown
-    '#8B0000', // Dark Red
-    '#8B4513', // Saddle Brown
-    '#800000', // Maroon
-    '#A52A2A'  // Brown
-],
+                    '#964B00', // Brown
+                    '#8B0000', // Dark Red
+                    '#8B4513', // Saddle Brown
+                    '#800000', // Maroon
+                    '#A52A2A'  // Brown
+                ],
                 label: 'File Size Distribution per mime-type'
             }],
             labels: {{ file_size_data.labels|safe }}
@@ -159,8 +153,6 @@
             }
         }
     };
-
-
 
     window.onload = function() {
     var ctx = document.getElementById('pie-chart').getContext('2d');

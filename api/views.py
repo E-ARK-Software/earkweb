@@ -5,6 +5,7 @@ import re
 import shutil
 import tarfile
 import traceback
+import mimetypes
 from json import JSONDecodeError
 
 import magic
@@ -40,9 +41,9 @@ import os
 import logging
 from taskbackend.taskexecution import execute_task
 from taskbackend.ip_state import IpState
-from taskbackend.tasks import checkout_working_copy_from_storage, aip_indexing, \
+from taskbackend.tasks import aip_indexing, \
     delete_representation_data_from_workdir, \
-    rename_representation_directory, sip_package
+    sip_package
 from config.configuration import config_path_work, config_path_storage, file_size_limit, \
     representations_directory, config_max_http_download, node_namespace_id, default_org
 from rest_framework.views import APIView
@@ -144,65 +145,6 @@ def start_ingest(request, uid):
     else:
         error = {"message": "Request method not supported"}
         return JsonResponse(error, status=400)
-
-
-@csrf_exempt
-@api_view(['POST'])
-@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
-@permission_classes((IsAuthenticated,))
-@renderer_classes([JSONRenderer])
-def checkout_working_copy(request, identifier):
-    """
-    post:
-    Checkout a working copy (database, file system)
-
-    A stored data set without a working copy cannot to be edited or changed directly. It is required to checkout a
-    working copy first.
-
-    To checkout the information package use the following command:
-
-        curl -X POST http://localhost:8000/earkweb/api/ips/urn:uuid:42658bbd-a76f-46f5-85da-f0ad2bed94dc/checkout-working-copy/
-    """
-    data = None
-    if request.body and request.body != "":
-        try:
-            data = JSONParser().parse(request)
-        except ParseError as e:
-            return JsonResponse(e.get_full_details(), status=400)
-    metadata_only = True if data and 'metadataonly' in data and data['metadataonly'] == "true" else False
-    reset_aip = request.query_params and 'reset' in request.query_params and request.query_params['reset'] == "true"
-    try:
-        # pylint: disable-next=no-member
-        ip = InformationPackage.objects.get(identifier=identifier)
-        try:
-            u = User.objects.get(username=request.user)
-            #if u != ip.user:
-            #    return JsonResponse({"message": "Unauthorized. Operation is not permitted."}, status=403)
-            if ip.uid != "":
-                return JsonResponse({"message": "A working copy already exists."}, status=400)
-            dpts = PairtreeStorage(config_path_storage)
-            if not dpts.identifier_object_exists(identifier):
-                return JsonResponse({"message": "Object does not exist in storage."}, status=404)
-            uid = str(uuid4())
-            task_input = {
-                "identifier": identifier, "uid": uid,
-                "metadataonly": metadata_only, "reset": reset_aip
-            }
-            job = checkout_working_copy_from_storage.delay(task_input)
-            ip.uid = uid
-            ip.work_dir = os.path.join(config_path_work, uid)
-            ip.save()
-            return JsonResponse(
-                {"message": "Checkout request submitted successfully.", "job_id": job.id, "uid": uid},
-                status=201
-            )
-        # pylint: disable-next=no-member
-        except User.DoesNotExist:
-            return JsonResponse({"message": "Internal error: user does not exist"}, status=500)
-    # pylint: disable-next=no-member
-    except InformationPackage.DoesNotExist:
-        return JsonResponse({"message": "Object does not exist"}, status=404)
-
 
 @csrf_exempt
 @api_view(['DELETE'])
@@ -576,38 +518,43 @@ def read_file(file_path):
 @permission_classes((IsAuthenticated,))
 def package_entry_from_backend(_, identifier, entry):
     """
-    get: Read package entry
+    get: Read file from package
 
-    To read the CSV file 'weather.csv' (mime type: application/csv) from the data set named 'default' stored as part
-    of the data set with identifier 'ait:faae219bffa999295175ff98e089fa0b07d9647d' use the following parameters:
+    To read the PDF file 'somepdf.pdf' (mime type: application/csv) from the representation "e4eec7d0-7caa-419f-bd68-cc0e1c9f38f8" 
+    stored as part of the information package with identifier 'doi:10.5281/zenodo.11366514' use the following parameters:
 
-    entry: data/weather.csv, identifier: ait:faae219bffa999295175ff98e089fa0b07d9647d, mime: application/csv,
-    representation: default
+    entry: representations/e4eec7d0-7caa-419f-bd68-cc0e1c9f38f8/data/somepdf.pdf, identifier: doi:10.5281/zenodo.11366514
     """
     try:
         dpts = PairtreeStorage(config_path_storage)
-        object_path = dpts.get_object_path(from_safe_filename(identifier))
-        t = tarfile.open(object_path, 'r')
-        tar_entry = os.path.join(identifier, entry)
+        safe_file_name = from_safe_filename(identifier)
+        base_path = dpts.get_object_path(safe_file_name)
+        file_path = os.path.join(base_path, entry)
 
-        info = t.getmember(tar_entry)
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            return JsonResponse(
+                {"message": f"Entry {entry} does not exist in archival package '{identifier}'"}, status=404
+            )
 
-        f = t.extractfile(info)
-        start_bytes = f.read(256)
+        # Detect MIME type
+        mime_type, _ = mimetypes.guess_type(file_path)
+        mime_type = mime_type or "application/octet-stream"
 
-        inst = ChunkedTarEntryReader(t)
-        magic_mime_detect = magic.Magic(mime=True)
-        mime = magic_mime_detect.from_buffer(start_bytes)
+        # Read and return the file content
+        with open(file_path, 'rb') as f:
+            return HttpResponse(f.read(), content_type=mime_type)
 
-        return HttpResponse(inst.chunks(tar_entry), content_type=mime)
-    except ObjectNotFoundException:
-        return JsonResponse(
-            {"message": "The archival package does not exist: %s" % identifier}, status=404
-        )
-    except (KeyError):
-        return JsonResponse(
-            {"message": "Entry %s does not exist in archival package '%s'" % (entry, identifier)}, status=404
-        )
+    except FileNotFoundError:
+        message = f"The archival package does not exist: {identifier}"
+        logger.warning(message)
+        return JsonResponse({"message": message}, status=404)
+    
+    except Exception as e:
+        error_message = f"An unexpected error occurred: {str(e)}"
+        logger.error(error_message)
+        logger.debug("Exception details:", exc_info=True)  
+        return JsonResponse({"message": error_message}, status=500)
 
 
 @csrf_exempt
@@ -682,6 +629,7 @@ def directory_json(request, area, item):
     version = 0  # N/A
     if area not in ["work", "storage"]:
         return JsonResponse({"message": "Area not defined."}, status=404)
+    access_path = None
     if area == "work":
         access_path = config_path_work
     elif area == "storage":
@@ -690,8 +638,14 @@ def directory_json(request, area, item):
         access_path = os.path.join(make_storage_data_directory_path(item, config_path_storage), version)
     if area in ["work", "storage"]:
         try:
-            # pylint: disable-next=no-member
-            ip = InformationPackage.objects.get(uid=item) if area == "work" else InformationPackage.objects.get(identifier=item, version=re.sub("\D", "", version))
+            if area == "work":
+                # pylint: disable-next=no-member
+                ip = InformationPackage.objects.get(uid=item)
+            else:
+                version_clean = re.sub("\D", "", version)
+                version_nr = int(version_clean)
+                # pylint: disable-next=no-member
+                ip = InformationPackage.objects.get(identifier=item, version=version_nr)
             try:
                 u = User.objects.get(username=request.user)
                 if u != ip.user:

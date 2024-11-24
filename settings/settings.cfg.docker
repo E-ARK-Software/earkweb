@@ -77,14 +77,31 @@ metadata_file_pattern_ead = [Ee][Aa][Dd]*.xml
 
 [access]
 dip_download_base_url = http://localhost/repo/download
-dip_download_path = /www/repo/download
+dip_download_path = /var/www/repo/download
 metadata_fields_indexing = title,description,publisher,uid
 data_directory_pattern = .*/representations/.+/data/.*
+# Identifiers
+## DOI
+identifier_pattern = doi(:|%%3A)\d+\.\d+(\/|%%2F)[^\s\/]+
+## URN
+# identifier_pattern = urn(%%3A|:)[a-zA-Z0-9\-.:]+
+## URL
+# http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*
+## ARK
+# ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+
+## DOI or URN or URL or ARK or Handle
+# (doi(%%3A|:)\d+.\d+(%%2F|/)[^\s]+|http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*|urn(%%3A|:)[a-zA-Z0-9\-.:]+|ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+)
+# Accepted identifiers
+## Comma Separated list of accepted identifiers
+# DOI example
+accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514
+# DOI, URN, HTTP, HTTPS, ARK
+# accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514, URN: urn:nbn:de:1111-200403299, HTTP: http://example.com/resource, HTTPS: https://example.com/resource, ARK: ark:/12345/fk1234, Handle: hdl:20.1000/101
+entry_pattern = .*
 
 [media]
-media_root = /var/www/repo/media/
+media_root = /var/www/html/
 media_url = /media/
 
-
 [system]
-backend_api_key = sBafmMkE.6Mwuj6q8eRfpN9LHBd5NU7vNcIJjVikQ
+backend_api_key = n6jPJwAX.tHvmUBt8tdHxdG5WiK5dmb3rul5XD3Kw

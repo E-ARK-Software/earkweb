@@ -242,6 +242,8 @@
 								<li class="nav-item"><a href="/earkweb/administration/dashboard" class="nav-link"><span id="mi-dashboard">{% trans 'Dashboard' %}</span></a></li>
 								<li class="nav-item"><a href="/earkweb/admin" class="nav-link"><span id="mi-site-admin">{% trans 'Site Administration' %}</span></a></li>
 								<li class="nav-item"><a href="/earkweb/api/" class="nav-link"><span id="mi-rest-api">{% trans 'REST API' %}</span></a></li>
+								<li class="nav-item"><a href="/earkweb/oai-pmh" class="nav-link"><span id="mi-oai-pmh">{% trans 'OAI-PMH' %}</span></a></li>	
+								<li class="nav-item"><a href="/earkweb/resource-sync" class="nav-link"><span id="mi-resource-sync">{% trans 'Resource Sync' %}</span></a></li>								
 							</ul>
 						</li>
 
@@ -356,7 +358,7 @@
                     $('#br-level-1').hide();
                     $('#br-level-2').hide();
                     break;
-                  case (url.match(/admin|api/) || {}).input:
+                  case (url.match(/admin|api|oai-pmh|resource-sync/) || {}).input:
                     $('#administration > a').addClass('active');
                     $('#br-level-1').html("<a href='/earkweb/administration'>"+$('#mi-administration').text()+"</a>");
                     $('#br-level-1').show();
@@ -371,6 +373,14 @@
 							break;
                     	case (url.match(/api/) || {}).input:
 							$('#br-level-2').text($('#mi-rest-api').text());
+							$('#br-level-2').show();
+							break;
+                    	case (url.match(/oai-pmh/) || {}).input:
+							$('#br-level-2').text($('#mi-oai-pmh').text());
+							$('#br-level-2').show();
+							break;
+                    	case (url.match(/resource-sync/) || {}).input:
+							$('#br-level-2').text($('#mi-resource-sync').text());
 							$('#br-level-2').show();
 							break;
                     }

@@ -97,6 +97,30 @@
                 })
                 .catch(error => console.log('Error:', error));
         }
+        /**
+         * Update data table
+         * current_ip variable must be provided (global scope)
+         */
+        function updateTable(filterword) {
+            $.ajax({
+                url: "/earkweb/access/ips_table",
+                type: "POST",
+                data: "filterword=" + filterword,
+                success: function(table_html){
+                    console.log("Table updated!")
+                    $('#ips-table').html(table_html);
+                },
+                error: function(err){
+                    console.log(err);
+                }
+            });
+        }
+        $( document ).ready(function() {
+            $( "#filterchars" ).keyup(function() {
+            updateTable($('#filterchars').val());
+            window.console.log($('#filterchars').val());
+            });
+        });
     </script>
 
 {% endblock %}
@@ -110,7 +134,9 @@
 
     <p>{% trans 'Indexing status of archived information packages.' %}</p>
 
-    <div id="informationpackage-table">
+    <p><input type="text" id="filterchars" placeholder="{% trans 'Search for identifier' %}" style="width: 28em">
+
+    <div id="ips-table">
         {% render_table informationpackage %}
     </div>
 

@@ -104,45 +104,6 @@ def delete(request, pk):
     return HttpResponse(template.render(context=context, request=request))
 
 
-@login_required
-def checkout(request, identifier):
-    ip = InformationPackage.objects.get(identifier=identifier)
-    uid = None
-    if not ip.uid:
-        uid = str(uuid4())
-        ip.uid = uid
-        ip.work_dir = os.path.join(config_path_work, uid)
-    template = loader.get_template('management/checkout_confirm.html')
-    from config.configuration import django_backend_service_host, django_backend_service_port
-    import requests
-    reset_aip = "reset_aip" in request.POST and request.POST["reset_aip"] == "on"
-    request_url = "/earkweb/api/ips/%s/checkout-working-copy/?reset=%s" % \
-                  (identifier, str(reset_aip).lower())
-    user_api_token = get_user_api_token(request.user)
-    response = requests.post(request_url, headers={'Authorization': 'Token %s' % user_api_token},
-                             verify=verify_certificate)
-    if response.status_code != 201:
-        err_msg = "An error occurred while trying do the checkout"
-        try:
-            json_err = json.loads(response.text)
-            err_msg = "%s: %s" % (err_msg, json_err["message"])
-        except JSONDecodeError:
-            pass
-        return render(request, 'earkweb/error.html', {
-            'header': 'Checkout error', 'message': err_msg
-        })
-    resp_json = json.loads(response.text)
-    context = {
-        'msg_checkout_confirm': resp_json['message'],
-        'identifier': identifier,
-        'uid': uid,
-        'ip': ip,
-        "jobid": resp_json["job_id"],
-        'flower_status': flower_is_running()
-    }
-    return HttpResponse(template.render(context=context, request=request))
-
-
 class InformationPackageTable(tables.Table):
     from django_tables2.utils import A
     area = "management"

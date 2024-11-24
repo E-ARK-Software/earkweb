@@ -4,7 +4,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
-from config.configuration import representations_directory
+from config.configuration import representations_directory, identifier_pattern, entry_pattern
 
 
 schema_view = get_schema_view(
@@ -34,7 +34,7 @@ urlpatterns = [
     #re_path(r'^identifiers/byextuid/$', views.identifiers_by_extuid),
 
     re_path(r'^ips/$', views.InformationPackages.as_view()),
-    re_path(r'^ips/%s/$' % representations_directory, views.representations_list),
+    re_path(fr'^ips/{representations_directory}/$', views.representations_list),
 
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/$', views.InfPackDetail.as_view()),
 
@@ -61,8 +61,11 @@ urlpatterns = [
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_working_dir_file_resource),
 
-    re_path(r'^ips/(?P<identifier>.+?)/(?P<entry>[0-9a-zA-Z_\-/\. \:]{3,500})/stream/$',
-        views.package_entry_from_backend, name='read_container_package_entry'),
+    re_path(
+        fr'^ips/(?P<identifier>{identifier_pattern})/file-item/(?P<entry>{entry_pattern})/$',
+        views.package_entry_from_backend,
+        name='read_container_package_entry',
+    ), 
 
     re_path(r'^ips/status/$', views.get_ip_states),
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/status/$', views.get_ip_state),
@@ -77,17 +80,12 @@ urlpatterns = [
 
     # endpoints which require direct access to the storage backend
 
-    re_path(r'^ips/(?P<identifier>.+?)/file-resource/(?P<ip_sub_file_path>.*)/$',
+    re_path(fr'^ips/(?P<identifier>{identifier_pattern})/file-resource/(?P<ip_sub_file_path>.*)/$',
         views.do_storage_file_resource),
 
-    re_path(r'^storage/ips/(?P<identifier>.+?)/dir-json$', views.do_storage_dir_json),
-    re_path(r'^storage/(?P<identifier>.+?)/%s/$' % representations_directory,
+    re_path(fr'^storage/ips/(?P<identifier>{identifier_pattern})/dir-json$', views.do_storage_dir_json),
+    re_path(fr'^storage/(?P<identifier>{identifier_pattern})/{representations_directory}/$',
         views.get_ip_representations_info, name='storage_identifier_representations'),
-    re_path(r'^ips/(?P<identifier>.+?)/index/$', views.index_informationpackage),
-
-    # endpoints which require direct access to both, working area and storage backend
-
-    re_path(r'^ips/(?P<identifier>.+?)/checkout-working-copy/$',
-        views.checkout_working_copy),
+    re_path(fr'^ips/(?P<identifier>{identifier_pattern})/index/$', views.index_informationpackage),
 
 ]

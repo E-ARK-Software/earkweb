@@ -680,6 +680,21 @@ $(document).ready(function() {
 <script type="text/javascript" src="{% static 'earkweb/tagify/tagify.min.js' %}"></script>
 <link rel="stylesheet" href="{% static "earkweb/tagify/tagify.css" %}" type="text/css" />
 
+<script type="text/javascript">
+    $(document).ready(function () {
+        // Initialize the datepicker
+        $('#id_original_creation_date').datepicker({
+            dateFormat: 'dd.mm.yy',
+            changeYear: true,
+            yearRange: '-200:+00'
+        });
+
+        // Ensure it opens on click
+        $('#id_original_creation_date').on('focus', function () {
+            $(this).datepicker('show');
+        });
+    });
+</script>
 <script>
 
 $(document).ready(function() {

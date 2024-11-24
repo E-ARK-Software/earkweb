@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 
 from django import forms
@@ -8,6 +9,14 @@ from django.utils.translation import gettext as _
 import logging
 
 from taggit.forms import TagField
+
+from config.configuration import default_title
+from config.configuration import default_description
+from config.configuration import default_contact
+from config.configuration import default_contact_email
+from config.configuration import default_maintainer
+from config.configuration import default_maintainer_email
+
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +65,29 @@ class MetaFormStep1(forms.Form):
     package_name = forms.CharField(widget=forms.HiddenInput())
     # Field is hidden!
     external_id = forms.CharField(widget=forms.HiddenInput(), required=False)
-    title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title')}))
-    description = forms.CharField(label=_('Information package description'), max_length=50000, widget=forms.Textarea(attrs ={'placeholder': _('Data set description')}))
-    original_creation_date = forms.CharField(label=_('Original creation date'), max_length=100, widget=forms.TextInput(
-        attrs={'placeholder': _('dd.mm.yyyy'),
-               'onclick': "$('#id_original_creation_date').datepicker({dateFormat:'dd.mm.yy',changeYear: true, yearRange: '-200:+00'});$('#id_creation_date').datepicker('show');"}),
-                                       required=False)
+    title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title'), 'value': default_title}))
+    description = forms.CharField(
+        label=_('Information package description'),
+        max_length=50000,
+        widget=forms.Textarea(attrs={'placeholder': _('Data set description')}),
+        initial=default_description
+    )
+
+    original_creation_date = forms.CharField(
+        label=_('Original creation date'),
+        max_length=100,
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': _('dd.mm.yyyy'),
+                'id': 'id_original_creation_date',  # Ensure it has an ID
+                'value': (datetime.now()).strftime("%d.%m.%Y")
+            }
+        ),
+        required=False
+    )
     tags = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
         'placeholder': _('Please enter 2 characters to get tag suggestions or write a custom tag and press enter to add it'),
-        'id': 'pp',
+        'id': 'pp'
     }), required=False)
     hidden_user_tags = forms.CharField(max_length=10000, widget=forms.HiddenInput(attrs={
         'id': 'pp_tags_hidden',
@@ -107,13 +130,13 @@ class MetaFormStep2(forms.Form):
 class MetaFormStep3(forms.Form):
 
     contact_point = forms.CharField(label=_('Contact'), max_length=255,
-                                    widget=forms.TextInput(attrs ={'placeholder': _('Contact')}))
+                                    widget=forms.TextInput(attrs ={'placeholder': _('Contact'), 'value': default_contact}))
     contact_email = forms.EmailField(label=_('Contact email'),
-                                     widget=forms.EmailInput({'placeholder': 'contact@email.com'}))
+                                     widget=forms.EmailInput({'placeholder': 'contact@email.com', 'value': default_contact_email}))
     publisher = forms.CharField(label=_('Maintainer'), max_length=255,
-                                widget=forms.TextInput(attrs ={'placeholder': _('Maintainer')}))
+                                widget=forms.TextInput(attrs ={'placeholder': _('Maintainer'), 'value': default_maintainer}))
     publisher_email = forms.EmailField(label=_('MaintainerEmail'),
-                                       widget=forms.EmailInput({'placeholder': 'maintainer@email.com'}))
+                                       widget=forms.EmailInput({'placeholder': 'maintainer@email.com', 'value': default_maintainer_email}))
     language = forms.CharField(label=_('MainLanguageOfPackage'), max_length=255,
                                widget=forms.TextInput(attrs ={'id': 'PP_lang'}), initial=(_('MainInitialLanguage')))
 
@@ -125,7 +148,7 @@ class MetaFormStep4(forms.Form):
 class MetaFormStep5(forms.Form):
 
     distribution_label = forms.CharField(label=_('Representation label'), max_length=50, widget=forms.TextInput(
-        attrs={'placeholder': _('Representation label')}))
+        attrs={'placeholder': _('Representation label'), 'value': 'pdf'}))
 
     access_rights = forms.ChoiceField(label=_('AccessRightsField'),
       choices = [
@@ -144,7 +167,12 @@ class MetaFormStep5(forms.Form):
         ],
     )
 
-    distribution_description = forms.CharField(label=_('Representation description'), max_length=4096, widget=forms.Textarea(attrs={'rows': '2'}))
+    distribution_description = forms.CharField(
+        label=_('Representation description'), 
+        max_length=4096, 
+        widget=forms.Textarea(attrs={'rows': '2'}),
+        initial="PDF"
+    )
 
     def __init__(self, *args, **kwargs):
         super(MetaFormStep5, self).__init__(*args, **kwargs)

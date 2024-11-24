@@ -409,29 +409,6 @@ def get_first_ip_path(wd_root_path):
                     return os.path.join(wd_root_path, wd_sub_dir)
 
 
-def get_package_from_storage(task_context_path, package_uuid, package_extension):
-    from config.configuration import config_path_storage
-    pts = PairtreeStorage(config_path_storage)
-    parent_object_path = pts.get_object_path(package_uuid)
-
-    package_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (package_uuid, package_extension)))
-    package_source_size = fsize(parent_object_path)
-    total_bytes_read = 0
-    with open(package_in_dip_work_dir, 'wb') as target_file:
-         for chunk in FileBinaryDataChunks(parent_object_path, 65536).chunks(total_bytes_read):
-             target_file.write(chunk)
-         total_bytes_read += package_source_size
-         target_file.close()
-    check_transfer(parent_object_path, package_in_dip_work_dir)
-
-
-def get_children_from_storage(task_context_path, package_uuid, package_extension):
-    get_package_from_storage(task_context_path, package_uuid, package_extension)
-    child_uuids = get_aip_children(task_context_path, package_uuid, package_extension)
-    for child_uuid in child_uuids:
-        get_children_from_storage(task_context_path, child_uuid, package_extension)
-
-
 def get_aip_parent(task_context_path, aip_identifier, package_extension):
     aip_in_dip_work_dir = os.path.join(task_context_path, ("%s.%s" % (aip_identifier, package_extension)))
 
@@ -843,6 +820,11 @@ def update_inventory(identifier, version, aip_path, archive_file, action):
     with open(inventory_content_file_path, 'w') as inventory_content_file:
         inventory_content_file.write(json.dumps(inventory_content_json, indent=4))
 
+    # Compute SHA512 hash of inventory_content.json and write it to inventory_content.json.sha512
+    inventory_content_file_sha512 = get_sha512_hash(inventory_content_file_path)
+    with open(os.path.join(aip_storage_root, "inventory_content.json.sha512"), 'w') as checksum_inventory_content:
+        checksum_inventory_content.write("%s %s" % (inventory_content_file_sha512, inventory_content_file_name))
+
 
 def find_metadata_file(directory, filename="metadata.json"):
     """Recursively search for the specified file in the given directory."""
@@ -850,3 +832,108 @@ def find_metadata_file(directory, filename="metadata.json"):
         if filename in files:
             return os.path.join(root, filename)
     return None
+
+
+import os
+import json
+import hashlib
+from datetime import datetime
+from collections import defaultdict
+
+def compute_file_hashes(file_path, algorithms=None):
+    """
+    Computes the hashes of a file using the specified algorithms.
+    """
+    if algorithms is None:
+        algorithms = ["md5", "sha1", "sha512"]
+    
+    hashes = {}
+    for algo in algorithms:
+        hasher = hashlib.new(algo)
+        with open(file_path, "rb") as f:
+            while chunk := f.read(8192):
+                hasher.update(chunk)
+        hashes[algo] = hasher.hexdigest()
+    return hashes
+
+
+def write_inventory_from_directory(identifier, version, data_dir, action, metadata=None):
+    """
+    Writes or updates the OCFL inventory.json file in the parent "data" directory.
+    
+    Parameters:
+        identifier (str): Unique ID for the archive.
+        version (str): Current version, e.g., "v00001".
+        data_dir (str): Directory containing version folders (e.g., "data").
+        action (str): Description of the action (e.g., "Created version").
+        metadata (dict, optional): Additional metadata to include in the inventory.
+    """
+    if not os.path.exists(data_dir):
+        raise ValueError(f"Data directory does not exist: {data_dir}")
+
+    inventory_path = os.path.join(data_dir, "inventory.json")
+
+    # Load existing inventory if it exists
+    if os.path.exists(inventory_path):
+        with open(inventory_path, "r") as f:
+            inventory = json.load(f)
+    else:
+        # Create a new inventory if it doesn't exist
+        inventory = {
+            "digestAlgorithm": "sha512",
+            "fixity": defaultdict(lambda: defaultdict(list)),
+            "head": version,
+            "id": identifier,
+            "manifest": defaultdict(list),
+            "type": "https://ocfl.io/1.1/spec/#inventory",
+            "versions": {}
+        }
+
+    # Prepare the entry for the current version
+    version_entry = {
+        "created": datetime.utcnow().isoformat() + "Z",
+        "message": action,
+        "state": defaultdict(list)
+    }
+
+    # Scan the files in the current version directory
+    version_dir = os.path.join(data_dir, version)
+    if not os.path.exists(version_dir):
+        raise ValueError(f"Version directory does not exist: {version_dir}")
+
+    for subdir, _, files in os.walk(version_dir):
+        for file in files:
+            file_path = os.path.join(subdir, file)
+            relative_path = os.path.relpath(file_path, os.path.join(data_dir, version, "content"))
+            hashes = compute_file_hashes(file_path)
+
+            # Add to fixity
+            for algo, hash_val in hashes.items():
+                inventory["fixity"][algo][hash_val].append(f"{version}/content/{relative_path}")
+
+            # Add to manifest
+            inventory["manifest"][hashes["sha512"]].append(f"{version}/content/{relative_path}")
+
+            # Add to version state
+            version_entry["state"][hashes["sha512"]].append(relative_path)
+
+    # Update the inventory with the new version entry
+    inventory["versions"][version] = version_entry
+    inventory["head"] = version
+
+    # Write the updated inventory back to disk
+    try:
+        with open(inventory_path, "w", encoding="utf-8") as f:
+            json.dump(inventory, f, indent=4)
+        print(f"Inventory updated at {inventory_path}")
+        
+        ocfl_object_file_name = "0=ocfl_object_1.0"
+        with open(os.path.join(data_dir, ocfl_object_file_name), 'w', encoding="utf-8") as ocfl_object_file:
+            ocfl_object_file.write("ocfl_object_1.0")
+        # Compute SHA512 hash of inventory_content.json and write it to inventory_content.json.sha512
+        inventory_content_file_sha512 = get_sha512_hash(inventory_path)
+        with open(os.path.join(data_dir, "inventory.json.sha512"), 'w', encoding="utf-8") as checksum_inventory_content:
+            checksum_inventory_content.write("%s %s" % (inventory_content_file_sha512, "inventory.json"))
+
+    except Exception as e:
+        raise IOError(f"Error writing inventory to {inventory_path}: {e}")

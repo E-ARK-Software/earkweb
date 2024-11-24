@@ -2,6 +2,8 @@ from django.urls import re_path, path
 import management.views
 import earkweb.views
 
+from config.configuration import identifier_pattern
+
 app_name = 'management'
 
 urlpatterns = [
@@ -13,8 +15,7 @@ urlpatterns = [
     re_path(r'^modify/(?P<pk>\d+)/$', management.views.sip_detail, name='ip_detail'),
     re_path(r'^delete/(?P<pk>\d+)/$', management.views.delete, name='delete'),
     re_path(r'^ip_detail_table$', management.views.ip_detail_table, name='ip_detail_table'),
-    re_path(r'^checkout/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/$', management.views.checkout, name='checkout'),
     re_path(r'^working_area/(?P<section>[a-z0-9]{1,20})/(?P<uid>[a-z0-9\-]{36,36})/$', earkweb.views.working_area2, name='working_area'),
-    re_path(r'^storage_area/(?P<section>[a-z0-9]{1,20})/(?P<identifier>[a-zA-Z0-9\_\-\:/\.]{20,200})/$', earkweb.views.storage_area, name='storage_area'),
+    re_path(r'^storage_area/(?P<section>[a-z0-9]{1,20})/(?P<identifier>%s)/$' % identifier_pattern, earkweb.views.storage_area, name='storage_area'),
     re_path(r'^get_directory_json$', earkweb.views.get_directory_json, name='get_directory_json'),
 ]

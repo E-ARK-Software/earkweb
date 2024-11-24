@@ -1,0 +1,31 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+<!-- Management area javascript -->
+<script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+<style>
+    h3 { padding-top: 20px }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">Resource Sync</h1>
+
+<h2>Sitemap Index</h2>
+
+<p><a href="/earkweb/rs/" target="_blank">Sitemap Index</a></p>
+
+<h2>Change list</h2>
+
+<p><a href="/earkweb/rs/changelist.xml" target="_blank">Change list</a></p>
+
+<h2>Resource</h2>
+
+<p><a href="/earkweb/rs/resources/{{identifier}}/" target="_blank">Resource: {{identifier}}</a></p>
+
+{% endblock %}

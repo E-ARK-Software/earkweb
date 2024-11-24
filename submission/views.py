@@ -6,18 +6,19 @@ import string
 import traceback
 import logging
 import uuid
-from xml.etree import ElementTree
-
+from itertools import chain
 import django_tables2 as tables
 import pycountry
 import requests
 import simplejson
+from rdflib import Literal
 from celery.result import AsyncResult
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.template import loader
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
+from django.http import HttpResponse
+from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -27,39 +28,31 @@ from django.views.generic.detail import DetailView
 from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
-
 from earkweb.views import get_domain_scheme
-from eatb.utils.datetime import current_timestamp, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
+from eatb.utils.datetime import DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
 from eatb.utils.fileutils import get_immediate_subdirectories, find_files
-from urllib.parse import quote, unquote
-from eatb.utils.fileutils import to_safe_filename, from_safe_filename
 from eatb.utils.fileutils import encode_identifier, decode_identifier
-
+from eatb.utils.stringutils import safe_path_string
 from config.configuration import documentation_directory, representations_directory, \
-    django_backend_service_host, django_backend_service_port, flower_service_url, node_namespace_id, \
+    flower_service_url, node_namespace_id, \
     package_access_url_pattern, repo_id, repo_title, repo_description, repo_catalogue_issued, \
     repo_catalogue_modified, \
-    verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, root_dir
+    verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, \
+    accepted_identifier_examples
 from config.configuration import config_path_work
+from config.configuration import identifier_pattern
+from earkweb.models import InformationPackage
 from earkweb.models import Representation, InternalIdentifier, Vocabulary
-from eatb.utils.stringutils import safe_path_string
-from taskbackend.taskexecution import execute_task
-from util.custom_exceptions import ResourceNotAvailable, AuthenticationError
 from util.djangoutils import get_unused_identifier, get_user_api_token
-from taskbackend.taskutils import extract_and_remove_package, update_states_from_backend_api, \
+from taskbackend.taskexecution import execute_task
+from taskbackend.taskutils import extract_and_remove_package, \
     get_celery_worker_status, flower_is_running, get_task_info_from_child_tasks
 
-from rdflib import Literal
-from submission.forms import MetaFormStep1, MetaFormStep2, TinyUploadFileForm, MetaFormStep4, MetaFormStep3, \
-    MetaFormStep5
+from submission.forms import MetaFormStep1, MetaFormStep2, TinyUploadFileForm, \
+    MetaFormStep4, MetaFormStep3, MetaFormStep5
 
-from config.configuration import django_service_host
-from config.configuration import django_service_port
-
-from earkweb.models import InformationPackage
-from itertools import chain
 
 from django.utils.translation import gettext_lazy as _
 
@@ -89,10 +82,17 @@ def start(request):
     int_ids_values = int_ids.values()
     num_blockchain_ids = len([i for i in int_ids_values if i['is_blockchain_id'] == 1])
     num_selfgen_ids = len([i for i in int_ids_values if i['is_blockchain_id'] == 0])
+    # Parse into a list of dictionaries
+    accepted_identifier_examples_list = [
+        {"type": field.split(': ')[0].strip(), "value": field.split(': ')[1].strip()}
+        for field in accepted_identifier_examples.split(',')
+    ]
     context = {
         'num_int_ids': len(int_ids),
         'num_blockchain_ids': num_blockchain_ids,
-        'num_selfgen_ids': num_selfgen_ids
+        'num_selfgen_ids': num_selfgen_ids,
+        'identifier_pattern': identifier_pattern,
+        'accepted_identifier_examples_list': accepted_identifier_examples_list
     }
     return HttpResponse(template.render(context=context, request=request))
 
@@ -897,7 +897,6 @@ def informationpackages_overview(request):
     order by ip.last_change desc;
     """.format(filterword, areacode)
     # user_id={0} and, request.user.pk
-    print(sql_query)
     # pylint: disable-next=no-member
     queryset = InformationPackage.objects.raw(sql_query)
     table = InformationPackageTable(queryset)

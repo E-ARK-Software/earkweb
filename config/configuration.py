@@ -42,6 +42,13 @@ repo_title = config.get('repo', 'repo_title')
 repo_description = config.get('repo', 'repo_description')
 repo_catalogue_issued = config.get('repo', 'repo_catalogue_issued')
 repo_catalogue_modified = config.get('repo', 'repo_catalogue_modified')
+# default values
+default_title = config.get('repo', 'default_title')
+default_description = config.get('repo', 'default_description')
+default_contact = config.get('repo', 'default_contact')
+default_contact_email = config.get('repo', 'default_contact_email')
+default_maintainer = config.get('repo', 'default_maintainer')
+default_maintainer_email = config.get('repo', 'default_maintainer_email')
 
 _conf_repr_dir = config.get('repo', 'representations_directory')
 representations_directory = _conf_repr_dir if _conf_repr_dir else "representations"
@@ -142,6 +149,12 @@ metadata_fields_indexing = config.get('access', 'metadata_fields_indexing')
 metadata_fields_list = [field.strip() for field in metadata_fields_indexing.split(',')]
 # data directory pattern
 data_directory_pattern = config.get('access', 'data_directory_pattern')
+# identifier pattern
+identifier_pattern = config.get('access', 'identifier_pattern')
+# Get the accepted identifier examples fields
+accepted_identifier_examples = config.get('access', 'accepted_identifier_examples')
+# entry pattern
+entry_pattern = config.get('access', 'entry_pattern')
 
 media_root = config.get('media', 'media_root')
 media_url = config.get('media', 'media_url')
@@ -172,18 +185,35 @@ commands = {
 # Solr fields
 # {'name': '', 'type': '', 'stored': ''}
 # {'name': '', 'type': '', 'stored': '', 'indexed': 'true'}
-solr_field_list = [{'name': 'packagetype', 'type': 'string', 'stored': 'true'},
-                   {'name': 'package', 'type': 'string', 'stored': 'true'},
+solr_field_list = [{'name': 'package', 'type': 'string', 'stored': 'true'},
+                   {'name': 'uid', 'type': 'string', 'stored': 'true'},
+                   {'name': 'title', 'type': 'string', 'stored': 'true'},
+                   {'name': 'description', 'type': 'string', 'stored': 'true'},
+                   {'name': 'identifier', 'type': 'string', 'stored': 'true'},
+                   {'name': 'label', 'type': 'string', 'stored': 'true'},
                    {'name': 'path', 'type': 'string', 'stored': 'true'},
+                   {'name': 'representation', 'type': 'string', 'stored': 'true'},
+                   {'name': 'rights', 'type': 'string', 'stored': 'true'},
+                   {'name': 'publisher', 'type': 'string', 'stored': 'true'},
                    {'name': 'size', 'type': 'plong', 'stored': 'true'},
+                   {'name': 'version', 'type': 'pint', 'stored': 'true'},
                    {'name': 'indexdate', 'type': 'pdate', 'stored': 'true'},
+                   {'name': 'creation_date', 'type': 'pdate', 'stored': 'true'},
+                   {'name': 'date', 'type': 'pdate', 'stored': 'true'},
+                   {'name': 'modified', 'type': 'pdate', 'stored': 'true'},
+                   {'name': 'last_save_date', 'type': 'pdate', 'stored': 'true'},
                    {'name': 'archivedate', 'type': 'pdate', 'stored': 'true'},
-                   {'name': 'is_metadata', 'type': 'boolean', 'stored': 'false', 'indexed': 'true'},
-                   {'name': 'is_content_data', 'type': 'boolean', 'stored': 'false', 'indexed': 'true'},
-                   {'name': 'confidential', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'textCategory', 'type': 'text_general', 'stored': 'true'},
                    {'name': 'content', 'type': 'text_general', 'stored': 'true', 'indexed': 'true'},
                    {'name': 'contentType', 'type': 'strings', 'stored': 'true'},
+                   {'name': 'pdf_pdfversion', 'type': 'pfloat', 'stored': 'true'},
+                   {'name': 'language', 'type': 'string', 'stored': 'true'},
+                   {'name': 'stream_name', 'type': 'string', 'stored': 'true'},
+                   {'name': 'stream_size', 'type': 'pint', 'stored': 'true'},
+                   {'name': 'xmptpg_npages', 'type': 'pint', 'stored': 'true'},
+                   {'name': 'pdf_encrypted', 'type': 'boolean', 'stored': 'true'},
+                   {'name': 'access_permission_extract_for_accessibility', 'type': 'boolean', 'stored': 'true'},
+                   {'name': 'access_permission_assemble_document', 'type': 'boolean', 'stored': 'true'},
                    {'name': 'content_type', 'type': 'strings', 'stored': 'true', 'indexed': 'true'}]
 solr_copy_fields = [{'source': 'content_type', 'dest': 'contentType'}]
 

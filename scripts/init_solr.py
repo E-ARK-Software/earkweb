@@ -109,7 +109,7 @@ for field in solr_field_list:
     print(OKBLUE + '## Adding new field: %s ##' % field['name'] + ENDC)
     # simple field with name, type, stored parameter
     solr_fields_args = ['curl', '-X', 'POST', '-H', '\'Content-type:application/json\'',
-                        '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s"}}' % (field['name'], field['type'], field['stored']),
+                        '--data-binary', '{"add-field": {"name": "%s", "type": "%s", "stored": "%s", "multiValued": "false"}}' % (field['name'], field['type'], field['stored']),
                         '%s/schema' % solr_core_url]
     try:
         # check if 'indexed' is set (additional to parameters above)

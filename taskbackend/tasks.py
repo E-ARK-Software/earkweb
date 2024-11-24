@@ -10,6 +10,7 @@ import tarfile
 import time
 import traceback
 import uuid
+from pathlib import Path
 from functools import partial
 from os import walk
 
@@ -63,9 +64,8 @@ from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files
 from eatb.utils.randomutils import get_unique_id, randomword
 from earkweb.views import clean_metadata
 from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
-    get_children_from_storage, get_package_from_storage, get_aip_parent, \
     create_or_update_state_info_file, persist_state, write_inventory, update_status, \
-    update_inventory
+    update_inventory, write_inventory_from_directory
 from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
 
@@ -178,15 +178,15 @@ def ingest_pipeline(_, context):
     """
     Ingests a pipeline by performing a series of chained tasks on the provided context.
 
-    This function executes the following tasks sequentially:
+    This pipeline now skips AIP packaging and directly stores the directory contents as-is.
+
+    Workflow:
     1. Validate the working directory.
     2. Perform descriptive metadata validation.
-    3. Store the original SIP.
-    4. Record AIP events.
-    5. Record AIP structure.
-    6. Package the AIP.
-    7. Store the AIP.
-    8. Index the AIP.
+    3. Record AIP events.
+    4. Record AIP structure.
+    5. Store the AIP.
+    6. Index the AIP.
 
     Parameters:
     context (str): A JSON string containing the task context, which must include a "uid".
@@ -199,15 +199,13 @@ def ingest_pipeline(_, context):
     result = chain(
         validate_working_directory.s(json.dumps(task_context)),
         descriptive_metadata_validation.s(),
-        store_original_sip.s(),
-        # aip_migrations.s(),
         aip_record_events.s(),
         aip_record_structure.s(),
-        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
     return result
+
 
 
 @app.task(bind=True, name="update_pipeline")
@@ -876,91 +874,65 @@ def aip_packaging(self, context, task_log):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="create_manifest")
-@requires_parameters("uid")
-@task_logger
-def create_manifest(_, context, task_log):
-    time.sleep(2)
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-    manifest_creation = ManifestCreation(working_dir)
-    manifest_file = os.path.join(working_dir, "manifest.txt")
-    manifest_creation.create_manifest(working_dir, manifest_file)
-    if os.path.exists(manifest_file):
-        task_log.info("Manifest file created at: %s" % manifest_file)
-    else:
-        task_log.warn("Error creating manifest file")
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="store_original_sip")
+@app.task(bind=True, name="store_aip")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
-def store_original_sip(_, context, task_log):
+def store_aip(_, context, task_log):
+    """
+    Stores the AIP by transferring the directory contents without packaging.
+
+    Updates the OCFL inventory with the directory contents as version `v00001`.
+    Initializes the OCFL inventory if it doesn't already exist.
+    """
     task_context = json.loads(context)
     identifier = task_context["identifier"].strip()
     package_name = task_context["package_name"]
     uid = task_context["uid"]
     working_dir = get_working_dir(uid)
-
-    sip = "%s.tar" % package_name
-    sip_path = os.path.join(working_dir, sip)
-    if not os.path.exists(sip_path):
-        raise ValueError("SIP not found: %s" % sip_path)
-
-    # store original sip
-    pts = PairtreeStorage(config_path_storage)
-    version_0 = VersionDirFormat % 0
-    task_context["version"] = version_0
-    data_dir = os.path.join(pts.get_dir_path_from_id(identifier), "data")
-    storage_dir = os.path.join(data_dir, version_0)
-    task_context["storage_dir"] = storage_dir
-    archive_file = sip
-    aip_path = os.path.join(storage_dir, archive_file)
-    os.makedirs(storage_dir, exist_ok=True)
-    shutil.copy2(sip_path, aip_path)
-
-    write_inventory(identifier, version_0, aip_path, archive_file)
-
-    # check successful creation of original sip
-    if not os.path.exists(aip_path):
-        raise ValueError("AIP not created: %s" % aip_path)
-
-    # persist state
-    persist_state(identifier, version_0, storage_dir, archive_file, working_dir)
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="store_aip")
-@requires_parameters("uid", "package_name", "identifier")
-@task_logger
-def store_aip(_, context, task_log):
-    task_context = json.loads(context)
-    identifier = task_context["identifier"].strip()
-    uid = task_context["uid"]
-    working_dir = get_working_dir(uid)
     action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
-    # pairtree storage
+    # Pairtree storage
     pts = PairtreeStorage(config_path_storage)
 
-    # store aip file
-    aip_file_name = "%s.tar" % to_safe_filename(identifier)
-    source_aip_file = os.path.join(working_dir, aip_file_name)
-    if not os.path.exists(source_aip_file):
-        raise ValueError("Source AIP not found: %s" % source_aip_file)
-    version = pts.store(identifier, source_aip_file)
+    # Define the storage directory for the new version
+    version = VersionDirFormat % 1  # v00001
     data_dir = os.path.join(pts.get_dir_path_from_id(identifier), "data")
     storage_dir = os.path.join(data_dir, version)
-    aip_path = os.path.join(storage_dir, aip_file_name)
+    os.makedirs(storage_dir, exist_ok=True)
     task_context["version"] = version
     task_context["storage_dir"] = storage_dir
 
-    # persist state
-    patch_data = persist_state(identifier, version, storage_dir, aip_file_name, working_dir)
+    # Define exclusions
+    excludes = [f"{package_name}.tar", f"{package_name}.xml"]
 
-    # update status db
+    # Copy all files and subdirectories from the working directory to the storage directory
+    for subdir, dirs, files in os.walk(working_dir):
+        for directory in dirs:
+            source_dir = os.path.join(subdir, directory)
+            target_dir = os.path.join(storage_dir, os.path.relpath(source_dir, working_dir))
+            os.makedirs(target_dir, exist_ok=True)
+        for file in files:
+            if file not in excludes:  # Exclude specified files
+                source_file = os.path.join(subdir, file)
+                target_file = os.path.join(storage_dir, os.path.relpath(source_file, working_dir))
+                os.makedirs(os.path.dirname(target_file), exist_ok=True)
+                shutil.copy2(source_file, target_file)
+
+    # Check if inventory exists, create one if missing
+    inventory_path = os.path.join(storage_dir, "inventory.json")
+    if not os.path.exists(inventory_path):
+        task_log.info("OCFL inventory missing. Initializing new inventory.")
+        storage_path_path = Path(storage_dir)
+        data_dir = storage_path_path.parent
+        write_inventory_from_directory(identifier, version, str(data_dir), action)
+        task_log.info("OCFL inventory initialized.")
+    else:
+        task_log.info("OCFL inventory already exists. Skipping initialization.")
+
+    # Persist state
+    patch_data = persist_state(identifier, version, storage_dir, None, working_dir)
+
+    # Update status database
     try:
         response = update_status(uid, patch_data)
         if response.status_code == 200:
@@ -969,14 +941,6 @@ def store_aip(_, context, task_log):
             task_log.warning(f"Status information not updated: {response.text} ({response.status_code})")
     except requests.exceptions.ConnectionError as err:
         task_log.warning("Connection to API failed. Status was not updated.", err)
-
-    # update ocfl inventory
-    if os.path.exists(os.path.join(data_dir, "inventory.json")):
-        update_inventory(identifier, version, aip_path, aip_file_name, action)
-        task_log.info("ocfl inventory updated")
-    else:
-        write_inventory(identifier, version, aip_path, aip_file_name)
-        task_log.info("ocfl inventory created")
 
     return json.dumps(task_context)
 
@@ -1001,41 +965,37 @@ def aip_indexing(_, context, task_log=None):
         task_log.warn("Unable to index data set because it is not available in storage.")
         return json.dumps(task_context)
 
-    # check solr server availability
+    # Check Solr server availability
     solr_server = SolrServer(solr_protocol, solr_host, solr_port)
     sq = SolrQuery(solr_server)
     base_url = sq.get_base_url()
     task_log.info(f"SolR base URL: {base_url}")
     solr_response = requests.get(base_url, verify=verify_certificate, timeout=5)
-    if not solr_response.status_code == 200:
+    if solr_response.status_code != 200:
         task_log.warn(f"Information package cannot be indexed because SolR is not available at: {base_url}")
         return json.dumps(task_context)
 
-    # delete existing records
+    # Delete existing records
     submission_url = f"{solr_protocol}://{solr_host}:{solr_port}/solr/storagecore1/update/?commit=true"
     task_log.info(f"Submission URL: {submission_url}")
     delete_response = requests.post(submission_url, data=f"<delete><query>package:\"{identifier}\"</query></delete>",
-                                    headers={'Content-Type': 'text/xml'}, verify=verify_certificate, timeout=5)
+                                     headers={'Content-Type': 'text/xml'}, verify=verify_certificate, timeout=5)
     if delete_response.status_code == 200:
         task_log.info(f"Index records deleted for package: {identifier}")
     else:
         task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (
-        delete_response.status_code, delete_response.text))
+            delete_response.status_code, delete_response.text))
 
-    # initialize solr client
+    # Initialize Solr client
     solr_client = SolrClient(solr_server, "storagecore1")
-    # store_dir = os.path.join(storage_dir)
-    package_files = list_files_in_dir(storage_dir)
-    for package_file in package_files:
-        if package_file.endswith(".tar"):
-            task_log.info("Indexing %s" % package_file)
-            results = solr_client.post_tar_file(os.path.join(storage_dir, package_file),
-                                                identifier, version, default_reporter, task_log=task_log)
-            task_log.info("Total number of files posted: %d" % len(results))
-            num_ok = sum(1 for result in results if result['status'] == 200)
-            task_log.info("Number of files posted successfully: %d" % num_ok)
-            num_failed = sum(1 for result in results if result['status'] != 200)
-            task_log.info("Number of plain documents: %d" % num_failed)
+    # Index files from storage directory
+    task_log.info(f"Indexing content files from directory: {storage_dir}")
+    results = solr_client.index_directory(storage_dir, identifier, version, default_reporter, task_log=task_log)
+    task_log.info("Total number of files posted: %d" % len(results))
+    num_ok = sum(1 for result in results if result['status'] == 200)
+    task_log.info("Number of files posted successfully: %d" % num_ok)
+    num_failed = sum(1 for result in results if result['status'] != 200)
+    task_log.info("Number of failed postings: %d" % num_failed)
 
     return json.dumps(task_context)
 
@@ -1123,354 +1083,6 @@ def solr_update_metadata(_, context, task_log):
     requests.get('%s://%s:%s/solr/admin/cores?action=RELOAD&core=%s' % (solr_protocol, solr_host, solr_port, solr_core))
 
 
-@app.task(bind=True, name="dip_acquire_aips")
-@requires_parameters("selected_aips")
-@task_logger
-def dip_acquire_aips(self, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-
-    # create dip working directory
-    if not os.path.exists(working_dir):
-        os.mkdir(working_dir)
-
-    total_bytes_read = 0
-    aip_total_size = 0
-
-    selected_aips = task_context["selected_aips"]
-    print("selected AIPs: %s" % selected_aips)
-    for aip_source in selected_aips.values():
-        if not os.path.exists(aip_source):
-            raise ValueError("Missing AIP source %s" % aip_source)
-        else:
-            aip_total_size += fsize(aip_source)
-
-    # task_context["selected_aips"] = selected_aips.keys()
-
-    task_log.info("DIP total size: %d" % aip_total_size)
-    # for aip in dip.aips.all():
-    for aip_identifier, aip_source in selected_aips.iteritems():
-        aip_source_size = fsize(aip_source)
-        partial_progress_reporter = partial(default_reporter, self)
-        package_extension = aip_source.rpartition('.')[2]
-        aip_in_dip_work_dir = os.path.join(working_dir, ("%s.%s" % (aip_identifier, package_extension)))
-        task_log.info("Source: %s (%d)" % (aip_source, aip_source_size))
-        task_log.info("Target: %s" % aip_in_dip_work_dir)
-        with open(aip_in_dip_work_dir, 'wb') as target_file:
-            for chunk in FileBinaryDataChunks(
-                    aip_source, 65536, partial_progress_reporter
-            ).chunks(total_bytes_read, aip_total_size):
-                target_file.write(chunk)
-            total_bytes_read += aip_source_size
-            target_file.close()
-        check_transfer(aip_source, aip_in_dip_work_dir)
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_acquire_dependant_aips")
-@requires_parameters("storage_dest")
-@task_logger
-def dip_acquire_dependant_aips(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-
-    # create dip working directory
-    if not os.path.exists(working_dir):
-        os.mkdir(working_dir)
-
-    if not task_context['storage_dest']:
-        raise ValueError("Storage root must be defined to execute this task.")
-
-    selected_aips = task_context["selected_aips"]
-    task_log.info("selected AIPs: %s" % selected_aips)
-    package_extension = "tar"
-    aip_parents = []
-    for aip_identifier, aip_source in selected_aips.iteritems():
-        package_extension = aip_source.rpartition('.')[2]
-        head_parent = None
-        while True:
-            parent_uuid = get_aip_parent(working_dir, aip_identifier, package_extension)
-            if parent_uuid:
-                # get the parent from storage
-                get_package_from_storage(working_dir, parent_uuid, package_extension)
-                aip_identifier = parent_uuid
-                head_parent = parent_uuid
-            else:
-                aip_parents.append(head_parent)
-                break
-    for aip_parent in aip_parents:
-        get_children_from_storage(working_dir, aip_parent, package_extension)
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_extract_aips")
-@requires_parameters("selected_aips")
-@task_logger
-def dip_extract_aips(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-    selected_aips = task_context["selected_aips"]
-    for selected_aip in selected_aips:
-        task_log.info(str(selected_aip))
-
-    # create dip working directory
-    if not os.path.exists(working_dir):
-        os.mkdir(working_dir)
-
-    # packagename is identifier of the DIP creation process
-    selected_aips = task_context["selected_aips"]
-
-    total_members = 0
-    for aip_identifier, aip_source in selected_aips.iteritems():
-        if not os.path.exists(aip_source):
-            raise ValueError("Missing AIP source %s" % aip_source)
-        else:
-            package_extension = aip_source.rpartition('.')[2]
-            aip_in_dip_work_dir = os.path.join(working_dir, ("%s.%s" % (aip_identifier, package_extension)))
-            tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
-            members = tar_obj.getmembers()
-            total_members += len(members)
-            tar_obj.close()
-
-    task_log.info("Total number of entries: %d" % total_members)
-    total_processed_members = 0
-    for aip_identifier, aip_source in selected_aips.iteritems():
-        package_extension = aip_source.rpartition('.')[2]
-        aip_in_dip_work_dir = os.path.join(working_dir, ("%s.%s" % (aip_identifier, package_extension)))
-        task_log.info("Extracting: %s" % aip_in_dip_work_dir)
-        tar_obj = tarfile.open(name=aip_in_dip_work_dir, mode='r', encoding='utf-8')
-        members = tar_obj.getmembers()
-        current_package_total_members = 0
-        for member in members:
-            if total_processed_members % 10 == 0:
-                perc = (total_processed_members * 100) / total_members
-                logger.debug("Progress: %d" % perc)
-                # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-            tar_obj.extract(member, working_dir)
-            task_log.info(("File extracted: %s" % member.name), display=False)
-            total_processed_members += 1
-            current_package_total_members += 1
-
-        task_log.info("Untar of %d items from package %s finished" % (current_package_total_members, aip_identifier))
-    task_log.info(("Untar of %d items in total finished" % total_processed_members))
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-    # Add related AIPs to PREMIS based on the extracted AIP directories available in the working directory
-    premis_path = os.path.join(working_dir, 'metadata/preservation/premis.xml')
-    extracted_aips = get_mets_objids_from_basedir(working_dir)
-    if os.path.isfile(premis_path):
-        dip_premis = DIPPremis(premis_path)
-        dip_premis.add_related_aips(extracted_aips, 'DIPAcquireAIPs')
-        with open(premis_path, 'w') as output_file:
-            output_file.write(str(dip_premis))
-    task_log.info("Related AIPs added to PREMIS: %s" % ", ".join(extracted_aips))
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_package_metadata_creation")
-@requires_parameters("selected_aips")
-@task_logger
-def dip_package_metadata_creation(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-    reps_path = os.path.join(working_dir, 'representations')
-    if os.path.isdir(reps_path):
-        for name in os.listdir(reps_path):
-            rep_path = os.path.join(reps_path, name)
-            if os.path.isdir(rep_path):
-                # Premis
-                premisgen = PremisGenerator(rep_path)
-                premisgen.createPremis()
-                # Mets
-                mets_data = {'packageid': task_context["uid"],
-                             'type': 'DIP',
-                             'schemas': os.path.join(working_dir, 'schemas'),
-                             'parent': ''}
-                metsgen = MetsGenerator(rep_path)
-                metsgen.createMets(mets_data)
-    else:
-        task_log.info("No DIP representations found.")
-
-    # Premis not needed as already existing
-    # premisgen = PremisGenerator(working_dir)
-    # premisgen.createPremis()
-
-    # create DIP parent Mets
-    mets_data = {'packageid': task_context["uid"],
-                 'type': 'DIP',
-                 'schemas': os.path.join(working_dir, 'schemas'),
-                 'parent': ''}
-    metsgen = MetsGenerator(working_dir)
-    metsgen.createMets(mets_data)
-
-    # copy schemas folder from extracted tar to root
-    selected_aips = task_context["selected_aips"]
-    src_schemas_folder = os.path.join(working_dir, selected_aips.keys()[0], 'schemas')
-    dst_schemas_folder = os.path.join(working_dir, 'schemas')
-    shutil.copytree(src_schemas_folder, dst_schemas_folder)
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_packaging")
-@requires_parameters("identifier")
-@task_logger
-def dip_packaging(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-
-    # identifier (not uuid of the working directory) is used as first part of the tar file
-
-    task_log.info("Packaging working directory: %s" % working_dir)
-
-    dip_identifier = task_context['identifier']
-
-    storage_file = os.path.join(working_dir, "%s.tar" % dip_identifier)
-    tar = tarfile.open(storage_file, "w:")
-    task_log.info("Creating archive: %s" % storage_file)
-
-    item_list = ['metadata', 'representations', 'schemas', 'METS.xml']
-    total = 0
-    for item in item_list:
-        pack_item = os.path.join(working_dir, item)
-        if os.path.exists(pack_item):
-            if os.path.isdir(pack_item):
-                total += sum([len(files) for (root, dirs, files) in walk(pack_item)])
-            else:
-                total += 1
-    task_log.info("Total number of files in working directory %d" % total)
-    # log file is closed at this point because it will be included in the package,
-    # subsequent log messages can only be shown in the gui
-    # tl.log.close()
-    i = 0
-    for item in item_list:
-        pack_item = os.path.join(working_dir, item)
-        if os.path.exists(pack_item):
-            if os.path.isdir(pack_item):
-                for subdir, dirs, files in os.walk(pack_item):
-                    for file in files:
-                        if os.path.join(subdir, file):
-                            entry = os.path.join(subdir, file)
-                            arcname = dip_identifier + "/" + os.path.relpath(entry, working_dir)
-                            tar.add(entry, arcname=arcname)
-                            if i % 10 == 0:
-                                perc = (i * 100) / total
-                                logger.debug("Progress: %d" % perc)
-                                # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                        i += 1
-            else:
-                arcname = dip_identifier + "/" + os.path.relpath(pack_item, working_dir)
-                tar.add(pack_item, arcname=arcname)
-                if i % 10 == 0:
-                    perc = (i * 100) / total
-                    logger.debug("Progress: %d" % perc)
-                    # self.update_state(state='PROGRESS', meta={'process_percent': perc})
-                i += 1
-    tar.close()
-    task_log.info("Package created: %s" % storage_file)
-
-    # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_store")
-@requires_parameters("identifier")
-@task_logger
-def dip_store(_, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-    from config.configuration import config_path_storage
-    if not os.path.exists(os.path.join(config_path_storage, "pairtree_version0_1")):
-        raise ValueError("Storage path is not a pairtree storage directory.")
-    if "identifier" not in task_context:
-        raise ValueError("DIP identifier is not defined.")
-    package_identifier = task_context["identifier"].strip()
-    package_file_name = "%s.tar" % task_context["identifier"]
-    package_file_path = os.path.join(working_dir, package_file_name)
-    if not os.path.exists(package_file_path):
-        raise ValueError("DIP TAR package does not exist: %s" % package_file_path)
-
-    pts = PairtreeStorage(config_path_storage)
-    pts.store(package_identifier, package_file_path)
-
-    package_object_path = pts.get_object_path(package_identifier)
-    if os.path.exists(package_object_path):
-        task_log.info('Storage path: %s' % package_object_path)
-        if ChecksumFile(package_file_path).get(ChecksumAlgorithm.SHA256) == ChecksumFile(package_object_path).get(
-                ChecksumAlgorithm.SHA256):
-            task_log.info("Checksum verification completed, the package was transmitted successfully.")
-            task_context["storage_loc"] = package_object_path
-        else:
-            task_log.error("Checksum verification failed, an error occurred while trying to transmit the package.")
-
-    return json.dumps(task_context)
-
-
-@app.task(bind=True, name="dip_create_access_copy")
-@requires_parameters("identifier")
-@task_logger
-def dip_create_access_copy(self, context, task_log):
-    task_context = json.loads(context)
-    working_dir = get_working_dir(task_context["uid"])
-    from config.configuration import config_path_storage
-    from config.configuration import dip_download_base_url
-    from config.configuration import dip_download_path
-
-    if not os.path.exists(os.path.join(config_path_storage, "pairtree_version0_1")):
-        raise ValueError("Storage path is not a pairtree storage directory.")
-    if not ("identifier" in task_context.keys() and task_context["identifier"] != ""):
-        raise ValueError("DIP identifier is not defined.")
-    package_identifier = task_context["identifier"].strip()
-    package_file_name = "%s.tar" % task_context["identifier"]
-    package_file_path = os.path.join(working_dir, package_file_name)
-    if not os.path.exists(package_file_path):
-        raise ValueError("DIP TAR package does not exist: %s" % package_file_path)
-    try:
-        pts = PairtreeStorage(config_path_storage)
-        package_object_path = pts.get_object_path(package_identifier)
-        if os.path.exists(package_object_path):
-            task_log.info('Storage path: %s' % package_object_path)
-            random_token = randomword(8)
-            access_dir = os.path.join(dip_download_path, random_token)
-            os.makedirs(access_dir, exist_ok=True)
-            access_file = os.path.join(access_dir, package_file_name)
-
-            total_bytes_read = 0
-
-            dip_total_size = fsize(package_object_path)
-
-            task_log.info("DIP total size: %d" % dip_total_size)
-
-            aip_source_size = fsize(package_object_path)
-            partial_progress_reporter = partial(default_reporter, self)
-            task_log.info("Source: %s (%d)" % (package_object_path, aip_source_size))
-            task_log.info("Target: %s" % access_file)
-            with open(access_file, 'wb') as target_file:
-                for chunk in FileBinaryDataChunks(package_object_path, 65536, partial_progress_reporter).chunks(
-                        total_bytes_read, dip_total_size):
-                    target_file.write(chunk)
-                total_bytes_read += aip_source_size
-                target_file.close()
-            check_transfer(package_object_path, access_file)
-
-            # self.update_state(state='PROGRESS', meta={'process_percent': 100})
-
-            random_url_part = os.path.join(random_token, package_file_name)
-            if not dip_download_base_url.endswith('/'):
-                dip_download_base_url += '/'
-            download_url = "%s%s" % (dip_download_base_url, random_url_part)
-            task_context["download_url"] = download_url
-
-    except Exception as e:
-        raise e
-    return json.dumps(task_context)
-
-
 @app.task(name="initialize_working_directory")
 def initialize_working_directory(context):
     task_context = json.loads(context)
@@ -1491,69 +1103,6 @@ def initialize_working_directory(context):
     return json.dumps(task_context)
 
 
-@app.task(bind=True, name="checkout_working_copy_from_storage")
-@requires_parameters("identifier", "uid")
-@task_logger
-def checkout_working_copy_from_storage(_, context, task_log):
-    task_context = json.loads(context) if isinstance(context, str) else context
-    uid = task_context['uid']
-    identifier = task_context['identifier']
-
-    task_log.info('Checking out archival information package: %s' % identifier)
-    metadata_only = 'metadataonly' in task_context and task_context['metadataonly'] == "true"
-    task_log.info('Check out metadata only: %s' % metadata_only)
-
-    dpts = PairtreeStorage(config_path_storage)
-    version = dpts.curr_version(identifier)
-    archival_package_file = os.path.join(make_storage_data_directory_path(identifier, config_path_storage),
-                                         version, to_safe_filename(identifier),
-                                         "%s.tar" % to_safe_filename(identifier))
-
-    work_dir = os.path.join(config_path_work, uid)
-
-    shutil.copy2(archival_package_file, work_dir)
-    for f in os.listdir(work_dir):
-        if f.endswith(".tar"):
-            extract_and_remove(os.path.join(work_dir, f), work_dir)
-
-    extract_dir = os.path.join(work_dir, to_safe_filename(identifier))
-    if not os.path.exists(extract_dir):
-        raise ValueError("Directory with extracted content does not exist: %s" % extract_dir)
-
-    # move extracted content one level higher to working directory
-    for directory_item in os.listdir(extract_dir):
-        if directory_item.endswith("processing.log"):
-            target = os.path.join(work_dir, "processing_%s.log" % to_safe_filename(identifier))
-        else:
-            target = work_dir
-        shutil.move(os.path.join(extract_dir, directory_item), target)
-
-    if len(os.listdir(extract_dir)) == 0:
-        shutil.rmtree(extract_dir)
-    else:
-        raise ValueError("Extraction directory cannot be removed because it is not empty")
-
-    reset = 'reset' in task_context and task_context['reset']
-    task_log.info('Reset AIP to SIP: %s' % reset)
-    if reset:
-        for f in os.listdir(work_dir):
-            if not f == "submission":
-                file_path = os.path.join(work_dir, f)
-                if os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-                else:
-                    os.unlink(file_path)
-        submission_dir = os.path.join(work_dir, "submission")
-        submission_representations = os.path.join(submission_dir, "representations")
-        if not os.path.exists(submission_representations):
-            raise ValueError("No representations found in submission folder.")
-        shutil.move(submission_representations, work_dir)
-        shutil.rmtree(submission_dir)
-
-    create_or_update_state_info_file(work_dir, {"version": version, "identifier": identifier})
-    return json.dumps(task_context)
-
-
 @app.task(name="delete_representation_data_from_workdir")
 def delete_representation_data_from_workdir(context):
     task_context = json.loads(context)
@@ -1570,28 +1119,6 @@ def delete_representation_data_from_workdir(context):
 
     return json.dumps(task_context)
 
-
-@app.task(name="rename_representation_directory")
-def rename_representation_directory(context):
-    task_context = json.loads(context)
-    check_required_params(task_context, ["uid", "current_representation_dir", "new_representation_dir"])
-
-    uid = task_context['uid']
-    current_representation_dirname = task_context['current_representation_dir']
-    new_representation_dirname = task_context['new_representation_dir']
-
-    work_dir = os.path.join(config_path_work, uid)
-    current_representation_directory = os.path.join(work_dir, representations_directory, current_representation_dirname)
-    new_representation_directory = os.path.join(work_dir, representations_directory, new_representation_dirname)
-
-    if os.path.exists(current_representation_directory):
-        shutil.move(current_representation_directory, new_representation_directory)
-    else:
-        os.makedirs(new_representation_directory)
-    if not os.path.exists(new_representation_directory):
-        raise ValueError("Process id: %s, renaming directory failed. The new directory does not exist: %s"
-                         % (uid, new_representation_directory))
-    return json.dumps(task_context)
 
 
 @app.task(name='generate_wordcloud_task')

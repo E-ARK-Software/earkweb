@@ -1,12 +1,36 @@
 import json
 import re
-
+import os
+import io
+from collections import defaultdict
+import traceback
+import logging
+from datetime import datetime, timedelta
+from urllib.parse import unquote, urlencode, urlparse
+import pysolr
+import requests
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from django.shortcuts import redirect, render
+from django.utils import translation
+from django.views.generic.base import View
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.template import loader
+from django.http import JsonResponse
+from django.utils.translation import gettext as trans
+from celery.result import AsyncResult
+from chartjs.views.lines import BaseLineChartView
+from util import service_available
+from util.djangoutils import get_user_api_token
+from earkweb.models import InformationPackage
 from eatb.pairtree_storage import make_storage_data_directory_path
 from eatb.utils.datetime import get_date_from_iso_str, DT_ISO_FORMAT
-from eatb.utils.fileutils import path_to_dict
-from datetime import datetime, timedelta
-
-
+from eatb.utils.fileutils import path_to_dict, from_safe_filename
+from config.configuration import config_path_work, config_path_storage, verify_certificate
 from config.configuration import sw_version, django_backend_service_api_url
 from config.configuration import sw_version_date
 from config.configuration import solr_host
@@ -14,43 +38,6 @@ from config.configuration import solr_port
 from config.configuration import solr_core
 from config.configuration import solr_core_ping_url
 from config.configuration import solr_core_url
-from django.shortcuts import redirect, render
-from django.utils import translation
-from django.views.generic.base import View
-from django.conf import settings
-import os
-import io
-
-import traceback
-import logging
-from urllib.parse import quote, unquote, urlencode, urlparse
-
-import requests
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, HttpResponseNotFound, HttpResponseServerError
-from django.template import loader
-from django.http import JsonResponse
-from celery.result import AsyncResult
-
-from config.configuration import config_path_work, config_path_storage, django_backend_service_host, \
-    django_backend_service_port, verify_certificate
-from earkweb.models import InformationPackage
-from util import service_available
-from util.djangoutils import get_user_api_token
-from django.utils.translation import gettext as trans
-
-from chartjs.views.lines import BaseLineChartView
-from chartjs.views.pie import HighChartPieView
-
-
-
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-from django.http import HttpResponse
-from django.views import View
-import pysolr
 
 
 logger = logging.getLogger(__name__)
@@ -151,12 +138,14 @@ def get_entries_count_for_last_7_months(only_ingested=False):
     counts = []
     for start_date, end_date in date_ranges:
         if only_ingested:
+            # pylint: disable-next=no-member
             count = InformationPackage.objects.filter(
                 created__range=(start_date, end_date)
             ).exclude(
                 storage_dir__exact=''
             ).count()
         else:
+            # pylint: disable-next=no-member
             count = InformationPackage.objects.filter(
                 created__range=(start_date, end_date),
                 storage_dir=''
@@ -181,47 +170,45 @@ class LineChartJSONView(BaseLineChartView):
         return [get_entries_count_for_last_7_months(only_ingested=False), get_entries_count_for_last_7_months(only_ingested=True)]
 
 
-
-
-import pysolr
-from collections import defaultdict
-import re
-
 # Connect to your Solr server
 solr = pysolr.Solr(solr_core_url, always_commit=True)
+
 
 def get_mime_type_counts():
     # Query Solr to retrieve documents with content_type and path fields
     results = solr.search('content_type:* AND path:*', rows=1000)
 
-    # Initialize a dictionary to count MIME types
+    # Dictionary to count MIME types
     mime_type_counts = defaultdict(int)
 
     # Regular expression to extract the MIME type
     mime_type_regex = re.compile(r'^([^;]+)')
     
     # Regular expression to match the required path pattern
-    path_regex = re.compile(r'/representations/[^/]+/data/')
+    path_regex = re.compile(r'representations/[^/]+/data/')
 
     # Process the results
     for result in results:
-        path = result.get('path', None)
+        # Get the 'path' field
+        path = result.get('path')
         if path:
-            # Decode the path
-            decoded_path = unquote(path.replace('=', '/'))
-            if path_regex.search(decoded_path):
+            # Check if the path matches the required structure
+            if path_regex.search(path):
+                # Get the first MIME type (if available) from 'content_type'
                 content_type = result.get('content_type', [None])[0]
                 if content_type:
+                    # Extract the main MIME type
                     match = mime_type_regex.match(content_type)
                     if match:
                         mime_type = match.group(1)
                         mime_type_counts[mime_type] += 1
 
-    # Prepare the labels and data lists
+    # Prepare the labels and data lists for charting
     labels = list(mime_type_counts.keys())
     data = list(mime_type_counts.values())
 
     return {'labels': labels, 'data': data}
+
 
 
 
@@ -242,7 +229,7 @@ def get_file_size_per_mime_type():
     mime_type_regex = re.compile(r'^([^;]+)')
     
     # Regular expression to match the required path pattern
-    path_regex = re.compile(r'/representations/[^/]+/data/')
+    path_regex = re.compile(r'representations/[^/]+/data/')
 
     # Process the results
     for result in results:
@@ -541,6 +528,11 @@ def working_area2(request, section, uid):
     return HttpResponse(template.render(context=context, request=request))
 
 
+def get_domain_scheme_from_request(request):
+    url = request.build_absolute_uri()
+    parsed_url = urlparse(url)
+    return parsed_url.scheme, parsed_url.netloc
+
 
 @login_required
 def storage_area(request, section, identifier):
@@ -562,54 +554,77 @@ def storage_area(request, section, identifier):
     """
     template = loader.get_template('earkweb/workingarea2.html')
     request.session['identifier'] = identifier
-    r = request.META['HTTP_REFERER']
-    title = "Information package management" if "management" in r else "Submission" if "submission" in r else "Access"
-    section = "management" if "management" in r else "submission" if "submission" in r else "access"
+    if "HTTP_REFERER" in request.META:
+        r = request.META['HTTP_REFERER']
+        title = "Information package management" if "management" in r else "Submission" if "submission" in r else "Access"
+        section = "management" if "management" in r else "submission" if "submission" in r else "access"
+    else:
+        title = "Access"
+        section = section if section else "access"
     #store_path = "%s" % make_storage_data_directory_path(identifier, config_path_storage)
     #logger.info(store_path)
-    schema, domain = get_domain_scheme(request.headers.get("Referer"))
-    url = "%s://%s/earkweb/api/storage/ips/%s/dir-json" % (schema, domain, identifier)
+    #schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    schema, domain = get_domain_scheme_from_request(request)
+    url = f"{schema}://{domain}/earkweb/api/storage/ips/{identifier}/dir-json"
     user_api_token = get_user_api_token(request.user)
     response = requests.get(
         url, 
-        headers={'Authorization': 'Token %s' % user_api_token}, 
+        headers={'Authorization': f'Token {user_api_token}'}, 
         verify=verify_certificate,
         timeout=10
     )
     if response.status_code != 200:
         return render(request, 'earkweb/error.html', {
-            'header': 'Archived object does not exist (%d)' % response.status_code
+            'header': 'Archived object does not exist (%d)' % response.status_code,
+            'details': response.text
         })
 
-    inventory_url = "%s://%s/earkweb/api/ips/%s/file-resource/inventory.json" % (
-    schema, domain, identifier)
-    print(inventory_url)
+    inventory_url = f"{schema}://{domain}/earkweb/api/ips/{identifier}/file-resource/inventory.json"
     inventory_response = requests.get(
         inventory_url, 
-        headers={'Authorization': 'Token %s' % user_api_token}, 
+        headers={'Authorization': f'Token {user_api_token}'}, 
         verify=verify_certificate,
         timeout=10
     )
     inventory = json.loads(inventory_response.text)
-
-    version_timeline_data = [
-        {"id": re.sub("\D", "", key),
-         "content": "%s (%s)" % (val["message"], key),
-         "start": val["created"],
-        "className" : "myClassName"
-         }
-        for key, val in inventory["versions"].items()]
+    try:
+        version_timeline_data = [
+            {
+                "id": re.sub(r"\D", "", key),
+                "content": f"{val['message']} ({key})",
+                "start": val["created"],
+                "className": "myClassName",
+            }
+            for key, val in inventory.get("versions", {}).items()
+        ]
+    except KeyError as e:
+        error_details = f"Missing key in inventory data: {e}"
+        return render(request, 'earkweb/error.html', {
+            'header': 'Version information not available in inventory',
+            'details': error_details
+        })
+    except TypeError as e:
+        error_details = f"Invalid type encountered: {e}"
+        return render(request, 'earkweb/error.html', {
+            'header': 'Version information not available in inventory',
+            'details': error_details
+        })
+    except Exception as e:
+        # Generic catch-all for other unexpected exceptions
+        error_details = f"An unexpected error occurred: {e}"
+        return render(request, 'earkweb/error.html', {
+            'header': 'Invalid inventory',
+            'details': error_details
+        })
 
     times = [val["created"] for key, val in inventory["versions"].items()]
     times.sort()
-    print(times)
     if len(times) > 1:
         min_dtstr = times[0]
         max_dtstr = times[len(times)-1]
         min_dt = get_date_from_iso_str(min_dtstr, DT_ISO_FORMAT)
         max_dt = get_date_from_iso_str(max_dtstr, DT_ISO_FORMAT)
         delta =  max_dt - min_dt
-        print(delta.seconds)
         scale = ("seconds", (delta.seconds)) if delta.seconds < 60 \
             else ("minutes", int(delta.seconds/60)) if delta.seconds < 3600 \
             else ("hours", int(delta.seconds/3600)) if delta.seconds < 86400 \
@@ -656,6 +671,7 @@ def read_file(request, ip_sub_file_path, area=None):
     path = ip_sub_file_path.lstrip(parts[0]).lstrip("/")
     area = area if area else "ips"
     schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    uid = from_safe_filename(uid)
     url = "%s://%s/earkweb/api/%s/%s/file-resource/%s/" % (schema, domain, area, uid, path)
     user_api_token = get_user_api_token(request.user)
     api_response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
@@ -988,3 +1004,43 @@ def howto_use_the_api(request):
     """
     template = loader.get_template('earkweb/howto/use_the_api.html')
     return HttpResponse(template.render(context={}, request=request))
+
+
+@login_required
+def oai_pmh(request):
+    """
+    OAI-PMH Overview
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: OAI-PMH Overview Page
+    """
+    # Fetch the first InformationPackage with a defined identifier
+    # pylint: disable-next=no-member
+    ip = InformationPackage.objects.filter(identifier__isnull=False).first()
+
+    # Render the template with the context
+    template = loader.get_template('earkweb/oai_pmh.html')
+    return HttpResponse(template.render(context={"identifier": ip.identifier if ip else None}, request=request))
+
+
+@login_required
+def resource_sync(request):
+    """
+    ResourceSync Overview
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: Resource Sync Overview Page
+    """
+    # Fetch the first InformationPackage with a defined identifier
+    # pylint: disable-next=no-member
+    ip = InformationPackage.objects.filter(identifier__isnull=False).first()
+
+    # Render the template with the context
+    template = loader.get_template('earkweb/resourcesync.html')
+    return HttpResponse(template.render(context={"identifier": ip.identifier if ip else None}, request=request))

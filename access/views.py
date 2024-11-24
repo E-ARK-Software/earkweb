@@ -70,6 +70,40 @@ def indexingstatus(request):
         'flower_password': flower_password
     })
 
+@login_required
+@csrf_exempt
+def informationpackages_overview(request):
+    area = "access"
+    areacode = "1"
+    filterword = request.POST['filterword'] if 'filterword' in request.POST.keys() else ""
+    sql_query = """
+    select ip.id as id, ip.work_dir as path, ip.uid as uid, ip.package_name as package_name, 
+    ip.identifier as identifier,
+    CONCAT('<a href="/earkweb/submission/upload_step1/',ip.id,'/" data-toggle="tooltip" title="Change">
+    <i class="fas fa-edit editcol"></i></a>') as edit,
+    CONCAT('<a href="/earkweb/submission/ips/',ip.id,'/startingest" data-toggle="tooltip" title="Ingest">
+    <i class="fas fa-box editcol"></i></a>') as ingest,
+    CONCAT('<a href="/earkweb/submission/delete/',ip.id,'/" data-toggle="tooltip" title="Delete">
+    <i class="fas fa-trash editcol"></i></a>') as delcol 
+    from informationpackage as ip
+    where 
+    (ip.uid like '%%{0}%%' or ip.package_name like '%%{0}%%' or ip.identifier like '%%{0}%%')
+    and deleted != 1
+    order by ip.last_change desc;
+    """.format(filterword, areacode)
+    # user_id={0} and, request.user.pk
+    # pylint: disable-next=no-member
+    queryset = InformationPackage.objects.raw(sql_query)
+    table = IndexingStatusTable(queryset)
+    RequestConfig(request, paginate={'per_page': 8}).configure(table)
+    context = {
+        'informationpackage': table,
+    }
+    if request.method == "POST":
+        return render(request, 'earkweb/ipstable.html', context=context)
+    else:
+        return render(request, '%s/overview.html' % area, {'informationpackage': table})
+
 
 class IndexingStatusTable(tables.Table):
 
@@ -249,15 +283,11 @@ def search(request):
 @csrf_exempt
 def get_information_package_item(request, identifier, entry):
 
-    entry_without_id = entry.replace(identifier+"/", "")
-
-    tar_entry = entry_without_id
-
     logging.debug("Storage path: %s" % config_path_storage)
     logging.debug("Data asset: %s " % identifier)
-    logging.debug("Entry path: %s " % tar_entry)
+    logging.debug("Entry path: %s " % entry)
 
-    url = "%s/api/ips/%s/%s/stream" % (django_service_url, identifier, tar_entry)
+    url = f"{django_service_url}/api/ips/{identifier}/file-item/{entry}/"
     user_api_token = get_user_api_token(request.user)
     response = requests.get(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
     if response.status_code == 404:
@@ -279,7 +309,7 @@ def get_information_package_item(request, identifier, entry):
     else:
         return render(request, 'earkweb/error.html',
                       {'header': 'An error occurred',
-                       'message': "An error occurred when trying to retrieve the entry: %s" % tar_entry})
+                       'message': "An error occurred when trying to retrieve the entry: %s" % entry})
 
 
 

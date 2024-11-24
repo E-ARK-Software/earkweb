@@ -1,0 +1,36 @@
+{% extends "earkweb/base.html" %}
+{% load dictionary_extras %}
+{% load static %}
+{% load i18n %}
+
+{% block extra_head %}
+
+<!-- Management area javascript -->
+<script type="text/javascript" src="{% static 'management/js/management.js' %}"></script>
+<style>
+    h3 { padding-top: 20px }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h1 class="main">OAI-PMH</h1>
+
+
+<h2>Identify</h2>
+
+<p><a href="/earkweb/oai?verb=Identify" target="_blank">Identify</a></p>
+
+<h2>List metadata formats</h2>
+
+<p><a href="/earkweb/oai?verb=ListMetadataFormats" target="_blank">List metadata formats</a></p>
+
+<h2>List identifiers</h2>
+
+<p><a href="/earkweb/oai?verb=ListIdentifiers" target="_blank">List identifiers</a></p>
+
+<h2>GetRecord</h2>
+
+<p><a href="/earkweb/oai?verb=GetRecord&identifier={{identifier}}&metadataPrefix=oai_dc" target="_blank">GetRecord: {{identifier}}</a></p>
+
+{% endblock %}

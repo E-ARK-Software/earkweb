@@ -10,6 +10,7 @@ from urllib.parse import quote
 from eatb.file_format import FormatIdentification
 from eatb.utils import randomutils
 from eatb.utils.datetime import current_date
+from eatb.utils.fileutils import list_files_in_dir
 from datetime import datetime
 from access.search.solrdocparams import SolrDocParams
 from config.configuration import verify_certificate, representations_directory, metadata_directory, \
@@ -259,7 +260,105 @@ class SolrClient(object):
         logger.info(f"Extract directory: {extract_dir}")
         #shutil.rmtree(extract_dir)
         progress_reporter(100)
+        
+    def index_directory(self, directory_path, identifier, version, progress_reporter=default_reporter, task_log=None):
+        """
+        Recursively iterate over files in a directory and post them to Solr.
+
+        @type       directory_path: string
+        @param      directory_path: Path to the directory containing content files
+
+        @type       identifier: string
+        @param      identifier: Identifier of the package
+
+        @rtype: list(dict(string, int))
+        @return: List of URLs and their corresponding return codes
+        """
+        progress_reporter(0)
+        task_log = task_log if task_log else logger
+        results = []
+
+        # Load metadata.json if available
+        metadata = {}
+        metadata_file_path = find_metadata_file(directory_path)
+        if metadata_file_path and os.path.exists(metadata_file_path):
+            with open(metadata_file_path, 'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+                task_log.info("Loaded metadata.json successfully.")
+
+        # Regex to match the valid file paths
+        valid_path_regex = re.compile(data_directory_pattern)
+
+        # Collect all files matching the pattern
+        files_to_index = []
+        for root, dirs, files in os.walk(directory_path):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, directory_path)
+                if valid_path_regex.search(full_path):
+                    files_to_index.append(full_path)
+
+        numfiles = len(files_to_index)
+        task_log.info(f"Found {numfiles} content files for indexing.")
+
+        for num, file_path in enumerate(files_to_index, 1):
+            params = SolrDocParams(file_path).get_params()
+            params['literal.package'] = identifier
+            params['literal.path'] = os.path.relpath(file_path, directory_path)
+            params['literal.size'] = os.path.getsize(file_path)
+            params['literal.indexdate'] = current_date(time_zone_id='UTC')
+            params['literal.archivedate'] = datetime.fromtimestamp(os.path.getctime(file_path)).astimezone(pytz.UTC)
+            params['literal.version'] = int(re.search(r'\d+', version).group(0))
+
+            # Add descriptions and metadata
+            filename = os.path.basename(file_path)
+            if 'representations' in metadata and metadata['representations']:
+                representation_items = metadata['representations'].items()
+                print(representation_items)
+                for rep_id, rep_data in representation_items:
+                    if rep_data and 'file_metadata' in rep_data and rep_data['file_metadata'] and filename in rep_data['file_metadata']:
+                        urn_params = {
+                            'node_namespace_id': node_namespace_id,
+                            'repo_id': repo_id,
+                            'encoded_package_id': quote(identifier, safe=''),
+                            'representation_id': rep_id,
+                            'encoded_file_path': quote(filename, safe='')
+                        }
+                        urn = urn_file_pattern.format(**urn_params)
+                        params['literal.identifier'] = urn
+                        params['literal.representation'] = rep_data['distribution_label']
+                        params['literal.rights'] = rep_data['access_rights']
+                        params['literal.label'] = rep_data['file_metadata'][filename]
+                        task_log.debug(f"Added description for '{filename}': {rep_data['file_metadata'][filename]}")
+
+            # Add main level metadata entries
+            selected_main_keys = metadata_fields_list
+            for main_key, main_value in metadata.items():
+                if main_key != "representations" and main_key in selected_main_keys:
+                    params[f'literal.{main_key}'] = main_value
+                    task_log.debug(f"Added main level metadata '{main_key}': {main_value}")
+
+            # Post file to Solr
+            try:
+                with open(file_path, 'rb') as f:
+                    files = {'file': ('userfile', f)}
+                    post_url = f"{self.url}/update/extract?{urlencode(params)}"
+                    response = requests.post(post_url, files=files, verify=verify_certificate)
+                    result = {"url": post_url, "status": response.status_code}
+                    results.append(result)
+
+                    if response.status_code != 200:
+                        task_log.info(f"Failed to post '{file_path}' (status {response.status_code}).")
+            except Exception as e:
+                task_log.error(f"Error posting file '{file_path}': {str(e)}")
+
+            percent = (num / numfiles) * 100
+            progress_reporter(percent)
+
+        self.commit()
+        task_log.info(f"Finished indexing files in directory: {directory_path}")
         return results
+
 
 
     def commit(self):
