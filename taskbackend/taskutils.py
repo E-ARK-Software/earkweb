@@ -12,7 +12,7 @@ import bagit
 from celery.result import AsyncResult
 
 from api.util import get_representation_ids_by_label
-from eatb.checksum import check_transfer, get_sha512_hash, get_hash_values
+from eatb.checksum import check_transfer, get_sha512_hash
 from eatb.csip_validation import XmlValidation
 from eatb.packaging import TarContainer, create_package
 from eatb.pairtree_storage import PairtreeStorage, make_storage_directory_path, make_storage_data_directory_path
@@ -56,11 +56,12 @@ def update_state_from_backend_api(request, uid):
     ip_state_json = json.loads(response.content)
     identifier = ip_state_json["identifier"]
     if identifier != "" and identifier != 'None':
+        # pylint: disable-next=no-member
         ip = InformationPackage.objects.get(uid=uid)
         ip.identifier = ip_state_json["identifier"]
         version = ip_state_json["version"]
         ip.version = int(version)
-        ip.storage_dir = make_storage_directory_path(identifier, version)
+        ip.storage_dir = make_storage_directory_path(identifier, version, config_path_storage)
         ip.save()
 
 
@@ -84,11 +85,12 @@ def update_states_from_backend_api(request):
             states = ip_states_json[uid]
             identifier = states["identifier"]
             if identifier != "" and identifier != 'None':
+                # pylint: disable-next=no-member
                 ip = InformationPackage.objects.get(uid=uid)
                 ip.identifier = states["identifier"]
                 version = states["version"]
                 ip.version = int(version)
-                ip.storage_dir = make_storage_directory_path(identifier, version)
+                ip.storage_dir = make_storage_directory_path(identifier, version, config_path_storage)
                 ip.save()
 
 
@@ -149,21 +151,9 @@ def run_command(args, stdin=PIPE, stdout=PIPE, stderr=PIPE):
     return result, res_stdout, res_stderr
 
 
-def safe_copy_from_to(copy_from, copy_to, tl):
-    package_source_size = fsize(copy_from)
-    logger.info("Source: %s (%d)" % (copy_from, package_source_size))
-    logger.info("Target: %s" % copy_to)
-    total_bytes_read = 0
-    with open(copy_to, 'wb') as target_file:
-        for chunk in FileBinaryDataChunks(copy_from, 65536).chunks(total_bytes_read):
-            target_file.write(chunk)
-        total_bytes_read += package_source_size
-        target_file.close()
-    check_transfer(copy_from, copy_to, tl)
-
-
 def get_identifier(org_nsid):
     """Get internal identifier"""
+    # pylint: disable-next=no-member
     intid_result_set = InternalIdentifier.objects.filter(used=False, org_nsid=org_nsid)[:1]
     if len(intid_result_set) == 0:
         raise ValueError("No identifier available for the namespace '%s'" % org_nsid)
