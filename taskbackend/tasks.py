@@ -11,27 +11,19 @@ import time
 import traceback
 import uuid
 from pathlib import Path
-from functools import partial
 from os import walk
-
 import redis
 import requests
-from celery import chain, group, shared_task
-
-# from celery.task import Task
-
 from lxml import etree, objectify
-
 from django.conf import settings
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import pysolr
-
-from config.configuration import solr_core_url
-
+from celery import chain, group
 from access.search.solrclient import SolrClient, default_reporter
 from access.search.solrquery import SolrQuery
 from access.search.solrserver import SolrServer
+from config.configuration import solr_core_url
 from config.configuration import config_path_storage, config_path_work, solr_protocol, \
     solr_host, solr_port, solr_core, representations_directory, verify_certificate, \
     redis_host, redis_port, redis_password, commands, root_dir, metadata_file_pattern_ead, \
@@ -40,32 +32,29 @@ from config.configuration import config_path_storage, config_path_work, solr_pro
 from earkweb.celery import app
 from earkweb.decorators import requires_parameters, task_logger
 from earkweb.models import InformationPackage
+from earkweb.views import clean_metadata
 from eatb import VersionDirFormat
-from eatb.checksum import check_transfer, ChecksumValidation, ChecksumAlgorithm, ChecksumFile
+from eatb.checksum import ChecksumValidation, ChecksumAlgorithm
 from eatb.cli import CliExecution, CliCommand, CliCommands
 from eatb.csip_validation import CSIPValidation
 from eatb.file_format import FormatIdentification
 from eatb.metadata import XLINK_NS, METS_NS
-from eatb.metadata.dip_parsed_premis import DIPPremis
 from eatb.metadata.ead import field_namevalue_pairs_per_file
-from eatb.metadata.mets import get_mets_objids_from_basedir
 from eatb.metadata.mets_generator import MetsGenerator
 from eatb.metadata.mets_validation import MetsValidation
 from eatb.metadata.parsed_mets import ParsedMets
 from eatb.metadata.premis_creator import PremisCreator
 from eatb.metadata.premis_generator import PremisGenerator
 from eatb.oais_ip import DeliveryValidation, SIPGenerator, create_sip
-from eatb.packaging import ManifestCreation
 from eatb.pairtree_storage import PairtreeStorage, make_storage_data_directory_path
 from eatb.utils.XmlHelper import q
 from eatb.utils.datetime import date_format, current_timestamp
-from eatb.utils.fileutils import to_safe_filename, list_files_in_dir, find_files, \
-    strip_prefixes, remove_protocol, fsize, FileBinaryDataChunks
-from eatb.utils.randomutils import get_unique_id, randomword
-from earkweb.views import clean_metadata
-from taskbackend.taskutils import get_working_dir, extract_and_remove, validate_ead_metadata, get_first_ip_path, \
-    create_or_update_state_info_file, persist_state, write_inventory, update_status, \
-    update_inventory, write_inventory_from_directory
+from eatb.utils.fileutils import to_safe_filename, find_files, \
+    strip_prefixes, remove_protocol
+from eatb.utils.randomutils import get_unique_id
+from taskbackend.taskutils import get_working_dir, validate_ead_metadata, get_first_ip_path, \
+    create_or_update_state_info_file, persist_state, update_status, \
+    write_inventory_from_directory
 from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
 
@@ -949,6 +938,11 @@ def store_aip(_, context, task_log):
 @requires_parameters("identifier")
 @task_logger
 def aip_indexing(_, context, task_log=None):
+    """
+    Index content files in AIP directory
+
+    Indexes content files and adds metadata to the Solr document
+    """
     if not task_log:
         task_log = logger
     task_context = json.loads(context)
@@ -1004,6 +998,9 @@ def aip_indexing(_, context, task_log=None):
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
 def solr_update_metadata(_, context, task_log):
+    """
+    Add descriptive metadata to Solr document
+    """
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     task_log.info("Updating SolR records with metadata.")
@@ -1120,7 +1117,6 @@ def delete_representation_data_from_workdir(context):
     return json.dumps(task_context)
 
 
-
 @app.task(name='generate_wordcloud_task')
 def generate_wordcloud_task():
     """Generate word cloud"""
@@ -1167,7 +1163,6 @@ def generate_wordcloud_task():
         f.write(buffer.getvalue())
     
     logger.info(f"Word cloud image saved at {image_path}")
-
 
 
 @app.task(name="backend_available")
