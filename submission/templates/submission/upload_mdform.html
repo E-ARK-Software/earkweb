@@ -582,6 +582,10 @@ $(document).ready(function() {
 
 <h2>{% trans 'Information package metadata' %}</h2>
 
+{% if "step2" in request.path %}
+<p>{% trans 'Right click on the map to add a location. Move the "location uncertainty" slider to create a circle for the area of the location. On the top right of the map you can search for a location.' %}</p>
+{% endif %}
+
 {% if "step4" in request.path %}
 <p>{% trans 'Upload supplementary documentation necessary to understand, manage, and preserve the digital information contained within the package. The files will be stored in the "documentation" folder in the root of the information package.' %}</p>
 {% endif %}
