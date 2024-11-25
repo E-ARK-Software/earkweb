@@ -52,9 +52,9 @@ from eatb.utils.datetime import date_format, current_timestamp
 from eatb.utils.fileutils import to_safe_filename, find_files, \
     strip_prefixes, remove_protocol
 from eatb.utils.randomutils import get_unique_id
+from eatb.storage import write_inventory_from_directory, update_storage_with_differences
 from taskbackend.taskutils import get_working_dir, validate_ead_metadata, get_first_ip_path, \
-    create_or_update_state_info_file, persist_state, update_status, \
-    write_inventory_from_directory
+    create_or_update_state_info_file, persist_state, update_status
 from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
 
@@ -868,58 +868,46 @@ def aip_packaging(self, context, task_log):
 @task_logger
 def store_aip(_, context, task_log):
     """
-    Stores the AIP by transferring the directory contents without packaging.
-
-    Updates the OCFL inventory with the directory contents as version `v00001`.
-    Initializes the OCFL inventory if it doesn't already exist.
+    Stores the AIP by transferring only changed files to a new version directory.
+    Updates the OCFL inventory to reflect additions, deletions, and changes.
     """
     task_context = json.loads(context)
     identifier = task_context["identifier"].strip()
     package_name = task_context["package_name"]
     uid = task_context["uid"]
     working_dir = get_working_dir(uid)
-    action = "update" if "is_update_task" in task_context and task_context["is_update_task"] else "ingest"
 
     # Pairtree storage
     pts = PairtreeStorage(config_path_storage)
 
-    # Define the storage directory for the new version
-    version = VersionDirFormat % 1  # v00001
-    data_dir = os.path.join(pts.get_dir_path_from_id(identifier), "data")
-    storage_dir = os.path.join(data_dir, version)
+    # Define version and storage directories
+    base_dir = pts.get_dir_path_from_id(identifier)
+    data_dir = os.path.join(base_dir, "data")
+    previous_version = pts.curr_version(identifier)
+    new_version = pts.next_version(identifier)
+    storage_dir = os.path.join(data_dir, new_version)
     os.makedirs(storage_dir, exist_ok=True)
-    task_context["version"] = version
-    task_context["storage_dir"] = storage_dir
 
-    # Define exclusions
+    # Copy only changed files and record deletions
+    inventory_path = os.path.join(data_dir, "inventory.json")
+
     excludes = [f"{package_name}.tar", f"{package_name}.xml"]
+    changed_files, deleted_files = update_storage_with_differences(
+        working_dir, storage_dir, previous_version, inventory_path, exclude_files=excludes
+    )
 
-    # Copy all files and subdirectories from the working directory to the storage directory
-    for subdir, dirs, files in os.walk(working_dir):
-        for directory in dirs:
-            source_dir = os.path.join(subdir, directory)
-            target_dir = os.path.join(storage_dir, os.path.relpath(source_dir, working_dir))
-            os.makedirs(target_dir, exist_ok=True)
-        for file in files:
-            if file not in excludes:  # Exclude specified files
-                source_file = os.path.join(subdir, file)
-                target_file = os.path.join(storage_dir, os.path.relpath(source_file, working_dir))
-                os.makedirs(os.path.dirname(target_file), exist_ok=True)
-                shutil.copy2(source_file, target_file)
-
-    # Check if inventory exists, create one if missing
-    inventory_path = os.path.join(storage_dir, "inventory.json")
-    if not os.path.exists(inventory_path):
-        task_log.info("OCFL inventory missing. Initializing new inventory.")
-        storage_path_path = Path(storage_dir)
-        data_dir = storage_path_path.parent
-        write_inventory_from_directory(identifier, version, str(data_dir), action)
-        task_log.info("OCFL inventory initialized.")
-    else:
-        task_log.info("OCFL inventory already exists. Skipping initialization.")
+    # Update inventory
+    task_log.info(f"Updating OCFL inventory for version {new_version}")
+    write_inventory_from_directory(
+        identifier=identifier,
+        version=new_version,
+        data_dir=data_dir,
+        action="ingest",
+        metadata={"added": changed_files, "removed": deleted_files},
+    )
 
     # Persist state
-    patch_data = persist_state(identifier, version, storage_dir, None, working_dir)
+    patch_data = persist_state(identifier, new_version, storage_dir, None, working_dir)
 
     # Update status database
     try:
