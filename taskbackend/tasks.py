@@ -28,7 +28,7 @@ from config.configuration import config_path_storage, config_path_work, solr_pro
     solr_host, solr_port, solr_core, representations_directory, verify_certificate, \
     redis_host, redis_port, redis_password, commands, root_dir, metadata_file_pattern_ead, \
     django_service_protocol, django_service_host, django_service_port, \
-    backend_api_key
+    backend_api_key, sw_version
 from earkweb.celery import app
 from earkweb.decorators import requires_parameters, task_logger
 from earkweb.models import InformationPackage
@@ -52,7 +52,7 @@ from eatb.utils.datetime import date_format, current_timestamp
 from eatb.utils.fileutils import to_safe_filename, find_files, \
     strip_prefixes, remove_protocol
 from eatb.utils.randomutils import get_unique_id
-from eatb.storage import write_inventory_from_directory, update_storage_with_differences
+from eatb.storage import write_inventory_from_directory, update_storage_with_differences, get_previous_version_series
 from taskbackend.taskutils import get_working_dir, validate_ead_metadata, get_first_ip_path, \
     create_or_update_state_info_file, persist_state, update_status
 from util.djangoutils import check_required_params
@@ -114,11 +114,11 @@ def sip_package(self, context, task_log):
     # append generation number to tar file; if tar file exists, the generation number is incremented
     sip_tar_file = os.path.join(working_dir, task_context['package_name'] + '.tar')
     tar = tarfile.open(sip_tar_file, "w:")
-    task_log.info("Packaging working directory: %s" % working_dir)
+    task_log.info(f"Packaging working directory: {working_dir}")
     total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
-    task_log.info("Total number of files in working directory %d" % total)
+    task_log.info(f"Total number of files in working directory {total}")
     i = 0
-    excludes = ["%s.tar" % package_name, "%s.xml" % package_name]
+    excludes = [f"{package_name}.tar", "{package_name}.xml"]
     for subdir, dirs, files in os.walk(working_dir):
 
         for directory in dirs:
@@ -225,7 +225,6 @@ def update_pipeline(_, context):
         descriptive_metadata_validation.s(),
         aip_record_events.s(),
         aip_record_structure.s(),
-        aip_packaging.s(),
         store_aip.s(),
         aip_indexing.s(),
     ).delay()
@@ -257,12 +256,12 @@ def validate_working_directory(_, context, task_log):
     task_context = json.loads(context)
     working_dir = get_working_dir(task_context["uid"])
     package_name = task_context["package_name"]
-    delivery_file = os.path.join(working_dir, "%s.tar" % package_name)
-    delivery_xml_file = os.path.join(working_dir, "%s.xml" % package_name)
+    delivery_file = os.path.join(working_dir, f"{package_name}.tar")
+    delivery_xml_file = os.path.join(working_dir, f"{package_name}.xml")
 
     if os.path.exists(delivery_xml_file):
-        task_log.info("Package file: %s" % delivery_file)
-        task_log.info("Delivery XML file: %s" % delivery_xml_file)
+        task_log.info(f"Package file: {delivery_file}")
+        task_log.info(f"Delivery XML file: {delivery_xml_file}")
         mets_schema_file = os.path.join(root_dir, "static/schemas/IP.xsd")
         sdv = DeliveryValidation()
         file_elements = sdv.getFileElements(working_dir, delivery_xml_file, mets_schema_file)
@@ -272,9 +271,9 @@ def validate_working_directory(_, context, task_log):
         checksum_algorithm = ParsedMets.get_file_element_checksum_algorithm(delivery_file_element)
         file_reference = ParsedMets.get_file_element_reference(delivery_file_element)
 
-        task_log.info("Extracted file reference: %s" % file_reference)
+        task_log.info(f"Extracted file reference: {file_reference}")
         file_path = os.path.join(working_dir, remove_protocol(file_reference))
-        task_log.info("Computing checksum for file: %s" % file_path)
+        task_log.info(f"Computing checksum for file: {file_path}")
         csval = ChecksumValidation()
         valid_checksum = csval.validate_checksum(file_path, checksum_expected,
                                                  ChecksumAlgorithm.get(checksum_algorithm))
@@ -647,8 +646,8 @@ def aip_record_events(_, context, task_log):
     working_dir = get_working_dir(task_context["uid"])
     try:
         premis = PremisCreator(working_dir)
-        premis.add_agent("urn:eark:software:earkweb:v2.0", "earkweb", "software")
-        premis.add_event("urn:eark:event:ingest:{0}", "success", "urn:eark:software:earkweb:v1.3", identifier)
+        premis.add_agent(f"urn:eark:software:earkweb:v{sw_version}", "earkweb", "software")
+        premis.add_event(f"urn:eark:event:ingest:{identifier}", "success", f"urn:eark:software:earkweb:v{sw_version}")
         premis.create("metadata/preservation/", "event", "ingest")
     except Exception as err:
         task_log.debug(err)
@@ -837,7 +836,7 @@ def aip_packaging(self, context, task_log):
     total = sum([len(files) for (root, dirs, files) in walk(working_dir)])
     task_log.info("Total number of files in working directory %d", total)
     i = 0
-    excludes = ["%s.tar" % package_name, "%s.xml" % package_name, archive_file]
+    excludes = [f"{package_name}.tar", f"{package_name}.xml", archive_file]
     for subdir, dirs, files in os.walk(working_dir):
 
         for directory in dirs:
@@ -891,9 +890,11 @@ def store_aip(_, context, task_log):
     # Copy only changed files and record deletions
     inventory_path = os.path.join(data_dir, "inventory.json")
 
+    previous_versions = get_previous_version_series(new_version)
+
     excludes = [f"{package_name}.tar", f"{package_name}.xml"]
     changed_files, deleted_files = update_storage_with_differences(
-        working_dir, storage_dir, previous_version, inventory_path, exclude_files=excludes
+        working_dir, storage_dir, previous_versions, inventory_path, exclude_files=excludes
     )
 
     # Update inventory
@@ -965,8 +966,9 @@ def aip_indexing(_, context, task_log=None):
     if delete_response.status_code == 200:
         task_log.info(f"Index records deleted for package: {identifier}")
     else:
-        task_log.warn("Index records cannot be removed. Response code %s, message: %s" % (
-            delete_response.status_code, delete_response.text))
+        task_log.warn(
+            f"Index records cannot be removed. Response code {delete_response.status_code}, message: {delete_response.text}"
+        )
 
     # Initialize Solr client
     solr_client = SolrClient(solr_server, "storagecore1")

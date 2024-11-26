@@ -9,6 +9,44 @@
     <link rel="stylesheet" href="{% static "submission/css/submission.css" %}" type="text/css" />
 
     <link rel="stylesheet" href="{% static "submission/css/start.css" %}" type="text/css" />
+    <style>
+    /* Tooltip container (positioning handled dynamically) */
+    .tooltip-container {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        color: #FFF;
+        background-color: #6ebaf7;
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    /* Balloon tooltip */
+    .tooltip-box {
+        display: none; /* Hidden by default */
+        position: absolute;
+        background-color: #6ebaf7;
+        color: #FFF;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        white-space: nowrap;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tooltip arrow */
+    .tooltip-box::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+    </style>
 
 {% endblock %}
 
@@ -144,19 +182,19 @@
      */
     function checkIdentifier() {
         const extuid = $("#extuid");
-        const identifierRegex = new RegExp("{{identifier_pattern|escapejs }}"); // Create regex from pattern
+        const identifierRegex = new RegExp("^{{identifier_pattern|escapejs }}$"); // Create regex from pattern
         const checkIdentifierUrl = "/earkweb/check_identifier_exists/" + encodeURIComponent(extuid.val());
 
         // Clear the message and mark as valid if input is empty
         if (extuid.val().trim() === "") {
-            $("#msgextuid").html("");
+            $("#msgextuid").html('');
             setValid("extuid");
             return;
         }
 
         // Validate identifier against the regex pattern
         if (!identifierRegex.test(extuid.val())) {
-            $("#msgextuid").html("Invalid identifier! Please ensure it matches the required format: {{identifier_pattern|escapejs }}");
+            $("#msgextuid").html('Invalid identifier! Please ensure it matches the <span class="tooltip-container" data-tooltip="^{{identifier_pattern|escapejs }}$">required format</span>');
             setInvalid("extuid");
             return;
         }
@@ -197,6 +235,44 @@
         checkIdentifier();
     });
 })();
+
+    </script>
+
+    <script>
+        let activeTooltipBox = null; // Track the active tooltip
+
+        document.addEventListener('mouseover', (event) => {
+            const tooltip = event.target.closest('.tooltip-container');
+            if (tooltip) {
+                // Create and show tooltip if it doesn't exist
+                if (!activeTooltipBox) {
+                    activeTooltipBox = document.createElement('div');
+                    activeTooltipBox.className = 'tooltip-box';
+                    activeTooltipBox.textContent = tooltip.getAttribute('data-tooltip');
+                    document.body.appendChild(activeTooltipBox);
+                }
+
+                // Position tooltip
+                const rect = tooltip.getBoundingClientRect();
+                activeTooltipBox.style.display = 'block';
+                activeTooltipBox.style.top = `${rect.top - activeTooltipBox.offsetHeight - 8}px`; // Adjust above the element
+                activeTooltipBox.style.left = `${rect.left + (rect.width / 2) - (activeTooltipBox.offsetWidth / 2)}px`; // Center align
+            }
+        });
+
+        document.addEventListener('mouseout', (event) => {
+            const tooltip = event.target.closest('.tooltip-container');
+            if (tooltip) {
+                // Hide the tooltip after a delay to account for transitions
+                setTimeout(() => {
+                    if (activeTooltipBox) {
+                        activeTooltipBox.style.display = 'none';
+                        document.body.removeChild(activeTooltipBox);
+                        activeTooltipBox = null; // Remove the reference
+                    }
+                }, 100);
+            }
+        });
 
     </script>
     
