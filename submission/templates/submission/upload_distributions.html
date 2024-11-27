@@ -142,8 +142,8 @@ function loadDataFiles(repr) {
                     minFileCount: 1,
                     maxFileCount: 50,
                     maxFileSize: 102400,
-                    'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
-'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'json', 'jsonl', 'gml', 'xsd', 'mp3', 'wav'],
+                    'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'jfif', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
+'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'ppt', 'pptx', 'json', 'jsonl', 'gml', 'xsd', 'mp3', 'wav', 'zip'],
                     'theme': 'explorer-fa',
                     'uploadUrl': '/earkweb/submission/upload',
                     overwriteInitial: false,
@@ -154,11 +154,15 @@ function loadDataFiles(repr) {
                     preferIconicPreview: true, // this will force thumbnails to display icons for following file extensions
                     previewFileIconSettings: { // configure your icon file extensions
                     'doc': '<i class="fas fa-file-word text-primary"></i>',
+                    'docx': '<i class="fas fa-file-word text-primary"></i>',
                     'odt': '<i class="fas fa-file-word text-primary"></i>',
                     'xls': '<i class="fas fa-file-excel text-primary"></i>',
+                    'xlsx': '<i class="fas fa-file-excel text-primary"></i>',
                     'ods': '<i class="fas fa-file-excel text-primary"></i>',
                     'ppt': '<i class="fas fa-file-powerpoint text-primary"></i>',
+                    'pptx': '<i class="fas fa-file-powerpoint text-primary"></i>',
                     'pdf': '<i class="fas fa-file-pdf text-primary"></i>',
+                    'pdfa': '<i class="fas fa-file-pdf text-primary"></i>',
                     'zip': '<i class="fas fa-file-archive text-primary"></i>',
                     'htm': '<i class="fas fa-file-code text-primary"></i>',
                     'txt': '<i class="fas fa-file-alt text-primary"></i>',
@@ -178,6 +182,7 @@ function loadDataFiles(repr) {
                     // note for these file types below no extension determination logic
                     // has been configured (the keys itself will be used as extensions)
                     'jpg': '<i class="fas fa-file-image text-danger"></i>',
+                    'jfif': '<i class="fas fa-file-image text-muted"></i>',
                     'gif': '<i class="fas fa-file-image text-muted"></i>',
                     'png': '<i class="fas fa-file-image text-primary"></i>'
                 },
