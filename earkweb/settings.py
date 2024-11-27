@@ -83,6 +83,7 @@ from config.configuration import redis_port
 from config.configuration import media_url
 from config.configuration import media_root
 from config.configuration import static_root
+from config.configuration import csrf_trusted_origins
 
 LANGUAGE_CODE = 'en'
 
@@ -130,6 +131,8 @@ TEMPLATES = [
 
 #ALLOWED_HOSTS = [gethostname(), gethostbyname(gethostname()), 'localhost', '127.0.0.1', 'pluto', '10.128.1.3']
 ALLOWED_HOSTS = ["*"]
+
+CSRF_TRUSTED_ORIGINS = csrf_trusted_origins
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),

@@ -79,6 +79,9 @@ package_access_url_pattern = \
      "" if django_service_port == 80 else ":%s" % django_service_port, app_label)
 package_download_url_pattern = "%s$dataassetid/" % package_access_url_pattern
 
+csrf_trusted_origin_csv = config.get('server', 'csrf_trusted_origins')
+csrf_trusted_origins = [field.strip() for field in csrf_trusted_origin_csv.split(',')]
+
 # backend
 django_backend_service_protocol = config.get('server', 'django_backend_service_protocol')
 django_backend_service_host = config.get('server', 'django_backend_service_host')

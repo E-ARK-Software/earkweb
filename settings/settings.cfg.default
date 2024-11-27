@@ -69,6 +69,7 @@ flower_port = 5555
 flower_path = /flower/
 flower_user = repo
 flower_password = repo
+csrf_trusted_origins = https://localhost:8443,http://localhost:8000
 
 [limits]
 config_max_filesize_viewer = 4194304
