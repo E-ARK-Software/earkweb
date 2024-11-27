@@ -57,6 +57,8 @@ documentation_directory = _conf_documentation_dir if _conf_documentation_dir els
 metadata_directory = _conf_repr_dir if _conf_repr_dir else "metadata"
 node_namespace_id = config.get('repo', 'node_namespace_id')
 urn_file_pattern = config.get('repo', 'urn_file_pattern')
+urn_event_pattern = config.get('repo', 'urn_event_pattern')
+urn_agent_pattern = config.get('repo', 'urn_agent_pattern')
 
 # logfiles
 logfile_ui = config.get('logs', 'logfile_ui')

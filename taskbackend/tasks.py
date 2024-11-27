@@ -9,6 +9,7 @@ import shutil
 import tarfile
 import time
 import traceback
+from urllib.parse import quote
 import uuid
 from pathlib import Path
 from os import walk
@@ -29,11 +30,14 @@ from config.configuration import config_path_storage, config_path_work, solr_pro
     redis_host, redis_port, redis_password, commands, root_dir, metadata_file_pattern_ead, \
     django_service_protocol, django_service_host, django_service_port, \
     backend_api_key, sw_version
+from config.configuration import urn_event_pattern, urn_agent_pattern, app_label
+
 from earkweb.celery import app
 from earkweb.decorators import requires_parameters, task_logger
 from earkweb.models import InformationPackage
 from earkweb.views import clean_metadata
 from eatb import VersionDirFormat
+from eatb.utils.datetime import DT_ISO_FORMAT_FILENAME, ts_date
 from eatb.checksum import ChecksumValidation, ChecksumAlgorithm
 from eatb.cli import CliExecution, CliCommand, CliCommands
 from eatb.csip_validation import CSIPValidation
@@ -640,19 +644,69 @@ def file_migration(self, details):
 @app.task(bind=True, name="aip_record_events")
 @requires_parameters("uid", "package_name", "identifier")
 @task_logger
-def aip_record_events(_, context, task_log):
+def aip_record_events(self, context, task_log):
+    """
+    Celery task to record preservation events in the AIP metadata.
+
+    This task creates a PREMIS event for an AIP ingestion process, 
+    documenting the software agent and generating a timestamped event entry.
+
+    Parameters:
+        self (Task): The Celery task instance.
+        context (str): JSON string containing the task context with keys:
+                       - "uid": Unique identifier for the working directory.
+                       - "package_name": Name of the package being processed.
+                       - "identifier": Unique identifier for the AIP.
+        task_log (Task.logger): Logger instance for capturing task logs.
+
+    Returns:
+        str: JSON string of the updated task context.
+
+    Raises:
+        Logs exceptions to `task_log` and includes the traceback.
+    """
+    # Parse the context JSON
     task_context = json.loads(context)
     identifier = task_context["identifier"]
-    working_dir = get_working_dir(task_context["uid"])
+    uid = task_context["uid"]
+
+    # Resolve working directory
+    working_dir = get_working_dir(uid)
+
     try:
+        # Initialize the PREMIS metadata creator
         premis = PremisCreator(working_dir)
-        premis.add_agent(f"urn:eark:software:earkweb:v{sw_version}", "earkweb", "software")
-        premis.add_event(f"urn:eark:event:ingest:{identifier}", "success", f"urn:eark:software:earkweb:v{sw_version}")
+
+        # Record the software agent responsible for this event
+        software_urn = urn_agent_pattern.format(
+            agent_type="software", 
+            agent_name=app_label, 
+            agent_version=f"v{sw_version}"
+        )
+        premis.add_agent(software_urn, app_label, "software")
+
+        # Record the ingestion event
+        event_urn = urn_event_pattern.format(
+            event_type="ingest", 
+            quoted_identifier=quote(identifier, safe=''), 
+            date_time_string=ts_date(fmt=DT_ISO_FORMAT_FILENAME)
+        )
+        premis.add_event(event_urn, "success", software_urn)
+
+        # Save the event metadata
         premis.create("metadata/preservation/", "event", "ingest")
+
+        # Log success message
+        task_log.info(f"PREMIS ingestion event successfully recorded for identifier: {identifier}")
+
     except Exception as err:
-        task_log.debug(err)
-        tb = traceback.format_exc()
-        task_log.debug(tb)
+        # Log the error and traceback
+        error_message = f"Error occurred while recording PREMIS event for identifier: {identifier}."
+        task_log.error(error_message)
+        task_log.error(f"Exception: {err}")
+        task_log.error(traceback.format_exc())
+
+    # Return the updated context as JSON
     return json.dumps(task_context)
 
 

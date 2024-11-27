@@ -24,6 +24,8 @@ is_test_instance = true
 node_namespace_id = eark
 repo_id = eArchiving
 urn_file_pattern = urn:{node_namespace_id}:{repo_id}:{encoded_package_id}:{representation_id}:{encoded_file_path}
+urn_event_pattern = urn:eark:event:{event_type}:{quoted_identifier}:{date_time_string}
+urn_agent_pattern = urn:eark:agent:{agent_type}:{agent_name}:{agent_version}
 
 [logs]
 logfile_ui = /data/ui.log
@@ -90,20 +92,21 @@ dip_download_path = /var/www/repo/download
 metadata_fields_indexing = title,description,publisher,uid
 data_directory_pattern = .*/representations/.+/data/.*
 # Identifiers
-## DOI
-identifier_pattern = doi(:|%%3A)\d+\.\d+(\/|%%2F)[^\s\/]+
+## DOI or URN
+identifier_pattern = (doi(:|%%3A)\d+\.\d+(\/|%%2F)[^\s\/]+|urn(%%3A|:)[a-zA-Z0-9\-.:]+)
+# Examples for other patterns
 ## URN
-# identifier_pattern = urn(%%3A|:)[a-zA-Z0-9\-.:]+
+### identifier_pattern = urn(%%3A|:)[a-zA-Z0-9\-.:]+
 ## URL
-# http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*
+### http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*
 ## ARK
-# ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+
+### ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+
 ## DOI or URN or URL or ARK or Handle
-# (doi(%%3A|:)\d+.\d+(%%2F|/)[^\s]+|http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*|urn(%%3A|:)[a-zA-Z0-9\-.:]+|ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+)
+### (doi(%%3A|:)\d+.\d+(%%2F|/)[^\s]+|http[s]?:(%%2F|/)(%%2F|/)[^\s(%%2F|/)$.?#].[^\s]*|urn(%%3A|:)[a-zA-Z0-9\-.:]+|ark:\/[0-9]+\/[^\s]+|hdl:[^\s]+)
 # Accepted identifiers
 ## Comma Separated list of accepted identifiers
 # DOI example
-accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514
+accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514, URN: urn:uuid:d695500b-0209-4c06-bea6-8fdd52c6db22
 # DOI, URN, HTTP, HTTPS, ARK
 # accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514, URN: urn:nbn:de:1111-200403299, HTTP: http://example.com/resource, HTTPS: https://example.com/resource, ARK: ark:/12345/fk1234, Handle: hdl:20.1000/101
 entry_pattern = .*
