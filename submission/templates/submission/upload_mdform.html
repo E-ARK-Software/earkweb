@@ -400,8 +400,30 @@ $(document).ready(function() {
     var osmAttrib='Map data © <a href="http://openstreetmap.org">OpenStreetMap</a> contributors';
     var osm = new L.TileLayer(osmUrl, {minZoom: 2, maxZoom: 20, attribution: osmAttrib});
 
-    // start the map in Vienna
-    map.setView(new L.LatLng(48.26909, 16.42686),11);
+    // start the map in the first existing location
+    if(existingLocations.length > 0) {
+        var firstLocation = existingLocations[0];
+        if (
+            firstLocation &&
+            firstLocation.coordinates &&
+            typeof firstLocation.coordinates.lat === 'number' &&
+            typeof firstLocation.coordinates.lng === 'number'
+        ) {
+            // Extract coordinates and zoom level
+            const lat = firstLocation.coordinates.lat;
+            const lng = firstLocation.coordinates.lng;
+            const zoom = firstLocation.zoomLevel || 11; // Default zoom level if none is provided
+
+            // Zoom the map to the location
+            map.setView(new L.LatLng(lat, lng), zoom);
+        } else {
+            console.error('Invalid or missing coordinates in firstLocation.');
+        }
+    } else {
+        // start in Vienna if there is still no location
+        map.setView(new L.LatLng(48.26909, 16.42686),11);
+    }
+    
     map.addLayer(osm);
 
     // Add the geocoder control to the map
@@ -473,11 +495,8 @@ $(document).ready(function() {
     $('#add_location_btn').bind('click', function(event) {
         // Prevent the default form submission behavior
         event.preventDefault();
-        console.log("hey, you clicked me")
-
         // Call your event handler function
         handleLocationEvent();
-
         // Return false to ensure the form is not submitted
         return false;
     });
