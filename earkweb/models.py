@@ -72,7 +72,7 @@ class Representation(models.Model):
     identifier = models.CharField(max_length=200)
     label = models.CharField(max_length=200)
     description = models.CharField(max_length=4096)
-    file_metadata = models.TextField(blank=True, null=True)
+    file_metadata = models.TextField(blank=True, null=True, default='{}')
     license = models.CharField(max_length=200)
     accessRights = models.CharField(max_length=200)
     created = models.DateTimeField(auto_now_add=True, blank=True)

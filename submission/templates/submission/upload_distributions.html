@@ -237,16 +237,18 @@ function loadDataFiles(repr) {
                 $('span[title="Move / Rearrange"]').css("display", "none");
 
                 var rps = {{ representations | safe  }};
-                var fileMetadata = JSON.parse(rps[$('#repval').val()]['file_metadata']);
-                // iterate file metadata and add descriptions to filenames
-                $.each(fileMetadata, function(filename, description) {
-                    // Find the div with the matching title attribute
-                    const $div = $(`.explorer-caption[title="${filename}"]`);
-                    if ($div.length) {
-                        $div.after(`<span class="filedesc">${description}</span>`);
-                    }
-                });
-
+                var repValue = $('#repval').val();
+                if(repValue) {
+                    var fileMetadata = rps[$('#repval').val()]['file_metadata'];
+                    // iterate file metadata and add descriptions to filenames
+                    $.each(fileMetadata, function(filename, description) {
+                        // Find the div with the matching title attribute
+                        const $div = $(`.explorer-caption[title="${filename}"]`);
+                        if ($div.length) {
+                            $div.after(`<span class="filedesc">${description}</span>`);
+                        }
+                    });
+                }
             },
             error: function(data){
                 window.console.log("an error occurred");
@@ -428,6 +430,8 @@ function changeRep(rep, sip_detail_url) {
         var reprObj = {'description': '', 'accessRights': '', 'label': ''};
         representations[repr_value] = reprObj;
     }
+    console.log("REPRESENTATIONS")
+    console.log(representations)
 
     $('#id_access_rights').val(representations[repr_value].accessRights);
 

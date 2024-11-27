@@ -480,8 +480,14 @@ def upload_step5(request, pk):
     reprs = {}
     if repname:
         reprs = {
-            r['identifier']: r for r in list(
-                reprs_qs.values("id", "identifier", "label", "description", "license", "accessRights", "file_metadata")
+            r['identifier']: {
+                **r,
+                'file_metadata': {} if r['file_metadata'] is None else r['file_metadata']
+            }
+            for r in list(
+                reprs_qs.values(
+                    "id", "identifier", "label", "description", "license", "accessRights", "file_metadata"
+                )
             )
         }
         repr_dir_names = list(reprs_qs.values_list('identifier', flat=True))
@@ -491,6 +497,7 @@ def upload_step5(request, pk):
                     'distribution_description': curr_repr['description'],
                     'distribution_label': curr_repr['label'],
                     'access_rights': curr_repr['accessRights'],
+                    'file_metadata': curr_repr['file_metadata']
                 })
         else:
             form = MetaFormStep5(request.POST)
