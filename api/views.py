@@ -469,47 +469,52 @@ def read_file(file_path):
 
     Returns:
         HttpResponse: An HTTP response containing the file content.
-        
-        - HttpResponseNotFound: If the file does not exist.
-        - HttpResponseBadRequest: If the file path does not point to a regular file.
-        - HttpResponseForbidden: If the file size exceeds the configured maximum download limit.
-        - FileResponse: If the file is one of the supported archive types (.tar, .tar.gz, .zip).
-        - HttpResponse: If the file size is within the limit and its content is text-based or matches specific patterns.
-        
-    Raises:
-        OSError: If an I/O operation fails while reading the file.
     """
-    if not os.path.exists(file_path):
-        return HttpResponseNotFound("File not found %s" % file_path)
-    elif not os.path.isfile(file_path):
-        return HttpResponseBadRequest("Not a file")
-    else:
-        file_size = fsize(file_path)
-        mime = get_mime_type(file_path)
-        if file_size > config_max_http_download:
-            return HttpResponseForbidden(
-                "Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_http_download))
-        if file_path.lower().endswith(('.tar', '.tar.gz', 'zip')):
-            stream = open(file_path, 'rb')
-            response = FileResponse(stream, content_type=mime, as_attachment=True)
-            response['Content-Disposition'] = "attachment; filename=%s" % os.path.basename(file_path)
-            return response
-        if file_size <= file_size_limit:
-            if mime.startswith("text/") or "0=ocfl_object_1.0" in file_path or "inventory.json.sha512" in file_path:
-                mime = "text/plain;charset=utf-8"
-                stream = open(file_path, 'rb')
-                bytes = stream.read()
-                #encoding = CharsetDetector(bytes).detect().getName()
-                encoding = charset_normalizer.detect(bytes)['encoding']
-                file_content = bytes.decode(encoding).encode('utf-8')
-                response = HttpResponse(file_content, content_type=mime)
-            else:
-                file_content = read_file_content(file_path)
-                response = HttpResponse(file_content, content_type=mime)
-            return response
+    try:
+        if not os.path.exists(file_path):
+            return HttpResponseNotFound("File not found %s" % file_path)
+        elif not os.path.isfile(file_path):
+            return HttpResponseBadRequest("Not a file")
         else:
-            return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" %
-                                         (file_size, file_size_limit))
+            file_size = fsize(file_path)
+            mime = get_mime_type(file_path)
+            if file_size > config_max_http_download:
+                return HttpResponseForbidden(
+                    "Size of requested file exceeds limit (file size %d > %d)" % (file_size, config_max_http_download))
+            if file_path.lower().endswith(('.tar', '.tar.gz', 'zip')):
+                stream = open(file_path, 'rb')
+                response = FileResponse(stream, content_type=mime, as_attachment=True)
+                response['Content-Disposition'] = "attachment; filename=%s" % os.path.basename(file_path)
+                return response
+            if file_size <= file_size_limit:
+                if mime.startswith("text/") or "0=ocfl_object_1.0" in file_path or "inventory.json.sha512" in file_path:
+                    mime = "text/plain;charset=utf-8"
+                    stream = open(file_path, 'rb')
+                    bytes = stream.read()
+                    
+                    # Detect encoding and handle fallback
+                    detected = charset_normalizer.detect(bytes)
+                    encoding = detected.get('encoding', 'utf-8')  # Fallback to UTF-8 if detection fails
+                    
+                    if not encoding:
+                        encoding = 'utf-8'  # Ensure a valid encoding is used
+                    
+                    try:
+                        file_content = bytes.decode(encoding).encode('utf-8')
+                    except UnicodeDecodeError as e:
+                        return HttpResponseBadRequest(f"Failed to decode file: {e}")
+
+                    response = HttpResponse(file_content, content_type=mime)
+                else:
+                    file_content = read_file_content(file_path)
+                    response = HttpResponse(file_content, content_type=mime)
+                return response
+            else:
+                return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" %
+                                             (file_size, file_size_limit))
+    except OSError as e:
+        return HttpResponseServerError(f"An error occurred: {e}")
+
 
 
 @csrf_exempt
