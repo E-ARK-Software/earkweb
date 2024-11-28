@@ -487,8 +487,11 @@ def read_file(file_path):
                 response['Content-Disposition'] = "attachment; filename=%s" % os.path.basename(file_path)
                 return response
             if file_size <= file_size_limit:
-                if mime.startswith("text/") or "0=ocfl_object_1.0" in file_path or "inventory.json.sha512" in file_path:
-                    mime = "text/plain;charset=utf-8"
+                if mime.startswith("text/") or mime.endswith("xml") or "0=ocfl_object_1.0" in file_path or "inventory.json.sha512" in file_path:
+                    if mime.endswith("xml"):
+                        mime = "text/xml;charset=utf-8"
+                    else:
+                        mime = "text/plain;charset=utf-8"
                     stream = open(file_path, 'rb')
                     bytes = stream.read()
                     
