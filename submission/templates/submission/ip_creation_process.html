@@ -30,7 +30,7 @@
     <link href="https://fonts.googleapis.com/css?family=Fira+Mono">
     <script>
 	$( document ).ready(function() {
-          setInterval(function(){get_contents();}, 1000);
+          setInterval(function(){get_contents();}, 3000);
           function get_contents() {
             console.log("called");
             $.get('/earkweb/api/ips/{{ip.uid}}/file-resource/metadata/other/processing.log/', function(data) {
