@@ -327,7 +327,9 @@ def upload_step1(request, pk):
                 'title': md_properties["title"],
                 'description': md_properties["description"],
                 'locations': md_properties["locations"] if "locations" in request.session['md_properties'] else "{}",
-                'original_creation_date': md_properties["original_creation_date"] if "original_creation_date" in request.session['md_properties'] else ""
+                'original_creation_date': md_properties["original_creation_date"] if "original_creation_date" in request.session['md_properties'] else "",
+                'content_information_type': md_properties["content_information_type"] if "content_information_type" in request.session['md_properties'] else "MIXED",
+                'content_category': md_properties["content_category"] if "content_category" in request.session['md_properties'] else "Mixed"
             })
         else:
             form = MetaFormStep1(initial={

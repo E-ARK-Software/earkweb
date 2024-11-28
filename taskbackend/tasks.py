@@ -58,7 +58,8 @@ from eatb.utils.fileutils import to_safe_filename, find_files, \
 from eatb.utils.randomutils import get_unique_id
 from eatb.storage import write_inventory_from_directory, update_storage_with_differences, get_previous_version_series
 from taskbackend.taskutils import get_working_dir, validate_ead_metadata, get_first_ip_path, \
-    create_or_update_state_info_file, persist_state, update_status
+    create_or_update_state_info_file, persist_state, update_status, find_metadata_file 
+
 from util.djangoutils import check_required_params
 from util.solrutils import SolrUtility
 
@@ -113,7 +114,24 @@ def sip_package(self, context, task_log):
     if not os.path.exists(working_dir):
         os.makedirs(working_dir, exist_ok=True)
 
-    create_sip(working_dir, package_name, uid, True, False, task_log)
+    # Load metadata.json if available
+    additional_metadata = {}
+    metadata_file_path = find_metadata_file(working_dir)
+    if metadata_file_path and os.path.exists(metadata_file_path):
+        with open(metadata_file_path, 'r', encoding='utf-8') as f:
+            additional_metadata = json.load(f)
+            task_log.info("Loaded metadata.json successfully.")
+
+
+    create_sip(
+        package_dir=working_dir, 
+        package_name=package_name, 
+        identifier=uid, 
+        generate_premis=True, 
+        generate_package=False, 
+        additional_metadata=additional_metadata, 
+        custom_logger=task_log
+    )
 
     # append generation number to tar file; if tar file exists, the generation number is incremented
     sip_tar_file = os.path.join(working_dir, task_context['package_name'] + '.tar')

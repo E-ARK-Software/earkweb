@@ -18,6 +18,9 @@ from config.configuration import default_maintainer
 from config.configuration import default_maintainer_email
 
 
+from eatb.utils.xmlutils import parse_csip_vocabulary
+import pkg_resources
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,6 +69,33 @@ class MetaFormStep1(forms.Form):
     # Field is hidden!
     external_id = forms.CharField(widget=forms.HiddenInput(), required=False)
     title = forms.CharField(label=_('Information package title'), max_length=100,  widget=forms.TextInput(attrs ={'placeholder': _('Data set title'), 'value': default_title}))
+    
+    # Content information type select
+    # resource path
+    resource_path = 'resources/vocabularies/CSIPVocabularyContentInformationType.xml'
+    # Get the resource file path using pkg_resources
+    resource_path_full = pkg_resources.resource_filename('eatb', resource_path)
+    csip_content_category_terms = parse_csip_vocabulary(resource_path_full, terms_only=True)
+    # A dropdown field using ChoiceField
+    content_information_type = forms.ChoiceField(
+        label=_('Content information type'),
+        choices=[(value, _(value)) for value in csip_content_category_terms],
+        initial='MIXED',
+    )    
+
+    # Content category select
+    # resource path
+    resource_path = 'resources/vocabularies/CSIPVocabularyContentCategory.xml'
+    # Get the resource file path using pkg_resources
+    resource_path_full = pkg_resources.resource_filename('eatb', resource_path)
+    csip_content_category_terms = parse_csip_vocabulary(resource_path_full, terms_only=True)
+    # A dropdown field using ChoiceField
+    content_category = forms.ChoiceField(
+        label=_('Content category'),
+        choices=[(value, _(value)) for value in csip_content_category_terms],
+        initial='Mixed',
+    )
+    
     description = forms.CharField(
         label=_('Information package description'),
         max_length=50000,
