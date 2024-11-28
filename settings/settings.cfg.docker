@@ -104,7 +104,7 @@ accepted_identifier_examples = DOI: doi:10.5281/zenodo.11366514, URN: urn:uuid:d
 entry_pattern = .*
 
 [media]
-media_root = /var/www/html/
+media_root = /var/www/html/media/
 media_url = /media/
 
 [system]
