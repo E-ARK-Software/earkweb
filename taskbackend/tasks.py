@@ -1183,7 +1183,7 @@ def delete_representation_data_from_workdir(context):
 def generate_wordcloud_task():
     """Generate word cloud"""
     solr = pysolr.Solr(solr_core_url, timeout=10)
-    filter_query = 'path:*/representations/*/data/*'
+    filter_query = 'path:*representations/*/data/*'
     
     results = solr.search('*:*', **{
         'fq': filter_query,
