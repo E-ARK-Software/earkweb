@@ -145,11 +145,15 @@ CELERY_IMPORTS = 'taskbackend.tasks'
 #CELERY_RESULT_BACKEND="db+mysql://%s:%s@%s/%s" % (mysql_user, mysql_password, mysql_host, mysql_celerybackend_db)
 #CELERY_RESULT_BACKEND = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
 
+# Retry and timeout settings
+CELERY_TASK_DEFAULT_RETRY_DELAY = 30  # Default delay between retries in seconds
+CELERY_TASK_MAX_RETRIES = 5          # Maximum number of retries for tasks
+
 #BROKER_URL = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
 BROKER_URL = "amqp://%s:%s@%s:%d/" % (rabbitmq_user, rabbitmq_password, rabbitmq_host, rabbitmq_port)
 CELERY_RESULT_BACKEND = "redis://:%s@%s:%d/0" % (redis_password, redis_host, redis_port)
 
-BROKER_CONNECTION_TIMEOUT = 10
+BROKER_CONNECTION_TIMEOUT = 30
 BROKER_POOL_LIMIT = 100
 CELERY_REDIS_MAX_CONNECTIONS = 20
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
