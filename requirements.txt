@@ -28,7 +28,7 @@ importlib_resources==6.4.0
 PyPDF2==3.0.1
 bagit==1.8.1
 charset-normalizer==3.4.0
-eatb==0.2.8
+eatb==0.2.9
 python-magic==0.4.27
 opf-fido==1.6.1
 django-chartjs==2.3.0
