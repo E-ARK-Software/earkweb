@@ -59,6 +59,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
         },
+        'charset_normalizer': {
+            'level': 'WARNING',  # Suppress debug-level messages
+            'handlers': ['console'],
+            'propagate': False,
+        },
     },
 }
 
