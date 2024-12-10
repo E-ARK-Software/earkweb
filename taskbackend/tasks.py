@@ -776,13 +776,21 @@ def aip_record_structure(_, context, task_log):
 
         parent = task_context['parent_id'] if 'parent_id' in task_context else ""
 
+        # Load metadata.json if available
+        additional_metadata = {}
+        metadata_file_path = find_metadata_file(working_dir)
+        if metadata_file_path and os.path.exists(metadata_file_path):
+            with open(metadata_file_path, 'r', encoding='utf-8') as f:
+                additional_metadata = json.load(f)
+                task_log.info("Loaded metadata.json successfully.")
+
         mets_data = {'packageid': identifier,
                      'type': 'AIP',
                      'schemas': schemas,
                      'parent': parent}
 
         metsgen = MetsGenerator(working_dir)
-        metsgen.createMets(mets_data)
+        metsgen.createMets(mets_data, additional_metadata=additional_metadata)
 
         # get identifier_map from context
         identifier_map = task_context['identifier_map'] if 'identifier_map' in task_context else None
