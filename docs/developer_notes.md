@@ -67,6 +67,10 @@ Local library dependencies can be installed using pip with the '-e' parameter. I
 library take effect immediately:
 
     pip install -e ../otherproject/otherlib/.
+
+To use eatb you can checkout eatb within the root directory and install the library in development mode:
+
+    python setup.py develop
     
 # Adapted libraries
 
