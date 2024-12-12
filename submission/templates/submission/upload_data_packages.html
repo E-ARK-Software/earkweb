@@ -178,31 +178,33 @@
             <input id="kv-explorer" type="file" multiple data-min-file-count="1">
         </div>
         <h2>Data packages</h2>
-        <p>A <i>data package</i> is a minimal data structure designed to upload data for the creation of a submission information package (SIP). 
-            It contains the essential files and folders required for submission, such as the root folder with a safe name and it needs to be packaged as
-            a container in one of the supported formats (tar, tar.gz, or zip). The <i>data package</i> may also include metadata or content 
-            data stored in a specific folder structure.</p>
+        <p>A <b>data package</b> is a minimal data structure designed to upload data for the creation of a <b>Submission Information Package (SIP)</b>. 
+            It contains the essential files and folders required for submission, such as the root folder with a <b>safe name</b>&nbsp;&ddagger;. 
+            For the upload this folder needs to be <b>packaged as a container in one of the supported formats</b>. The <i>data package</i> 
+            may also include metadata or content data stored in a specific folder structure.</p>
         
         <p>There are basic requirements for uploading a <i>data package</i>. However, it is important to note that the <i>data package</i> does not fulfill all 
-            the requirements of an <i>information package</i>, which are outlined in the <a href="https://earkcsip.dilcis.eu/">Common Specification of Information Packages (CSIP)</a>. 
-            An <i>information package</i>, which is created from a <i>data package</i>, must meet additional CSIP requirements to ensure conformance with the specification.</p>
-        <p>Supported upload formats for a <i>data package</i>: zip, tar, and tar.gz</p>
-        <p>Maximum allowed upload file size: <span id="file-size"></span></p>
+            the requirements of an <i>information package</i>, which are outlined in the <b><a href="https://earkcsip.dilcis.eu/">Common Specification of Information Packages (CSIP)</a></b>. 
+            An <b>Information Package</b>, which is created from a <i>data package</i>, must meet additional CSIP requirements to ensure conformance with the specification.</p>
+        <p><b>Supported upload formats</b> for a <i>data package</i>: zip, tar, and tar.gz</p>
+        <p><b>Maximum upload file size</b>: <span id="file-size"></span></p>
         
         <p>To upload <i>data packages</i>, please adhere to the following requirements:</p>
 
         <ol>
-            <li>The container must have the file extension tar, tar.gz, or zip.</li>
-            <li>The container file (tar, tar.gz, zip) file must contain a single root folder (it is not allowed to have more than one folder at the root level), see  CSIPSTR1 (MUST) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
-            <li>The container file name must be a <i>safe name</i>&nbsp;&ddagger;.</li>
-            <li>The root folder within the container must match the <i>package label</i> *, excluding its file extension (e.g., without .tar, .tar.gz, or .zip).</li>
-            <li>The <i>package label</i> * must not be one of the following reserved words: representations, schemas, metadata, or documentation.</li>
-            <li>The root folder of the container may contain a folder "metadata" with metadata files, see CSIPSTR5 (SHOULD) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
-            <li>If the container includes content data, it must be stored in the 'representations' folder, followed by a <i>safe name</i>&nbsp;&ddagger; representation label and a data folder (e.g., 'representations/rep1/data/image.jpeg').</li>
+            <li>The <b>container</b> MUST have the <b>file extension <code>.tar</code>, <code>.tar.gz</code>, or <code>.zip</code></b>.</li>
+            <li>The <b>container</b> MUST contain a <b>single root folder</b> (more than one folder at the root level is not allowed), see  CSIPSTR1 (MUST) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
+            <li>The <b>container</b> file name MUST be a <b>safe name</b>&nbsp;&ddagger;.</li>
+            <li>The <b>root folder</b> within the container <b>MUST match the <i>package label</i></b> *, excluding its file extension (e.g., without .tar, .tar.gz, or .zip).</li>
+            <li>The <b>package label</b> * MUST NOT be one of the following reserved words: representations, schemas, metadata, or documentation.</li>
+            <li>The <b>root folder</b> MAY contain a folder "metadata" with metadata files, see CSIPSTR5 (SHOULD) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
+            <li>If the container includes <b>content data</b>, it MUST be stored under the <code>representations</code> <b>folder</b>. 
+                Each piece of content must be placed within a subfolder named with a <b>safe representation label</b> (e.g., <code>rep1</code>),
+                and that subfolder MUST contain a <code>data</code> <b>folder</b>. Example path: <code>representations/rep1/data/image.jpeg</code></li>
         </ol>
 
-        <p>* The <i>package label</i> is the container filename without the container's extension (e.g., without .tar, .tar.gz, or .zip).</li></p>
-        <p>&ddagger; A <i>safe name</i> is a file name or a label which only allows ascii characters, numbers, dashes, underscores, and dots.</p>
+        <p>* The <b>package label</b> is the <b>container filename without extension</b>, e.g., without <code>.tar</code>, <code>.tar.gz</code>, or <code>.zip</code>.</li></p>
+        <p>&ddagger; A <b>safe name</b> or <b>label</b> MUST consist only of <b>ASCII characters, numbers, dashes, underscores, and dots</b>.</p>
 
         <p>The following is an example of a minimal structure of a <i>data package</i>:</p>
         <pre>mypackage
@@ -213,11 +215,16 @@
     └── rep1
         └── data
             └── myfile.pdf</pre>
-
-        <p style="margin-top:10px">This <i>data package</i> folder can then be packed as a container, e.g., as a zip file:</p>
+        <p style="margin-top:10px">The metadata folder is optional, meaning the data package may also consist solely of a content file, as shown below:</p>
+        <pre>mypackage
+└── representations
+    └── rep1
+        └── data
+            └── myfile.pdf</pre>
+        <p style="margin-top:10px">This <i>data package</i> folder MUST then be packed as a container, e.g., as a zip file:</p>
         <pre>mypackage.zip</pre>
         <p style="margin-top:10px">The label <i>mypackage</i> is extracted from the filename and helps to recognise the item in the information package overview.</p>
-        <p style="margin-top:10px">Note that the metadata folder is optional. Additionally, the folders "schemas" and "documentation" can be added at the root or representation level (refer to the <a href="https://earkcsip.dilcis.eu/">CSIP</a> for further information).</p>
+        <p style="margin-top:10px">Additionally, the folders "schemas" and "documentation" can be added at the root or representation level (refer to the <a href="https://earkcsip.dilcis.eu/">CSIP</a> for further information).</p>
 
     </form>
 
