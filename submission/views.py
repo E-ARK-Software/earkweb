@@ -52,6 +52,7 @@ from config.configuration import config_path_work, config_path_reception
 from config.configuration import identifier_pattern
 from earkweb.models import InformationPackage
 from earkweb.models import Representation, InternalIdentifier, Vocabulary
+from earkweb.utils.representation_utils import register_representations_from_data_package
 from util.djangoutils import get_unused_identifier, get_user_api_token
 from taskbackend.taskexecution import execute_task
 from taskbackend.taskutils import extract_and_remove_package, \
@@ -314,6 +315,25 @@ def upload_packaged_sip(request):
             filename = file_data.name
             file_path = os.path.join(config_path_reception, filename)
 
+            # Detect MIME type
+            mime_type, _ = mimetypes.guess_type(file_path)
+            mime_type = mime_type or "application/octet-stream"
+
+            if not filename.endswith(('.tar', '.tar.gz', '.zip')):
+                file_upload_resp = {
+                    "ver": "1.0",
+                    "ret": True,
+                    "errcode": 1,
+                    "data": {
+                        "status": "Unsupported file extension. Please upload a .tar, .tar.gz, or .zip file.",
+                        "originalFilename": filename,
+                        "fileName": filename,
+                        "mimeType": mime_type,
+                        "fileSize": file_data.size,
+                    }
+                }
+                return JsonResponse(file_upload_resp, status=415) # HTTP 415: Media type not supported
+
             with open(file_path, 'wb+') as destination:
                 for chunk in posted_files['file_data'].chunks():
                     destination.write(chunk)
@@ -325,7 +345,8 @@ def upload_packaged_sip(request):
             
             # pylint: disable-next=no-member
             uid = get_unique_id()
-            package_name = '.'.join(filename.split('.')[:-1])
+            # extract the package name from a file with extensions like .zip, .tar, or .tar.gz
+            package_name = '.'.join(filename.split('.')[:-2]) if filename.endswith(('.tar.gz')) else '.'.join(filename.split('.')[:-1])
             # pylint: disable-next=no-member
             InformationPackage.objects.create(
                 work_dir=os.path.join(config_path_work, uid), uid=uid,
@@ -335,27 +356,25 @@ def upload_packaged_sip(request):
             # pylint: disable-next=no-member
             ip = InformationPackage.objects.get(uid=uid)
 
-            
+            representations = register_representations_from_data_package(file_path, ip)
+
             job = initialize_package_from_reception.delay(
                 container_path=file_path,
-                uid=uid
+                uid=uid,
+                representations=representations
             )
             
-            # Detect MIME type
-            mime_type, _ = mimetypes.guess_type(file_path)
-            mime_type = mime_type or "application/octet-stream"
             sha256 = ChecksumFile(file_path).get(ChecksumAlgorithm.SHA256)
-
             file_upload_resp = {
                 "ver": "1.0",
                 "ret": True,
                 "errcode": 0,
                 "data": {
-                    "status": "File upload successful success",
+                    "status": "File upload successful",
                     "originalFilename": filename,
                     "fileName": filename,
                     "mimeType": mime_type,
-                    "fileSize": 255997,
+                    "fileSize": file_data.size,
                     "sha256Hash": sha256,
                     "uid": uid,
                     "jobid": job.id
@@ -364,7 +383,7 @@ def upload_packaged_sip(request):
             }
             return JsonResponse(file_upload_resp, status=201)
     else:
-        template = loader.get_template('submission/upload.html')
+        template = loader.get_template('submission/upload_data_packages.html')
     context = {
         "max_upload_file_size": config_max_http_download,
         "flower_service_url": flower_service_url,

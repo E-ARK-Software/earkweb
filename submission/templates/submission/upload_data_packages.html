@@ -1,0 +1,225 @@
+{% extends "earkweb/base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% block extra_head %}
+
+<script>
+    var flowerServiceUrl = '{{ flower_service_url }}';
+    var djangoServiceUrl = '{{ django_service_url }}';
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024; // Base for binary conversion
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k)); // Determine the unit index
+        return `${(bytes / Math.pow(k, i)).toFixed(decimals)} ${sizes[i]}`;
+    }
+    function checkTaskStatus(task_id, packageLabel) {
+        var startIndexingUrl = "{% url 'submission:reception-task-status' task_id=0 %}".replace('0', task_id);
+        $.ajax({
+            url: startIndexingUrl,
+            type: 'GET',
+            success: function(response) {
+                if (response.status === 'SUCCESS') {
+                    $("#id-status-" + packageLabel).html('<span style="color:green">Data package received and initialized successfully</span>.');
+                    console.log("SUCCESS!")
+                } else if (response.status === 'FAILURE') {
+                    $("#id-status-" + packageLabel).html('<span class="error">Error: <a href="'+flowerServiceUrl+'task/' + task_id + '" target="new">failed task<a/></span>');
+                    console.log("#id-status-" + packageLabel);
+                    console.log("FAILURE!");
+                } else {
+                    setTimeout(function() {
+                        checkTaskStatus(task_id, packageLabel);
+                    }, 2000);  // Poll every 2 seconds
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("Error fetching task status: ", error);
+                $("#indexing-status-" + packageLabel).text('Error checking status.');
+            }
+        });
+    }
+
+    function loadDataFiles() {
+        $.ajax({
+            type: 'GET',
+            url: '/earkweb/api/reception/dir-json',
+            data: {}, // No filter applied here
+            success: function(data) {
+                console.log(JSON.stringify(data));
+
+                var datafiles = data.data.children; // No filtering by ipTargetDirectory
+                console.log(datafiles.length);
+
+                initPrev = [];
+                initPrevConfig = [];
+
+                if (datafiles.length > 0) {
+                    var datafiles_arr = datafiles;
+
+                    var mimeTypes = [];
+                    var pv_file_paths = [];
+
+                    function appendFilePaths(path, dfarr) {
+                        for (let df of dfarr) {
+                            var curr_path = path ? path + "/" + df.text : df.text;
+                            if (!df.children) {
+                                pv_file_paths.push(curr_path);
+                                mimeTypes.push(df.data);
+                            } else {
+                                appendFilePaths(curr_path, df.children);
+                            }
+                        }
+                    }
+
+                    appendFilePaths(null, datafiles_arr);
+                    pv_file_paths.sort();
+                    obj = [];
+                    for (var key in mimeTypes) {
+                        var downloadUrl = '{{ django_backend_service_url }}/earkweb/submission/receptionresource/' + mimeTypes[key]['path'];
+                        var deleteUrl = '{{ django_backend_service_url }}/earkweb/submission/receptionresource/' + mimeTypes[key]['path'] + '/';
+                        caption = mimeTypes[key]['path'].replace('{{ ip.uid }}/', '');
+                        initPrev.push(mimeTypes[key]['mimetype']);
+                        initPrevConfig.push({
+                            caption: caption,
+                            filetype: mimeTypes[key]['mimetype'],
+                            downloadUrl: downloadUrl,
+                            key: mimeTypes[key]['path'],
+                            previewAsData: false,
+                            showPreview: false,
+                            url: deleteUrl
+                        });
+                    }
+                }
+
+                $("#kv-explorer").fileinput({
+                    minFileCount: 1,
+                    maxFileCount: 10,
+                    maxFileSize: {{ max_upload_file_size }},
+                    'allowedFileExtensions': ['zip', 'tar', 'tar.gz'],
+                    'theme': 'explorer-fa',
+                    'uploadUrl': '/earkweb/submission/upload-packaged-sip',
+                    overwriteInitial: false,
+                    allowedPreviewTypes: ['image'],
+                    initialPreviewAsData: false,
+                    initialPreview: initPrev,
+                    initialPreviewConfig: initPrevConfig,
+                    preferIconicPreview: true,
+                    previewFileIconSettings: {
+                        'zip': '<i class="fas fa-file-archive text-primary"></i>',
+                    },
+                    previewFileExtSettings: {
+                        'zip': function(ext) {
+                            return ext.match(/(zip|tar|gz)$/i);
+                        },
+                    },
+                    uploadExtraData: function(previewId, index) {
+                        var info = {
+                            "uid": "{{ ip.uid }}",
+                            "distribution_description": $('#id_distribution_description').val(),
+                            "offer": $('#id_offer').val(),
+                            "access_rights": $('#id_access_rights').val(),
+                        };
+                        return info;
+                    }
+                }).on('fileuploaded', function(event, data, previewId, index) {
+                    const response = data.response;
+                    if (response && response.ret) {
+                        const fileDetails = response.data;
+
+                        setTimeout(function() {
+                            const detailsCell = $(`[title="${fileDetails.originalFilename}"] .file-details-cell`);
+                            console.log("Matching Element:", $(detailsCell).length ? "Found" : "Not Found");
+
+                            if (detailsCell.length > 0) {
+                                var packageLabel = fileDetails.originalFilename.replace(/(\.tar\.gz|\.tar|\.zip)$/, "");
+                                detailsCell.append(`
+                                    <p class="explorer-caption">SHA-256: ${fileDetails.sha256Hash}</p>
+                                    <p class="explorer-caption">Working directory: <a  target="_blank" href="${djangoServiceUrl}/submission/working_area/submission/${fileDetails.uid}">${fileDetails.uid}<a/></p>                            
+                                    <p class="explorer-caption">Status: <span id="id-status-${packageLabel}"></span></p>
+                                `);
+                                checkTaskStatus(fileDetails.jobid, packageLabel);
+                            } else {
+                                console.error(`Element with [title="${fileDetails.originalFilename}"] or class 'file-details-cell' not found.`);
+                            }
+                        }, 100); // Short delay to allow DOM update
+                    }
+                });
+
+                const byteSize = {{ max_upload_file_size }};
+                const formattedSize = formatBytes(byteSize);
+                $('#file-size').text(formattedSize);
+
+                $('button[title="View Details"]').css("display", "none");
+                $('span[title="Move / Rearrange"]').css("display", "none");
+            },
+            error: function(data) {
+                console.error("An error occurred");
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        loadDataFiles();
+    });
+</script>
+
+
+{% endblock %}
+
+{% block content %}
+
+    {% include "submission/about_module.html" %}
+
+    <h2>{% trans 'Upload data packages' %}</h2>
+
+    <form enctype="multipart/form-data" method="post">
+        <div class="file-loading">
+            <input id="kv-explorer" type="file" multiple data-min-file-count="1">
+        </div>
+        <h2>Data packages</h2>
+        <p>A <i>data package</i> is a minimal data structure designed to upload data for the creation of a submission information package (SIP). 
+            It contains the essential files and folders required for submission, such as the root folder with a safe name and it needs to be packaged as
+            a container in one of the supported formats (tar, tar.gz, or zip). The <i>data package</i> may also include metadata or content 
+            data stored in a specific folder structure.</p>
+        
+        <p>There are basic requirements for uploading a <i>data package</i>. However, it is important to note that the <i>data package</i> does not fulfill all 
+            the requirements of an <i>information package</i>, which are outlined in the <a href="https://earkcsip.dilcis.eu/">Common Specification of Information Packages (CSIP)</a>. 
+            An <i>information package</i>, which is created from a <i>data package</i>, must meet additional CSIP requirements to ensure conformance with the specification.</p>
+        <p>Supported upload formats for a <i>data package</i>: zip, tar, and tar.gz</p>
+        <p>Maximum allowed upload file size: <span id="file-size"></span></p>
+        
+        <p>To upload <i>data packages</i>, please adhere to the following requirements:</p>
+
+        <ol>
+            <li>The container must have the file extension tar, tar.gz, or zip.</li>
+            <li>The container file (tar, tar.gz, zip) file must contain a single root folder (it is not allowed to have more than one folder at the root level), see  CSIPSTR1 (MUST) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
+            <li>The container file name must be a <i>safe name</i>&nbsp;&ddagger;.</li>
+            <li>The root folder within the container must match the <i>package label</i> *, excluding its file extension (e.g., without .tar, .tar.gz, or .zip).</li>
+            <li>The <i>package label</i> * must not be one of the following reserved words: representations, schemas, metadata, or documentation.</li>
+            <li>The root folder of the container may contain a folder "metadata" with metadata files, see CSIPSTR5 (SHOULD) in <a target="_blank" href="https://earkcsip.dilcis.eu/">CSIP</a>.</li>
+            <li>If the container includes content data, it must be stored in the 'representations' folder, followed by a <i>safe name</i>&nbsp;&ddagger; representation label and a data folder (e.g., 'representations/rep1/data/image.jpeg').</li>
+        </ol>
+
+        <p>* The <i>package label</i> is the container filename without the container's extension (e.g., without .tar, .tar.gz, or .zip).</li></p>
+        <p>&ddagger; A <i>safe name</i> is a file name or a label which only allows ascii characters, numbers, dashes, underscores, and dots.</p>
+
+        <p>The following is an example of a minimal structure of a <i>data package</i>:</p>
+        <pre>mypackage
+├── metadata
+│   └── descriptive
+│       └── dc.xml
+└── representations
+    └── rep1
+        └── data
+            └── myfile.pdf</pre>
+
+        <p style="margin-top:10px">This <i>data package</i> folder can then be packed as a container, e.g., as a zip file:</p>
+        <pre>mypackage.zip</pre>
+        <p style="margin-top:10px">The label <i>mypackage</i> is extracted from the filename and helps to recognise the item in the information package overview.</p>
+        <p style="margin-top:10px">Note that the metadata folder is optional. Additionally, the folders "schemas" and "documentation" can be added at the root or representation level (refer to the <a href="https://earkcsip.dilcis.eu/">CSIP</a> for further information).</p>
+
+    </form>
+
+
+{% endblock %}

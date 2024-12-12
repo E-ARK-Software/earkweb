@@ -74,6 +74,16 @@
 
     <!--link rel="stylesheet" media="screen" href="{% static "earkweb/stylesheets/global.css" %}" /-->
 
+	<style>
+	.nav-group-sub {
+		display: none;
+	}
+
+	.nav-group-sub.show {
+		display: block;
+	}
+	</style>
+
   </head>
 
   <body class="custom-scrollbars">
@@ -239,11 +249,11 @@
 						<li id="administration" class="nav-item nav-item-submenu">
 							<a href="#" class="nav-link"><i class="fas fa-wrench"></i></i> <span id="mi-administration">{% trans 'Administration' %}</span></a>
 							<ul class="nav nav-group-sub" data-submenu-title="Administration">
-								<li class="nav-item"><a href="/earkweb/administration/dashboard" class="nav-link"><span id="mi-dashboard">{% trans 'Dashboard' %}</span></a></li>
-								<li class="nav-item"><a href="/earkweb/admin" class="nav-link"><span id="mi-site-admin">{% trans 'Site Administration' %}</span></a></li>
-								<li class="nav-item"><a href="/earkweb/api/" class="nav-link"><span id="mi-rest-api">{% trans 'REST API' %}</span></a></li>
-								<li class="nav-item"><a href="/earkweb/oai-pmh" class="nav-link"><span id="mi-oai-pmh">{% trans 'OAI-PMH' %}</span></a></li>	
-								<li class="nav-item"><a href="/earkweb/resource-sync" class="nav-link"><span id="mi-resource-sync">{% trans 'Resource Sync' %}</span></a></li>								
+								<li id="ni-dashboard" class="nav-item"><a href="/earkweb/administration/dashboard" class="nav-link"><span id="mi-dashboard">{% trans 'Dashboard' %}</span></a></li>
+								<li id="ni-site-admin" class="nav-item"><a href="/earkweb/admin" class="nav-link"><span id="mi-site-admin">{% trans 'Site Administration' %}</span></a></li>
+								<li id="ni-rest-api" class="nav-item"><a href="/earkweb/api/" class="nav-link"><span id="mi-rest-api">{% trans 'REST API' %}</span></a></li>
+								<li id="ni-oai-pmh" class="nav-item"><a href="/earkweb/oai-pmh" class="nav-link"><span id="mi-oai-pmh">{% trans 'OAI-PMH' %}</span></a></li>	
+								<li id="ni-resource-sync" class="nav-item"><a href="/earkweb/resource-sync" class="nav-link"><span id="mi-resource-sync">{% trans 'Resource Sync' %}</span></a></li>								
 							</ul>
 						</li>
 
@@ -349,104 +359,165 @@
 
 	</div>
 	<!-- /page content -->
-<script>
+	<script>
         $(document).ready(function(){
+			// Remove all 'active' classes initially
             $('a').removeClass('active');
-                var url = window.location.href;
-                switch(url) {
-                  case (url.match(/home/) || {}).input:
-                    $('#home > a').addClass('active');
-                    $('#br-level-1').hide();
-                    $('#br-level-2').hide();
-                    break;
-                  case (url.match(/admin|api|oai-pmh|resource-sync/) || {}).input:
-                    $('#administration > a').addClass('active');
-                    $('#br-level-1').html("<a href='/earkweb/administration'>"+$('#mi-administration').text()+"</a>");
-                    $('#br-level-1').show();
-                    switch(url) {
-                    	case (url.match(/dashboard/) || {}).input:
-							$('#br-level-2').text($('#mi-dashboard').text());
+
+			// current URL
+			var url = window.location.href;
+			const submenuStateKey = 'activeSubmenu';
+
+			// Restore sub-menu state from localStorage
+			const activeSubmenu = localStorage.getItem(submenuStateKey);
+			if (activeSubmenu) {
+				$(`#${activeSubmenu} > ul`).addClass('show');
+				$(`#${activeSubmenu} > a`).addClass('active');
+			}
+
+			// Highlight sub-menu items
+			switch(url) {
+				case (url.match(/home/) || {}).input:
+					$('#home > a').addClass('active');
+					$('#br-level-1').hide();
+					$('#br-level-2').hide();
+					break;
+				case (url.match(/admin|\/api\/|oai-pmh|resource-sync/) || {}).input:
+					$('#administration > a').addClass('active'); // Highlight main menu item
+					$('#administration > ul').addClass('show'); // Keep sub-menu item open
+					localStorage.setItem(submenuStateKey, 'start'); // Save state
+					$('#br-level-1').html("<a href='/earkweb/administration'>"+$('#mi-administration').text()+"</a>");
+					$('#br-level-1').show();
+					switch(url) {
+						case (url.match(/dashboard/) || {}).input:
+							$('#ni-dashboard > a').addClass('active');
+							$('#br-level-2').text($('#ni-dashboard').text());
 							$('#br-level-2').show();
 							break;
-                    	case (url.match(/admin$/) || {}).input:
-							$('#br-level-2').text($('#mi-site-admin').text());
+						case (url.match(/admin$/) || {}).input:
+							$('#ni-site-admin > a').addClass('active');
+							$('#br-level-2').text($('#ni-site-admin').text());
 							$('#br-level-2').show();
 							break;
-                    	case (url.match(/api/) || {}).input:
-							$('#br-level-2').text($('#mi-rest-api').text());
+						case (url.match(/api/) || {}).input:
+							$('#ni-rest-api > a').addClass('active');
+							$('#br-level-2').text($('#ni-rest-api').text());
 							$('#br-level-2').show();
 							break;
-                    	case (url.match(/oai-pmh/) || {}).input:
-							$('#br-level-2').text($('#mi-oai-pmh').text());
+						case (url.match(/oai-pmh/) || {}).input:
+							$('#ni-oai-pmh > a').addClass('active');
+							$('#br-level-2').text($('#ni-oai-pmh').text());
 							$('#br-level-2').show();
 							break;
-                    	case (url.match(/resource-sync/) || {}).input:
-							$('#br-level-2').text($('#mi-resource-sync').text());
+						case (url.match(/resource-sync/) || {}).input:
+							$('#ni-resource-sync > a').addClass('active');
+							$('#br-level-2').text($('#ni-resource-sync').text());
 							$('#br-level-2').show();
 							break;
-                    }
-                    break;
-                  case (url.match(/submission/) || {}).input:
-                    $('#submission > a').addClass('active');
-                    $('#br-level-1').html("<a href='/earkweb/submission'>"+$('#mi-submission').text()+"</a>");
-                    $('#br-level-1').show();
-                    switch(url) {
-                    	case (url.match(/submission\/start/) || {}).input:
-                    	$('#br-level-2').html($('#ni-submission-start').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    	case (url.match(/submission\/upload-packaged-sip/) || {}).input:
-                    	$('#br-level-2').html($('#ni-submission-upload-packaged-sip').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    	case (url.match(/submission\/overview/) || {}).input:
-                    	$('#br-level-2').html($('#ni-submission-overview').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    }
-                    break;
-                  case (url.match(/management/) || {}).input:
-                    $('#management > a').addClass('active');
-                    $('#br-level-1').html("<a href='/earkweb/management'>"+$('#mi-management').text()+"</a>");
-                    $('#br-level-1').show();
-                    switch(url) {
-                    	case (url.match(/management\/overview/) || {}).input:
-                    	$('#br-level-2').html($('#ni-management-overview').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    }
-                    break;
-                  case (url.match(/access/) || {}).input:
-                    $('#access > a').addClass('active');
-                    $('#br-level-1').html("<a href='/earkweb/access'>"+$('#mi-search').text()+"</a>");
-                    $('#br-level-1').show();
-                    switch(url) {
-                    	case (url.match(/access\/search/) || {}).input:
-                    	$('#br-level-2').html($('#ni-search').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    	case (url.match(/access\/indexing-status/) || {}).input:
-                    	$('#br-level-2').html($('#ni-indexing-status').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    }
-                    break;
-                  case (url.match(/howto-*/) || {}).input:
-                    $('#help > a').addClass('active');
-                    $('#br-level-1').html("<a href='/earkweb/howto'>"+$('#mi-help').text()+"</a>");
-                    $('#br-level-1').show();
-                    switch(url) {
-                    	case (url.match(/howto-use-the-api/) || {}).input:
-                    	$('#br-level-2').html($('#ni-howto-use-the-api').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    	case (url.match(/howto-create-dataset/) || {}).input:
-                    	$('#br-level-2').html($('#ni-howto-create-dataset').text());
-                    	$('#br-level-2').show();
-                    	break;
-                    }
-                    break;
-                }
+					}
+					break;
+				case (url.match(/submission/) || {}).input:
+					$('#submission > a').addClass('active');  // Highlight main menu item
+					$('#submission > ul').addClass('show'); // Keep sub-menu item open
+					// Save the state to localStorage
+					localStorage.setItem(submenuStateKey, 'submission');
+					// Update breadcrumb
+					$('#br-level-1').html("<a href='/earkweb/submission'>"+$('#mi-submission').text()+"</a>");
+					$('#br-level-1').show();
+					// Highlight sub-menu item
+					switch(url) {
+						case (url.match(/submission\/start/) || {}).input:
+							$('#ni-submission-start > a').addClass('active');
+							$('#br-level-2').html($('#ni-submission-start').text());
+							$('#br-level-2').show();
+							break;
+						case (url.match(/submission\/upload-packaged-sip/) || {}).input:
+							$('#ni-submission-upload-packaged-sip > a').addClass('active');
+							$('#br-level-2').html($('#ni-submission-upload-packaged-sip').text());
+							$('#br-level-2').show();
+							break;
+						case (url.match(/submission\/overview/) || {}).input:
+							$('#ni-submission-overview > a').addClass('active');
+							$('#br-level-2').html($('#ni-submission-overview').text());
+							$('#br-level-2').show();
+							break;
+					}
+					break;
+				case (url.match(/management/) || {}).input:
+					$('#management > a').addClass('active'); // Highlight main menu item
+					$('#management > ul').addClass('show'); // Keep sub-menu item open
+					// Save the state to localStorage
+					localStorage.setItem(submenuStateKey, 'management');
+					$('#br-level-1').html("<a href='/earkweb/management'>"+$('#mi-management').text()+"</a>");
+					$('#br-level-1').show();
+					switch(url) {
+						case (url.match(/management\/overview/) || {}).input:
+							$('#ni-management-overview > a').addClass('active');
+							$('#br-level-2').html($('#ni-management-overview').text());
+							$('#br-level-2').show();
+							break;
+					}
+					break;
+				case (url.match(/access/) || {}).input:
+					$('#access > a').addClass('active'); // Highlight main menu item
+					$('#submission > ul').addClass('show'); // Keep sub-menu item open
+					// Save the state to localStorage
+					localStorage.setItem(submenuStateKey, 'access');
+					$('#br-level-1').html("<a href='/earkweb/access'>"+$('#mi-search').text()+"</a>");
+					$('#br-level-1').show();
+					switch(url) {
+						case (url.match(/access\/search/) || {}).input:
+							$('#ni-search > a').addClass('active');
+							$('#br-level-2').html($('#ni-search').text());
+							$('#br-level-2').show();
+							break;
+						case (url.match(/access\/indexing-status/) || {}).input:
+							$('#ni-indexing-status > a').addClass('active');
+							$('#br-level-2').html($('#ni-indexing-status').text());
+							$('#br-level-2').show();
+							break;
+					}
+					break;
+				case (url.match(/howto-*/) || {}).input:
+					$('#help > a').addClass('active'); // Highlight main menu item
+					$('#help > ul').addClass('show'); // Keep sub-menu item open
+					// Save the state to localStorage
+					localStorage.setItem(submenuStateKey, 'howto');
+					$('#br-level-1').html("<a href='/earkweb/howto'>"+$('#mi-help').text()+"</a>");
+					$('#br-level-1').show();
+					switch(url) {
+						case (url.match(/howto-create-dataset/) || {}).input:
+							$('#ni-howto-create-dataset > a').addClass('active');
+							$('#br-level-2').html($('#ni-howto-create-dataset').text());
+							$('#br-level-2').show();
+							break;
+						case (url.match(/howto-ingest-dataset/) || {}).input:
+							$('#ni-howto-ingest-dataset > a').addClass('active');
+							$('#br-level-2').html($('#ni-howto-ingest-dataset').text());
+							$('#br-level-2').show();
+							break;
+						case (url.match(/howto-use-the-api/) || {}).input:
+							$('#ni-howto-use-the-api > a').addClass('active');
+							$('#br-level-2').html($('#ni-howto-use-the-api').text());
+							$('#br-level-2').show();
+							break;
+					}
+					break;
+			}
+			// Prevent sub-menu from closing when clicking on main menu or sub-menu items
+			$('.nav-item-submenu > a').on('click', function (e) {
+				e.preventDefault();
+				const submenu = $(this).next('.nav-group-sub');
+
+				if (submenu.hasClass('show')) {
+					submenu.removeClass('show');
+					localStorage.removeItem(submenuStateKey); // Clear stored state
+				} else {
+					submenu.addClass('show');
+					const parentId = $(this).parent().attr('id');
+					localStorage.setItem(submenuStateKey, parentId); // Save active state
+				}
+			});
         });
     </script>
 </body>

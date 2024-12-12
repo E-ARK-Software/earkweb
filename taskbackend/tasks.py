@@ -12,6 +12,7 @@ import time
 import traceback
 from urllib.parse import quote
 import uuid
+from typing import Dict
 from pathlib import Path
 from os import walk
 import redis
@@ -30,14 +31,13 @@ from config.configuration import config_path_storage, config_path_work, solr_pro
     solr_host, solr_port, solr_core, representations_directory, verify_certificate, \
     redis_host, redis_port, redis_password, commands, root_dir, metadata_file_pattern_ead, \
     django_service_protocol, django_service_host, django_service_port, \
-    backend_api_key, sw_version
+    backend_api_key, sw_version, documentation_directory, metadata_directory
 from config.configuration import urn_event_pattern, urn_agent_pattern, app_label
 
 from earkweb.celery import app
 from earkweb.decorators import requires_parameters, task_logger
 from earkweb.models import InformationPackage
 from earkweb.views import clean_metadata
-from eatb import VersionDirFormat
 from eatb.utils.datetime import DT_ISO_FORMAT_FILENAME, ts_date
 from eatb.checksum import ChecksumValidation, ChecksumAlgorithm
 from eatb.cli import CliExecution, CliCommand, CliCommands
@@ -1251,8 +1251,11 @@ def write_error_json(working_dir, error_message):
         json.dump(error_data, error_file, indent=2)
 
 
+import os
+import shutil
+
 @app.task(name="initialize_package_from_reception")
-def initialize_package_from_reception(container_path: str, uid: str):
+def initialize_package_from_reception(container_path: str, uid: str, representations: Dict[str, str] = {}):
     working_dir = os.path.join(config_path_work, uid)
     os.makedirs(working_dir, exist_ok=True)
 
@@ -1290,11 +1293,6 @@ def initialize_package_from_reception(container_path: str, uid: str):
         if root_folder != package_name:
             raise ValueError(f"Root folder name '{root_folder}' does not match package name '{package_name}'.")
 
-        # Check for 'metadata' folder
-        metadata_path = os.path.join(working_dir, root_folder, "metadata")
-        if not os.path.isdir(metadata_path):
-            raise ValueError("Root folder must contain a 'metadata' directory.")
-
         # Move contents of root folder to parent directory
         root_folder_path = os.path.join(working_dir, root_folder)
         for item in os.listdir(root_folder_path):
@@ -1304,6 +1302,35 @@ def initialize_package_from_reception(container_path: str, uid: str):
 
         # Remove empty root folder
         os.rmdir(root_folder_path)
+
+        # Check that representation labels are unique
+        if len(representations.values()) != len(set(representations.values())):
+            raise ValueError("Labels are not unique.")        
+        
+        # Check if list of labels matches list of directories
+        representations_path = os.path.join(working_dir, representations_directory)
+        list_of_labels = list(set(representations.values()))
+        list_of_directories = list(os.listdir(representations_path))
+        if list_of_labels != list_of_directories:
+            raise ValueError(f"List of labels {list_of_labels} does not match list of directories {list_of_directories} in {representations_path}")
+        
+        # Create a mapping of representations and rename the folders
+        representations_by_label = {value: key for key, value in representations.items()}
+        for label, representation_id in representations_by_label.items():
+            src = os.path.join(representations_path, label)
+            dest = os.path.join(representations_path, representation_id)
+
+            # Ensure src exists before renaming
+            if not os.path.isdir(src):
+                raise ValueError(f"Source directory {src} does not exist.")
+
+            # Ensure destination does not already exist
+            if os.path.isdir(dest):
+                raise ValueError(f"Destination directory {dest} already exists.")
+
+            # Rename the representation folders
+            shutil.move(src, dest)
+
 
     except ValueError as e:
         write_error_json(working_dir, str(e))
