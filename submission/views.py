@@ -1,5 +1,6 @@
 import datetime
 import json
+from math import e
 import os
 import shutil
 import string
@@ -11,6 +12,9 @@ import django_tables2 as tables
 import pycountry
 import requests
 import simplejson
+import tempfile
+import mimetypes
+from requests.auth import HTTPBasicAuth
 from rdflib import Literal
 from celery.result import AsyncResult
 from django.contrib.auth.decorators import login_required
@@ -35,13 +39,16 @@ from eatb.utils.randomutils import get_unique_id
 from eatb.utils.fileutils import get_immediate_subdirectories, find_files
 from eatb.utils.fileutils import encode_identifier, decode_identifier
 from eatb.utils.stringutils import safe_path_string
+from eatb.checksum import ChecksumFile, ChecksumAlgorithm
+from config.configuration import flower_user
+from config.configuration import flower_password
 from config.configuration import documentation_directory, representations_directory, \
     flower_service_url, node_namespace_id, \
     package_access_url_pattern, repo_id, repo_title, repo_description, repo_catalogue_issued, \
     repo_catalogue_modified, \
     verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, \
-    accepted_identifier_examples
-from config.configuration import config_path_work
+    django_service_url, accepted_identifier_examples, config_max_http_download
+from config.configuration import config_path_work, config_path_reception
 from config.configuration import identifier_pattern
 from earkweb.models import InformationPackage
 from earkweb.models import Representation, InternalIdentifier, Vocabulary
@@ -49,6 +56,7 @@ from util.djangoutils import get_unused_identifier, get_user_api_token
 from taskbackend.taskexecution import execute_task
 from taskbackend.taskutils import extract_and_remove_package, \
     get_celery_worker_status, flower_is_running, get_task_info_from_child_tasks
+from taskbackend.tasks import initialize_package_from_reception
 
 from submission.forms import MetaFormStep1, MetaFormStep2, TinyUploadFileForm, \
     MetaFormStep4, MetaFormStep3, MetaFormStep5
@@ -111,6 +119,32 @@ def fileresource(request, item, ip_sub_file_path):
     elif request.method == "POST":
         # POST is translated to delete (kv-file-explorer triggers post request for delete action)
         response = requests.delete(url, headers={'Authorization': 'Token %s' % user_api_token}, verify=verify_certificate)
+        return JsonResponse({'success': True}, status=response.status_code)
+
+
+@login_required
+@csrf_exempt
+def receptionresource(request, ip_sub_file_path):
+    user_api_token = get_user_api_token(request.user)
+    schema, domain = get_domain_scheme(request.headers.get("Referer"))
+    url = f"{schema}://{domain}/earkweb/api/reception/file-resource/{ip_sub_file_path}/"
+    if request.method == "GET":
+        response = requests.get(
+            url, 
+            headers={'Authorization': f'Token {user_api_token}'}, 
+            verify=verify_certificate, 
+            timeout=10
+        )
+        content_type = response.headers['content-type']
+        return HttpResponse(response.content, content_type=content_type)
+    elif request.method == "POST":
+        # POST is translated to delete (kv-file-explorer triggers post request for delete action)
+        response = requests.delete(
+            url, 
+            headers={'Authorization': f'Token {user_api_token}'}, 
+            verify=verify_certificate, 
+            timeout=10
+        )
         return JsonResponse({'success': True}, status=response.status_code)
 
 
@@ -187,6 +221,35 @@ def upload(request):
     return HttpResponse(template.render(context=context, request=request))
 
 
+def reception_task_status(request, task_id):
+    """Get celery task status from flower"""
+    # Flower task info URL
+    flower_url = f'{flower_service_url}api/task/info/{task_id}'
+    
+    # Flower authentication details (replace with your actual credentials)
+    # flower_user = f'{flower_user}'
+    # flower_password = f'{flower_password}'
+
+    try:
+        # Make an authenticated GET request to Flower's API to get task status
+        response = requests.get(flower_url, auth=HTTPBasicAuth(flower_user, flower_password))
+        
+        # If the request is successful, pass the data back as JSON
+        if response.status_code == 200:
+            task_info = response.json()
+            return JsonResponse({
+                "status": task_info.get('state'),
+                "result": task_info.get('result'),
+                "info": task_info
+            })
+        else:
+            return JsonResponse({"error": "Failed to fetch task status from Flower."}, status=response.status_code)
+
+    except requests.exceptions.RequestException as e:
+        # Handle any network-related errors
+        return JsonResponse({"error": str(e)}, status=500)
+    
+
 @login_required
 @csrf_exempt
 def ip_upload(request):
@@ -235,6 +298,80 @@ def ip_upload(request):
     context = {
     }
     return HttpResponse(template.render(context=context, request=request))
+
+
+@login_required
+@csrf_exempt
+def upload_packaged_sip(request):
+    """Upload files to information package"""
+    if request.method == "POST":
+        posted_files = request.FILES
+        if 'file_data' not in posted_files:
+            return JsonResponse({'error': "No files available"}, status=500)
+        else:
+
+            file_data = posted_files['file_data']
+            filename = file_data.name
+            file_path = os.path.join(config_path_reception, filename)
+
+            with open(file_path, 'wb+') as destination:
+                for chunk in posted_files['file_data'].chunks():
+                    destination.write(chunk)
+
+            if os.path.exists(file_path):
+                logger.info(f"Temporary fle created at: {file_path}")       
+            else:
+                raise FileNotFoundError(f"File not created at: {file_path}")   
+            
+            # pylint: disable-next=no-member
+            uid = get_unique_id()
+            package_name = '.'.join(filename.split('.')[:-1])
+            # pylint: disable-next=no-member
+            InformationPackage.objects.create(
+                work_dir=os.path.join(config_path_work, uid), uid=uid,
+                package_name=package_name, external_id="", user=request.user, version=0
+            )
+            
+            # pylint: disable-next=no-member
+            ip = InformationPackage.objects.get(uid=uid)
+
+            
+            job = initialize_package_from_reception.delay(
+                container_path=file_path,
+                uid=uid
+            )
+            
+            # Detect MIME type
+            mime_type, _ = mimetypes.guess_type(file_path)
+            mime_type = mime_type or "application/octet-stream"
+            sha256 = ChecksumFile(file_path).get(ChecksumAlgorithm.SHA256)
+
+            file_upload_resp = {
+                "ver": "1.0",
+                "ret": True,
+                "errcode": 0,
+                "data": {
+                    "status": "File upload successful success",
+                    "originalFilename": filename,
+                    "fileName": filename,
+                    "mimeType": mime_type,
+                    "fileSize": 255997,
+                    "sha256Hash": sha256,
+                    "uid": uid,
+                    "jobid": job.id
+                }
+
+            }
+            return JsonResponse(file_upload_resp, status=201)
+    else:
+        template = loader.get_template('submission/upload.html')
+    context = {
+        "max_upload_file_size": config_max_http_download,
+        "flower_service_url": flower_service_url,
+        "django_service_url": django_service_url,        
+    }
+    return HttpResponse(template.render(context=context, request=request))
+
 
 def upload_step1(request, pk):
     # pylint: disable-next=no-member

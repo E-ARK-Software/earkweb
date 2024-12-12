@@ -76,6 +76,10 @@ urlpatterns = [
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/(?P<datatype>[a-z0-9]{1,20})/upload/$',
         views.UploadFile.as_view()),
 
+    re_path(r'^reception/dir-json$', views.reception_dir_json),
+
+    re_path(r'^reception/file-resource/(?P<ip_sub_file_path>.*)/$', views.reception_file_resource),
+
     re_path(r'^ips/(?P<uid>[a-z0-9\-]{36,36})/dir-json$', views.do_working_dir_dir_json),
 
     # endpoints which require direct access to the storage backend

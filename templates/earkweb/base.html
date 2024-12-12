@@ -253,6 +253,7 @@
 							<a href="#" class="nav-link"><i class="fas fa-boxes"></i> <span id="mi-submission">{% trans 'Submission' %}</span></a>
 							<ul class="nav nav-group-sub" data-submenu-title="Data sets">
 								<li id="ni-submission-start" class="nav-item"><a href="/earkweb/submission/start" class="nav-link">{% trans 'NavNewSubmission' %}</a></li>
+								<li id="ni-submission-upload-packaged-sip" class="nav-item"><a href="/earkweb/submission/upload-packaged-sip" class="nav-link">{% trans 'Upload data packages' %}</a></li>
 								<li id="ni-submission-overview" class="nav-item"><a href="/earkweb/submission/overview" class="nav-link">{% trans 'NavOpenSubmissions' %}</a></li>
 							</ul>
 						</li>
@@ -392,6 +393,10 @@
                     switch(url) {
                     	case (url.match(/submission\/start/) || {}).input:
                     	$('#br-level-2').html($('#ni-submission-start').text());
+                    	$('#br-level-2').show();
+                    	break;
+                    	case (url.match(/submission\/upload-packaged-sip/) || {}).input:
+                    	$('#br-level-2').html($('#ni-submission-upload-packaged-sip').text());
                     	$('#br-level-2').show();
                     	break;
                     	case (url.match(/submission\/overview/) || {}).input:

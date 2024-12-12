@@ -5,6 +5,7 @@ import gettext
 import io
 import json
 import os
+import re
 import shutil
 import tarfile
 import time
@@ -57,6 +58,7 @@ from eatb.utils.fileutils import to_safe_filename, find_files, \
     strip_prefixes, remove_protocol
 from eatb.utils.randomutils import get_unique_id
 from eatb.storage import write_inventory_from_directory, update_storage_with_differences, get_previous_version_series
+from eatb.packaging import ZipContainer, TarContainer
 from taskbackend.taskutils import get_working_dir, validate_ead_metadata, get_first_ip_path, \
     create_or_update_state_info_file, persist_state, update_status, find_metadata_file 
 
@@ -1233,6 +1235,94 @@ def generate_wordcloud_task():
         f.write(buffer.getvalue())
     
     logger.info(f"Word cloud image saved at {image_path}")
+
+
+RESERVED_WORDS = {"representations", "schemas", "metadata", "documentation"}
+ALLOWED_EXTENSIONS = {".zip", ".tar", ".tar.gz"} 
+FILENAME_REGEX = re.compile(r"^[a-zA-Z0-9.\-_]*$")
+
+def write_error_json(working_dir, error_message):
+    error_data = {
+        "status": "error",
+        "message": error_message
+    }
+    error_file_path = os.path.join(working_dir, "error.json")
+    with open(error_file_path, "w") as error_file:
+        json.dump(error_data, error_file, indent=2)
+
+
+@app.task(name="initialize_package_from_reception")
+def initialize_package_from_reception(container_path: str, uid: str):
+    working_dir = os.path.join(config_path_work, uid)
+    os.makedirs(working_dir, exist_ok=True)
+
+    try:
+        # Validate the container's file extension
+        extension = next((ext for ext in ALLOWED_EXTENSIONS if container_path.endswith(ext)), None)
+        if not extension:
+            raise ValueError("Container must have a .zip, .tar, or .tar.gz extension.")
+
+        # Validate the file name
+        base_filename = os.path.basename(container_path)
+        if not FILENAME_REGEX.match(base_filename):
+            raise ValueError("Filename contains invalid characters.")
+
+        # Derive the package name
+        package_name = re.sub(r"(\.tar\.gz|\.tar|\.zip)$", "", base_filename)
+
+        # Ensure the package name is not reserved
+        if package_name in RESERVED_WORDS:
+            raise ValueError(f"Package name '{package_name}' is a reserved word.")
+
+        # Extract the container
+        if extension in {".tar", ".tar.gz"}:
+            container = TarContainer(container_path)
+        else:
+            container = ZipContainer(container_path)
+        container.extract(extract_to=working_dir)
+
+        # Verify root folder structure
+        root_contents = os.listdir(working_dir)
+        if len(root_contents) != 1 or not os.path.isdir(os.path.join(working_dir, root_contents[0])):
+            raise ValueError("Container must contain a single root folder.")
+
+        root_folder = root_contents[0]
+        if root_folder != package_name:
+            raise ValueError(f"Root folder name '{root_folder}' does not match package name '{package_name}'.")
+
+        # Check for 'metadata' folder
+        metadata_path = os.path.join(working_dir, root_folder, "metadata")
+        if not os.path.isdir(metadata_path):
+            raise ValueError("Root folder must contain a 'metadata' directory.")
+
+        # Move contents of root folder to parent directory
+        root_folder_path = os.path.join(working_dir, root_folder)
+        for item in os.listdir(root_folder_path):
+            src = os.path.join(root_folder_path, item)
+            dest = os.path.join(working_dir, item)
+            shutil.move(src, dest)
+
+        # Remove empty root folder
+        os.rmdir(root_folder_path)
+
+    except ValueError as e:
+        write_error_json(working_dir, str(e))
+        raise
+
+
+
+    # package_name = filename
+    # extuid = ""
+    
+    # working_dir = os.path.join(config_path_work, uid)
+    # os.makedirs(os.path.join(working_dir, documentation_directory), exist_ok=True)
+    # os.makedirs(os.path.join(working_dir, representations_directory), exist_ok=True)
+    # os.makedirs(os.path.join(working_dir, metadata_directory), exist_ok=True)
+    
+    # state_data = json.dumps({"version": 0, "last_change": date_format(datetime.datetime.utcnow(), fmt=DT_ISO_FORMAT)})
+    # os.makedirs(os.path.join(working_dir, "metadata/other"), exist_ok=True)
+    # with open(os.path.join(working_dir, "metadata/other/state.json"), 'w') as status_file:
+    #     status_file.write(state_data)
 
 
 @app.task(name="backend_available")

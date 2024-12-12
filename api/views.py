@@ -44,7 +44,7 @@ from taskbackend.ip_state import IpState
 from taskbackend.tasks import aip_indexing, \
     delete_representation_data_from_workdir, \
     sip_package
-from config.configuration import config_path_work, config_path_storage, file_size_limit, \
+from config.configuration import config_path_work, config_path_storage, config_path_reception, file_size_limit, \
     representations_directory, config_max_http_download, node_namespace_id, default_org
 from rest_framework.views import APIView
 from rest_framework import status
@@ -423,6 +423,39 @@ def do_working_dir_file_resource(request, uid, ip_sub_file_path):
             return HttpResponseNotFound("Information package object not found in database")
     else:
         raise ValueError("Method not supported")
+    
+
+@csrf_exempt
+@api_view(['GET', 'DELETE'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
+def reception_file_resource(request, ip_sub_file_path):
+    """
+    get: Retrieve file resource (database, file system)
+
+    Retrieve file resource from the working area's file system.
+    For example, the following is a request to retrieve a metadata file named `metadata.json` from  the metadata folder
+    in the working directory:
+
+        http://localhost:8000/earkweb/api/ips/cb755987-9e83-4e71-b000-dea9324e5dea/file-resource/metadata%2Fmetadata.json/
+
+    delete: Remove file resource (database, working area)
+
+    Retrieve file resource
+    """
+    file_path = os.path.join(config_path_reception, ip_sub_file_path)
+    if not file_path.startswith(config_path_reception):
+        return HttpResponseForbidden({"message": "Invalid file path"})
+    if request.method == 'GET':
+        return read_file(file_path)
+    elif request.method == 'DELETE':
+        os.remove(file_path)
+        if not os.path.exists(file_path):
+            return JsonResponse({"message": "File successfully removed"}, status=200)
+        else:
+            return HttpResponseForbidden({"message": "Unable to remove file"})
+    else:
+        raise ValueError("Method not supported")
 
 
 @csrf_exempt
@@ -593,6 +626,19 @@ def get_ip_representations_info(_, identifier):
 @api_view(['GET'])
 @authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
 @permission_classes((IsAuthenticated,))
+def reception_dir_json(request):
+    """
+    get: List directory content as JSON (working area)
+
+    List directory content as JSON
+    """
+    return directory_json(request, "reception", item=None)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
+@permission_classes((IsAuthenticated,))
 def do_working_dir_dir_json(request, uid):
     """
     get: List directory content as JSON (working area)
@@ -635,9 +681,11 @@ def directory_json(request, area, item):
 
     """
     version = 0  # N/A
-    if area not in ["work", "storage"]:
+    if area not in ["work", "storage", "reception"]:
         return JsonResponse({"message": "Area not defined."}, status=404)
     access_path = None
+    if area == "reception":
+        access_path = config_path_reception
     if area == "work":
         access_path = config_path_work
     elif area == "storage":
@@ -669,6 +717,7 @@ def directory_json(request, area, item):
         item_path = item
     if area == "storage":
         item_path = ""
+    item_path = "." if not item_path else item_path
     if not os.path.exists(os.path.join(access_path, item_path)):
         return JsonResponse({
             "message": "Access path does not exist: %s" %
@@ -678,6 +727,8 @@ def directory_json(request, area, item):
         return JsonResponse(get_directory_json(access_path, item_path), status=200)
     elif area == "storage":
         return JsonResponse(get_directory_json(access_path, "../"), status=200)
+    elif area == "reception":
+        return JsonResponse(get_directory_json(access_path, "."), status=200)
 
 
 
