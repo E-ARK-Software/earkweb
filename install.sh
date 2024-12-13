@@ -7,9 +7,8 @@ set -e  # Exit on any error
 # Define variables
 USER="${USER}"
 GROUP="${GROUP}"
-EARkWEB_REPO="https://github.com/E-ARK-Software/earkweb.git"
-STATIC_DIR="static"
 
+# Colours for terminal messages
 HEADER="\e[34m"
 OKGREEN="\e[92m"
 WARN="\e[93m"
@@ -134,7 +133,7 @@ check_directory() {
 # Update system and install dependencies
 echo_highlight_header $HEADER 'System dependencies'
 if confirm_with_enter "Do you want to install system dependencies? This will update and upgrade system packages and \
-then installs the following packages: python3 python3-dev python3-pip python3-virtualenv \
+then install the following packages: python3 python3-dev python3-pip python3-virtualenv \
 build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev gettext \
 curl gnupg apt-transport-https mysql-server redis-server; sudo required)?"; then
     echo "Proceeding with installing system dependencies with apt-get..."
@@ -165,15 +164,15 @@ if confirm_with_enter "Do you want to proceed with installing earkweb?"; then
     # Set ownership fallback to current user and group
     DESIRED_USER="${USER}"  # Default to the current logged-in user
     DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
-    echo "Using ownership fallback: ${DESIRED_USER}:${DESIRED_GROUP}"
+    echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
 
     # Prompt for Variables
     LOG_DIR=$(prompt_with_default "Enter earkweb log directory (press Enter to use the default)" "/var/log/earkweb")
     CELERY_LOG_DIR=$(prompt_with_default "Enter celery log directory (press Enter to use the default)" "/var/log/celery")
-    STORAGE_DIR=$(prompt_with_default "Enter earkweb data directory (press Enter to use the default)" "/var/data/repo/storage")
-    WORK_DIR=$(prompt_with_default "Enter earkweb data directory (press Enter to use the default)" "/var/data/repo/work")
-    RECEPTION_DIR=$(prompt_with_default "Enter earkweb data directory (press Enter to use the default)" "/var/data/repo/reception")
-    ACCESS_DIR=$(prompt_with_default "Enter earkweb data directory (press Enter to use the default)" "/var/data/repo/access")
+    STORAGE_DIR=$(prompt_with_default "Enter earkweb storage directory (press Enter to use the default)" "/var/data/repo/storage")
+    WORK_DIR=$(prompt_with_default "Enter earkweb work directory (press Enter to use the default)" "/var/data/repo/work")
+    RECEPTION_DIR=$(prompt_with_default "Enter earkweb reception directory (press Enter to use the default)" "/var/data/repo/reception")
+    ACCESS_DIR=$(prompt_with_default "Enter earkweb access directory (press Enter to use the default)" "/var/data/repo/access")
 
     # Setup Python virtual environment
     virtualenv -p python3 venv
@@ -250,8 +249,9 @@ token = Token.objects.create(user=u)
 token.save()
 print(f"Generated token for admin user: {token.key}")
 EOF
+    echo_highlight $OKGREEN "Setting up and initialising the mysql database completed"
 else
-    echo_highlight $WARN "Database initialisation skipped."
+    echo_highlight $WARN "Setting up and initialising the mysql database skipped."
 fi
 
 # Installing RabbitMQ and Redis
