@@ -8,6 +8,9 @@ set -e  # Exit on any error
 USER="${USER}"
 GROUP="${GROUP}"
 
+# supervisor configuration
+SUPERVISOR_CONFIG_DIR=/etc/supervisor/conf.d/
+
 # Colours for terminal messages
 HEADER="\e[34m"
 OKGREEN="\e[92m"
@@ -268,9 +271,10 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
     echo_highlight_header $HEADER 'Installing and configuring supervisor'
     if confirm_with_key "Do you want to install and configure supervisor (sudo required)?\n"; then
         echo "Proceeding with installing supervisor..."
-        SUPERVISOR_CONFIG_DIR=/etc/supervisor/conf.d/
         sudo apt update
         sudo apt install supervisor
+        sudo systemctl enable supervisor
+        sudo systemctl start supervisor
         # Ensure the user is in the correct directory
         if ! check_directory; then
             echo_highlight $FAIL "Please ensure you are running this script from within the cloned 'earkweb' repository."
@@ -286,22 +290,26 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
         echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
         # copy config files
         sudo cp $EARKWEB_DIR/config/supervisor/*.cfg $SUPERVISOR_CONFIG_DIR
-	FILES_TO_UPDATE=(
-	    "${SUPERVISOR_CONFIG_DIR}earkweb.conf"
-	    "${SUPERVISOR_CONFIG_DIR}celery.conf"
-	    "${SUPERVISOR_CONFIG_DIR}beat.conf"
-	    "${SUPERVISOR_CONFIG_DIR}flower.conf"
-	    "${SUPERVISOR_CONFIG_DIR}solr.conf"
-	)
-	for file in "${FILES_TO_UPDATE[@]}"; do
-	    sudo sed -i "s|^\(user\s*=\s*\).*|\1$DESIRED_USER|" "$file"
-	    sudo sed -i "s|^\(group\s*=\s*\).*|\1$DESIRED_GROUP|" "$file" 
-	    if [[ "$file" == *solr.conf ]]; then
-	        echo "The file ends with solr.conf"
-	    else
-                sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb/|\1$EARKWEB_DIR|" "$file"
-	    fi
-	done
+        MODULES_TO_UPDATE=(
+            "earkweb"
+            "celery"
+            "beat"
+            "flower"
+        )
+        log "Updating supvervisor configuration files"
+        for module in "${MODULES_TO_UPDATE[@]}"; do
+            FILE_TO_UPDATE="${SUPERVISOR_CONFIG_DIR}$module.conf"
+            sudo sed -i "s|^\(directory\s*=\s*\).*|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
+            sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
+            sudo sed -i "s|^\(user\s*=\s*\).*|\1$DESIRED_USER|" "$FILE_TO_UPDATE"
+            sudo sed -i "s|^\(group\s*=\s*\).*|\1$DESIRED_GROUP|" "$FILE_TO_UPDATE"
+            sudo sed -i "s|^\(stdout_logfile\s*=\s*\).*|\1$LOG_DIR/$module.log|" "$FILE_TO_UPDATE"
+            sudo sed -i "s|^\(stderr_logfile\s*=\s*\).*|\1$LOG_DIR/$module.err|" "$FILE_TO_UPDATE"
+        done
+
+        log "Re-read supervisor configuration"
+        sudo supervisorctl reread
+        sudo supervisorctl update
     else
         echo_highlight $WARN "Supervisor installation skipped."
     fi
@@ -519,6 +527,24 @@ if confirm_with_key "Do you want to proceed with installing solr (sudo required)
     log "Restarting Solr..."
     "$SOLR_DIR/bin/solr" stop
     "$SOLR_DIR/bin/solr" start
+
+    # Update supervisor configuration if file is present
+    if [[ ! -f "$SUPERVISOR_CONFIG_DIR/solr.conf" ]]; then
+        FILE_TO_UPDATE=$SUPERVISOR_CONFIG_DIR/solr.conf
+        sudo sed -i "s|^\(directory\s*=\s*\).*|\1$SOLR_DIR|" "$FILE_TO_UPDATE"
+        sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
+        sudo sed -i "s|^\(user\s*=\s*\).*|\1$DESIRED_USER|" "$FILE_TO_UPDATE"
+        sudo sed -i "s|^\(group\s*=\s*\).*|\1$DESIRED_GROUP|" "$FILE_TO_UPDATE"
+        sudo sed -i "s|^\(stdout_logfile\s*=\s*\).*|\1$LOG_DIR/solr.log|" "$FILE_TO_UPDATE"
+        sudo sed -i "s|^\(stderr_logfile\s*=\s*\).*|\1$LOG_DIR/solr.err|" "$FILE_TO_UPDATE"
+        
+        log "Re-read supervisor configuration"
+        sudo supervisorctl reread
+        sudo supervisorctl update
+    else
+        echo_highlight $WARN "Error: Missing $SUPERVISOR_CONFIG_DIR/solr.conf file, supervisor is not configured."
+    fi
+
     echo_highlight $OKGREEN "Installation of Solr completed"
 else
     echo_highlight $WARN "Solr installation skipped."
