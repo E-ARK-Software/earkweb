@@ -288,8 +288,7 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
         DESIRED_USER="${USER}"  # Default to the current logged-in user
         DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
         echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
-        # copy config files
-        sudo cp $EARKWEB_DIR/config/supervisor/*.conf $SUPERVISOR_CONFIG_DIR
+        
         MODULES_TO_UPDATE=(
             "earkweb"
             "celery"
@@ -298,6 +297,9 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
         )
         log "Updating supvervisor configuration files"
         for module in "${MODULES_TO_UPDATE[@]}"; do
+            # copy config file
+            sudo cp $EARKWEB_DIR/config/supervisor/$module.conf $SUPERVISOR_CONFIG_DIR
+            # update file
             FILE_TO_UPDATE="${SUPERVISOR_CONFIG_DIR}$module.conf"
             sudo sed -i "s|^\(directory\s*=\s*\).*|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
             sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
@@ -528,6 +530,7 @@ if confirm_with_key "Do you want to proceed with installing solr (sudo required)
     "$SOLR_DIR/bin/solr" stop
     "$SOLR_DIR/bin/solr" start
 
+    sudo cp $EARKWEB_DIR/config/supervisor/solr.conf $SUPERVISOR_CONFIG_DIR
     # Update supervisor configuration if file is present
     if [[ ! -f "$SUPERVISOR_CONFIG_DIR/solr.conf" ]]; then
         FILE_TO_UPDATE=$SUPERVISOR_CONFIG_DIR/solr.conf
