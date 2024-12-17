@@ -64,7 +64,7 @@ function start_solr_if_not_running() {
         log "Solr is not running. Starting Solr..."
         "$SOLR_DIR/bin/solr" start || error_exit "Failed to start Solr."
     elif echo "$solr_status" | grep -q "Found .* Solr nodes"; then
-        echo_hightlight $OKGREEN "Solr is already running."
+        echo_highlight $OKGREEN "Solr is already running."
     else
         echo_highlight $WARN "Unable to determine Solr status. Attempting to start Solr..."
         "$SOLR_DIR/bin/solr" start || error_exit "Failed to start Solr."
