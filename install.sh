@@ -289,7 +289,7 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
         DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
         echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
         # copy config files
-        sudo cp $EARKWEB_DIR/config/supervisor/*.cfg $SUPERVISOR_CONFIG_DIR
+        sudo cp $EARKWEB_DIR/config/supervisor/*.conf $SUPERVISOR_CONFIG_DIR
         MODULES_TO_UPDATE=(
             "earkweb"
             "celery"
