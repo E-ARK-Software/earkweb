@@ -532,7 +532,7 @@ if confirm_with_key "Do you want to proceed with installing solr (sudo required)
 
     sudo cp $EARKWEB_DIR/config/supervisor/solr.conf $SUPERVISOR_CONFIG_DIR
     # Update supervisor configuration if file is present
-    if [[ ! -f "$SUPERVISOR_CONFIG_DIR/solr.conf" ]]; then
+    if [[ ! -f "${SUPERVISOR_CONFIG_DIR}solr.conf" ]]; then
         FILE_TO_UPDATE=$SUPERVISOR_CONFIG_DIR/solr.conf
         sudo sed -i "s|^\(directory\s*=\s*\).*|\1$SOLR_DIR|" "$FILE_TO_UPDATE"
         sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb|\1$EARKWEB_DIR|" "$FILE_TO_UPDATE"
