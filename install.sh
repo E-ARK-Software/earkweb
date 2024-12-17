@@ -45,15 +45,25 @@ function prompt_with_default() {
     read -p "${prompt_message} [${default_value}]: " input_value
     echo "${input_value:-$default_value}"
 }
+# Function to check if Solr is available
+check_solr() {
+    curl --silent --fail "$SOLR_URL" > /dev/null
+}
+
 
 function start_solr_if_not_running() {
     log "Checking if Solr is running..."
     local solr_status
     solr_status=$("$SOLR_DIR/bin/solr" status 2>/dev/null || true)
-    if echo "$solr_status" | grep -q "running"; then
-        log "Solr is already running."
-    else
+
+    # Check if the status explicitly says "No Solr nodes are running"
+    if echo "$solr_status" | grep -q "No Solr nodes are running"; then
         log "Solr is not running. Starting Solr..."
+        "$SOLR_DIR/bin/solr" start || error_exit "Failed to start Solr."
+    elif echo "$solr_status" | grep -q "Found .* Solr nodes"; then
+        echo_hightlight $OKGREEN "Solr is already running."
+    else
+        echo_highlight $WARN "Unable to determine Solr status. Attempting to start Solr..."
         "$SOLR_DIR/bin/solr" start || error_exit "Failed to start Solr."
     fi
 }
@@ -72,10 +82,12 @@ confirm_solr_core_deletion() {
     esac
 }
 
-function confirm_with_enter() {
+function confirm_with_key() {
     local prompt_message=$1
-    read -p "${prompt_message} (Press Enter to confirm, any other key to cancel): " input
-    if [[ -z "$input" ]]; then
+    echo -e -n "${prompt_message}(Press 'y' to confirm, any other key to skip this step):\n"
+    read -n1 -s input  # Read a single keypress silently (-s for no echo)
+    echo  # Print a new line for cleaner output
+    if [[ "$input" == "y" || "$input" == "Y" ]]; then
         return 0  # Confirmed
     else
         return 1  # Canceled
@@ -132,14 +144,13 @@ check_directory() {
 
 # Update system and install dependencies
 echo_highlight_header $HEADER 'System dependencies'
-if confirm_with_enter "Do you want to install system dependencies? This will update and upgrade system packages and \
-then install the following packages: python3 python3-dev python3-pip python3-virtualenv \
-build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev gettext \
-curl gnupg apt-transport-https mysql-server redis-server; sudo required)?"; then
+if confirm_with_key "The system requires the following system packages:\npython3 python3-dev python3-pip python3-virtualenv \
+build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev gettext default-jre \
+curl gnupg apt-transport-https mysql-server redis-server\nDo you want to install the system packages (sudo required)?\n"; then
     echo "Proceeding with installing system dependencies with apt-get..."
     sudo apt-get update -y && sudo apt-get upgrade -y
     sudo apt-get install -y python3 python3-dev python3-pip python3-virtualenv \
-      build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev gettext \
+      build-essential default-libmysqlclient-dev libmysqlclient-dev libicu-dev gettext default-jre \
       curl gnupg apt-transport-https mysql-server redis-server
     echo_highlight $OKGREEN "Installing dependencies completed"
 else
@@ -148,7 +159,7 @@ fi
 
 # Installing earkweb
 echo_highlight_header $HEADER 'Installing earkweb'
-if confirm_with_enter "Do you want to proceed with installing earkweb?"; then
+if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
     echo "Proceeding with installing earkweb..."
     
     # Ensure the user is in the correct directory
@@ -187,9 +198,9 @@ if confirm_with_enter "Do you want to proceed with installing earkweb?"; then
     set_permissions "$LOG_DIR" "$DESIRED_USER" "$DESIRED_GROUP"
     sudo mkdir -p $CELERY_LOG_DIR
     set_permissions "$CELERY_LOG_DIR" "$DESIRED_USER" "$DESIRED_GROUP"
-    sudo mkdir -p $STORAGE_DIR/storage/pairtree_root
+    sudo mkdir -p $STORAGE_DIR/pairtree_root
     set_permissions "$STORAGE_DIR" "$DESIRED_USER" "$DESIRED_GROUP"
-    sudo touch $INSTALL_DIR/storage/pairtree_version0_1
+    sudo touch $STORAGE_DIR/pairtree_version0_1
     sudo mkdir -p $WORK_DIR
     set_permissions "$WORK_DIR" "$DESIRED_USER" "$DESIRED_GROUP"
     sudo mkdir -p $RECEPTION_DIR
@@ -215,6 +226,86 @@ if confirm_with_enter "Do you want to proceed with installing earkweb?"; then
     MEDIA_ROOT=$STATIC_ROOT_TARGET/media/
     sudo mkdir -p $MEDIA_ROOT
     set_permissions "$MEDIA_ROOT" "$DESIRED_USER" "$DESIRED_GROUP"
+ 
+    # Adapt earkweb configuration
+    echo_highlight_header $HEADER 'Adapt earkweb configuration'
+    if confirm_with_key "Do you want to proceed with adapting the earkweb configuration ($EARKWEB_SETTINGS_PATH)?\n"; then
+        echo "Proceeding with adapting the earkweb configuration ($EARKWEB_SETTINGS_PATH)..."
+        # Check if the settings file exists
+        if [[ ! -f "$EARKWEB_SETTINGS_PATH" ]]; then
+            echo_highlight $FAIL "Error: Settings file not found at $EARKWEB_SETTINGS_PATH"
+            exit 1
+        fi
+
+        # Update the settings file using sed
+        sed -i "s|^\(config_path_storage\s*=\s*\).*|\1$STORAGE_DIR|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(config_path_work\s*=\s*\).*|\1$WORK_DIR|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(config_path_reception\s*=\s*\).*|\1$RECEPTION_DIR|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(config_path_access\s*=\s*\).*|\1$ACCESS_DIR|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(logfile_ui\s*=\s*\).*|\1$LOG_DIR/ui.log|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(logfile_request\s*=\s*\).*|\1$LOG_DIR/request.log|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(logfile_celery\s*=\s*\).*|\1$CELERY_LOG_DIR/request.log|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(logfile_celery_proc\s*=\s*\).*|\1$CELERY_LOG_DIR/logfile_celery_proc.log|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(static_root\s*=\s*\).*|\1$STATIC_ROOT|" "$EARKWEB_SETTINGS_PATH"
+        sed -i "s|^\(media_root\s*=\s*\).*|\1$MEDIA_ROOT|" "$EARKWEB_SETTINGS_PATH"
+
+        echo "Settings file $EARKWEB_SETTINGS_PATH updated:"
+        echo " - config_path_storage: $STORAGE_DIR"
+        echo " - config_path_work: $WORK_DIR"
+        echo " - config_path_reception: $RECEPTION_DIR"
+        echo " - config_path_access: $ACCESS_DIR"
+        echo " - logfile_ui: $LOG_DIR/ui.log"
+        echo " - logfile_celery: $LOG_DIR/request.log"
+        echo " - logfile_celery_proc: $LOG_DIR/logfile_celery_proc.log"
+        echo " - static_root: $STATIC_ROOT"
+        echo " - media_root: $MEDIA_ROOT"
+        echo_highlight $OKGREEN "Adapting earkweb configuration completed"
+
+    else
+        echo_highlight $WARN "Adapting earkweb settings skipped."
+    fi
+
+    echo_highlight_header $HEADER 'Installing and configuring supervisor'
+    if confirm_with_key "Do you want to install and configure supervisor (sudo required)?\n"; then
+        echo "Proceeding with installing supervisor..."
+        SUPERVISOR_CONFIG_DIR=/etc/supervisor/conf.d/
+        sudo apt update
+        sudo apt install supervisor
+        # Ensure the user is in the correct directory
+        if ! check_directory; then
+            echo_highlight $FAIL "Please ensure you are running this script from within the cloned 'earkweb' repository."
+            exit 1
+        fi
+        if [[ ! -d "$current_dir/$earkweb_module" ]]; then
+            echo_highlight $FAIL "Error: Supervisor configuration not found at: $SUPERVISOR_CONFIG_DIR"
+            return 1
+        fi
+        # Set ownership fallback to current user and group
+        DESIRED_USER="${USER}"  # Default to the current logged-in user
+        DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
+        echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
+        # copy config files
+        sudo cp $EARKWEB_DIR/config/supervisor/*.cfg $SUPERVISOR_CONFIG_DIR
+	FILES_TO_UPDATE=(
+	    "${SUPERVISOR_CONFIG_DIR}earkweb.conf"
+	    "${SUPERVISOR_CONFIG_DIR}celery.conf"
+	    "${SUPERVISOR_CONFIG_DIR}beat.conf"
+	    "${SUPERVISOR_CONFIG_DIR}flower.conf"
+	    "${SUPERVISOR_CONFIG_DIR}solr.conf"
+	)
+	for file in "${FILES_TO_UPDATE[@]}"; do
+	    sudo sed -i "s|^\(user\s*=\s*\).*|\1$DESIRED_USER|" "$file"
+	    sudo sed -i "s|^\(group\s*=\s*\).*|\1$DESIRED_GROUP|" "$file" 
+	    if [[ "$file" == *solr.conf ]]; then
+	        echo "The file ends with solr.conf"
+	    else
+                sudo sed -i "s|^\(command\s*=\s*\)/opt/earkweb/|\1$EARKWEB_DIR|" "$file"
+	    fi
+	done
+    else
+        echo_highlight $WARN "Supervisor installation skipped."
+    fi
+
     echo_highlight $OKGREEN "Installing earkweb completed"
 else
     echo_highlight $WARN "Installation of earkweb skipped."
@@ -222,13 +313,14 @@ fi
 
 # Setting up and initialising the mysql database
 echo_highlight_header $HEADER 'Setting up and initialising the mysql database'
-if confirm_with_enter "Do you want to proceed with setting up and initialising the mysql database (sudo required)?"; then
+if confirm_with_key "Do you want to proceed with setting up and initialising the mysql database (sudo required)?\n"; then
     echo "Proceeding with setting up and initialising the mysql database..."
     # Set up MySQL database
     sudo systemctl start mysql
     sudo mysql <<EOF
 CREATE USER 'repo'@'%' IDENTIFIED BY 'repo';
 CREATE DATABASE repodb;
+ALTER DATABASE repodb CHARACTER SET utf8 COLLATE utf8_general_ci;
 GRANT ALL ON repodb.* TO 'repo'@'%';
 EOF
 
@@ -256,7 +348,7 @@ fi
 
 # Installing RabbitMQ and Redis
 echo_highlight_header $HEADER 'Installing RabbitMQ and Redis'
-if confirm_with_enter "Do you want to proceed  with installing RabbitMQ and Redis (sudo required)?"; then
+if confirm_with_key "Do you want to proceed  with installing RabbitMQ and Redis (sudo required)?\n"; then
     echo "Proceeding with installing RabbitMQ and Redis..."
     # Install RabbitMQ
     # Add repository keys
@@ -292,20 +384,55 @@ fi
 
 # Installing Solr
 echo_highlight_header $HEADER 'Installing Solr'
-if confirm_with_enter "Do you want to proceed with installing solr (sudo required)?"; then
+if confirm_with_key "Do you want to proceed with installing solr (sudo required)?\n"; then
     echo "Proceeding with installing solr..."
+
     # Prompt for Variables
+    SOLR_VERSION="8.4.1"
+    SOLR_DIST_FILE=solr-$SOLR_VERSION.tgz
+    #SOLR_DIST_URL=http://archive.apache.org/dist/lucene/solr/${SOLR_VERSION}/solr-${SOLR_VERSION}.tgz
+    SOLR_DIST_URL=https://earkweb.sydarkivera.se/$SOLR_DIST_FILE
     CORE_NAME="storagecore1"
     SOLR_TARGET_DIR=$(prompt_with_default "Enter Solr installation directory (press Enter to use the default)" "/opt/solr")
-    SOLR_DIR="${SOLR_TARGET_DIR}/solr-8.4.1"
+    SOLR_DIR="${SOLR_TARGET_DIR}/solr-$SOLR_VERSION"
     SOLR_CONF_DIR="${SOLR_DIR}/server/solr/${CORE_NAME}/conf"
-    VENV_DIR="${EARKWEB_DIR}/venv"
     SOLR_URL=$(prompt_with_default "Enter Solr base URL (press Enter to use the default)" "http://localhost:8983/solr")
+
+    # Ensure the user is in the correct directory
+    if ! check_directory; then
+    	echo_highlight $FAIL "Please ensure you are running this script from within the cloned 'earkweb' repository."
+    	exit 1
+    fi
+    VENV_DIR="${EARKWEB_DIR}/venv"
 
     # Ensure required dependencies are installed
     check_dependency "curl"
     check_dependency "python3"
 
+    # Set ownership fallback to current user and group
+    DESIRED_USER="${USER}"  # Default to the current logged-in user
+    DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
+    echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
+
+    # create directory, set permissions and change to solr directory
+    echo "creating directory $SOLR_TARGET_DIR ..."    
+    sudo mkdir -p $SOLR_TARGET_DIR
+    set_permissions "$SOLR_TARGET_DIR" "$DESIRED_USER" "$DESIRED_GROUP"
+    cd $SOLR_TARGET_DIR
+
+    echo "downloading solr and unpacking it ..."    
+    # download solr and unpack it
+ 
+    # Check if the file already exists
+    if [ -f "$SOLR_DIST_FILE" ]; then
+        echo "File '$SOLR_DIST_FILE' already exists in the current directory. Skipping download."
+    else
+        echo "File '$SOLR_DIST_FILE' not found. Downloading..."
+        wget "$SOLR_DIST_URK" || { echo_highlight $FAIL "Failed to download $FILE_NAME"; exit 1; }
+        echo_hightlight $OKGREEN "Download complete."
+    fi
+    tar -xzvf solr-${SOLR_VERSION}.tgz
+    
     # Check directories
     [ -d "$SOLR_DIR" ] || error_exit "Solr directory not found: $SOLR_DIR"
     [ -d "$EARKWEB_DIR" ] || error_exit "EarkWeb directory not found: $EARKWEB_DIR"
@@ -320,8 +447,41 @@ if confirm_with_enter "Do you want to proceed with installing solr (sudo require
     (using 'pip3 install -r $EARKWEB_DIR/requirements.txt')."
     fi
 
+    # check java installation
+    if command -v java &> /dev/null; then
+        echo_highlight $OKGREEN "Java is installed."
+        java -version
+    else
+        echo_highlight $FAIL "Java is NOT installed."
+	exit
+    fi
     # Start Solr if not already running
     start_solr_if_not_running
+
+    # Track start time
+    START_TIME=$(date +%s)
+
+    # Time to wait before retrying (in seconds)
+    WAIT_TIME=5
+    
+    # # Timeout in seconds (adjust as needed, e.g., 120 seconds)
+    TIMEOUT=60
+
+    # Wait for Solr to become available
+    echo "Waiting for Solr to become available..."
+    while ! check_solr; do
+        CURRENT_TIME=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+	# Break if timeout is reached
+        if [ "$ELAPSED_TIME" -ge "$TIMEOUT" ]; then
+	    echo_highlight $FAIL "Timeout reached! Solr did not become available after ${TIMEOUT} seconds."
+	    exit 1
+	fi
+	echo "Solr is not yet available. Retrying in $WAIT_TIME seconds... (Elapsed: ${ELAPSED_TIME}s)"
+	sleep "$WAIT_TIME"
+    done
+    echo_highlight $OKGREEN "Solr is now available!"
+
 
     # Delete storagecore1, ask for confirmation
     if confirm_solr_core_deletion "$CORE_NAME"; then
@@ -364,46 +524,9 @@ else
     echo_highlight $WARN "Solr installation skipped."
 fi
 
-# Adapt earkweb configuration
-echo_highlight_header $HEADER 'Adapt earkweb configuration'
-if confirm_with_enter "Do you want to proceed with adapting the earkweb configuration ($EARKWEB_SETTINGS_PATH)?"; then
-    echo "Proceeding with adapting the earkweb configuration ($EARKWEB_SETTINGS_PATH)..."
-    # Check if the settings file exists
-    if [[ ! -f "$EARKWEB_SETTINGS_PATH" ]]; then
-        echo_highlight $FAIL "Error: Settings file not found at $EARKWEB_SETTINGS_PATH"
-        exit 1
-    fi
-
-    # Update the settings file using sed
-    sed -i "s|^\(config_path_storage\s*=\s*\).*|\1$STORAGE_DIR|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(config_path_work\s*=\s*\).*|\1$WORK_DIR|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(config_path_reception\s*=\s*\).*|\1$RECEPTION_DIR|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(config_path_access\s*=\s*\).*|\1$ACCESS_DIR|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(logfile_ui\s*=\s*\).*|\1$LOG_DIR/ui.log|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(logfile_request\s*=\s*\).*|\1$LOG_DIR/request.log|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(logfile_celery\s*=\s*\).*|\1$CELERY_LOG_DIR/request.log|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(logfile_celery_proc\s*=\s*\).*|\1$CELERY_LOG_DIR/logfile_celery_proc.log|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(static_root\s*=\s*\).*|\1$STATIC_ROOT|" "$EARKWEB_SETTINGS_PATH"
-    sed -i "s|^\(media_root\s*=\s*\).*|\1$MEDIA_ROOT|" "$EARKWEB_SETTINGS_PATH"
-
-    echo "Settings file $EARKWEB_SETTINGS_PATH updated:"
-    echo " - config_path_storage: $STORAGE_DIR"
-    echo " - config_path_work: $WORK_DIR"
-    echo " - config_path_reception: $RECEPTION_DIR"
-    echo " - config_path_access: $ACCESS_DIR"
-    echo " - logfile_ui: $LOG_DIR/ui.log"
-    echo " - logfile_celery: $LOG_DIR/request.log"
-    echo " - logfile_celery_proc: $LOG_DIR/logfile_celery_proc.log"
-    echo " - static_root: $STATIC_ROOT"
-    echo " - media_root: $MEDIA_ROOT"
-    echo_highlight $OKGREEN "Adapting earkweb configuration completed"
-
-else
-    echo_highlight $WARN "Adapting earkweb settings skipped."
-fi
 
 # Installation complete
 echo_highlight_header $HEADER 'Installation complete'
 echo "Configure the API key at http://127.0.0.1:8000/earkweb/adminrest_framework_api_key/apikey/"
-echo "Ensure it matches backend_api_key in ${EARKWEB_SETTINGS_PATH}."
+echo "Ensure it matches backend_api_key in the earkweb settings file settings/settings.cfg."
 echo_highlight $OKGREEN "Installation complete."
