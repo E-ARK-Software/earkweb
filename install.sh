@@ -316,6 +316,10 @@ if confirm_with_key "Do you want to proceed with installing earkweb?\n"; then
         echo_highlight $WARN "Supervisor installation skipped."
     fi
 
+    # creating directory for uwsgi pidfile
+    sudo mkdir -p /var/run/uwsgi/earkweb/
+    sudo chown ${DESIRED_USER}:${DESIRED_GROUP} /var/run/uwsgi/earkweb
+
     echo_highlight $OKGREEN "Installing earkweb completed"
 else
     echo_highlight $WARN "Installation of earkweb skipped."
@@ -553,6 +557,83 @@ else
     echo_highlight $WARN "Solr installation skipped."
 fi
 
+# Installing Nginx
+echo_highlight_header $HEADER 'Installing and configuring Nginx'
+if confirm_with_key "Do you want to proceed  with installing and configuring Nginx (sudo required)?\n"; then
+    echo "Proceeding with installing and configuring Nginx..."
+    sudo apt update
+    sudo apt install nginx
+
+    # Set ownership fallback to current user and group
+    DESIRED_USER="${USER}"  # Default to the current logged-in user
+    DESIRED_GROUP="$(id -gn)"  # Get the current user's primary group
+    echo "Using ownership: ${DESIRED_USER}:${DESIRED_GROUP}"
+
+    # Ensure the user is in the correct directory
+    if ! check_directory; then
+        echo_highlight $FAIL "Please ensure you are running this script from within the cloned 'earkweb' repository."
+        exit 1
+    fi
+
+    # Define the variables
+    CONFIG_NAME="earkweb"  # Replace with your configuration file name
+    SOURCE_PATH="$EARKWEB_DIR/config/$CONFIG_NAME"  # Replace with the actual path to your config file
+    NGINX_AVAILABLE="/etc/nginx/sites-available"
+    NGINX_ENABLED="/etc/nginx/sites-enabled"
+    DEFAULT_CONFIG="$NGINX_ENABLED/default"
+
+    # Check if the source configuration file exists
+    if [[ ! -f "$SOURCE_PATH" ]]; then
+        echo "Error: Source Nginx configuration file $SOURCE_PATH does not exist."
+        exit 1
+    fi
+
+    # Copy the configuration file to sites-available
+    sudo cp "$SOURCE_PATH" "$NGINX_AVAILABLE/"
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to copy $CONFIG_NAME to $NGINX_AVAILABLE."
+        exit 1
+    fi
+    echo "Configuration file copied to $NGINX_AVAILABLE."
+
+    # Disable the default configuration if it exists
+    if [[ -L "$DEFAULT_CONFIG" ]]; then
+        sudo rm -f "$DEFAULT_CONFIG"
+        if [[ $? -ne 0 ]]; then
+            echo "Error: Failed to remove default configuration."
+            exit 1
+        fi
+        echo "Default configuration disabled."
+    fi
+
+    # Create a symbolic link in sites-enabled
+    sudo ln -sf "$NGINX_AVAILABLE/$CONFIG_NAME" "$NGINX_ENABLED/$CONFIG_NAME"
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to create symbolic link in $NGINX_ENABLED."
+        exit 1
+    fi
+    echo "Symbolic link created in $NGINX_ENABLED."
+
+    # Test the Nginx configuration
+    sudo nginx -t
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Nginx configuration test failed. Rolling back."
+        sudo rm -f "$NGINX_ENABLED/$CONFIG_NAME"
+        exit 1
+    fi
+    echo "Nginx configuration test passed."
+
+    # Restart Nginx
+    sudo systemctl restart nginx
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to restart Nginx."
+        exit 1
+    fi
+echo "Nginx restarted successfully."
+    echo_highlight $OKGREEN "Installation and configuration of Nginx completed"
+else
+    echo_highlight $WARN "Installation of Nginx skipped."
+fi
 
 # Installation complete
 echo_highlight_header $HEADER 'Installation complete'
