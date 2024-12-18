@@ -577,7 +577,7 @@ if confirm_with_key "Do you want to proceed  with installing and configuring Ngi
 
     # Define the variables
     CONFIG_NAME="earkweb"  # Replace with your configuration file name
-    SOURCE_PATH="$EARKWEB_DIR/config/$CONFIG_NAME"  # Replace with the actual path to your config file
+    SOURCE_PATH="$EARKWEB_DIR/config/nginx/$CONFIG_NAME"  # Replace with the actual path to your config file
     NGINX_AVAILABLE="/etc/nginx/sites-available"
     NGINX_ENABLED="/etc/nginx/sites-enabled"
     DEFAULT_CONFIG="$NGINX_ENABLED/default"
