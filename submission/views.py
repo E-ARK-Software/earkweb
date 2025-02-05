@@ -67,7 +67,14 @@ from django.utils.translation import gettext_lazy as _
 
 from util.flowerapiclient import get_task_info, get_task_list
 
+import unicodedata
+
+
 logger = logging.getLogger(__name__)
+
+
+def normalize_filename(filename):
+    return unicodedata.normalize('NFKD', filename).encode('ascii', 'ignore').decode('utf-8')
 
 
 @login_required
@@ -271,8 +278,9 @@ def ip_upload(request):
 
             file_data = posted_files['file_data']
             filename = file_data.name
+            sanitized_filename = normalize_filename(filename)
             target_directory = os.path.join(ip_work_dir, "documentation")
-            file_path = os.path.join(ip_work_dir, "documentation", filename)
+            file_path = os.path.join(ip_work_dir, "documentation", sanitized_filename)
             if not os.path.exists(target_directory):
                 os.makedirs(target_directory, exist_ok=True)
 
