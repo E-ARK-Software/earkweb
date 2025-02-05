@@ -182,6 +182,7 @@
      */
     function checkIdentifier() {
         const extuid = $("#extuid");
+        const identifierPattern = '{{identifier_pattern}}';
         const identifierRegex = new RegExp("^{{identifier_pattern|escapejs }}$"); // Create regex from pattern
         const checkIdentifierUrl = "/earkweb/check_identifier_exists/" + encodeURIComponent(extuid.val());
 
@@ -193,7 +194,7 @@
         }
 
         // Validate identifier against the regex pattern
-        if (!identifierRegex.test(extuid.val())) {
+        if (identifierPattern === ".*" || identifierRegex.test(extuid.val())) {
             $("#msgextuid").html('Invalid identifier! Please ensure it matches the <span class="tooltip-container" data-tooltip="^{{identifier_pattern|escapejs }}$">required format</span>');
             setInvalid("extuid");
             return;
