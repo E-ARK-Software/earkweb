@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-04 09:39+0200\n"
+"POT-Creation-Date: 2025-02-02 18:20+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,13 +19,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: access/templates/access/about_module.html:2 templates/earkweb/base.html:267
-#: templates/earkweb/navbar.html:52
+#: access/templates/access/about_module.html:2 templates/earkweb/base.html:280
+#: templates/earkweb/navbar.html:53
 msgid "Search & Access"
 msgstr "Suche & Zugriff"
 
 #: access/templates/access/detail.html:40
-#: access/templates/access/search.html:56
+#: access/templates/access/search.html:196
 #: management/templates/management/detail.html:40
 #: management/templates/management/iptable.html:23
 #: management/templates/management/render_network.html:51
@@ -38,7 +38,7 @@ msgstr "Informationspaket"
 msgid "Representations"
 msgstr "Repräsentationen"
 
-#: access/templates/access/detail.html:50 access/views.py:61
+#: access/templates/access/detail.html:50 access/views.py:112
 #: management/templates/management/detail.html:90
 #: submission/templates/submission/detail.html:97
 msgid "Identifier"
@@ -49,7 +49,7 @@ msgstr "Bezeichner"
 #: management/templates/management/iptable.html:7
 #: submission/templates/submission/detail.html:97
 #: submission/templates/submission/iptable.html:7
-#: submission/templates/submission/start.html:30
+#: submission/templates/submission/start.html:68
 msgid "Label"
 msgstr "Bezeichner"
 
@@ -72,85 +72,93 @@ msgid "Save changes"
 msgstr "Änderungen speichern"
 
 #: access/templates/access/index.html:16
-#: access/templates/access/search.html:104 templates/admin/search_form.html:7
-#: templates/earkweb/base.html:269 templates/earkweb/navbar.html:55
+#: access/templates/access/search.html:237 templates/admin/search_form.html:7
+#: templates/earkweb/base.html:282 templates/earkweb/navbar.html:56
 msgid "Search"
 msgstr "Suche"
 
 #: access/templates/access/index.html:18
-#: access/templates/access/indexing_status.html:22
-#: templates/earkweb/base.html:270 templates/earkweb/navbar.html:56
+#: access/templates/access/indexing_status.html:132
+#: templates/earkweb/base.html:283 templates/earkweb/navbar.html:57
 msgid "Indexing status"
 msgstr "Indexierungsstatus"
 
-#: access/templates/access/indexing_status.html:25
+#: access/templates/access/indexing_status.html:135
 msgid "Indexing status of archived information packages."
 msgstr "Indizierungsstatus archivierter Informationspakete"
 
-#: access/templates/access/search.html:43
+#: access/templates/access/indexing_status.html:137
+#, fuzzy
+#| msgid "External identifier (optional)"
+msgid "Search for identifier"
+msgstr "Externer identifier"
+
+#: access/templates/access/search.html:183
 msgid "Full-text search"
 msgstr "Volltext-Suche"
 
-#: access/templates/access/search.html:50
+#: access/templates/access/search.html:190
 msgid "Search term"
 msgstr "Suchbegriff"
 
-#: access/templates/access/search.html:58
+#: access/templates/access/search.html:198
 msgid "Identifier of the information package"
 msgstr "Bezeichner des Informationspakets"
 
-#: access/templates/access/search.html:63
+#: access/templates/access/search.html:203
 msgid "Content type"
 msgstr "Inhaltstyp"
 
-#: access/templates/access/search.html:84
+#: access/templates/access/search.html:224
 msgid "Sort"
 msgstr "Sortieren"
 
-#: access/templates/access/search.html:87
+#: access/templates/access/search.html:227
 msgid "Relevance"
 msgstr "Relevanz"
 
-#: access/templates/access/search.html:88
+#: access/templates/access/search.html:228
 #, fuzzy
 #| msgid "size (ascending)"
 msgid "date (ascending)"
 msgstr "Größe (aufsteigend)"
 
-#: access/templates/access/search.html:89
+#: access/templates/access/search.html:229
 #, fuzzy
 #| msgid "size (descending)"
 msgid "date (descending)"
 msgstr "Größe (absteigend)"
 
-#: access/templates/access/search.html:90
+#: access/templates/access/search.html:230
 msgid "size (ascending)"
 msgstr "Größe (aufsteigend)"
 
-#: access/templates/access/search.html:91
+#: access/templates/access/search.html:231
 msgid "size (descending)"
 msgstr "Größe (absteigend)"
 
-#: access/templates/access/search.html:97
-#, fuzzy
-#| msgid "Content type"
-msgid "Content files only"
-msgstr "Inhaltstyp"
-
-#: access/views.py:63 submission/templates/submission/iptable.html:37
+#: access/views.py:114 submission/templates/submission/iptable.html:37
 msgid "Last change"
 msgstr "Letzte Änderung"
 
-#: access/views.py:64
-msgid "Number of indexed documents"
-msgstr "Anzahl indizierter Dokumente"
+#: access/views.py:115
+msgid "Indexed"
+msgstr ""
+
+#: access/views.py:116 templates/admin/object_history.html:24
+msgid "Action"
+msgstr ""
+
+#: access/views.py:117
+msgid "Status"
+msgstr ""
 
 #: administration/templates/administration/backendadmin.html:18
 msgid "BackendAdministration"
 msgstr "Backend-Administration"
 
 #: administration/templates/administration/backendadmin.html:22
-#: templates/earkweb/base.html:243 templates/earkweb/navbar.html:13
+#: templates/earkweb/base.html:253 templates/earkweb/navbar.html:13
 msgid "Dashboard"
 msgstr ""
 
@@ -165,6 +173,10 @@ msgid "Flower process monitoring"
 msgstr "Flower Prozess-Monitoring"
 
 #: administration/templates/administration/backendadmin.html:28
+msgid "OAI-PMH Interface"
+msgstr ""
+
+#: administration/templates/administration/backendadmin.html:29
 #: templates/earkweb/navbar.html:19
 msgid "ResourceSyncInterface"
 msgstr "ResourceSync-Schnittstelle"
@@ -177,15 +189,15 @@ msgstr "Der Prozess wurde erfolgreich im Hintergrund ausgeführt"
 msgid "The backend task execution did not deliver the expected result"
 msgstr "Der Prozess hat nicht das erwartete Ergebnis geliefert"
 
-#: earkweb/settings.py:321
+#: earkweb/settings.py:330
 msgid "English"
 msgstr "Englisch"
 
-#: earkweb/settings.py:322
+#: earkweb/settings.py:331
 msgid "Spanish"
 msgstr ""
 
-#: earkweb/settings.py:323
+#: earkweb/settings.py:332
 msgid "German"
 msgstr "Deutsch"
 
@@ -286,8 +298,8 @@ msgstr "Tags"
 msgid "Contact point"
 msgstr "Kontakt"
 
-#: management/templates/management/detail.html:75 submission/forms.py:113
-#: submission/forms.py:114 submission/templates/submission/detail.html:82
+#: management/templates/management/detail.html:75 submission/forms.py:166
+#: submission/forms.py:167 submission/templates/submission/detail.html:82
 msgid "Maintainer"
 msgstr "BetreuerIn"
 
@@ -298,11 +310,11 @@ msgstr "BetreuerIn"
 msgid "Main language"
 msgstr "Hauptsprache"
 
-#: management/templates/management/iptable.html:11 management/views.py:155
+#: management/templates/management/iptable.html:11 management/views.py:116
 msgid "WorkingCopy"
 msgstr "Arbeitsverzeichnis"
 
-#: management/templates/management/iptable.html:36 management/views.py:154
+#: management/templates/management/iptable.html:36 management/views.py:115
 msgid "CreationDateTime"
 msgstr "Erstellungszeitpunkt"
 
@@ -315,57 +327,69 @@ msgid "SearchInternalLabelProcessIdOrIdentifier"
 msgstr ""
 "Nach internem Bezeichner, Prozess-Kennung oder Informationspaket-ID filtern"
 
-#: management/views.py:151
+#: management/views.py:112
 msgid "Archived Information Package"
 msgstr "Archiviertes Informationspaket"
 
-#: management/views.py:152
+#: management/views.py:113
 msgid "PackageDirectory"
 msgstr "Informationspaket-Verzeichnis"
 
-#: management/views.py:156
+#: management/views.py:117
 msgid "InternalLabel"
 msgstr "Bezeichner"
 
-#: management/views.py:157
+#: management/views.py:118
 msgid "PackageOverview"
 msgstr "Informationspaket-Übersicht"
 
-#: management/views.py:158
+#: management/views.py:119
 msgid "ChangeIt"
 msgstr "Ändern"
 
-#: submission/forms.py:59
+#: submission/forms.py:71
 msgid "Information package title"
 msgstr "Titel des Informationspakets"
 
-#: submission/forms.py:59
+#: submission/forms.py:71
 #, fuzzy
 #| msgid "DataManagementTitle"
 msgid "Data set title"
 msgstr "Archivdaten-Management"
 
-#: submission/forms.py:60
+#: submission/forms.py:81
+#, fuzzy
+#| msgid "Create information package"
+msgid "Content information type"
+msgstr "Neues Informationspaket erstellen"
+
+#: submission/forms.py:94
+#, fuzzy
+#| msgid "Content type"
+msgid "Content category"
+msgstr "Inhaltstyp"
+
+#: submission/forms.py:100
 msgid "Information package description"
 msgstr "Beschreibung des Informationspakets"
 
-#: submission/forms.py:60
+#: submission/forms.py:102
 #, fuzzy
 #| msgid "Description"
 msgid "Data set description"
 msgstr "Beschreibung"
 
-#: submission/forms.py:61
+#: submission/forms.py:107
 #, fuzzy
 #| msgid "CreationDateTime"
 msgid "Original creation date"
 msgstr "Erstellungszeitpunkt"
 
-#: submission/forms.py:62
+#: submission/forms.py:111
 msgid "dd.mm.yyyy"
 msgstr ""
 
-#: submission/forms.py:66
+#: submission/forms.py:119
 msgid ""
 "Please enter 2 characters to get tag suggestions or write a custom tag and "
 "press enter to add it"
@@ -374,15 +398,15 @@ msgstr ""
 "Sie ein benutzerdefiniertes Tag und drücken Sie die Eingabetaste, um es "
 "hinzuzufügen"
 
-#: submission/forms.py:76
+#: submission/forms.py:129
 msgid "PleaseAddNameOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:77 submission/forms.py:93 submission/forms.py:98
+#: submission/forms.py:130 submission/forms.py:146 submission/forms.py:151
 msgid "ModifyInitialValue"
 msgstr "Ändern"
 
-#: submission/forms.py:79
+#: submission/forms.py:132
 msgid ""
 "Only alphanumeric characters plus hyphen ('-'), underscore ('_'), and dot  "
 "('.') are allowed."
@@ -390,96 +414,96 @@ msgstr ""
 "Es sind nur alphanumerische Zeichen plus Bindestrich ('-'), Unterstrich "
 "('_') und Punkt ('.') Erlaubt."
 
-#: submission/forms.py:92
+#: submission/forms.py:145
 #, fuzzy
 #| msgid "PleaseAddNameOfPackage"
 msgid "PleaseAddTitleOfPackage"
 msgstr "Bitte den Namen des Informationspakets hinzufügen"
 
-#: submission/forms.py:109 submission/forms.py:110
+#: submission/forms.py:162 submission/forms.py:163
 #, fuzzy
 #| msgid "ContactOfPackage"
 msgid "Contact"
 msgstr "Kontaktstelle"
 
-#: submission/forms.py:111
+#: submission/forms.py:164
 #, fuzzy
 #| msgid "ContactEmailOfPackage"
 msgid "Contact email"
 msgstr "Email der Kontaktstelle"
 
-#: submission/forms.py:115
+#: submission/forms.py:168
 msgid "MaintainerEmail"
 msgstr "Email BetreuerIn"
 
-#: submission/forms.py:117
+#: submission/forms.py:170
 msgid "MainLanguageOfPackage"
 msgstr "Hauptsprache"
 
-#: submission/forms.py:118
+#: submission/forms.py:171
 msgid "MainInitialLanguage"
 msgstr "Deutsch"
 
-#: submission/forms.py:127 submission/forms.py:128
+#: submission/forms.py:180 submission/forms.py:181
 msgid "Representation label"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/forms.py:130
+#: submission/forms.py:183
 msgid "AccessRightsField"
 msgstr "Zugriffsrecht"
 
-#: submission/forms.py:132
+#: submission/forms.py:185
 msgid "RestrictedAccess"
 msgstr "Eingeschränkter Zugriff"
 
-#: submission/forms.py:133
+#: submission/forms.py:186
 msgid "CreativeCommonsAttribution"
 msgstr "Creative Commons Namensnennung"
 
-#: submission/forms.py:134
+#: submission/forms.py:187
 msgid "CreativeCommonsAttributionShareAlike"
 msgstr "Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen"
 
-#: submission/forms.py:135
+#: submission/forms.py:188
 msgid "CreativeCommonsAttributionNoDerivatives"
 msgstr "Creative Commons Namensnennung - Keine Bearbeitungen"
 
-#: submission/forms.py:136
+#: submission/forms.py:189
 msgid "CreativeCommonsAttributionNonCommercial"
 msgstr "Creative Commons Namensnennung - Nicht kommerziell"
 
-#: submission/forms.py:137
+#: submission/forms.py:190
 msgid "CreativeCommonsAttributionNonCommercialShareAlike"
 msgstr ""
 "Creative Commons Namensnennung - Nicht kommerziell - Weitergabe unter "
 "gleichen Bedingungen"
 
-#: submission/forms.py:138
+#: submission/forms.py:191
 msgid "CreativeCommonsAttributionNonCommercialNoDerivatives"
 msgstr ""
 "Creative Commons Namensnennung - Nicht kommerziell - Keine Bearbeitungen"
 
-#: submission/forms.py:139
+#: submission/forms.py:192
 msgid "CreativeCommonsZero"
 msgstr "Creative Commons Zero (Gemeinfreiheitserklärung)"
 
-#: submission/forms.py:140
+#: submission/forms.py:193
 msgid "GNUGeneralPublicLicensev3.0"
 msgstr "GNU General Public License v3.0"
 
-#: submission/forms.py:141
+#: submission/forms.py:194
 msgid "MITLicense"
 msgstr "MIT-Lizenz"
 
-#: submission/forms.py:142
+#: submission/forms.py:195
 msgid "ApacheLicense2.0"
 msgstr "Apache-Lizenz 2.0"
 
-#: submission/forms.py:143
+#: submission/forms.py:196
 msgid "BSD3ClauseLicense"
 msgstr "BSD-3-Klausel-Lizenz"
 
-#: submission/forms.py:147
+#: submission/forms.py:201
 msgid "Representation description"
 msgstr "Beschreibung der Repräsentation"
 
@@ -541,7 +565,7 @@ msgstr "Externer identifier"
 msgid "Process ID"
 msgstr "Prozess-ID"
 
-#: submission/templates/submission/iptable.html:21 submission/views.py:745
+#: submission/templates/submission/iptable.html:21 submission/views.py:999
 #: templates/earkweb/howto/ingest_dataset.html:59
 msgid "Working directory"
 msgstr "Arbeitsverzeichnis"
@@ -562,23 +586,23 @@ msgstr "Informationspakete in Bearbeitung"
 msgid "SearchInternalLabelOrIdentifier"
 msgstr "Nach internem Bezeichner oder Prozess-Kennung filtern"
 
-#: submission/templates/submission/start.html:19
-#: templates/earkweb/base.html:254 templates/earkweb/navbar.html:32
+#: submission/templates/submission/start.html:57
+#: templates/earkweb/base.html:266 templates/earkweb/navbar.html:33
 msgid "NavNewSubmission"
 msgstr "Neues Informationspaket erstellen"
 
-#: submission/templates/submission/start.html:21
+#: submission/templates/submission/start.html:59
 msgid "EnterInternalLabelAndOptionalExternalId"
 msgstr ""
 "Bitte einen Bezeichner für das Informationspaket angeben. Optional kann eine "
 "externe ID hinzugefügt werden."
 
-#: submission/templates/submission/start.html:39
+#: submission/templates/submission/start.html:77
 msgid "External identifier (optional)"
 msgstr "Externer identifier"
 
-#: submission/templates/submission/start.html:54
-#: submission/templates/submission/upload_mdform.html:663
+#: submission/templates/submission/start.html:106
+#: submission/templates/submission/upload_mdform.html:693
 msgid "Continue"
 msgstr "Weiter"
 
@@ -621,27 +645,34 @@ msgstr "Prozess-ID"
 msgid "Upload data"
 msgstr "Daten hochladen"
 
-#: submission/templates/submission/upload_distributions.html:505
+#: submission/templates/submission/upload_data_packages.html:174
+#: templates/earkweb/base.html:267
+#, fuzzy
+#| msgid "Upload data"
+msgid "Upload data packages"
+msgstr "Daten hochladen"
+
+#: submission/templates/submission/upload_distributions.html:539
 msgid "Create representations and upload data"
 msgstr "Repräsentationen anlegen und Daten-Dateien hochladen"
 
-#: submission/templates/submission/upload_distributions.html:521
+#: submission/templates/submission/upload_distributions.html:555
 msgid "Representation ID"
 msgstr "Metadaten der Repräsentation"
 
-#: submission/templates/submission/upload_distributions.html:526
+#: submission/templates/submission/upload_distributions.html:560
 msgid "Create another representation"
 msgstr "Weitere Repräsentation anlegen"
 
-#: submission/templates/submission/upload_distributions.html:532
+#: submission/templates/submission/upload_distributions.html:566
 msgid "Switch to other representation"
 msgstr "Zu Repräsentation wechseln"
 
-#: submission/templates/submission/upload_distributions.html:542
+#: submission/templates/submission/upload_distributions.html:576
 msgid "Delete distribution"
 msgstr "Repräsentation l&ouml;schen"
 
-#: submission/templates/submission/upload_distributions.html:593
+#: submission/templates/submission/upload_distributions.html:636
 msgid "Create information package"
 msgstr "Neues Informationspaket erstellen"
 
@@ -653,15 +684,22 @@ msgstr "Informationspaket erstellt"
 msgid "The information package was created successfully"
 msgstr "Das Informationspaket wurde erfolgreich erstellt"
 
-#: submission/templates/submission/upload_mdform.html:485
+#: submission/templates/submission/upload_mdform.html:511
 msgid "Add location"
 msgstr ""
 
-#: submission/templates/submission/upload_mdform.html:576
+#: submission/templates/submission/upload_mdform.html:602
 msgid "Information package metadata"
 msgstr "Informationspaket-Metadaten"
 
-#: submission/templates/submission/upload_mdform.html:579
+#: submission/templates/submission/upload_mdform.html:605
+msgid ""
+"Right click on the map to add a location. Move the \"location uncertainty\" "
+"slider to create a circle for the area of the location. On the top right of "
+"the map you can search for a location."
+msgstr ""
+
+#: submission/templates/submission/upload_mdform.html:609
 msgid ""
 "Upload supplementary documentation necessary to understand, manage, and "
 "preserve the digital information contained within the package. The files "
@@ -669,36 +707,34 @@ msgid ""
 "information package."
 msgstr ""
 
-#: submission/templates/submission/upload_mdform.html:665
+#: submission/templates/submission/upload_mdform.html:695
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: submission/views.py:742
+#: submission/views.py:996
 msgid "Last modified"
 msgstr "Letzte Änderung"
 
-#: submission/views.py:746
+#: submission/views.py:1000
 msgid "ShowWorkingDirectory"
 msgstr "Arbeitsverzeichnis anzeigen"
 
-#: submission/views.py:747
+#: submission/views.py:1001
 msgid "Data Set Label"
 msgstr "Bezeichner des Informationspakets"
 
-#: submission/views.py:749 templates/admin/app_list.html:28
-#: templates/admin/edit_inline/stacked.html:16
-#: templates/admin/edit_inline/tabular.html:38
-#: templates/admin/widgets/related_widget_wrapper.html:11
+#: submission/views.py:1003 templates/admin/app_list.html:31
+#: templates/admin/edit_inline/stacked.html:20
+#: templates/admin/edit_inline/tabular.html:40
 msgid "Change"
 msgstr "Ändern"
 
-#: submission/views.py:750
+#: submission/views.py:1004
 msgid "Ingest"
 msgstr ""
 
-#: submission/views.py:751 templates/admin/delete_confirmation.html:18
-#: templates/admin/submit_line.html:7
-#: templates/admin/widgets/related_widget_wrapper.html:25
+#: submission/views.py:1005 templates/admin/delete_confirmation.html:18
+#: templates/admin/submit_line.html:14
 msgid "Delete"
 msgstr "Löschen"
 
@@ -710,10 +746,10 @@ msgstr ""
 msgid "We’re sorry, but the requested page could not be found."
 msgstr ""
 
-#: templates/admin/500.html:6 templates/admin/app_index.html:9
-#: templates/admin/auth/user/change_password.html:10
-#: templates/admin/base.html:66 templates/admin/change_form.html:18
-#: templates/admin/change_list.html:31
+#: templates/admin/500.html:6 templates/admin/app_index.html:10
+#: templates/admin/auth/user/change_password.html:14
+#: templates/admin/base.html:76 templates/admin/change_form.html:18
+#: templates/admin/change_list.html:32
 #: templates/admin/delete_confirmation.html:14
 #: templates/admin/delete_selected_confirmation.html:14
 #: templates/admin/invalid_setup.html:6 templates/admin/object_history.html:6
@@ -759,22 +795,25 @@ msgstr ""
 msgid "Clear selection"
 msgstr ""
 
+#: templates/admin/app_index.html:8 templates/admin/base.html:73
+msgid "Breadcrumbs"
+msgstr ""
+
 #: templates/admin/app_list.html:8
 #, python-format
 msgid "Models in the %(name)s application"
 msgstr ""
 
-#: templates/admin/app_list.html:19
-#: templates/admin/widgets/related_widget_wrapper.html:18
+#: templates/admin/app_list.html:22
 msgid "Add"
 msgstr ""
 
-#: templates/admin/app_list.html:26 templates/admin/edit_inline/stacked.html:16
-#: templates/admin/edit_inline/tabular.html:38
+#: templates/admin/app_list.html:29 templates/admin/edit_inline/stacked.html:20
+#: templates/admin/edit_inline/tabular.html:40
 msgid "View"
 msgstr ""
 
-#: templates/admin/app_list.html:39
+#: templates/admin/app_list.html:43
 msgid "You don’t have permission to view or edit anything."
 msgstr ""
 
@@ -788,30 +827,48 @@ msgstr ""
 msgid "Enter a username and password."
 msgstr ""
 
-#: templates/admin/auth/user/change_password.html:14
-#: templates/admin/auth/user/change_password.html:52
-#: templates/admin/base.html:54
+#: templates/admin/auth/user/change_password.html:18
+#: templates/admin/auth/user/change_password.html:70
+#: templates/admin/base.html:57
 msgid "Change password"
 msgstr ""
 
-#: templates/admin/auth/user/change_password.html:25
-#: templates/admin/change_form.html:43 templates/admin/change_list.html:51
-#: templates/admin/login.html:23
-msgid "Please correct the error below."
-msgstr ""
-
-#: templates/admin/auth/user/change_password.html:25
-#: templates/admin/change_form.html:43 templates/admin/change_list.html:51
-#: templates/admin/login.html:23
-msgid "Please correct the errors below."
+#: templates/admin/auth/user/change_password.html:18
+msgid "Set password"
 msgstr ""
 
 #: templates/admin/auth/user/change_password.html:29
+#: templates/admin/change_form.html:43 templates/admin/change_list.html:52
+#: templates/admin/login.html:23
+msgid "Please correct the error below."
+msgid_plural "Please correct the errors below."
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/admin/auth/user/change_password.html:33
 #, python-format
 msgid "Enter a new password for the user <strong>%(username)s</strong>."
 msgstr ""
 
-#: templates/admin/base.html:40
+#: templates/admin/auth/user/change_password.html:35
+msgid ""
+"This action will <strong>enable</strong> password-based authentication for "
+"this user."
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:71
+msgid "Disable password-based authentication"
+msgstr ""
+
+#: templates/admin/auth/user/change_password.html:73
+msgid "Enable password-based authentication"
+msgstr ""
+
+#: templates/admin/base.html:28
+msgid "Skip to main content"
+msgstr ""
+
+#: templates/admin/base.html:43
 #, fuzzy
 #| msgid "InitialWelcome"
 msgid "Welcome,"
@@ -823,17 +880,17 @@ msgstr ""
 "sie die erstellten Informationspakete zur genaueren Begutachtung "
 "herunterladen."
 
-#: templates/admin/base.html:45
+#: templates/admin/base.html:48
 msgid "View site"
 msgstr ""
 
-#: templates/admin/base.html:50
+#: templates/admin/base.html:53
 #, fuzzy
 #| msgid "Django Documentation"
 msgid "Documentation"
 msgstr "Django Dokumentation"
 
-#: templates/admin/base.html:56
+#: templates/admin/base.html:61
 #, fuzzy
 #| msgid "log out"
 msgid "Log out"
@@ -863,33 +920,53 @@ msgid "History"
 msgstr ""
 
 #: templates/admin/change_form_object_tools.html:7
-#: templates/admin/edit_inline/stacked.html:18
-#: templates/admin/edit_inline/tabular.html:40
+#: templates/admin/edit_inline/stacked.html:22
+#: templates/admin/edit_inline/tabular.html:42
 msgid "View on site"
 msgstr ""
 
-#: templates/admin/change_list.html:76
+#: templates/admin/change_list.html:77
 msgid "Filter"
 msgstr ""
 
-#: templates/admin/change_list.html:78
+#: templates/admin/change_list.html:80
+msgid "Hide counts"
+msgstr ""
+
+#: templates/admin/change_list.html:81
+msgid "Show counts"
+msgstr ""
+
+#: templates/admin/change_list.html:84
 msgid "Clear all filters"
 msgstr ""
 
-#: templates/admin/change_list_results.html:17
+#: templates/admin/change_list_results.html:16
 msgid "Remove from sorting"
 msgstr ""
 
-#: templates/admin/change_list_results.html:18
+#: templates/admin/change_list_results.html:17
 #, python-format
 msgid "Sorting priority: %(priority_number)s"
 msgstr ""
 
-#: templates/admin/change_list_results.html:19
+#: templates/admin/change_list_results.html:18
 msgid "Toggle sorting"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:24
+#: templates/admin/color_theme_toggle.html:3
+msgid "Toggle theme (current theme: auto)"
+msgstr ""
+
+#: templates/admin/color_theme_toggle.html:4
+msgid "Toggle theme (current theme: light)"
+msgstr ""
+
+#: templates/admin/color_theme_toggle.html:5
+msgid "Toggle theme (current theme: dark)"
+msgstr ""
+
+#: templates/admin/delete_confirmation.html:25
 #, python-format
 msgid ""
 "Deleting the %(object_name)s '%(escaped_object)s' would result in deleting "
@@ -897,32 +974,32 @@ msgid ""
 "following types of objects:"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:31
+#: templates/admin/delete_confirmation.html:30
 #, python-format
 msgid ""
 "Deleting the %(object_name)s '%(escaped_object)s' would require deleting the "
 "following protected related objects:"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:38
+#: templates/admin/delete_confirmation.html:35
 #, python-format
 msgid ""
 "Are you sure you want to delete the %(object_name)s \"%(escaped_object)s\"? "
 "All of the following related items will be deleted:"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:40
-#: templates/admin/delete_selected_confirmation.html:39
+#: templates/admin/delete_confirmation.html:37
+#: templates/admin/delete_selected_confirmation.html:31
 msgid "Objects"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:47
-#: templates/admin/delete_selected_confirmation.html:50
+#: templates/admin/delete_confirmation.html:44
+#: templates/admin/delete_selected_confirmation.html:42
 msgid "Yes, I’m sure"
 msgstr ""
 
-#: templates/admin/delete_confirmation.html:48
-#: templates/admin/delete_selected_confirmation.html:51
+#: templates/admin/delete_confirmation.html:45
+#: templates/admin/delete_selected_confirmation.html:43
 msgid "No, take me back"
 msgstr ""
 
@@ -938,27 +1015,27 @@ msgid ""
 "types of objects:"
 msgstr ""
 
-#: templates/admin/delete_selected_confirmation.html:30
+#: templates/admin/delete_selected_confirmation.html:26
 #, python-format
 msgid ""
 "Deleting the selected %(objects_name)s would require deleting the following "
 "protected related objects:"
 msgstr ""
 
-#: templates/admin/delete_selected_confirmation.html:37
+#: templates/admin/delete_selected_confirmation.html:29
 #, python-format
 msgid ""
 "Are you sure you want to delete the selected %(objects_name)s? All of the "
 "following objects and their related items will be deleted:"
 msgstr ""
 
-#: templates/admin/edit_inline/tabular.html:24
+#: templates/admin/edit_inline/tabular.html:26
 #, fuzzy
 #| msgid "Delete"
 msgid "Delete?"
 msgstr "Löschen"
 
-#: templates/admin/filter.html:2
+#: templates/admin/filter.html:4
 #, python-format
 msgid " By %(filter_title)s "
 msgstr ""
@@ -981,7 +1058,23 @@ msgstr ""
 msgid "None available"
 msgstr ""
 
-#: templates/admin/index.html:42
+#: templates/admin/index.html:33
+msgid "Added:"
+msgstr ""
+
+#: templates/admin/index.html:33
+#, fuzzy
+#| msgid "Change"
+msgid "Changed:"
+msgstr "Ändern"
+
+#: templates/admin/index.html:33
+#, fuzzy
+#| msgid "Delete"
+msgid "Deleted:"
+msgstr "Löschen"
+
+#: templates/admin/index.html:43
 msgid "Unknown content"
 msgstr ""
 
@@ -1013,6 +1106,18 @@ msgstr "einloggen"
 msgid "Toggle navigation"
 msgstr ""
 
+#: templates/admin/nav_sidebar.html:3
+msgid "Sidebar"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:5
+msgid "Start typing to filter…"
+msgstr ""
+
+#: templates/admin/nav_sidebar.html:6
+msgid "Filter navigation items"
+msgstr ""
+
 #: templates/admin/object_history.html:22
 msgid "Date/time"
 msgstr ""
@@ -1021,11 +1126,13 @@ msgstr ""
 msgid "User"
 msgstr ""
 
-#: templates/admin/object_history.html:24
-msgid "Action"
-msgstr ""
+#: templates/admin/object_history.html:49
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] ""
+msgstr[1] ""
 
-#: templates/admin/object_history.html:38
+#: templates/admin/object_history.html:52
 msgid ""
 "This object doesn’t have a change history. It probably wasn’t added via this "
 "admin site."
@@ -1055,95 +1162,110 @@ msgstr[1] ""
 msgid "%(full_result_count)s total"
 msgstr ""
 
-#: templates/admin/submit_line.html:9
+#: templates/admin/submit_line.html:5
 #, fuzzy
 #| msgid "Save changes"
 msgid "Save as new"
 msgstr "Änderungen speichern"
 
-#: templates/admin/submit_line.html:10
+#: templates/admin/submit_line.html:6
 msgid "Save and add another"
 msgstr ""
 
-#: templates/admin/submit_line.html:11
+#: templates/admin/submit_line.html:7
 msgid "Save and continue editing"
 msgstr ""
 
-#: templates/admin/submit_line.html:11
+#: templates/admin/submit_line.html:7
 #, fuzzy
 #| msgid "Save changes"
 msgid "Save and view"
 msgstr "Änderungen speichern"
 
-#: templates/admin/submit_line.html:12
+#: templates/admin/submit_line.html:10
 msgid "Close"
 msgstr ""
 
-#: templates/admin/widgets/related_widget_wrapper.html:10
+#: templates/admin/widgets/related_widget_wrapper.html:11
 #, python-format
 msgid "Change selected %(model)s"
 msgstr ""
 
-#: templates/admin/widgets/related_widget_wrapper.html:17
+#: templates/admin/widgets/related_widget_wrapper.html:19
 #, python-format
 msgid "Add another %(model)s"
 msgstr ""
 
-#: templates/admin/widgets/related_widget_wrapper.html:24
+#: templates/admin/widgets/related_widget_wrapper.html:27
 #, python-format
 msgid "Delete selected %(model)s"
 msgstr ""
 
-#: templates/earkweb/base.html:165 templates/earkweb/base_bak.html:118
+#: templates/admin/widgets/related_widget_wrapper.html:34
+#, python-format
+msgid "View selected %(model)s"
+msgstr ""
+
+#: templates/earkweb/base.html:175 templates/earkweb/base_bak.html:118
 #: templates/earkweb/base_fileupload.html:110
 msgid "log out"
 msgstr "ausloggen"
 
-#: templates/earkweb/base.html:173 templates/earkweb/base_bak.html:123
+#: templates/earkweb/base.html:183 templates/earkweb/base_bak.html:123
 #: templates/earkweb/base_fileupload.html:115
 msgid "Access"
 msgstr "Benutzung"
 
-#: templates/earkweb/base.html:178 templates/earkweb/base_bak.html:127
+#: templates/earkweb/base.html:188 templates/earkweb/base_bak.html:127
 #: templates/earkweb/base_fileupload.html:119
 msgid "log in"
 msgstr "einloggen"
 
-#: templates/earkweb/base.html:231 templates/earkweb/base.html:305
+#: templates/earkweb/base.html:241 templates/earkweb/base.html:318
 msgid "eArchiving Repository"
 msgstr ""
 
-#: templates/earkweb/base.html:241 templates/earkweb/navbar.html:9
+#: templates/earkweb/base.html:251 templates/earkweb/navbar.html:9
 msgid "Administration"
 msgstr "Administration"
 
-#: templates/earkweb/base.html:244
+#: templates/earkweb/base.html:254
 #, fuzzy
 #| msgid "Administration"
 msgid "Site Administration"
 msgstr "Administration"
 
-#: templates/earkweb/base.html:245
+#: templates/earkweb/base.html:255
 msgid "REST API"
 msgstr ""
 
-#: templates/earkweb/base.html:252 templates/earkweb/navbar.html:28
+#: templates/earkweb/base.html:256 templates/earkweb/navbar.html:20
+msgid "OAI-PMH"
+msgstr ""
+
+#: templates/earkweb/base.html:257
+#, fuzzy
+#| msgid "ResourceSyncInterface"
+msgid "Resource Sync"
+msgstr "ResourceSync-Schnittstelle"
+
+#: templates/earkweb/base.html:264 templates/earkweb/navbar.html:29
 msgid "Submission"
 msgstr "Informationspaket-Erstellung"
 
-#: templates/earkweb/base.html:255 templates/earkweb/navbar.html:33
+#: templates/earkweb/base.html:268 templates/earkweb/navbar.html:34
 msgid "NavOpenSubmissions"
 msgstr "Informationspakete in Bearbeitung"
 
-#: templates/earkweb/base.html:260 templates/earkweb/navbar.html:41
+#: templates/earkweb/base.html:273 templates/earkweb/navbar.html:42
 msgid "Package Management"
 msgstr "Dataset-Management"
 
-#: templates/earkweb/base.html:262 templates/earkweb/navbar.html:45
+#: templates/earkweb/base.html:275 templates/earkweb/navbar.html:46
 msgid "NavIngestedPackages"
 msgstr "Archivierte Informationspakete"
 
-#: templates/earkweb/base.html:275 templates/earkweb/base.html:276
+#: templates/earkweb/base.html:288 templates/earkweb/base.html:289
 #: templates/earkweb/howto/create_dataset.html:17
 #: templates/earkweb/howto/howto_overview.html:17
 #: templates/earkweb/howto/ingest_dataset.html:17
@@ -1151,20 +1273,20 @@ msgstr "Archivierte Informationspakete"
 msgid "Help"
 msgstr ""
 
-#: templates/earkweb/base.html:277
+#: templates/earkweb/base.html:290
 #, fuzzy
 #| msgid "Review submission information package"
 msgid "How-to create a submission information package (SIP)"
 msgstr "Informationspaket überprüfen"
 
-#: templates/earkweb/base.html:278
+#: templates/earkweb/base.html:291
 #: templates/earkweb/howto/ingest_dataset.html:19
 #, fuzzy
 #| msgid "Create new information package"
 msgid "How to create an archival information package (AIP)"
 msgstr "Neues Informationspaket erstellen"
 
-#: templates/earkweb/base.html:279
+#: templates/earkweb/base.html:292
 msgid "How-to use the API"
 msgstr ""
 
@@ -1175,46 +1297,6 @@ msgstr "Sprache"
 #: templates/earkweb/error.html:12
 msgid "Error"
 msgstr "Fehler"
-
-#: templates/earkweb/home.html:21 templates/registration/login.html:16
-msgid "InitialWelcome"
-msgstr ""
-"Die <span class = emph>eArchiving-Referenzimplementierung</span> ist die "
-"aktuelle Implementierung der E-ARK-Spezifikationen zu Demonstrationszwecken. "
-"In dieser Umgebung können Sie die Erstellung von Informationspaketen testen "
-"und dabei Ihre eigenen Daten und Metadaten verwenden. Anschließend können "
-"sie die erstellten Informationspakete zur genaueren Begutachtung "
-"herunterladen."
-
-#: templates/earkweb/home.html:72
-msgid "disclaimerText"
-msgstr ""
-"<p><emph>Haftungsausschluss</emph>: Bitte beachten Sie, dass die eArchiving-"
-"Referenzimplementierung ausschließlich zu Demonstrationszwecken zur "
-"Verfügung gestellt wird. Die maximale Größe für Dateien, die hochgeladen "
-"werden, ist 200 MB und es können maximal 50 Dateien pro Repräsentation "
-"hochgeladen werden. Folgende Formate sind zulässig: </ p> <ul> \t <li> "
-"Text / TabelleDokument- und Datenformate \t \t <ul> \t \t \t <li> "
-"Textdokument (* .txt) </li> \t \t\t <li> Portable Document Format (* .pdf) "
-"</ li> \t \t \t <li> OpenDocumentTabellenkalkulation (* .ods) </li> \t \t \t "
-"<li> OpenDocument-Textdokument (* .odt) </li> \t \t\t <li> Microsoft Word "
-"Open XML (* .docx) </li> \t \t \t <li> Microsoft Word-Dokument(* .doc) </ "
-"li> \t \t \t <li> Microsoft Excel 97-2003-Arbeitsblatt (* .xls) </li> \t "
-"\t\t <li> Microsoft Excel Open XML-Tabelle (* .xlsx) </li> \t \t \t <li> "
-"KommaGetrennte Werte (* .csv) </li> \t \t </ul> \t </li> \t <li> Bildformate "
-"\t \t <ul> \t \t\t <li> Gemeinsame fotografische Expertengruppe (* .jpg, * ."
-"jpeg) </li> \t \t \t <li> TagBilddateiformat (* .tif, * .tiff) </li> \t \t "
-"\t <li> Tragbare Netzwerkgrafiken(png) </li> \t \t </ul> \t </li> \t <li> "
-"Generische / geografische Markup-Sprachformate \t\t <ul> \t \t \t <li> "
-"Erweiterbare Markup-Sprache (* .xml) </li> \t \t \t <li> XML-"
-"SchemaDefinition (* .xsd) </li> \t \t \t <li> Geografie-Markup-Sprache (* ."
-"gml) </li> \t \t\t <li> GPS-Austauschformat (* .gpx) </li> \t \t \t <li> "
-"OpenStreetMap (* .osm) </li> \t\t </ul> \t </li> </ul> <p> <emph> Anmerkung "
-"zum Datenschutz:</emph> Alle Daten und Metadaten, die in die E-ARK-"
-"Referenzimplementierung hochgeladen wurden, sind für alle angemeldeten "
-"Benutzer sichtbar. Wir empfehlen Ihnen daher, keine .sensiblen Inhalte "
-"hochzuladen. Bitte beachten Sie, dass die Daten auf täglich nachts (3 Uhr "
-"morgens MEZ) gelöscht werden. </p>"
 
 #: templates/earkweb/howto/create_dataset.html:19
 #, fuzzy
@@ -1500,6 +1582,16 @@ msgid ""
 "transfer (scp, rsync, etc.)."
 msgstr ""
 
+#: templates/registration/login.html:16
+msgid "InitialWelcome"
+msgstr ""
+"Die <span class = emph>eArchiving-Referenzimplementierung</span> ist die "
+"aktuelle Implementierung der E-ARK-Spezifikationen zu Demonstrationszwecken. "
+"In dieser Umgebung können Sie die Erstellung von Informationspaketen testen "
+"und dabei Ihre eigenen Daten und Metadaten verwenden. Anschließend können "
+"sie die erstellten Informationspakete zur genaueren Begutachtung "
+"herunterladen."
+
 #: templates/registration/login.html:17
 msgid "The repository is configured as a test instance. Default login data:"
 msgstr ""
@@ -1512,6 +1604,45 @@ msgstr "Keine Blockchain-Identifikatoren verfügbar"
 #: util/djangoutils.py:40
 msgid "An error occurred"
 msgstr "Es ist ein Fehler aufgetreten"
+
+#, fuzzy
+#~| msgid "Content type"
+#~ msgid "Content files only"
+#~ msgstr "Inhaltstyp"
+
+#~ msgid "Number of indexed documents"
+#~ msgstr "Anzahl indizierter Dokumente"
+
+#~ msgid "disclaimerText"
+#~ msgstr ""
+#~ "<p><emph>Haftungsausschluss</emph>: Bitte beachten Sie, dass die "
+#~ "eArchiving-Referenzimplementierung ausschließlich zu "
+#~ "Demonstrationszwecken zur Verfügung gestellt wird. Die maximale Größe für "
+#~ "Dateien, die hochgeladen werden, ist 200 MB und es können maximal 50 "
+#~ "Dateien pro Repräsentation hochgeladen werden. Folgende Formate sind "
+#~ "zulässig: </ p> <ul> \t <li> Text / TabelleDokument- und Datenformate \t "
+#~ "\t <ul> \t \t \t <li> Textdokument (* .txt) </li> \t \t\t <li> Portable "
+#~ "Document Format (* .pdf) </ li> \t \t \t <li> "
+#~ "OpenDocumentTabellenkalkulation (* .ods) </li> \t \t \t <li> OpenDocument-"
+#~ "Textdokument (* .odt) </li> \t \t\t <li> Microsoft Word Open XML (* ."
+#~ "docx) </li> \t \t \t <li> Microsoft Word-Dokument(* .doc) </ li> \t \t \t "
+#~ "<li> Microsoft Excel 97-2003-Arbeitsblatt (* .xls) </li> \t \t\t <li> "
+#~ "Microsoft Excel Open XML-Tabelle (* .xlsx) </li> \t \t \t <li> "
+#~ "KommaGetrennte Werte (* .csv) </li> \t \t </ul> \t </li> \t <li> "
+#~ "Bildformate \t \t <ul> \t \t\t <li> Gemeinsame fotografische "
+#~ "Expertengruppe (* .jpg, * .jpeg) </li> \t \t \t <li> TagBilddateiformat "
+#~ "(* .tif, * .tiff) </li> \t \t \t <li> Tragbare Netzwerkgrafiken(png) </"
+#~ "li> \t \t </ul> \t </li> \t <li> Generische / geografische Markup-"
+#~ "Sprachformate \t\t <ul> \t \t \t <li> Erweiterbare Markup-Sprache (* ."
+#~ "xml) </li> \t \t \t <li> XML-SchemaDefinition (* .xsd) </li> \t \t \t "
+#~ "<li> Geografie-Markup-Sprache (* .gml) </li> \t \t\t <li> GPS-"
+#~ "Austauschformat (* .gpx) </li> \t \t \t <li> OpenStreetMap (* .osm) </li> "
+#~ "\t\t </ul> \t </li> </ul> <p> <emph> Anmerkung zum Datenschutz:</emph> "
+#~ "Alle Daten und Metadaten, die in die E-ARK-Referenzimplementierung "
+#~ "hochgeladen wurden, sind für alle angemeldeten Benutzer sichtbar. Wir "
+#~ "empfehlen Ihnen daher, keine .sensiblen Inhalte hochzuladen. Bitte "
+#~ "beachten Sie, dass die Daten auf täglich nachts (3 Uhr morgens MEZ) "
+#~ "gelöscht werden. </p>"
 
 #~ msgid "DistributionAccessRightsValueFree"
 #~ msgstr "Frei (Kein Vertrag erforderlich)"

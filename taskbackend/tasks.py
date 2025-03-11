@@ -1330,6 +1330,7 @@ def initialize_package_from_reception(container_path: str, uid: str, representat
 
             # Rename the representation folders
             shutil.move(src, dest)
+        os.makedirs(os.path.join(working_dir, documentation_directory), exist_ok=True)
 
 
     except ValueError as e:

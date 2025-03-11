@@ -16,14 +16,7 @@
      padding-left:3px
 }
 
-#context-menu {
-    display: none;
-    position: absolute;
-    background-color: white;
-    border: 1px solid #ccc;
-    padding: 20px;
-    z-index: 500;
-}
+
 
 
 /* Basic styling for the button */
@@ -51,6 +44,49 @@
 .help-block {
     font-size: 80%
 }
+#context-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 12px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    width: 450px;
+}
+#context-menu div {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#context-menu label {
+    flex: 1;
+    font-size: 14px;
+}
+#context-menu input[type="text"] {
+    flex: 2;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+#context-menu button {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: #007bff;
+    color: white;
+    font-size: 14px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+#context-menu button:hover {
+    background: #0056b3;
+}
+ /* Fixes checkbox alignment */
+ #context-menu input[type="checkbox"] {
+            transform: translateY(-4px);
+        }
 </style>
 <script type="text/javascript" src="{% static 'earkweb/bootstrap-notify/bootstrap-notify.js' %}"></script>
 <script language="javascript">
@@ -76,185 +112,109 @@ function generateId (len) {
 }
 
 function loadDataFiles(repr) {
-
-    console.log("Loading: "+repr);
+    console.log("Loading: " + repr);
 
     $.ajax({
-            type: 'GET',
-            url: '/earkweb/api/ips/{{ uid }}/dir-json',
-            data: {
+        type: 'GET',
+        url: '/earkweb/api/ips/{{ uid }}/dir-json',
+        data: {},
+        success: function(data) {
+            var representations = data.data.children.filter(obj => obj.text === '{{representations_directory}}');
+            var datafiles = representations[0]['children'].filter(obj => obj.text === repr);
 
-            },
-            success: function(data){
-                var representations = data.data.children.filter(obj => {
-                  return obj.text === '{{representations_directory}}';
-                })
+            initPrev = [];
+            initPrevConfig = [];
 
-                var datafiles = representations[0]['children'].filter(obj => {
-                  return obj.text === repr
-                })
+            if (datafiles.length > 0) {
+                var datafiles_arr = datafiles[0].children.filter(obj => obj.text === 'data')[0]['children'];
+                var mimeTypes = [];
+                var pv_file_paths = [];
 
-                initPrev = [];
-                initPrevConfig = [];
-
-                if(datafiles.length > 0) {
-
-                    //var datafiles_arr = datafiles[0].children['data'].children;
-
-                    var datafiles_arr = datafiles[0].children.filter(obj => {
-                      return obj.text === 'data'
-                    })[0]['children']
-
-
-                    var mimeTypes = [];
-
-                    //console.log(datafiles_arr);
-                    var pv_file_paths = [];
-                    function appendFilePaths(path, dfarr) {
-                        for (df of dfarr) {
-                            var curr_path = path ? path+"/"+df.text : df.text;
-                            if(!df.children) {
-                                pv_file_paths.push(curr_path);
-                                mimeTypes.push(df.data);
-                            } else {
-
-                                appendFilePaths(curr_path, df.children);
-                            }
+                function appendFilePaths(path, dfarr) {
+                    for (df of dfarr) {
+                        var curr_path = path ? path + "/" + df.text : df.text;
+                        if (!df.children) {
+                            pv_file_paths.push(curr_path);
+                            mimeTypes.push(df.data);
+                        } else {
+                            appendFilePaths(curr_path, df.children);
                         }
                     }
-                    appendFilePaths(null, datafiles_arr);
-                    pv_file_paths.sort();
-                    obj = [];
-
-
-                    for (var key in mimeTypes) {
-
-                        var downloadUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path'];
-                        var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/'+ mimeTypes[key]['path']+'/';
-                        caption = mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/'+repr+'/data/', '');
-                        initPrev.push(mimeTypes[key]['mimetype']);
-                        initPrevConfig.push({caption: caption, filetype: mimeTypes[key]['mimetype'], downloadUrl: downloadUrl, key: mimeTypes[key]['path'], previewAsData: false, 'showPreview': false, url: deleteUrl});
-                    }
-
                 }
+                appendFilePaths(null, datafiles_arr);
+                pv_file_paths.sort();
 
-                $("#kv-explorer").fileinput({
-                    minFileCount: 1,
-                    maxFileCount: 50,
-                    maxFileSize: 400000,
-                    'allowedFileExtensions' : ['csv', 'jpg', 'jpeg', 'jfif', 'tif', 'tiff', 'png', 'gpx', 'pdf', 'osm', 'ods',
-'odt', 'docx', 'doc', 'xml', 'txt', 'xls', 'xlsx', 'ppt', 'pptx', 'json', 'jsonl', 'gml', 'xsd', 'mp3', 'wav', 'zip'],
-                    'theme': 'explorer-fa',
-                    'uploadUrl': '/earkweb/submission/upload',
-                    overwriteInitial: false,
-                    allowedPreviewTypes: ['image'],
-                    initialPreviewAsData: false,
-                    initialPreview: initPrev,
-                    initialPreviewConfig: initPrevConfig,
-                    preferIconicPreview: true, // this will force thumbnails to display icons for following file extensions
-                    previewFileIconSettings: { // configure your icon file extensions
-                    'doc': '<i class="fas fa-file-word text-primary"></i>',
-                    'docx': '<i class="fas fa-file-word text-primary"></i>',
-                    'odt': '<i class="fas fa-file-word text-primary"></i>',
-                    'xls': '<i class="fas fa-file-excel text-primary"></i>',
-                    'xlsx': '<i class="fas fa-file-excel text-primary"></i>',
-                    'ods': '<i class="fas fa-file-excel text-primary"></i>',
-                    'ppt': '<i class="fas fa-file-powerpoint text-primary"></i>',
-                    'pptx': '<i class="fas fa-file-powerpoint text-primary"></i>',
-                    'pdf': '<i class="fas fa-file-pdf text-primary"></i>',
-                    'pdfa': '<i class="fas fa-file-pdf text-primary"></i>',
-                    'zip': '<i class="fas fa-file-archive text-primary"></i>',
-                    'htm': '<i class="fas fa-file-code text-primary"></i>',
-                    'txt': '<i class="fas fa-file-alt text-primary"></i>',
-                    'mov': '<i class="fas fa-file-video text-primary"></i>',
-                    'mp3': '<i class="fas fa-file-audio text-primary"></i>',
-                    'wav': '<i class="fas fa-file-audio text-primary"></i>',
-                    'csv': '<i class="fas fa-file-csv text-primary"></i>',
-                    'xml': '<i class="fas fa-file-code text-primary"></i>',
-                    'json': '<i class="fas fa-file-code text-primary"></i>',
-                    'jsonl': '<i class="fas fa-file-code text-primary"></i>',
-                    'gml': '<i class="fas fa-atlas text-primary"></i>',
-                    'xsd': '<i class="fas fa-file-code text-primary"></i>',
-                    'shp': '<i class="fas fa-atlas text-primary"></i>',
-                    'shx': '<i class="fas fa-atlas text-primary"></i>',
-                    'sql': '<i class="fas fa-database text-primary"></i>',
-
-                    // note for these file types below no extension determination logic
-                    // has been configured (the keys itself will be used as extensions)
-                    'jpg': '<i class="fas fa-file-image text-danger"></i>',
-                    'jfif': '<i class="fas fa-file-image text-muted"></i>',
-                    'gif': '<i class="fas fa-file-image text-muted"></i>',
-                    'png': '<i class="fas fa-file-image text-primary"></i>'
-                },
-                previewFileExtSettings: { // configure the logic for determining icon file extensions
-                    'csv': function(ext) {
-                        return ext.match(/(csv)$/i);
-                    },
-                    'doc': function(ext) {
-                        return ext.match(/(doc|docx)$/i);
-                    },
-                    'ods': function(ext) {
-                        return ext.match(/(ods)$/i);
-                    },
-                    'odt': function(ext) {
-                        return ext.match(/(odt)$/i);
-                    },
-                    'xls': function(ext) {
-                        return ext.match(/(xls|xlsx)$/i);
-                    },
-                    'ppt': function(ext) {
-                        return ext.match(/(ppt|pptx)$/i);
-                    },
-                    'zip': function(ext) {
-                        return ext.match(/(zip|rar|tar|gzip|gz|7z|xz)$/i);
-                    },
-                    'htm': function(ext) {
-                        return ext.match(/(htm|html)$/i);
-                    },
-                    'txt': function(ext) {
-                        return ext.match(/(txt|ini|java|php|js|css)$/i);
-                    },
-                    'mov': function(ext) {
-                        return ext.match(/(avi|mpg|mkv|mov|mp4|3gp|webm|wmv)$/i);
-                    },
-                    'mp3': function(ext) {
-                        return ext.match(/(mp3|wav)$/i);
-                    }
-                },
-                    uploadExtraData: function (previewId, index) {
-                    var info = {
-                        "uid": "{{ uid }}",
-                        "rep": repr,
-                        "distribution_description": $('#id_distribution_description').val(),
-                        "offer": $('#id_offer').val(),
-                        "access_rights": $('#id_access_rights').val(),
-                    };
-                    return info;
-                    }
-                });
-
-                $('button[title="View Details"]').css("display", "none");
-                $('span[title="Move / Rearrange"]').css("display", "none");
-
-                var rps = {{ representations | safe  }};
-                var repValue = $('#repval').val();
-                if(repValue) {
-                    var fileMetadata = rps[$('#repval').val()]['file_metadata'];
-                    // iterate file metadata and add descriptions to filenames
-                    $.each(fileMetadata, function(filename, description) {
-                        // Find the div with the matching title attribute
-                        const $div = $(`.explorer-caption[title="${filename}"]`);
-                        if ($div.length) {
-                            $div.after(`<span class="filedesc">${description}</span>`);
-                        }
+                for (var key in mimeTypes) {
+                    var downloadUrl = '{{ django_backend_service_url }}/submission/fileresource/' + mimeTypes[key]['path'];
+                    var deleteUrl = '{{ django_backend_service_url }}/submission/fileresource/' + mimeTypes[key]['path'] + '/';
+                    var caption = mimeTypes[key]['path'].replace('{{ uid }}/{{representations_directory}}/' + repr + '/data/', '');
+                    
+                    initPrev.push(mimeTypes[key]['mimetype']);
+                    initPrevConfig.push({
+                        caption: caption,
+                        filetype: mimeTypes[key]['mimetype'],
+                        downloadUrl: downloadUrl,
+                        key: mimeTypes[key]['path'],
+                        previewAsData: false,
+                        showPreview: false,
+                        url: deleteUrl
                     });
                 }
-            },
-            error: function(data){
-                window.console.log("an error occurred");
             }
-        });
+
+            $("#kv-explorer").fileinput({
+                minFileCount: 1,
+                maxFileCount: 50,
+                maxFileSize: 400000,
+                'allowedFileExtensions': ['csv', 'jpg', 'jpeg', 'png', 'pdf', 'json', 'xml', 'txt'],
+                'theme': 'explorer-fa',
+                'uploadUrl': '/earkweb/submission/upload',
+                overwriteInitial: false,
+                allowedPreviewTypes: ['image'],
+                initialPreviewAsData: false,
+                initialPreview: initPrev,
+                initialPreviewConfig: initPrevConfig,
+                preferIconicPreview: true
+            });
+
+            $('button[title="View Details"]').css("display", "none");
+            $('span[title="Move / Rearrange"]').css("display", "none");
+
+            // Load file metadata correctly
+            var rps = {{ representations | safe }};
+            var repValue = $('#repval').val();
+
+            if (repValue && rps[repValue] && rps[repValue]['file_metadata']) {
+                var fileMetadata = rps[repValue]['file_metadata'];
+
+                if (typeof fileMetadata === "string") {
+                    fileMetadata = JSON.parse(fileMetadata);
+                }
+
+                $.each(fileMetadata, function(filename, metadata) {
+                    const formattedFilename = filename.split('/').pop();
+                    const $div = $(`.explorer-caption[title="${formattedFilename}"]`);
+
+                    if ($div.length) {
+                        const previewIcon = metadata.isPreview ? '<i style="margin-left:3px" class="fas fa-eye" title="Preview object"></i>' : '';
+                        const publicAccessIcon = metadata.isPublicAccess ? '<i style="margin-left:3px" class="fas fa-globe" title="Public access"></i>' : '';
+
+                        if ($div.next('.filedesc').length) {
+                            $div.next('.filedesc').html(`${metadata.description} ${previewIcon} ${publicAccessIcon}`);
+                        } else {
+                            $div.after(`<span class="filedesc">${metadata.description} ${previewIcon} ${publicAccessIcon}</span>`);
+                        }
+                    }
+                });
+            }
+        },
+        error: function(data) {
+            console.log("An error occurred while loading file metadata.");
+        }
+    });
 }
+
+
 
 
 $( document ).ready(function() {
@@ -622,9 +582,19 @@ function delRep(rep, url) {
     </div>
 
     <!-- Context Menu (initially hidden) -->
-    <div id="context-menu" style="display:none; position: absolute;">
-        <label for="file-description">Description:</label>
-        <input type="text" id="file-description">
+    <div id="context-menu">
+        <div>
+            <label for="file-description">Description:</label>
+            <input type="text" id="file-description">
+        </div>
+        <div>
+            <input type="checkbox" id="isPublicAccessCheckbox">
+            <label for="isPublicAccessCheckbox">Public access object</label>
+        </div>
+        <div>
+            <input type="checkbox" id="isPreviewCheckbox">
+            <label for="isPreviewCheckbox">Preview object</label>
+        </div>
         <button id="context-ok">OK</button>
     </div>
 
@@ -698,27 +668,40 @@ function delRep(rep, url) {
     $(document).ready(function() {
     // Handle right-click event at the document level
     $(document).on("contextmenu", function(event) {
-      
-        // Check if the right-clicked element is an .explorer-caption
-        if ($(event.target).hasClass("explorer-caption")) {
-            event.preventDefault();
+    if ($(event.target).hasClass("explorer-caption")) {
+        event.preventDefault();
 
-            // Position and show context menu at the cursor location
-            $('#context-menu').css({
-                display: 'block',
-                left: (event.pageX - 200) + 'px', // adjust as needed
-                top: (event.pageY - 130) + 'px'
-            });
-       
+        $('#context-menu').css({
+            display: 'block',
+            left: (event.pageX - 200) + 'px',
+            top: (event.pageY - 130) + 'px'
+        });
 
-            // Store the filename for use when "OK" is clicked
-            const filename = $(event.target).attr('title');
-            $('#context-menu').data('filename', filename);
-        } else {
-            // Hide the context menu if clicked outside .explorer-caption
-            $('#context-menu').hide();
+        const filename = $(event.target).attr('title');
+        $('#context-menu').data('filename', filename);
+
+        var rps = {{ representations | safe }};
+        var repValue = $('#repval').val();
+
+        if (repValue && rps[repValue] && rps[repValue]['file_metadata']) {
+            var fileMetadata = rps[repValue]['file_metadata'];
+
+            if (typeof fileMetadata === "string") {
+                fileMetadata = JSON.parse(fileMetadata);
+            }
+
+            if (fileMetadata[filename]) {
+                const metadata = fileMetadata[filename];
+                $('#file-description').val(metadata.description || '');
+                $('#isPublicAccessCheckbox').prop('checked', metadata.isPublicAccess || false);
+                $('#isPreviewCheckbox').prop('checked', metadata.isPreview || false);
+            }
         }
-    });
+    } else {
+        $('#context-menu').hide();
+    }
+});
+
 
     // Hide context menu on click outside
     $(document).click(function(event) {
@@ -733,9 +716,11 @@ function delRep(rep, url) {
 
         const description = $('#file-description').val();
         const filename = $('#context-menu').data('filename');
+        const isPreview = $('#isPreviewCheckbox').prop('checked');
+        const isPublicAccess = $('#isPublicAccessCheckbox').prop('checked');
 
         const valueToSend = {};
-        valueToSend[filename] = description;
+        valueToSend[filename] = {'isPreview': isPreview, 'isPublicAccess': isPublicAccess, 'description': description};
 
         $.ajax({
             url: '/earkweb/submission/updatedistrmd',  
@@ -753,12 +738,12 @@ function delRep(rep, url) {
                 const description = valueToSend[filename];
 
                 const $div = $(`.explorer-caption[title="${filename}"]`);
-
-                // If the description span already exists, update it; otherwise, add a new one
+                const previewIcon = isPreview ? '<i style="margin-left:3px" class="fas fa-eye" title="Preview object"></i>' : '';
+                const publicAccessIcon = isPublicAccess ? '<i style="margin-left:3px" class="fas fa-globe" title="Public access"></i>' : '';
                 if ($div.next('.filedesc').length) {
-                    $div.next('.filedesc').text(description);
+                    $div.next('.filedesc').text(description.description);
                 } else {
-                    $div.after(`<span class="filedesc">${description}</span>`);
+                    $div.after(`<span class="filedesc">${description.description} ${previewIcon} ${publicAccessIcon}</span>`);
                 }
             },
             error: function(error) {

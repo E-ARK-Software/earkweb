@@ -442,7 +442,7 @@ if confirm_with_key "Do you want to proceed with installing solr (sudo required)
         echo "File '$SOLR_DIST_FILE' already exists in the current directory. Skipping download."
     else
         echo "File '$SOLR_DIST_FILE' not found. Downloading..."
-        wget "$SOLR_DIST_URK" || { echo_highlight $FAIL "Failed to download $FILE_NAME"; exit 1; }
+        wget "$SOLR_DIST_URL" || { echo_highlight $FAIL "Failed to download $FILE_NAME"; exit 1; }
         echo_hightlight $OKGREEN "Download complete."
     fi
     tar -xzvf solr-${SOLR_VERSION}.tgz

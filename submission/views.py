@@ -14,6 +14,7 @@ import requests
 import simplejson
 import tempfile
 import mimetypes
+from urllib.parse import quote
 from requests.auth import HTTPBasicAuth
 from rdflib import Literal
 from celery.result import AsyncResult
@@ -33,7 +34,7 @@ from django.utils.safestring import mark_safe
 from django.shortcuts import render, redirect
 from django_tables2 import RequestConfig
 from earkweb.views import get_domain_scheme
-from eatb.utils.datetime import DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
+from eatb.utils.datetime import DT_ISO_FORMAT_FILENAME, DT_ISO_FORMAT, ts_date, DATE_DMY, date_format
 from eatb.utils.dictutils import dict_keys_underscore_to_camel, dict_keys_camel_to_underscore
 from eatb.utils.randomutils import get_unique_id
 from eatb.utils.fileutils import get_immediate_subdirectories, find_files
@@ -48,8 +49,10 @@ from config.configuration import documentation_directory, representations_direct
     repo_catalogue_modified, \
     verify_certificate, django_backend_service_api_url, metadata_directory, django_backend_service_url, \
     django_service_url, accepted_identifier_examples, config_max_http_download
+from eatb.utils.fileutils import to_safe_filename
 from config.configuration import config_path_work, config_path_reception
 from config.configuration import identifier_pattern
+from config.configuration import urn_event_pattern
 from earkweb.models import InformationPackage
 from earkweb.models import Representation, InternalIdentifier, Vocabulary
 from earkweb.utils.representation_utils import register_representations_from_data_package
@@ -896,7 +899,16 @@ def ip_creation_process(request, pk):
             zoom_level = location['zoomLevel']
             location_uncertainty = location['locationUncertainty']
             uncertainty_radius = location['locationUncertaintyRadius']
-            spatial_info = f"{label}, {lat}, {lng} ({zoom_level}, {location_uncertainty}, {uncertainty_radius})"
+
+            # Record the ingestion event
+            eventIdentifier = urn_event_pattern.format(
+                event_type=to_safe_filename(location['locationEvent']), 
+                quoted_identifier=quote(ip.identifier, safe=''), 
+                date_time_string=location['locationDate']
+            )
+            locationEvent = location['locationEvent']
+            locationDate = location['locationDate']
+            spatial_info = f"{label}, {lat}, {lng} ({zoom_level}, {location_uncertainty}, {uncertainty_radius}, {eventIdentifier}, {locationEvent}, {locationDate})"
             g.add((parent_resource_uri, DCTERMS.spatial, Literal(spatial_info)))
             g.add((parent_resource_uri, DCTERMS.temporal, Literal(basic_metadata["created"])))
 

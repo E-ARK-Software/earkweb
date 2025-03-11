@@ -73,13 +73,16 @@ function generateUUID() {
         return v.toString(16);
     });
 }
-function MapLocation(label, lat, lng, zoomLevel, locationUncertainty=0, locationUncertaintyRadius=0) {
+function MapLocation(label, lat, lng, zoomLevel, locationUncertainty=0, locationUncertaintyRadius=0, locationEvent="", locationDate="") {
     this.identifier = "urn:eark:location:" + generateUUID();
     this.label = label;
     this.coordinates = { lat: lat, lng: lng };
     this.zoomLevel = zoomLevel;
     this.locationUncertainty = locationUncertainty;
     this.locationUncertaintyRadius = locationUncertaintyRadius;
+    this.eventIdentifier = "urn:eark:event:" + generateUUID();
+    this.locationEvent = locationEvent;
+    this.locationDate = locationDate;
 }
 MapLocation.prototype.toString = function() {
     return JSON.stringify({
@@ -88,7 +91,10 @@ MapLocation.prototype.toString = function() {
         coordinates: this.coordinates,
         zoomLevel: this.zoomLevel,
         locationUncertainty: this.locationUncertainty,
-        locationUncertaintyRadius: this.locationUncertaintyRadius
+        locationUncertaintyRadius: this.locationUncertaintyRadius,
+        eventIdentifier: this.eventIdentifier,
+        locationEvent: this.locationEvent,
+        locationDate: this.locationDate
     });
 };
 MapLocation.fromString = function(str) {
@@ -100,35 +106,164 @@ MapLocation.fromString = function(str) {
         obj.coordinates.lng,
         obj.zoomLevel,
         obj.locationUncertainty,
-        obj.locationUncertaintyRadius
+        obj.locationUncertaintyRadius,
+        obj.eventIdentifier,
+        obj.locationEvent,
+        obj.locationDate
     );
 };
 
 function persistLocations() {
-    // persist locations
     let persistedLocationsArr = [];
-    for (const [key, value] of Object.entries(window.locationsRecord)) {       
+    for (const [key, value] of Object.entries(window.locationsRecord)) {
         if (value instanceof MapLocation) {
-             persistedLocationsArr.push(value.toString());
+            persistedLocationsArr.push(value.toString());
         }
     }
     persistedLocations = persistedLocationsArr.join(", ");
     $('#locations')[0].value = "[" + persistedLocations + "]";
+    console.log("Persisted locations:", $('#locations')[0].value); // Debugging output
 }
+
 
 function handleLocationEvent() {
-        // store current location in locations dictionary
-        if (!(window.currentLocation.label in window.locationsRecord)) {
-            let loc = window.currentLocation;
-            window.locationsRecord[window.currentLocation.label] = new MapLocation(
-                loc.label, loc.lat, loc.lng, loc.zoomLevel, loc.locationUncertainty, loc.locationUncertaintyRadius
-            );
-            persistLocations();
-        }
+    let eventName = $("#event_name").val();
+    let eventDate = $("#event_date").val();
+    let label = $("#location").val();
 
-        // reset current location object
-        window.currentLocation = Object.create(Location);
+    // Check if the location already exists, and update instead of creating a new one
+    if (label in window.locationsRecord) {
+        let existingLocation = window.locationsRecord[label];
+        existingLocation.locationUncertainty = $("#locslider").slider("value");
+        existingLocation.locationUncertaintyRadius = window.currentLocation.locationUncertaintyRadius;
+        existingLocation.locationEvent = eventName;
+        existingLocation.locationDate = eventDate;
+
+        // Update marker tooltip with new label
+        existingLocation.marker.setTooltipContent(label);
+
+        // Remove old circle and create a new one
+        if (existingLocation.circle) {
+            map.removeLayer(existingLocation.circle);
+        }
+        existingLocation.circle = L.circle([existingLocation.marker.getLatLng().lat, existingLocation.marker.getLatLng().lng], {
+            color: 'blue',
+            fillColor: 'blue',
+            fillOpacity: 0.3,
+            radius: existingLocation.locationUncertaintyRadius
+        }).addTo(map);
+
+    } else {
+        // If the location doesn't exist, create a new one
+        let loc = new MapLocation(label, window.currentLocation.lat, window.currentLocation.lng, window.currentLocation.zoomLevel, $("#locslider").slider("value"), window.currentLocation.locationUncertaintyRadius, eventName, eventDate);
+        
+        loc.marker = L.marker([window.currentLocation.lat, window.currentLocation.lng], {
+            title: label,
+            draggable: true
+        }).addTo(map);
+        
+        loc.marker.bindTooltip(label, { permanent: true, direction: 'right' });
+        
+        loc.circle = L.circle([window.currentLocation.lat, window.currentLocation.lng], {
+            color: 'blue',
+            fillColor: 'blue',
+            fillOpacity: 0.3,
+            radius: window.currentLocation.locationUncertaintyRadius
+        }).addTo(map);
+
+        // Store new location
+        window.locationsRecord[label] = loc;
+
+        // Add click event for editing
+        loc.marker.on("click", function (e) {
+            openEditContextMenu(e, loc);
+        });
+
+        // Enable dragging and updating position
+        loc.marker.on("dragend", function (e) {
+            loc.coordinates.lat = e.target.getLatLng().lat;
+            loc.coordinates.lng = e.target.getLatLng().lng;
+            persistLocations();
+        });
+    }
+
+    persistLocations();
+    window.map.closePopup();
 }
+
+
+function openEditContextMenu(e, location) {
+    L.popup()
+        .setLatLng(e.latlng)
+        .setContent(`
+            <div class="form-group ui-widget">
+                <label for="location">Location name</label>
+                <input style="width:200px" class="form-control" id="location" type="text" value="${location.label}" />
+
+                <label for="locslider">Location uncertainty</label>
+                <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
+
+                <!-- Button to toggle event details -->
+                <button class="btn btn-secondary btn-sm" type="button" id="toggle_event_btn">
+                    + Add event details
+                </button>
+
+                <!-- Event details (initially hidden) -->
+                <div id="event_details" style="display: block; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <label for="event_name">Event name</label>
+                    <input style="width:200px" class="form-control" id="event_name" type="text" value="${location.locationEvent}" />
+
+                    <label for="event_date">Event date</label>
+                    <input style="width:200px" class="form-control" id="event_date" type="date" value="${location.locationDate}" />
+                </div>
+
+                <button id="update_location_btn" class="btn btn-primary" type="button">Save Changes</button>
+            </div>
+        `)
+        .addTo(map)
+        .openOn(map);
+
+    // Update slider
+    $("#locslider").slider({
+        range: "min",
+        min: 0,
+        max: 100,
+        value: location.locationUncertainty,
+        change: function (event, ui) {
+            location.locationUncertainty = ui.value;
+            if (location.circle) {
+                map.removeLayer(location.circle);
+            }
+            location.circle = L.circle([location.marker.getLatLng().lat, location.marker.getLatLng().lng], {
+                color: 'blue',
+                fillColor: 'blue',
+                fillOpacity: 0.3,
+                radius: (200000 / Math.pow(2, location.zoomLevel)) * ui.value
+            }).addTo(map);
+        }
+    });
+
+    // Save changes when clicking the button
+    $("#update_location_btn").on("click", function () {
+        location.label = $("#location").val();
+        location.locationEvent = $("#event_name").val();
+        location.locationDate = $("#event_date").val();
+        location.locationUncertainty = $("#locslider").slider("value");
+
+        location.marker.setTooltipContent(location.label);
+
+        persistLocations();
+        window.map.closePopup();
+    });
+
+    // Toggle event details visibility
+    $("#toggle_event_btn").on("click", function () {
+        $("#event_details").slideToggle();
+        let btnText = $(this).text() === "+ Add event details" ? "- Hide event details" : "+ Add event details";
+        $(this).text(btnText);
+    });
+}
+
 </script>
 {% endif %}
 
@@ -451,6 +586,8 @@ $(document).ready(function() {
       zoomLevel: 0,
       locationUncertainty: 0,
       locationUncertaintyRadius: 0,
+      locationEvent: "",
+      locationDate: "",
       marker: undefined,
       circle: undefined
     };
@@ -470,27 +607,47 @@ $(document).ready(function() {
 
     if(existingLocations.length > 0) {
         for (const item of existingLocations) {
-            var currLoc = Object.create(Location);
-            currLoc.label = item.label;
-            currLoc.locationUncertainty = item.locationUncertainty;
-            currLoc.locationUncertaintyRadius = item.locationUncertaintyRadius;
+            var currLoc = new MapLocation(
+                item.label,
+                item.coordinates.lat,
+                item.coordinates.lng,
+                item.zoomLevel,
+                item.locationUncertainty,
+                item.locationUncertaintyRadius,
+                item.locationEvent,
+                item.locationDate
+            );
 
-            currLoc.marker = new L.marker([item.coordinates.lat, item.coordinates.lng], {
+            currLoc.marker = L.marker([item.coordinates.lat, item.coordinates.lng], {
                 title: item.label,
-                clickable: true,
                 draggable: true
             }).addTo(map);
+
             currLoc.marker.bindTooltip(item.label, { permanent: true, direction: 'right' });
-            currLoc.circle = new L.circle([item.coordinates.lat, item.coordinates.lng], {
+
+            currLoc.circle = L.circle([item.coordinates.lat, item.coordinates.lng], {
                 color: 'blue',
                 fillColor: 'blue',
                 fillOpacity: 0.3,
                 radius: item.locationUncertaintyRadius
-                }).addTo(map);
-            console.log(currLoc);
+            }).addTo(map);
+
             window.locationsRecord[item.label] = currLoc;
+
+            // Enable clicking to edit
+            currLoc.marker.on("click", function (e) {
+                openEditContextMenu(e, currLoc);
+            });
+
+            // Enable dragging and updating position
+            currLoc.marker.on("dragend", function (e) {
+                currLoc.coordinates.lat = e.target.getLatLng().lat;
+                currLoc.coordinates.lng = e.target.getLatLng().lng;
+                persistLocations();
+            });
         }
     }
+
 
     $('#add_location_btn').bind('click', function(event) {
         // Prevent the default form submission behavior
@@ -502,14 +659,30 @@ $(document).ready(function() {
     });
 
     // context menu html
-    html = `
-    <div class="form-group ui-widget">
-        <label for="location">Location name</label>
-        <input style="width:200px" class="form-control ui-autocomplete-input" id="location" type="text" value=""/>
-        <label for="locslider">Location uncertainty</label>
-        <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
-        <button id="add_location_btn" class="btn btn-primary" type="button">{% trans 'Add location' %}</button>
-    </div>
+    let html = `
+        <div class="form-group ui-widget">
+            <label for="location">Location name</label>
+            <input style="width:200px" class="form-control ui-autocomplete-input" id="location" type="text" value=""/>
+            
+            <label for="locslider">Location uncertainty</label>
+            <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
+
+            <!-- Button to toggle event details -->
+            <button class="btn btn-secondary btn-sm" type="button" id="toggle_event_btn">
+                + Add event details
+            </button>
+
+            <!-- Event details (initially hidden) -->
+            <div id="event_details" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <label for="event_name">Event name</label>
+                <input style="width:200px" class="form-control" id="event_name" type="text" />
+                
+                <label for="event_date">Event date</label>
+                <input style="width:200px" class="form-control" id="event_date" type="date" />
+            </div>
+
+            <button id="add_location_btn" class="btn btn-primary" type="button">Add location</button>
+        </div>
     `;
     
     // map context menu
@@ -591,7 +764,7 @@ $(document).ready(function() {
 
 
 <style>
-    #map { height: 400px; }
+    #map { height: 600px; }
 </style>
 
 
@@ -599,14 +772,26 @@ $(document).ready(function() {
 
 {% block content %}
 
+
+{% if "step1" in request.path %}
 <h2>{% trans 'Information package metadata' %}</h2>
+{% elif "step2" in request.path %}
+<h2>{% trans 'Geospatial metadata' %}</h2>
+{% elif "step3" in request.path %}
+<h2>{% trans 'Contact metadata' %}</h2>
+{% elif "step4" in request.path %}
+<h2>{% trans 'Supplementary Documentation' %}</h2>
+{% else %}
+<h2>{% trans 'Metadata' %}</h2>
+{% endif %}
 
 {% if "step2" in request.path %}
 <p>{% trans 'Right click on the map to add a location. Move the "location uncertainty" slider to create a circle for the area of the location. On the top right of the map you can search for a location.' %}</p>
 {% endif %}
 
 {% if "step4" in request.path %}
-<p>{% trans 'Upload supplementary documentation necessary to understand, manage, and preserve the digital information contained within the package. The files will be stored in the "documentation" folder in the root of the information package.' %}</p>
+
+<p>{% trans 'Upload <b>supplementary documentation</b> necessary to understand, manage, and preserve the digital information contained within the package. The files will be <b>stored in the "documentation" folder</b> of the information package. (see CSIPSTR16 related to the <a href="https://earkcsip.dilcis.eu/#folderstructureofthecsip">folder structure of the E-ARK CSIP</a>).' %}</p>
 {% endif %}
 
 <form name="mdform" method="post">
@@ -772,9 +957,10 @@ function onRemoveTag(e){
 function onInvalidTag(e){
     console.log(e, e.detail);
 }
+    </script>
 -->
 
-</script>
+
 
 {% if "step4" in request.path %}
 <script>
@@ -804,6 +990,19 @@ $(document).ready(function() {
         }
     );
 });
+</script>
+{% endif %}
+
+{% if "step2" in request.path %}
+<script>
+    $(document).ready(function () {
+        // Use event delegation to handle dynamically inserted elements
+        $(document).on("click", "#toggle_event_btn", function () {
+            $("#event_details").slideToggle(); // Smooth toggle
+            let btnText = $(this).text() === "+ Add event details" ? "- Hide event details" : "+ Add event details";
+            $(this).text(btnText);
+        });
+    });
 </script>
 {% endif %}
 

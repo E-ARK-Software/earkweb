@@ -30,6 +30,8 @@ from config.configuration import config_path_storage
 from config.configuration import flower_service_url
 from config.configuration import flower_user
 from config.configuration import flower_password
+from config.configuration import django_backend_service_api_url, verify_certificate
+
 from earkweb.models import InformationPackage, Representation
 
 from django.utils.translation import gettext_lazy as _
@@ -277,6 +279,81 @@ def search(request):
         'local_solr_port': solr_port,
     }
     return HttpResponse(template.render(context=context, request=request))
+
+
+def landing_page(request, identifier):
+    """
+    Fetch metadata using the API and display public file resources.
+    """
+    # Fetch metadata from the API
+    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json"
+    response = requests.get(metadata_url)
+
+    if response.status_code != 200:
+        raise Http404("Metadata not found")
+
+    metadata = response.json()
+
+    # Extract metadata fields
+    title = metadata.get("title", "Untitled Package")
+    description = metadata.get("description", "No description available.")
+
+    # Extract publicly available files and preview image
+    public_files = []
+    preview_image = None
+
+    for repkey, repdata in metadata.get("representations", {}).items():
+        for filename, file_data in repdata.get("file_metadata", {}).items():
+            file_path = f"representations/{repkey}/data/{filename}"
+            if file_data.get("isPublicAccess", False):
+                file_description = file_data.get("description", filename)  # Use description if available
+                public_files.append({"path": file_path, "description": file_description})
+                if file_data.get("isPreview", False):
+                    preview_image = file_path
+
+    # Get custom stylesheet from query parameters
+    stylesheet = request.GET.get("stylesheet", None)
+
+    return render(request, "access/package_files.html", {
+        "identifier": identifier,
+        "title": title,
+        "description": description,
+        "preview_image": preview_image,
+        "public_files": public_files,
+        "stylesheet": stylesheet
+    })
+
+
+def disseminate(request, identifier, entry):
+    """
+    disseminate
+    """
+    logging.debug("Storage path: %s" % config_path_storage)
+    logging.debug("Data asset: %s " % identifier)
+    logging.debug("Entry path: %s " % entry)
+
+    url = f"{django_service_url}/api/ips/{identifier}/file-resource/{entry}/"
+    response = requests.get(url)
+    if response.status_code == 404:
+        return render(request, 'earkweb/error.html',
+                      {'header': 'Not available',
+                       'message': "Resource not found!"})
+    elif response.status_code == 200:
+        content_type = response.headers['content-type']
+        if content_type == "application/pdf":
+            search_term = request.GET["search"] if "search" in request.GET else None
+            import base64
+            base64_encoded = base64.b64encode(response.content)
+            base64_string = base64_encoded.decode("ascii")
+            return render(request, 'access/pdfviewer.html', {'url': url, "search": search_term, 'data': base64_string})
+        if content_type.startswith('text'):
+            content_type = '%s; charset=utf-8' % content_type
+        print(content_type)
+        return HttpResponse(response.content, content_type=content_type)
+    else:
+        return render(request, 'earkweb/error.html',
+                      {'header': 'An error occurred',
+                       'message': "An error occurred when trying to retrieve the entry: %s" % entry})
 
 
 @login_required

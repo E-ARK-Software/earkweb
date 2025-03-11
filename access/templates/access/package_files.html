@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% if stylesheet %}
+    <link rel="stylesheet" href="{{ stylesheet }}">
+    {% else %}
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #333; }
+        p { font-size: 16px; color: #555; }
+        .preview { max-width: 100%; height: auto; margin-bottom: 20px; }
+        .file-list { list-style-type: none; padding: 0; }
+        .file-list li { margin: 5px 0; }
+        .file-list a { text-decoration: none; color: #007bff; font-weight: bold; }
+        .file-list a:hover { text-decoration: underline; }
+    </style>
+    {% endif %}
+</head>
+<body>
+
+    <h1>{{ title }}</h1>
+    <p>{{ description }}</p>
+
+    {% if preview_image %}
+        <h2>Preview Image</h2>
+        <img src="/earkweb/access/{{ identifier }}/{{ preview_image }}" class="preview" alt="Preview Image">
+    {% endif %}
+
+    <h2>Available Files</h2>
+    <ul class="file-list">
+        {% for file in public_files %}
+            <li><a href="/earkweb/access/{{ identifier }}/{{ file.path }}/" target="_blank">{{ file.description }}</a></li>
+        {% empty %}
+            <li>No publicly available files.</li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>

@@ -50,9 +50,11 @@ from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework import parsers
 from rest_framework import renderers
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from uuid import uuid4
 from rest_framework import generics
 from util.djangoutils import check_required_params, get_unused_identifier
+
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
@@ -460,9 +462,8 @@ def reception_file_resource(request, ip_sub_file_path):
 
 @csrf_exempt
 @api_view(['GET'])
-@authentication_classes((TokenAuthentication, BasicAuthentication, SessionAuthentication))
-@permission_classes((IsAuthenticated,))
-def do_storage_file_resource(_, identifier, ip_sub_file_path):
+@permission_classes([AllowAny])
+def do_storage_file_resource(request, identifier, ip_sub_file_path):
     """
     get: Retrieve file resource (file system)
 
@@ -486,10 +487,27 @@ def do_storage_file_resource(_, identifier, ip_sub_file_path):
     """
     dpts = PairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
-    version = dpts.curr_version(package_id)
-    #access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
-    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
+    version = dpts.curr_version(package_id).replace("-", "0")
+    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
+    #access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
     file_path = os.path.join(access_path, ip_sub_file_path)
+    # Check if file is public
+    is_public = False
+    metadata_file = os.path.join(access_path, "metadata/metadata.json")
+    if not os.path.exists(metadata_file):
+        return JsonResponse({"error": "Metadata file not found"}, status=404)
+    with open(metadata_file, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+    for repkey, representation in metadata.get("representations", {}).items():
+        file_metadata = representation.get("file_metadata", {})
+        file_key = ip_sub_file_path.replace(f'representations/{repkey}/data/','')
+        if file_key in file_metadata and file_metadata[file_key].get("isPublicAccess", False):
+            is_public = True
+            break
+    # Enforce authentication for private files
+    if not ip_sub_file_path.endswith("metadata.json") and not is_public:
+        if not request.user.is_authenticated:
+            return JsonResponse({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
     return read_file(file_path)
 
 

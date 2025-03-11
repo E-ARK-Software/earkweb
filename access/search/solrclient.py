@@ -264,15 +264,6 @@ class SolrClient(object):
     def index_directory(self, directory_path, identifier, version, progress_reporter=default_reporter, task_log=None):
         """
         Recursively iterate over files in a directory and post them to Solr.
-
-        @type       directory_path: string
-        @param      directory_path: Path to the directory containing content files
-
-        @type       identifier: string
-        @param      identifier: Identifier of the package
-
-        @rtype: list(dict(string, int))
-        @return: List of URLs and their corresponding return codes
         """
         progress_reporter(0)
         task_log = task_log if task_log else logger
@@ -294,7 +285,6 @@ class SolrClient(object):
         for root, dirs, files in os.walk(directory_path):
             for file in files:
                 full_path = os.path.join(root, file)
-                rel_path = os.path.relpath(full_path, directory_path)
                 if valid_path_regex.search(full_path):
                     files_to_index.append(full_path)
 
@@ -310,33 +300,46 @@ class SolrClient(object):
             params['literal.archivedate'] = datetime.fromtimestamp(os.path.getctime(file_path)).astimezone(pytz.UTC)
             params['literal.version'] = int(re.search(r'\d+', version).group(0))
 
-            # Add descriptions and metadata
             filename = os.path.basename(file_path)
-            if 'representations' in metadata and metadata['representations']:
-                representation_items = metadata['representations'].items()
-                print(representation_items)
-                for rep_id, rep_data in representation_items:
-                    if rep_data and 'file_metadata' in rep_data and rep_data['file_metadata'] and filename in rep_data['file_metadata']:
+            
+            # Extract file metadata if available
+            if 'representations' in metadata:
+                for rep_id, rep_data in metadata['representations'].items():
+                    if 'file_metadata' in rep_data and filename in rep_data['file_metadata']:
+                        file_meta = rep_data['file_metadata'][filename]
+                        params['literal.isPreview'] = file_meta.get('isPreview', False)
+                        params['literal.description'] = file_meta.get('description', '')
+                        params['literal.representation'] = rep_data.get('distribution_label', '')
+                        params['literal.rights'] = rep_data.get('access_rights', '')
+                        
                         urn_params = {
-                            'node_namespace_id': node_namespace_id,
-                            'repo_id': repo_id,
+                            'node_namespace_id': metadata.get('nodeNamespaceId', ''),
+                            'repo_id': metadata.get('repoId', ''),
                             'encoded_package_id': quote(identifier, safe=''),
                             'representation_id': rep_id,
                             'encoded_file_path': quote(filename, safe='')
                         }
                         urn = urn_file_pattern.format(**urn_params)
                         params['literal.identifier'] = urn
-                        params['literal.representation'] = rep_data['distribution_label']
-                        params['literal.rights'] = rep_data['access_rights']
-                        params['literal.label'] = rep_data['file_metadata'][filename]
-                        task_log.debug(f"Added description for '{filename}': {rep_data['file_metadata'][filename]}")
+                        task_log.debug(f"Added metadata for '{filename}': {file_meta}")
 
-            # Add main level metadata entries
+            # Add location metadata if available
+            if 'locations' in metadata:
+                for i, location in enumerate(metadata['locations']):
+                    params[f'literal.location_{i}_id'] = location.get('identifier', '')
+                    params[f'literal.location_{i}_label'] = location.get('label', '')
+                    params[f'literal.location_{i}_lat'] = location.get('coordinates', {}).get('lat', '')
+                    params[f'literal.location_{i}_lng'] = location.get('coordinates', {}).get('lng', '')
+                    params[f'literal.location_{i}_zoom'] = location.get('zoomLevel', '')
+                    params[f'literal.location_{i}_uncertainty'] = location.get('locationUncertainty', '')
+                    params[f'literal.location_{i}_radius'] = location.get('locationUncertaintyRadius', '')
+                    task_log.debug(f"Added location metadata {i} for file '{filename}': {location}")
+
+            # Add main metadata fields
             selected_main_keys = metadata_fields_list
             for main_key, main_value in metadata.items():
-                if main_key != "representations" and main_key in selected_main_keys:
+                if main_key != "representations" and main_key != "locations" and main_key in selected_main_keys:
                     params[f'literal.{main_key}'] = main_value
-                    task_log.debug(f"Added main level metadata '{main_key}': {main_value}")
 
             # Post file to Solr
             try:
@@ -344,21 +347,18 @@ class SolrClient(object):
                     files = {'file': ('userfile', f)}
                     post_url = f"{self.url}/update/extract?{urlencode(params)}"
                     response = requests.post(post_url, files=files, verify=verify_certificate)
-                    result = {"url": post_url, "status": response.status_code}
-                    results.append(result)
+                    results.append({"url": post_url, "status": response.status_code})
 
                     if response.status_code != 200:
                         task_log.info(f"Failed to post '{file_path}' (status {response.status_code}).")
             except Exception as e:
                 task_log.error(f"Error posting file '{file_path}': {str(e)}")
 
-            percent = (num / numfiles) * 100
-            progress_reporter(percent)
+            progress_reporter((num / numfiles) * 100)
 
         self.commit()
         task_log.info(f"Finished indexing files in directory: {directory_path}")
         return results
-
 
 
     def commit(self):
