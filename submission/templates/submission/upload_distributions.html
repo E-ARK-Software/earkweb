@@ -215,8 +215,6 @@ function loadDataFiles(repr) {
 }
 
 
-
-
 $( document ).ready(function() {
 
     if(Object.getOwnPropertyNames(representations).length < 2) {
@@ -485,11 +483,7 @@ function delRep(rep, url) {
         $('#reperr').html("Identifier character length must be between 30 and 50!");
     $('#reprnote').invisible();
 
-
-
 }
-
-
 </script>
 
 {% endblock %}
@@ -615,62 +609,62 @@ function delRep(rep, url) {
 {% block after_body %}
 <script>
 
-    $(document).ready(function () {
+$(document).ready(function () {
 
-        $('#kv-explorer').on('fileuploaded', function(event, data, previewId, index) {
-            var response = data.response;
-            if(response.ret ) {
-                window.console.log("upload success!"+data.response.data);
-            }else{
-                window.console.log("upload failed!"+response.errmsg)
-            }
-            console.info(response.data);
-        });
-
-
+    $('#kv-explorer').on('fileuploaded', function(event, data, previewId, index) {
+        var response = data.response;
+        if(response.ret ) {
+            window.console.log("upload success!"+data.response.data);
+        }else{
+            window.console.log("upload failed!"+response.errmsg)
+        }
+        console.info(response.data);
+    });
 
     //$("#kv-explorer").fileinput('destroy');
     loadDataFiles('{{ rep }}');
     //$("#kv-explorer").fileinput('reset');
 
+});
+
+$(document).ready(function() {
+    const $button = $('#finalizebtn');
+    const $popup = $('#popup');
+
+    $button.hover(
+        function() {
+            // Get button's position and dimensions
+            const rect = this.getBoundingClientRect();
+            const popupWidth = $popup.outerWidth();
+            const popupHeight = $popup.outerHeight();
+
+            // Position the popup above the button (or adjust as needed)
+            $popup.css({
+                left: `${(rect.left/2) + (rect.width / 2) - (popupWidth / 2) - 38}px`,
+                top: `${rect.top}px`
+            });
+
+            // Show the popup
+            $popup.addClass('visible');
+        },
+        function() {
+            // Hide the popup
+            $popup.removeClass('visible');
+        }
+    );
+});
 
 
-    });
-
-    $(document).ready(function() {
-        const $button = $('#finalizebtn');
-        const $popup = $('#popup');
-
-        $button.hover(
-            function() {
-                // Get button's position and dimensions
-                const rect = this.getBoundingClientRect();
-                const popupWidth = $popup.outerWidth();
-                const popupHeight = $popup.outerHeight();
-
-                // Position the popup above the button (or adjust as needed)
-                $popup.css({
-                    left: `${(rect.left/2) + (rect.width / 2) - (popupWidth / 2) - 38}px`,
-                    top: `${rect.top}px`
-                });
-
-                // Show the popup
-                $popup.addClass('visible');
-            },
-            function() {
-                // Hide the popup
-                $popup.removeClass('visible');
-            }
-        );
-    });
-
-    
-    $(document).ready(function() {
-    // Handle right-click event at the document level
-    $(document).on("contextmenu", function(event) {
+$(document).on("contextmenu", function(event) {
     if ($(event.target).hasClass("explorer-caption")) {
         event.preventDefault();
 
+        // Clear the form fields
+        $('#file-description').val('');
+        $('#isPublicAccessCheckbox').prop('checked', false);
+        $('#isPreviewCheckbox').prop('checked', false);
+
+        // Show the context menu at the correct position
         $('#context-menu').css({
             display: 'block',
             left: (event.pageX - 200) + 'px',
@@ -703,57 +697,55 @@ function delRep(rep, url) {
 });
 
 
-    // Hide context menu on click outside
-    $(document).click(function(event) {
-        if (!$(event.target).closest('#context-menu').length) {
-            $('#context-menu').hide();
-        }
-    });
-
-    // Send description via AJAX on "OK" button click
-    $('#context-ok').click(function(event) {
-        event.preventDefault();
-
-        const description = $('#file-description').val();
-        const filename = $('#context-menu').data('filename');
-        const isPreview = $('#isPreviewCheckbox').prop('checked');
-        const isPublicAccess = $('#isPublicAccessCheckbox').prop('checked');
-
-        const valueToSend = {};
-        valueToSend[filename] = {'isPreview': isPreview, 'isPublicAccess': isPublicAccess, 'description': description};
-
-        $.ajax({
-            url: '/earkweb/submission/updatedistrmd',  
-            type: 'POST',
-            data: {
-                'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
-                'pk': '{{ pk }}',
-                'rep': $('#repval').val(),
-                'param_name': 'file_metadata',
-                'param_value': JSON.stringify(valueToSend),
-            },
-            success: function(response) {
-                $('#context-menu').hide();
-                const filename = Object.keys(valueToSend)[0];
-                const description = valueToSend[filename];
-
-                const $div = $(`.explorer-caption[title="${filename}"]`);
-                const previewIcon = isPreview ? '<i style="margin-left:3px" class="fas fa-eye" title="Preview object"></i>' : '';
-                const publicAccessIcon = isPublicAccess ? '<i style="margin-left:3px" class="fas fa-globe" title="Public access"></i>' : '';
-                if ($div.next('.filedesc').length) {
-                    $div.next('.filedesc').text(description.description);
-                } else {
-                    $div.after(`<span class="filedesc">${description.description} ${previewIcon} ${publicAccessIcon}</span>`);
-                }
-            },
-            error: function(error) {
-                alert('Error saving description.');
-            }
-        });
-    });
+$(document).click(function(event) {
+    if (!$(event.target).closest('#context-menu').length) {
+        $('#context-menu').hide();
+    }
 });
 
+$('#context-ok').click(function(event) {
+    event.preventDefault();
 
+    const filename = $('#context-menu').data('filename');
+    const description = $('#file-description').val();
+    const isPreview = $('#isPreviewCheckbox').prop('checked');
+    const isPublicAccess = $('#isPublicAccessCheckbox').prop('checked');
+
+    const valueToSend = {};
+    valueToSend[filename] = {
+        'isPreview': isPreview,
+        'isPublicAccess': isPublicAccess,
+        'description': description
+    };
+
+    $.ajax({
+        url: '/earkweb/submission/updatedistrmd',
+        type: 'POST',
+        data: {
+            'csrfmiddlewaretoken': $("input[name='csrfmiddlewaretoken']").val(),
+            'pk': '{{ pk }}',
+            'rep': $('#repval').val(),
+            'param_name': 'file_metadata',
+            'param_value': JSON.stringify(valueToSend),
+        },
+        success: function(response) {
+            $('#context-menu').hide();
+
+            const $fileItem = $(`.explorer-caption[title="${filename}"]`);
+            const previewIcon = isPreview ? '<i style="margin-left:3px" class="fas fa-eye" title="Preview object"></i>' : '';
+            const publicAccessIcon = isPublicAccess ? '<i style="margin-left:3px" class="fas fa-globe" title="Public access"></i>' : '';
+
+            // Remove any existing description and icons
+            $fileItem.next('.filedesc').remove();
+
+            // Add the new description and icons
+            $fileItem.after(`<span class="filedesc">${description} ${previewIcon} ${publicAccessIcon}</span>`);
+        },
+        error: function(error) {
+            alert('Error saving description.');
+        }
+    });
+});
 </script>
 {% endblock %}
 
