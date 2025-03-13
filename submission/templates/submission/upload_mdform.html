@@ -115,34 +115,140 @@ MapLocation.fromString = function(str) {
 
 function persistLocations() {
     let persistedLocationsArr = [];
+
     for (const [key, value] of Object.entries(window.locationsRecord)) {
         if (value instanceof MapLocation) {
             persistedLocationsArr.push(value.toString());
         }
     }
-    persistedLocations = persistedLocationsArr.join(", ");
-    $('#locations')[0].value = "[" + persistedLocations + "]";
-    console.log("Persisted locations:", $('#locations')[0].value); // Debugging output
+
+    let persistedLocations = persistedLocationsArr.length > 0 ? "[" + persistedLocationsArr.join(", ") + "]" : "[]";
+
+    $('#locations').val(persistedLocations);
+    console.log("Updated persisted locations:", $('#locations').val());
 }
 
 
-function handleLocationEvent() {
+$(document).on("click", "#update_location_btn", function () {
+    let oldLabel = $("#location").attr("data-original-label"); // Track the old name
+    let newLabel = $("#location").val();
     let eventName = $("#event_name").val();
     let eventDate = $("#event_date").val();
-    let label = $("#location").val();
+    let locationUncertainty = $("#locslider").slider("value");
 
-    // Check if the location already exists, and update instead of creating a new one
-    if (label in window.locationsRecord) {
-        let existingLocation = window.locationsRecord[label];
-        existingLocation.locationUncertainty = $("#locslider").slider("value");
-        existingLocation.locationUncertaintyRadius = window.currentLocation.locationUncertaintyRadius;
+    let location;
+
+    if (oldLabel in window.locationsRecord) {
+        location = window.locationsRecord[oldLabel];
+    } else {
+        for (const key in window.locationsRecord) {
+            if (window.locationsRecord[key].marker.getLatLng().lat === window.currentLocation.marker.getLatLng().lat &&
+                window.locationsRecord[key].marker.getLatLng().lng === window.currentLocation.marker.getLatLng().lng) {
+                location = window.locationsRecord[key];
+                break;
+            }
+        }
+    }
+
+    if (location) {
+        delete window.locationsRecord[oldLabel];
+
+        location.label = newLabel;
+        location.locationEvent = eventName;
+        location.locationDate = eventDate;
+        location.locationUncertainty = locationUncertainty;
+
+        window.locationsRecord[newLabel] = location;
+
+        location.marker.setTooltipContent(newLabel);
+
+        persistLocations();
+        window.map.closePopup();
+    }
+});
+
+$(document).on("click", "#toggle_event_btn", function () {
+    let eventDetailsDiv = $("#event_details");
+
+    if (eventDetailsDiv.is(":visible")) {
+        eventDetailsDiv.slideUp();
+        $(this).text("+ Add event details");
+    } else {
+        eventDetailsDiv.slideDown();
+        $(this).text("- Hide event details");
+    }
+});
+
+$(document).on("click", "#delete_location_btn", function () {
+    let locationLabel = $("#location").val();
+    let location = window.locationsRecord[locationLabel];
+
+    console.log("Attempting to delete location:", locationLabel);
+
+    if (location) {
+        console.log("Location found in window.locationsRecord:", location);
+
+        if (location.marker && map.hasLayer(location.marker)) {
+            console.log("Removing marker...");
+            map.removeLayer(location.marker);
+            location.marker = null; 
+        }
+        if (location.circle && map.hasLayer(location.circle)) {
+            console.log("Removing circle...");
+            map.removeLayer(location.circle);
+            location.circle = null;
+        }
+
+        delete window.locationsRecord[locationLabel];
+    } 
+
+    if (window.currentLocation && window.currentLocation.marker) {
+        console.log("Removing window.currentLocation marker...");
+        if (map.hasLayer(window.currentLocation.marker)) {
+            map.removeLayer(window.currentLocation.marker);
+        }
+        window.currentLocation.marker = null;
+    }
+
+    if (window.currentLocation && window.currentLocation.circle) {
+        console.log("Removing window.currentLocation circle...");
+        if (map.hasLayer(window.currentLocation.circle)) {
+            map.removeLayer(window.currentLocation.circle);
+        }
+        window.currentLocation.circle = null;
+    }
+
+    window.currentLocation = {};
+
+    persistLocations(); 
+    window.map.closePopup();
+});
+
+
+$(document).on("click", "#add_location_btn", function () {
+    handleLocationEvent(); 
+    window.map.closePopup(); 
+});
+
+function handleLocationEvent() {
+    let locationLabel = $("#location").val();
+    let eventName = $("#event_name").val();
+    let eventDate = $("#event_date").val();
+    let locationUncertainty = $("#locslider").slider("value");
+
+    if (!locationLabel) {
+        alert("Please enter a location name.");
+        return;
+    }
+
+    if (window.locationsRecord[locationLabel]) {
+        let existingLocation = window.locationsRecord[locationLabel];
+        existingLocation.locationUncertainty = locationUncertainty;
         existingLocation.locationEvent = eventName;
         existingLocation.locationDate = eventDate;
 
-        // Update marker tooltip with new label
-        existingLocation.marker.setTooltipContent(label);
+        existingLocation.marker.setTooltipContent(locationLabel);
 
-        // Remove old circle and create a new one
         if (existingLocation.circle) {
             map.removeLayer(existingLocation.circle);
         }
@@ -152,18 +258,28 @@ function handleLocationEvent() {
             fillOpacity: 0.3,
             radius: existingLocation.locationUncertaintyRadius
         }).addTo(map);
-
     } else {
-        // If the location doesn't exist, create a new one
-        let loc = new MapLocation(label, window.currentLocation.lat, window.currentLocation.lng, window.currentLocation.zoomLevel, $("#locslider").slider("value"), window.currentLocation.locationUncertaintyRadius, eventName, eventDate);
-        
+        // Create a new location object
+        let loc = new MapLocation(
+            locationLabel,
+            window.currentLocation.lat,
+            window.currentLocation.lng,
+            window.currentLocation.zoomLevel,
+            locationUncertainty,
+            window.currentLocation.locationUncertaintyRadius,
+            eventName,
+            eventDate
+        );
+
+        // Create marker
         loc.marker = L.marker([window.currentLocation.lat, window.currentLocation.lng], {
-            title: label,
+            title: locationLabel,
             draggable: true
         }).addTo(map);
-        
-        loc.marker.bindTooltip(label, { permanent: true, direction: 'right' });
-        
+
+        loc.marker.bindTooltip(locationLabel, { permanent: true, direction: 'right' });
+
+        // Create uncertainty circle
         loc.circle = L.circle([window.currentLocation.lat, window.currentLocation.lng], {
             color: 'blue',
             fillColor: 'blue',
@@ -171,10 +287,10 @@ function handleLocationEvent() {
             radius: window.currentLocation.locationUncertaintyRadius
         }).addTo(map);
 
-        // Store new location
-        window.locationsRecord[label] = loc;
+        // Store the new location
+        window.locationsRecord[locationLabel] = loc;
 
-        // Add click event for editing
+        // Click event for editing
         loc.marker.on("click", function (e) {
             openEditContextMenu(e, loc);
         });
@@ -188,9 +304,13 @@ function handleLocationEvent() {
     }
 
     persistLocations();
-    window.map.closePopup();
+    window.map.closePopup(); // Ensure the popup closes after adding the location
 }
 
+$(document).on("contextmenu", function () {
+    $("#event_details").show();
+    $("#toggle_event_btn").text("- Hide event details");
+});
 
 function openEditContextMenu(e, location) {
     L.popup()
@@ -198,18 +318,18 @@ function openEditContextMenu(e, location) {
         .setContent(`
             <div class="form-group ui-widget">
                 <label for="location">Location name</label>
-                <input style="width:200px" class="form-control" id="location" type="text" value="${location.label}" />
+                <input style="width:200px" class="form-control" id="location" type="text" value="${location.label}" data-original-label="${location.label}" />
 
                 <label for="locslider">Location uncertainty</label>
                 <div style="margin-left:2px;margin-bottom:10px" id="locslider"></div>
 
                 <!-- Button to toggle event details -->
                 <button class="btn btn-secondary btn-sm" type="button" id="toggle_event_btn">
-                    + Add event details
+                    ${location.locationEvent ? "- Hide event details" : "+ Add event details"}
                 </button>
 
                 <!-- Event details (initially hidden) -->
-                <div id="event_details" style="display: block; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                <div id="event_details" style="display: ${location.locationEvent ? "block" : "none"}; margin-top: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                     <label for="event_name">Event name</label>
                     <input style="width:200px" class="form-control" id="event_name" type="text" value="${location.locationEvent}" />
 
@@ -218,6 +338,7 @@ function openEditContextMenu(e, location) {
                 </div>
 
                 <button id="update_location_btn" class="btn btn-primary" type="button">Save Changes</button>
+                <button id="delete_location_btn" class="btn btn-danger" type="button">Delete</button>
             </div>
         `)
         .addTo(map)
@@ -242,27 +363,8 @@ function openEditContextMenu(e, location) {
             }).addTo(map);
         }
     });
-
-    // Save changes when clicking the button
-    $("#update_location_btn").on("click", function () {
-        location.label = $("#location").val();
-        location.locationEvent = $("#event_name").val();
-        location.locationDate = $("#event_date").val();
-        location.locationUncertainty = $("#locslider").slider("value");
-
-        location.marker.setTooltipContent(location.label);
-
-        persistLocations();
-        window.map.closePopup();
-    });
-
-    // Toggle event details visibility
-    $("#toggle_event_btn").on("click", function () {
-        $("#event_details").slideToggle();
-        let btnText = $(this).text() === "+ Add event details" ? "- Hide event details" : "+ Add event details";
-        $(this).text(btnText);
-    });
 }
+
 
 </script>
 {% endif %}
@@ -648,16 +750,6 @@ $(document).ready(function() {
         }
     }
 
-
-    $('#add_location_btn').bind('click', function(event) {
-        // Prevent the default form submission behavior
-        event.preventDefault();
-        // Call your event handler function
-        handleLocationEvent();
-        // Return false to ensure the form is not submitted
-        return false;
-    });
-
     // context menu html
     let html = `
         <div class="form-group ui-widget">
@@ -693,9 +785,7 @@ $(document).ready(function() {
         .addTo(map)
         .openOn(map);
 
-        map.addEventListener("popupclose", e => {
-            //handleLocationEvent();
-        });
+        
 
         // marker
         window.currentLocation.marker = L.marker([e.latlng.lat, e.latlng.lng], {
@@ -903,64 +993,6 @@ $(document).ready(function() {
         });
     });
 </script>
-<script>
-
-$(document).ready(function() {
-    $(document).on('click', '#add_location_btn', function(event) {
-            // Prevent the default form submission behavior
-            event.preventDefault();
-
-            // Call your event handler function
-            handleLocationEvent();
-
-            window.map.closePopup();
-
-            // Return false to ensure the form is not submitted
-            return false;
-        });
-});
-</script>
-<!--
-<input name="tags" placeholder="write some tags" value="css, html, javascript, css">
-
-<script>
-    var input = document.querySelector('input[name=tags]'),
-    // init Tagify script on the above inputs
-    tagify = new Tagify(input, {e
-        whitelist : ["A# .NET", "A# (Axiom)", "A-0 System", "A+", "A++", "ABAP", "ABC", "ABC ALGOL", "ABSET", "ABSYS", "ACC", "Accent", "Ace DASL", "ACL2", "Avicsoft", "ACT-III", "Action!", "ActionScript", "Ada", "Adenine", "Agda", "Agilent VEE", "Agora", "AIMMS", "Alef", "ALF", "ALGOL 58", "ALGOL 60", "ALGOL 68", "ALGOL W", "Alice", "Alma-0", "AmbientTalk", "Amiga E", "AMOS", "AMPL", "Apex (Salesforce.com)", "APL", "AppleScript", "Arc", "ARexx", "Argus", "AspectJ", "Assembly language", "ATS", "Ateji PX", "AutoHotkey", "Autocoder", "AutoIt", "AutoLISP / Visual LISP", "Averest", "AWK", "Axum", "Active Server Pages", "ASP.NET", "B", "Babbage", "Bash", "BASIC", "bc", "BCPL", "BeanShell", "Batch (Windows/Dos)", "Bertrand", "BETA", "Bigwig", "Bistro", "BitC", "BLISS", "Blockly", "BlooP", "Blue", "Boo", "Boomerang", "Bourne shell (including bash and ksh)", "BREW", "BPEL", "B", "C--", "C++ – ISO/IEC 14882", "C# – ISO/IEC 23270", "C/AL", "Caché ObjectScript", "C Shell", "Caml", "Cayenne", "CDuce", "Cecil", "Cesil", "Céu", "Ceylon", "CFEngine", "CFML", "Cg", "Ch", "Chapel", "Charity", "Charm", "Chef", "CHILL", "CHIP-8", "chomski", "ChucK", "CICS", "Cilk", "Citrine (programming language)", "CL (IBM)", "Claire", "Clarion", "Clean", "Clipper", "CLIPS", "CLIST", "Clojure", "CLU", "CMS-2", "COBOL – ISO/IEC 1989", "CobolScript – COBOL Scripting language", "Cobra", "CODE", "CoffeeScript", "ColdFusion", "COMAL", "Combined Programming Language (CPL)", "COMIT", "Common Intermediate Language (CIL)", "Common Lisp (also known as CL)", "COMPASS", "Component Pascal", "Constraint Handling Rules (CHR)", "COMTRAN", "Converge", "Cool", "Coq", "Coral 66", "Corn", "CorVision", "COWSEL", "CPL", "CPL", "Cryptol", "csh", "Csound", "CSP", "CUDA", "Curl", "Curry", "Cybil", "Cyclone", "Cython", "M2001", "M4", "M#", "Machine code", "MAD (Michigan Algorithm Decoder)", "MAD/I", "Magik", "Magma", "make", "Maple", "MAPPER now part of BIS", "MARK-IV now VISION:BUILDER", "Mary", "MASM Microsoft Assembly x86", "MATH-MATIC", "Mathematica", "MATLAB", "Maxima (see also Macsyma)", "Max (Max Msp – Graphical Programming Environment)", "MaxScript internal language 3D Studio Max", "Maya (MEL)", "MDL", "Mercury", "Mesa", "Metafont", "Microcode", "MicroScript", "MIIS", "Milk (programming language)", "MIMIC", "Mirah", "Miranda", "MIVA Script", "ML", "Model 204", "Modelica", "Modula", "Modula-2", "Modula-3", "Mohol", "MOO", "Mortran", "Mouse", "MPD", "Mathcad", "MSIL – deprecated name for CIL", "MSL", "MUMPS", "Mystic Programming L","temple","stun","detective","sign","passion","routine","deck","discriminate","relaxation","fraud","attractive","soft","forecast","point","thank","stage","eliminate","effective","flood","passive","skilled","separation","contact","compromise","reality","district","nationalist","leg","porter","conviction","worker","vegetable","commerce","conception","particle","honor","stick","tail","pumpkin","core","mouse","egg","population","unique","behavior","onion","disaster","cute","pipe","sock","dialect","horse","swear","owner","cope","global","improvement","artist","shed","constant","bond","brink","shower","spot","inject","bowel","homosexual","trust","exclude","tough","sickness","prevalence","sister","resolution","cattle","cultural","innocent","burial","bundle","thaw","respectable","thirsty","exposure","team","creed","facade","calendar","filter","utter","dominate","predator","discover","theorist","hospitality","damage","woman","rub","crop","unpleasant","halt","inch","birthday","lack","throne","maximum","pause","digress","fossil","policy","instrument","trunk","frame","measure","hall","support","convenience","house","partnership","inspector","looting","ranch","asset","rally","explicit","leak","monarch","ethics","applied","aviation","dentist","great","ethnic","sodium","truth","constellation","lease","guide","break","conclusion","button","recording","horizon","council","paradox","bride","weigh","like","noble","transition","accumulation","arrow","stitch","academy","glimpse","case","researcher","constitutional","notion","bathroom","revolutionary","soldier","vehicle","betray","gear","pan","quarter","embarrassment","golf","shark","constitution","club","college","duty","eaux","know","collection","burst","fun","animal","expectation","persist","insure","tick","account","initiative","tourist","member","example","plant","river","ratio","view","coast","latest","invite","help","falsify","allocation","degree","feel","resort","means","excuse","injury","pupil","shaft","allow","ton","tube","dress","speaker","double","theater","opposed","holiday","screw","cutting","picture","laborer","conservation","kneel","miracle","brand","nomination","characteristic","referral","carbon","valley","hot","climb","wrestle","motorist","update","loot","mosquito","delivery","eagle","guideline","hurt","feedback","finish","traffic","competence","serve","archive","feeling","hope","seal","ear","oven","vote","ballot","study","negative","declaration","particular","pattern","suburb","intervention","brake","frequency","drink","affair","contemporary","prince","dry","mole","lazy","undermine","radio","legislation","circumstance","bear","left","pony","industry","mastermind","criticism","sheep","failure","chain","depressed","launch","script","green","weave","please","surprise","doctor","revive","banquet","belong","correction","door","image","integrity","intermediate","sense","formal","cane","gloom","toast","pension","exception","prey","random","nose","predict","needle","satisfaction","establish","fit","vigorous","urgency","X-ray","equinox","variety","proclaim","conceive","bulb","vegetarian","available","stake","publicity","strikebreaker","portrait","sink","frog","ruin","studio","match","electron","captain","channel","navy","set","recommend","appoint","liberal","missile","sample","result","poor","efflux","glance","timetable","advertise","personality","aunt","dog", "weather","energy", "Austria","Vienna"],
-        blacklist : ["react", "angular"]
-    });
-
-
-// "remove all tags" button event listener
-document.querySelector('.tags--removeAllBtn')
-    .addEventListener('click', tagify.removeAllTags.bind(tagify))
-
-// Chainable event listeners
-tagify.on('add', onAddTag)
-      .on('remove', onRemoveTag)
-      .on('invalid', onInvalidTag);
-
-// tag added callback
-function onAddTag(e){
-    console.log(e, e.detail);
-    console.log( tagify.DOM.originalInput.value )
-    tagify.off('add', onAddTag) // exmaple of removing a custom Tagify event
-}
-
-// tag remvoed callback
-function onRemoveTag(e){
-    console.log(e, e.detail);
-}
-
-// invalid tag added callback
-function onInvalidTag(e){
-    console.log(e, e.detail);
-}
-    </script>
--->
-
-
 
 {% if "step4" in request.path %}
 <script>
@@ -990,19 +1022,6 @@ $(document).ready(function() {
         }
     );
 });
-</script>
-{% endif %}
-
-{% if "step2" in request.path %}
-<script>
-    $(document).ready(function () {
-        // Use event delegation to handle dynamically inserted elements
-        $(document).on("click", "#toggle_event_btn", function () {
-            $("#event_details").slideToggle(); // Smooth toggle
-            let btnText = $(this).text() === "+ Add event details" ? "- Hide event details" : "+ Add event details";
-            $(this).text(btnText);
-        });
-    });
 </script>
 {% endif %}
 
