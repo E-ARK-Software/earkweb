@@ -1017,13 +1017,11 @@ def oai_pmh(request):
     Returns:
     - HttpResponse: OAI-PMH Overview Page
     """
-    # Fetch the first InformationPackage with a defined identifier
-    # pylint: disable-next=no-member
-    ip = InformationPackage.objects.filter(identifier__isnull=False).first()
+    # Fetch the first InformationPackage with a non-empty identifier
+    ip = InformationPackage.objects.filter(identifier__isnull=False).exclude(identifier="").first()
 
     # Render the template with the context
-    template = loader.get_template('earkweb/oai_pmh.html')
-    return HttpResponse(template.render(context={"identifier": ip.identifier if ip else None}, request=request))
+    return render(request, 'earkweb/oai_pmh.html', {"identifier": ip.identifier if ip else None})
 
 
 @login_required
