@@ -16,6 +16,8 @@ from django.template import loader
 from django.http import JsonResponse
 import django_tables2 as tables
 from django.utils.safestring import mark_safe
+from django.http import StreamingHttpResponse
+import mimetypes
 from requests.auth import HTTPBasicAuth
 import requests
 from django.contrib.auth.models import User
@@ -324,36 +326,49 @@ def landing_page(request, identifier):
     })
 
 
+def stream_it(url):
+    response = requests.get(url, stream=True)
+    for chunk in response.iter_content(chunk_size=8192):
+        if chunk:
+            yield chunk
+
 def disseminate(request, identifier, entry):
     """
-    disseminate
+    Disseminate function for handling PDF, text, and large video files.
     """
     logging.debug("Storage path: %s" % config_path_storage)
     logging.debug("Data asset: %s " % identifier)
     logging.debug("Entry path: %s " % entry)
 
     url = f"{django_service_url}/api/ips/{identifier}/file-resource/{entry}/"
-    response = requests.get(url)
+    response = requests.get(url, stream=True)
+
     if response.status_code == 404:
         return render(request, 'earkweb/error.html',
                       {'header': 'Not available',
                        'message': "Resource not found!"})
     elif response.status_code == 200:
-        content_type = response.headers['content-type']
+        content_type = response.headers.get('content-type', '')
+        
         if content_type == "application/pdf":
-            search_term = request.GET["search"] if "search" in request.GET else None
+            search_term = request.GET.get("search", None)
             import base64
             base64_encoded = base64.b64encode(response.content)
             base64_string = base64_encoded.decode("ascii")
             return render(request, 'access/pdfviewer.html', {'url': url, "search": search_term, 'data': base64_string})
-        if content_type.startswith('text'):
-            content_type = '%s; charset=utf-8' % content_type
-        print(content_type)
+
+        elif content_type.startswith('text'):
+            return HttpResponse(response.content, content_type=f'{content_type}; charset=utf-8')
+
+        elif content_type.startswith('video') or content_type.startswith('audio'):
+            video_mime_type, _ = mimetypes.guess_type(entry)
+            return StreamingHttpResponse(stream_it(url), content_type=video_mime_type)
+
         return HttpResponse(response.content, content_type=content_type)
-    else:
-        return render(request, 'earkweb/error.html',
-                      {'header': 'An error occurred',
-                       'message': "An error occurred when trying to retrieve the entry: %s" % entry})
+
+    return render(request, 'earkweb/error.html',
+                  {'header': 'An error occurred',
+                   'message': f"An error occurred when trying to retrieve the entry: {entry}"})
 
 
 @login_required
