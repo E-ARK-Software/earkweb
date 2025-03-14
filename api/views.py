@@ -488,15 +488,19 @@ def do_storage_file_resource(request, identifier, ip_sub_file_path):
     dpts = PairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
     version = dpts.curr_version(package_id).replace("-", "0")
-    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage), version)
+    access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
     aip_root__path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
     if ip_sub_file_path == "inventory.json":
         file_path = os.path.join(aip_root__path, ip_sub_file_path)
     else:
-        file_path = os.path.join(access_path, ip_sub_file_path)
+        version_pattern = re.compile(r'^v\d{5}')
+        if bool(version_pattern.match(ip_sub_file_path)):
+            file_path = os.path.join(access_path, ip_sub_file_path)
+        else:
+            file_path = os.path.join(access_path, version, ip_sub_file_path)
     # Check if file is public
     is_public = False
-    metadata_file = os.path.join(access_path, "metadata/metadata.json")
+    metadata_file = os.path.join(access_path, version, "metadata/metadata.json")
     if not os.path.exists(metadata_file):
         return JsonResponse({"error": "Metadata file not found"}, status=404)
     with open(metadata_file, "r", encoding="utf-8") as f:
