@@ -184,16 +184,16 @@ class MetaFormStep5(forms.Form):
       choices = [
             ("Restricted", _('RestrictedAccess')),
             ("CC BY", _('CreativeCommonsAttribution')),
-            ("CC BY-SA", _('CreativeCommonsAttributionShareAlike')),
-            ("CC BY-ND", _('CreativeCommonsAttributionNoDerivatives')),
-            ("CC BY-NC", _('CreativeCommonsAttributionNonCommercial')),
-            ("CC BY-NC-SA", _('CreativeCommonsAttributionNonCommercialShareAlike')),
-            ("CC BY-NC-ND", _('CreativeCommonsAttributionNonCommercialNoDerivatives')),
-            ("CC0", _('CreativeCommonsZero')),
-            ("GPL-3.0", _('GNUGeneralPublicLicensev3.0')),
-            ("MIT", _('MITLicense')),
-            ("Apache-2.0", _('ApacheLicense2.0')),
-            ("BSD-3-Clause", _('BSD3ClauseLicense'))
+            ("http://creativecommons.org/licenses/by-sa/4.0/", _('CreativeCommonsAttributionShareAlike')),
+            ("https://creativecommons.org/licenses/by-nd/2.0/deed.en", _('CreativeCommonsAttributionNoDerivatives')),
+            ("https://creativecommons.org/licenses/by-nc/2.0/deed.en", _('CreativeCommonsAttributionNonCommercial')),
+            ("https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en", _('CreativeCommonsAttributionNonCommercialShareAlike')),
+            ("https://creativecommons.org/licenses/by-nc-nd/4.0/deed.en", _('CreativeCommonsAttributionNonCommercialNoDerivatives')),
+            ("https://creativecommons.org/public-domain/cc0/", _('CreativeCommonsZero')),
+            ("https://www.gnu.org/licenses/gpl-3.0-standalone.html", _('GNUGeneralPublicLicensev3.0')),
+            ("https://opensource.org/license/mit", _('MITLicense')),
+            ("https://opensource.org/license/apache-2-0", _('ApacheLicense2.0')),
+            ("https://opensource.org/license/bsd-3-clause", _('BSD3ClauseLicense'))
         ],
     )
 
