@@ -224,9 +224,8 @@ def get_record(request):
         return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported by the item or by the repository.')
 
     # API call to fetch metadata
-    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-item/metadata/metadata.json/"
-    user_api_token = get_user_api_token(request.user)
-    response = requests.get(metadata_url, headers={'Authorization': f'Token {user_api_token}'}, verify=verify_certificate)
+    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json/"
+    response = requests.get(metadata_url)
     
     if response.status_code != 200:
         return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
@@ -363,6 +362,12 @@ where:
                 ET.SubElement(resource, 'resourceName').text = file_name
                 ET.SubElement(resource, 'resourceDescription').text = file_data.get('description', 'No Description')
                 ET.SubElement(resource, 'isPreview').text = str(file_data.get('isPreview', False))
+                ET.SubElement(resource, 'bytesSize').text = str(file_data.get('bytesSize', False))
+                ET.SubElement(resource, 'mimeType').text = str(file_data.get('mimeType', False))
+                if str(file_data.get('mimeType', False)).startswith('audio'):
+                    ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', False))
+                if str(file_data.get('mimeType', False)).startswith('video'):
+                    ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', False))
 
                 # Construct the full file URL
                 file_url = f"{django_backend_service_url}/access/{identifier}/{file_path}"
