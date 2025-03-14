@@ -369,7 +369,7 @@ function openEditContextMenu(e, location) {
 </script>
 {% endif %}
 
-{% if "step1" in request.path %}
+{% if "step1" in request.path or "modify" in request.path %}
 <script>
 
 $(document).ready(function() {
