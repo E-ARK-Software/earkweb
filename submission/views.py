@@ -71,7 +71,8 @@ from django.utils.translation import gettext_lazy as _
 from util.flowerapiclient import get_task_info, get_task_list
 
 import unicodedata
-
+from mutagen import File as MutagenFile
+from moviepy import VideoFileClip
 
 logger = logging.getLogger(__name__)
 
@@ -774,25 +775,53 @@ def ip_creation_process(request, pk):
         # pylint: disable-next=no-member
         reprecords = Representation.objects.filter(ip=ip)
         repinfo = {}
+
         for reprecord in reprecords:
+            file_metadata = {}  
             try:
+                # Ensure file_metadata is a valid dictionary
                 file_metadata = json.loads(reprecord.file_metadata) if isinstance(reprecord.file_metadata, str) else reprecord.file_metadata
+                if not isinstance(file_metadata, dict):
+                    file_metadata = {}  # Ensure it's a dict
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON for file_metadata in {reprecord.identifier}: {e}")
                 file_metadata = {}  
 
-            # Now construct the repinfo dictionary
+            file_items = []
+            data_path = os.path.join(config_path_work, ip.uid, representations_directory, reprecord.identifier, "data")
+            for f in find_files(data_path, "*"):
+                file_item = f.replace(data_path, "").strip("/")
+                file_items.append(file_item)
+
+                if os.path.exists(f):
+                    # Ensure file_item exists in file_metadata before assignment
+                    if file_item not in file_metadata:
+                        file_metadata[file_item] = {}  # Initialize it as an empty dictionary
+
+                    file_metadata[file_item]["bytesSize"] = os.path.getsize(f)
+                    mime_type, _ = mimetypes.guess_type(f)
+                    file_metadata[file_item]['mimeType'] = mime_type or 'application/octet-stream'
+
+                    # Duration for media files
+                    if mime_type:
+                        try:
+                            if mime_type.startswith('audio'):
+                                audio = MutagenFile(f)
+                                duration = audio.info.length if audio.info else None
+                                file_metadata[file_item]['durationSeconds'] = round(duration, 2) if duration else None
+                            elif mime_type.startswith('video'):
+                                with VideoFileClip(f) as video:
+                                    file_metadata[file_item]['durationSeconds'] = round(video.duration, 2)
+                        except Exception as e:
+                            logger.warning(f"Media type metadata cannot be extracted for {reprecord.identifier}: {e}")
+
             repinfo[reprecord.identifier] = {
                 'distribution_label': reprecord.label,
                 'distribution_description': reprecord.description,
                 'access_rights': reprecord.accessRights,
-                'file_metadata': file_metadata,  # This will be valid JSON or an empty dict if there was an error
-                'file_items': [
-                    f.replace(os.path.join(config_path_work, ip.uid), "").strip("/")
-                    for f in find_files(os.path.join(config_path_work, ip.uid, representations_directory, reprecord.identifier, "data"), "*")
-                ]
+                'file_metadata': file_metadata,
+                'file_items': file_items
             }
-
 
         if reprecords:
             context = dict(chain(context.items(), {'representations': repinfo}.items()))
