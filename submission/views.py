@@ -462,7 +462,24 @@ def upload_step1(request, pk):
         data3 = dict(post_data.items())
         data3['tags'] = realtags
         data3['user_generated_tags'] = usertags
+
+        # remove query parameter
+        data3.pop("q", None)
+        data3.pop("selected_items", None)
+        data3.pop("selected_data", None)
+
         data4 = {key: Literal(val) if isinstance(val, list) else Literal(val) for key, val in data3.items()}
+
+        # Linked data items
+        selected_items = request.POST.getlist("selected_items") 
+        parsed_items = [] 
+        for item in selected_items:
+            if "|" in item:  
+                label, link = item.split("|", 1)  
+                parsed_items.append({"label": label.strip(), "link": link.strip()}) 
+        data4['linked_data'] = parsed_items
+
+
         if form.is_valid():
             request.session['step1'] = data4
             url = "/earkweb/submission/upload_step2/%s/" % (str(ip.id))
@@ -482,10 +499,15 @@ def upload_step1(request, pk):
         tags = []
         user_generated_tags = []
         # if the file is available, parse it and get metadata properties
+        selected_items_data = [] 
         if ip.basic_metadata and ip.basic_metadata != 'null':
             md_properties = json.loads(ip.basic_metadata)
 
             md_properties = dict_keys_camel_to_underscore(md_properties)
+
+            # Extract linked data if available
+            if "linked_data" in md_properties and isinstance(md_properties["linked_data"], list):
+                selected_items_data = md_properties["linked_data"]  
 
             request.session['md_properties'] = md_properties
             # load existing metadata values as initial form values
@@ -507,6 +529,7 @@ def upload_step1(request, pk):
         return render(request, 'submission/upload_mdform.html', {
             'form': form,
             'ip': ip,
+            'selected_items_data': selected_items_data,
             'tags': [val.name for val in ip.tags.all()],
             'user_generated_tags': user_generated_tags,
             'locations': request.session['md_properties']["locations"] if "md_properties" in request.session.keys() and "locations" in request.session['md_properties'] else {}
@@ -1528,3 +1551,75 @@ def get_autocomplete(request):
 def get_autocomplete_tags(request):
     eurovoc_terms = list(Vocabulary.objects.values_list('term', flat=True))
     return JsonResponse(eurovoc_terms, safe=False)
+
+
+def search_wikidata(query):
+    """Function to search Wikidata"""
+    url = "https://www.wikidata.org/w/api.php"
+    params = {
+        "action": "wbsearchentities",
+        "format": "json",
+        "language": "en",
+        "search": query
+    }
+    response = requests.get(url, params=params)
+    
+    if response.status_code == 200:
+        return [
+            {
+                "label": item.get("label", "Unknown"),
+                "id": item["id"],
+                "link": f"https://www.wikidata.org/wiki/{item['id']}"  # Convert to full URL
+            }
+            for item in response.json().get("search", [])
+        ]
+    
+    return []
+
+
+def search_gnd(query):
+    """Function to search GND (German National Library)"""
+    url = f"https://lobid.org/gnd/search?q={query}&format=json"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  
+
+        data = response.json()
+        logger.info("GND API Response: %s", data)  
+
+        if "member" not in data:  
+            return []
+
+        return [
+            {
+                "label": entry.get("preferredName", "Unknown"),
+                "id": entry["id"],
+                "link": entry["id"]
+            }
+            for entry in data.get("member", [])
+        ]
+    except requests.exceptions.RequestException as e:
+        logger.error("Error fetching GND data: %s", e)
+        return [] 
+
+@login_required
+@csrf_exempt
+def search_ld(request):
+    query = request.GET.get('q', '')
+    search_gnd_enabled = request.GET.get('gnd', 'true') == 'true'
+    search_wd_enabled = request.GET.get('wd', 'true') == 'true' 
+    wikidata_results = []
+    gnd_results = []
+
+    if query:
+        if search_wd_enabled:
+            wikidata_results = search_wikidata(query)
+        if search_gnd_enabled:
+            gnd_results = search_gnd(query)
+
+    return JsonResponse({
+        'query': query,
+        'wikidata_results': wikidata_results,
+        'gnd_results': gnd_results
+    })

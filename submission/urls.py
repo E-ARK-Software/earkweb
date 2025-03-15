@@ -44,5 +44,5 @@ urlpatterns = [
     re_path(r'^get_directory_json$', earkweb.views.get_directory_json, name='get_directory_json'),
     re_path(r'^get_autocomplete/$', submission.views.get_autocomplete, name='get_autocomplete'),
     re_path(r'^get_autocomplete_tags/$', submission.views.get_autocomplete_tags, name='get_autocomplete_tags'),
-
+    re_path(r'^search_ld/$', submission.views.search_ld, name='search_ld'),
 ]

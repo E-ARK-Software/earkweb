@@ -50,6 +50,98 @@
   cursor: pointer;
 }
 
+/* linked data widget styles */
+.container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    max-width: none;
+    gap: 10px;
+}
+.search-section, .results-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+select {
+    text-align: left;
+}
+
+#search-form {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 500px; /* Adjust based on layout */
+}
+
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%; /* Forces everything to stay in one row */
+}
+
+#search-query {
+    flex-grow: 1; /* Ensures the input takes space but doesn't push checkboxes down */
+    min-width: 200px; /* Prevents shrinking */
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between checkboxes */
+    white-space: nowrap; /* Prevents wrapping */
+}
+
+
+        #search-results {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+            width: 100%;
+        }
+        .result {
+            padding: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .result:hover {
+            background-color: #f0f0f0;
+        }
+        #selected-items {
+            width: 100%;
+            height: 100px;
+            border: 0px solid #ddd;
+        }
+        .submit-section {
+            margin-top: 10px;
+            display: flex;
+            justify-content: left;
+        }
+        .tooltip {
+        position: absolute;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 0.2s;
+        pointer-events: none;
+    }
+    .checkbox-hint {
+        color: red;
+        font-size: 12px;
+        margin-left: 5px;
+        display: inline-block;
+    }
 </style>
 
 {% if "step2" in request.path %}
@@ -920,6 +1012,198 @@ $(document).ready(function() {
     </div>
     {% endif %}
     {% endfor %}
+
+    {% if "step1" in request.path %}
+    <label for="q">Linked data</label>
+    <div class="container">
+        <!-- Left: Search & Results -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="search-query" name="q" placeholder="Enter search term...">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="search-gnd" tooltip="test" checked> GND</label>
+                    <label><input type="checkbox" id="search-wd" checked> WD</label>
+                </div>
+            </div>
+
+            <div id="search-results" style="margin-bottom:20px"></div>
+        </div>
+
+        <!-- Right: Selected Items -->
+        <div class="results-section" style="margin-bottom:20px; border: 1px solid #e7e5e5">
+            <p style="padding-left: 4px;padding-right: 10px;padding-top: 2px;">Selected Items (click to remove)</p>
+
+            <select id="selected-items" name="selected_items" multiple>
+                {% for item in selected_items_data %}
+                    <option value="{{ item.link }}|{{ item.label }}" selected>{{ item.label }}</option>
+                {% endfor %}
+            </select>
+            <input type="hidden" name="selected_data" id="selected-data">
+        </div>
+    </div>
+
+
+<script>
+
+$(document).ready(function() {
+    let typingTimer;
+    let doneTypingInterval = 500; // delay for search triggers
+
+    function triggerSearch() {
+        let query = $("#search-query").val().trim();
+
+        if (query.length > 2) { 
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(function() {
+                searchLinkedData(query);
+            }, doneTypingInterval);
+        } else {
+            $("#search-results").empty(); 
+        }
+    }
+
+    $("#search-query").on("keyup", triggerSearch);
+    $("#search-query").on("change", function() {
+        triggerSearch();
+    });
+    $(".checkbox-group input[type='checkbox']").on("change", function() {
+        triggerSearch();
+    });
+
+    function searchLinkedData(query) {
+        let searchGND = $("#search-gnd").is(":checked"); 
+        let searchWD = $("#search-wd").is(":checked");  
+
+        $.ajax({
+            url: "/earkweb/submission/search_ld",
+            type: "GET",
+            data: { q: query, gnd: searchGND, wd: searchWD },
+            success: function(response) {
+                $("#search-results").empty();
+
+                if ((!searchWD || response.wikidata_results.length === 0) && 
+                    (!searchGND || response.gnd_results.length === 0)) {
+                    $("#search-results").append("<p>No results found.</p>");
+                    return;
+                }
+
+                if (searchWD && response.wikidata_results.length > 0) {
+                    response.wikidata_results.forEach(item => {
+                        $("#search-results").append(
+                            `<div class="result" data-id="${item.id}" data-label="${item.label}" data-link="https://www.wikidata.org/wiki/${item.id}">
+                                ${item.label} (${item.id})
+                            </div>`
+                        );
+                    });
+                }
+
+                if (searchGND && response.gnd_results.length > 0) {
+                    response.gnd_results.forEach(item => {
+                        $("#search-results").append(
+                            `<div class="result" data-id="${item.id}" data-label="${item.label}" data-link="${item.link}">
+                                ${item.label}
+                            </div>`
+                        );
+                    });
+                }
+            }
+        });
+    }
+
+    // add result to selected items
+    $(document).on("click", ".result", function() {
+        let label = $(this).data("label");
+        let link = $(this).data("link"); 
+
+        let value = label + "|" + link;
+
+        if (!$(`#selected-items option[value="${value}"]`).length) {
+            $("#selected-items").append(
+                `<option value="${value}" selected>${label}</option>` // Store both label and link in value
+            );
+        }
+    });
+
+    // right click to open linked data page
+    $(document).on("contextmenu", ".result", function(event) {
+        event.preventDefault(); 
+        let link = $(this).data("link");
+
+        if (link) {
+            window.open(link, "_blank"); 
+        }
+    });
+
+    $(document).ready(function() {
+        // tooltip  
+        $("body").append('<div id="tooltip" class="tooltip">Left-click to add item, right-click to open web page</div>');
+
+        $(document).on("mouseenter", ".result", function(event) {
+            let tooltip = $("#tooltip");
+            tooltip.css({
+                top: event.pageY + 10 + "px",
+                left: event.pageX + 10 + "px",
+                visibility: "visible",
+                opacity: 1
+            });
+        });
+
+        $(document).on("mouseleave", ".result", function() {
+            $("#tooltip").css({ visibility: "hidden", opacity: 0 });
+        });
+
+        $(document).on("mousemove", function(event) {
+            $("#tooltip").css({
+                top: event.pageY + 10 + "px",
+                left: event.pageX + 10 + "px"
+            });
+        });
+
+        // Right-click to open the linked data page
+        $(document).on("contextmenu", ".result", function(event) {
+            event.preventDefault();
+            let link = $(this).data("link");
+            if (link) {
+                window.open(link, "_blank");
+            }
+        });
+    });
+    // Remove the selected item when clicked
+    $(document).on("click", "#selected-items option", function() {
+        $(this).remove(); 
+    });
+
+    $(document).ready(function() {
+    $(".checkbox-group input[type='checkbox']").on("change", function() {
+            // If both checkboxes are unchecked, prevent unchecking and show a hint
+            if (!$("#search-gnd").is(":checked") && !$("#search-wd").is(":checked")) {
+                $(this).prop("checked", true); 
+                let hint = $("<span class='checkbox-hint'>At least one option must be selected</span>");
+                $(this).parent().append(hint); 
+
+                setTimeout(function() {
+                    hint.fadeOut(300, function() { $(this).remove(); });
+                }, 2000);
+            }
+        });
+    });
+
+    $("#selected-items option").each(function() {
+        let value = $(this).val();
+        let label = $(this).text();
+        if (!$(`#selected-items option[value="${value}"]`).length) {
+            $("#selected-items").append(
+                `<option value="${value}" selected>${label}</option>`
+            );
+        }
+    });
+
+
+});
+
+
+</script>
+    {% endif %}
 
     {% if "step2" in request.path %}
     <div class="form-group">
