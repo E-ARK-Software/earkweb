@@ -951,18 +951,18 @@ def ip_creation_process(request, pk):
             zoom_level = location['zoomLevel']
             location_uncertainty = location['locationUncertainty']
             uncertainty_radius = location['locationUncertaintyRadius']
-
-            # Record the ingestion event
-            eventIdentifier = urn_event_pattern.format(
-                event_type=to_safe_filename(location['locationEvent']), 
-                quoted_identifier=quote(ip.identifier, safe=''), 
-                date_time_string=location['locationDate']
-            )
-            locationEvent = location['locationEvent']
-            locationDate = location['locationDate']
-            spatial_info = f"{label}, {lat}, {lng} ({zoom_level}, {location_uncertainty}, {uncertainty_radius}, {eventIdentifier}, {locationEvent}, {locationDate})"
-            g.add((parent_resource_uri, DCTERMS.spatial, Literal(spatial_info)))
-            g.add((parent_resource_uri, DCTERMS.temporal, Literal(basic_metadata["created"])))
+            if 'locationEvent' in location:
+                # Record the ingestion event
+                eventIdentifier = urn_event_pattern.format(
+                    event_type=to_safe_filename(location['locationEvent']), 
+                    quoted_identifier=quote(ip.identifier, safe=''), 
+                    date_time_string=location['locationDate']
+                )
+                locationEvent = location['locationEvent']
+                locationDate = location['locationDate']
+                spatial_info = f"{label}, {lat}, {lng} ({zoom_level}, {location_uncertainty}, {uncertainty_radius}, {eventIdentifier}, {locationEvent}, {locationDate})"
+                g.add((parent_resource_uri, DCTERMS.spatial, Literal(spatial_info)))
+                g.add((parent_resource_uri, DCTERMS.temporal, Literal(basic_metadata["created"])))
 
         # Add child representations and hasPart relationships
         if "representations" in basic_metadata:
