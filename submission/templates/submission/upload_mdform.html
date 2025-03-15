@@ -1101,7 +1101,7 @@ $(document).ready(function() {
                     response.gnd_results.forEach(item => {
                         $("#search-results").append(
                             `<div class="result" data-id="${item.id}" data-label="${item.label}" data-link="${item.link}">
-                                ${item.label}
+                                ${item.label} (${item.id})
                             </div>`
                         );
                     });
@@ -1115,7 +1115,7 @@ $(document).ready(function() {
         let label = $(this).data("label");
         let link = $(this).data("link"); 
 
-        let value = label + "|" + link;
+        let value = link  + "|" + label;
 
         if (!$(`#selected-items option[value="${value}"]`).length) {
             $("#selected-items").append(
@@ -1190,11 +1190,18 @@ $(document).ready(function() {
 
     $("#selected-items option").each(function() {
         let value = $(this).val();
-        let label = $(this).text();
-        if (!$(`#selected-items option[value="${value}"]`).length) {
-            $("#selected-items").append(
-                `<option value="${value}" selected>${label}</option>`
-            );
+        let parts = value.split("|");
+
+        if (parts.length === 2) { 
+            let link = parts[0].trim();
+            let label = parts[1].trim();
+            
+            
+            if (!$(`#selected-items option[value="${value}"]`).length) {
+                $("#selected-items").append(
+                    `<option value="${value}" selected>${label}</option>`
+                );
+            }
         }
     });
 

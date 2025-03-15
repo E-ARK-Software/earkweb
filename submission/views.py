@@ -475,7 +475,7 @@ def upload_step1(request, pk):
         parsed_items = [] 
         for item in selected_items:
             if "|" in item:  
-                label, link = item.split("|", 1)  
+                link,label = item.split("|", 1)  
                 parsed_items.append({"label": label.strip(), "link": link.strip()}) 
         data4['linked_data'] = parsed_items
 
