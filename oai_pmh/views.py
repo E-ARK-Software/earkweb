@@ -265,6 +265,18 @@ def get_record(request):
         ET.SubElement(title_elem, 'title').text = metadata_json.get('title', 'No Title')
         ET.SubElement(obj_ident, 'objectDescriptionWrap').text = metadata_json.get('description', 'No Description')
 
+        # linked data
+        subject_wrap = ET.SubElement(descriptive_metadata, 'subjectWrap')
+        for linked_data in metadata_json.get('linkedData', []):
+            concept_set = ET.SubElement(subject_wrap, 'subjectSet')
+            concept = ET.SubElement(concept_set, 'concept')
+            # Label
+            concept_id = ET.SubElement(concept, 'conceptID', type="URI")
+            concept_id.text = linked_data.get('link', 'Unknown Link')
+            # Human-readable name
+            concept_name = ET.SubElement(concept, 'term')
+            concept_name.text = linked_data.get('label', 'Unknown Label')
+
         # Add event and/or place data
         event_wrap = ET.SubElement(descriptive_metadata, 'eventWrap')
 
