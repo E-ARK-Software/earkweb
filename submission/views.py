@@ -563,8 +563,18 @@ def upload_step2(request, pk):
         else:
             form = MetaFormStep2()
     #locs['locations'] = loc_list
-    json_dict = json.loads(loc_strs)
-    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip, 'locations': json.dumps(json_dict)})
+    if isinstance(loc_strs, str):
+        try:
+            # If it's a string
+            json_dict = json.dumps(json.loads(loc_strs))
+        except json.JSONDecodeError:
+            json_dict = json.dumps([])  # Fallback
+    elif isinstance(loc_strs, (list, dict)):
+        # If it's already a python object
+        json_dict = json.dumps(loc_strs)
+    else:
+        json_dict = json.dumps([])  # Fallback
+    return render(request, 'submission/upload_mdform.html', {'form': form, 'ip': ip, 'locations': json_dict})
 
 
 def upload_step3(request, pk):
