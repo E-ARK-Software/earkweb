@@ -7,7 +7,7 @@ from earkweb.models import InformationPackage
 from config.configuration import django_service_url
 from config.configuration import solr_core_url
 from eatb.utils.datetime import date_format, current_timestamp
-from config.configuration import django_backend_service_api_url, django_backend_service_url, verify_certificate
+from config.configuration import django_backend_service_api_url, django_backend_service_url, verify_certificate, representations_directory
 from util.djangoutils import get_user_api_token
 import xml.etree.ElementTree as ET
 
@@ -356,34 +356,35 @@ where:
         for rep_id, rep_data in metadata_json.get('representations', {}).items():
             resource_set = ET.SubElement(resource_wrap, 'resourceSet')
             ET.SubElement(resource_set, 'resourceID').text = rep_id
-            ET.SubElement(resource_set, 'resourceType').text = rep_data.get('distribution_label', 'Unknown')
 
-            # Extract file metadata separately
             file_metadata = rep_data.get('file_metadata', {})
-
             file_items = rep_data.get('file_items', [])
+            
             if not isinstance(file_items, list):
                 print(f"Warning: file_items is not a list for rep_id {rep_id}: {file_items}")
                 continue
 
-            for file_path in file_items:  # file_path is a string
-                file_name = file_path.split("/")[-1]  # Extract filename from path
-                file_data = file_metadata.get(file_name, {})  # Get metadata if available
+            for file_path in file_items:
+                file_data = file_metadata.get(file_path, {})
 
-                resource = ET.SubElement(resource_set, 'resource')
-                ET.SubElement(resource, 'resourceName').text = file_name
-                ET.SubElement(resource, 'resourceDescription').text = file_data.get('description', 'No Description')
-                ET.SubElement(resource, 'isPreview').text = str(file_data.get('isPreview', False))
-                ET.SubElement(resource, 'bytesSize').text = str(file_data.get('bytesSize', False))
-                ET.SubElement(resource, 'mimeType').text = str(file_data.get('mimeType', False))
-                if str(file_data.get('mimeType', False)).startswith('audio'):
-                    ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', False))
-                if str(file_data.get('mimeType', False)).startswith('video'):
-                    ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', False))
+                # Only process files where 'isPublicAccess' is explicitly True
+                if file_data.get('isPublicAccess') is True:
+                    resource = ET.SubElement(resource_set, 'resource')
+                    ET.SubElement(resource, 'resourceName').text = file_path
+                    ET.SubElement(resource, 'resourceDescription').text = file_data.get('description', 'No Description')
+                    ET.SubElement(resource, 'isPreview').text = str(file_data.get('isPreview', False))
+                    ET.SubElement(resource, 'bytesSize').text = str(file_data.get('bytesSize', 'Unknown'))
+                    mime_type = file_data.get('mimeType', 'application/octet-stream')
+                    ET.SubElement(resource, 'mimeType').text = mime_type
 
-                # Construct the full file URL
-                file_url = f"{django_service_url}/access/{identifier}/{file_path}"
-                ET.SubElement(resource, 'resourceRepresentation').text = file_url
+                    # Add durationSeconds if applicable
+                    if mime_type.startswith(('video/', 'audio/')):
+                        ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', 'Unknown'))
+
+                    # Construct the full file URL
+                    file_url = f"{django_service_url}/access/{identifier}/{representations_directory}/{rep_id}/data/{file_path}"
+                    ET.SubElement(resource, 'resourceRepresentation').text = file_url
+
 
 
 
