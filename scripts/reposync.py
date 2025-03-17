@@ -2,12 +2,13 @@
 # coding=UTF-8
 """
 Repository file system and frontend database synchronization
-Note: Requires that both, the django frontend and the storage backend can access the storage area. It can therefore not be used in a distributed setup.
 """
 import json
 import logging
+import os
+import sys
 
-from eatb.storage.pairtreestorage import PairtreeStorage
+from eatb.pairtree_storage import PairtreeStorage
 from eatb.utils.fileutils import get_immediate_subdirectories
 from eatb.utils.terminal import print_headline, success, warning
 from pairtree import ObjectNotFoundException
@@ -15,22 +16,19 @@ from pairtree import ObjectNotFoundException
 logger = logging.getLogger("earkweb")
 logger.setLevel(logging.INFO)
 
-import os
-import sys
-from taskbackend.ip_state import IpState
-
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "earkweb.settings")
+
 import django
 django.setup()
 
-from earkweb.models import InformationPackage
-from config.configuration import config_path_storage
-from config.configuration import config_path_work
+from earkweb.models import InformationPackage, Representation
+from config.configuration import config_path_storage, config_path_work
 from django.core.exceptions import ObjectDoesNotExist
 
 
 def sync_ip_state(ip_state_info, ip_in):
+    """Synchronize state information from state.json."""
     if "storage_dir" in ip_state_info:
         ip_in.storage_dir = ip_state_info["storage_dir"]
     if "version" in ip_state_info:
@@ -42,22 +40,87 @@ def sync_ip_state(ip_state_info, ip_in):
     ip_in.save()
 
 
+def store_metadata(ip, metadata_path):
+    """Read metadata.json and store its content in InformationPackage fields."""
+    try:
+        with open(metadata_path, "r", encoding="utf-8") as f:
+            metadata_content = json.load(f)
+        
+        # Set InformationPackage fields from metadata
+        ip.package_name = metadata_content.get("packageName", "").strip()
+        ip.identifier = metadata_content.get("uid", ip.identifier)
+        ip.external_id = metadata_content.get("externalId", "")
+        ip.title = metadata_content.get("title", "")
+        ip.content_information_type = metadata_content.get("contentInformationType", "")
+        ip.content_category = metadata_content.get("contentCategory", "")
+        ip.description = metadata_content.get("description", "")
+        ip.original_creation_date = metadata_content.get("originalCreationDate", "")
+        ip.tags = json.dumps(metadata_content.get("tags", []))  # Store as JSON string
+        ip.linked_data = json.dumps(metadata_content.get("linkedData", []))  # Store as JSON string
+        ip.locations = json.dumps(metadata_content.get("locations", []))  # Store as JSON string
+        ip.contact_point = metadata_content.get("contactPoint", "")
+        ip.contact_email = metadata_content.get("contactEmail", "")
+        ip.publisher = metadata_content.get("publisher", "")
+        ip.publisher_email = metadata_content.get("publisherEmail", "")
+        ip.language = metadata_content.get("language", "")
+        ip.created = metadata_content.get("created", "")
+        ip.last_change = metadata_content.get("lastChange", "")
+        
+        # Store full metadata JSON
+        ip.basic_metadata = json.dumps(metadata_content)
+
+        ip.save()
+        success(f"Stored metadata for {ip.identifier} (Package Name: {ip.package_name})")
+    except Exception as e:
+        warning(f"Failed to store metadata.json for {ip.identifier}: {e}")
+
+
+def register_representations(ip, metadata_content):
+    """Register representations based on the metadata.json content."""
+    representations = metadata_content.get("representations", {})
+
+    for rep_id, rep_data in representations.items():
+        identifier = rep_id
+        label = rep_data.get("distribution_label", "Unknown")
+        description = rep_data.get("distribution_description", "")
+        access_rights = rep_data.get("access_rights", "")
+        file_metadata = json.dumps(rep_data.get("file_metadata", {}))  # Store as JSON
+        
+        # Create or update the Representation record
+        representation, created = Representation.objects.get_or_create(
+            identifier=identifier,
+            ip=ip,
+            defaults={
+                "label": label,
+                "description": description,
+                "accessRights": access_rights,
+                "file_metadata": file_metadata
+            }
+        )
+
+        if created:
+            success(f"Registered new representation: {identifier}")
+        else:
+            warning(f"Representation already exists: {identifier}")
+
+
 if __name__ == "__main__":
     ps = PairtreeStorage(config_path_storage)
+
     print_headline("Synchronize local repository storage with information packages table")
-    print(
-        "Checking if the list of packages (in their respective latest version) is registered in the information packages table of the frontend database.")
+    
     p_list = ps.latest_version_ip_list()
     for p in p_list:
-        print("Information package: %s" % p['id'])
-        print("- Version: %s" % p['version'])
-        print("- Storage path: %s" % os.path.join(config_path_storage, p['path']))
+        print(f"Information package: {p['id']}")
+        print(f"- Version: {p['version']}")
+        print(f"- Storage path: {os.path.join(config_path_storage, p['path'])}")
+        
         try:
             ip = InformationPackage.objects.get(identifier=p['id'])
             ip.storage_dir = os.path.join(config_path_storage, str(p['path']))
             ip.save()
         except ObjectDoesNotExist:
-            InformationPackage.objects.create(
+            ip = InformationPackage.objects.create(
                 work_dir="",
                 uid="",
                 identifier=p['id'],
@@ -65,51 +128,52 @@ if __name__ == "__main__":
                 package_name="",
                 version=0
             )
+
     print_headline("Check storage location references in information packages table")
-    print("""Checking if the storage locations in the information packages table of the frontend database reference existing files or unset the value otherwise.
-Note that the storage location value is also unset if the identifier has changed and the storage location value is therefore outdated.""")
-    p_list_ids = map(lambda x: x['id'], p_list)
+
     ips = InformationPackage.objects.all()
+    
     for ip in ips:
         if ip.storage_dir != '':
             if not os.path.exists(ip.storage_dir):
-                warning("Unsetting storage_dir because the referenced object is not accessible: %s" % ip.identifier)
+                warning(f"Unsetting storage_dir because the referenced object is not accessible: {ip.identifier}")
                 ip.storage_dir = ''
                 ip.save()
             try:
                 ps.get_object_path(ip.identifier)
-            except ValueError:
-                warning("Unsetting storage_dir because the referenced object is not accessible: %s" % ip.identifier)
+            except (ValueError, ObjectNotFoundException):
+                warning(f"Unsetting storage_dir because the referenced object is not accessible: {ip.identifier}")
                 ip.storage_dir = ''
                 ip.save()
-            except ObjectNotFoundException:
-                warning("Object not found in storage (record is removed): %s" % ip.identifier)
-                ip.delete()
 
     print_headline("Check if a process for each working directory exists")
-    print(
-        "Checking if each working directory has an information package process with the corresponding UUID or create it otherwise.")
+    
     work_subdirectories = get_immediate_subdirectories(config_path_work)
+    
     for work_subdirectory in work_subdirectories:
-        print("Checking working directory: %s" % work_subdirectory)
+        print(f"Checking working directory: {work_subdirectory}")
         ip = None
+        ip_work_dir = os.path.join(config_path_work, work_subdirectory)
+        
         try:
             ip = InformationPackage.objects.get(uid=work_subdirectory)
         except ObjectDoesNotExist:
-            ip_work_dir = os.path.join(config_path_work, work_subdirectory)
-            warning("Creating missing information package process for existing working directory: %s" % work_subdirectory)
+            warning(f"Creating missing information package process for existing working directory: {work_subdirectory}")
             ip = InformationPackage.objects.create(
                 work_dir=ip_work_dir,
                 uid=work_subdirectory,
                 package_name="",
                 version=0
             )
-        if ip:
-            ip_state_doc_path = os.path.join(config_path_work, work_subdirectory, "metadata/other/state.json")
-            if os.path.exists(ip_state_doc_path):
-                success("State information available (state.json)")
-                ip_state_info = json.load(open(ip_state_doc_path))
-                sync_ip_state(ip_state_info, ip)
-            else:
-                warning("Process directory has no state information")
+        
+        # Store metadata.json content and set package_name if available
+        metadata_path = os.path.join(ip_work_dir, "metadata/metadata.json")
+        if os.path.exists(metadata_path):
+            store_metadata(ip, metadata_path)
+            with open(metadata_path, "r", encoding="utf-8") as f:
+                metadata_content = json.load(f)
+            register_representations(ip, metadata_content)
+        else:
+            warning(f"Process directory has no metadata.json: {work_subdirectory}")
+        
     success("Repository synchronization finished.")
