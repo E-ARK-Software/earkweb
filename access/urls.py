@@ -24,8 +24,4 @@ urlpatterns = [
     re_path(r'^num-indexed/(?P<pk>\d+)$', views.num_indexed, name='num-indexed'),
     re_path(fr'^(?P<identifier>{identifier_pattern})/item/$', views.InformationPackageDetail.as_view(), name='asset'),
     #re_path(fr'^(?P<identifier>{identifier_pattern})/disseminate/(?P<entry>.*)/$', views.disseminate),
-
-    
-    
-    re_path(fr'^ips/(?P<identifier>{identifier_pattern})/$', views.landing_page),
 ]

@@ -344,7 +344,7 @@ where:
         # Add link to the landing page
         resource_wrap = ET.SubElement(descriptive_metadata, 'resourceWrap')
 
-        landing_page = f"{django_backend_service_url}/access/{identifier}/"
+        landing_page = f"{django_service_url}/access/{identifier}/"
         resource_set = ET.SubElement(resource_wrap, 'resourceSet')
         ET.SubElement(resource_set, 'resourceID').text = identifier
         ET.SubElement(resource_set, 'resourceType').text = "Landing Page"
@@ -382,7 +382,7 @@ where:
                     ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', False))
 
                 # Construct the full file URL
-                file_url = f"{django_backend_service_url}/access/{identifier}/{file_path}"
+                file_url = f"{django_service_url}/access/{identifier}/{file_path}"
                 ET.SubElement(resource, 'resourceRepresentation').text = file_url
 
 
