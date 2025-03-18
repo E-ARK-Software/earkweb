@@ -69,9 +69,14 @@
                     {% if file.mimeType in "image/jpeg,image/jpg,image/png,image/gif" %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
                         <img 
-                            data-src="/earkweb/access/{{ identifier }}/{{ file.path }}" 
-                            class="d-block w-100 lazyload" 
-                            alt="{{ file.description }}"
+                        {% if forloop.first %}
+                            src="/earkweb/access/{{ identifier }}/{{ file.path }}" 
+                        {% else %}
+                            data-src="/earkweb/access/{{ identifier }}/{{ file.path }}"
+                        {% endif %}
+                        class="d-block w-100 lazy-image"
+                        alt="{{ file.description }}"
+                        loading="lazy"
                         >
                         {% if file.description %}
                             <div class="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
