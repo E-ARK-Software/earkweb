@@ -18,6 +18,8 @@ from django.utils.safestring import mark_safe
 import xml.etree.ElementTree as ET
 import logging
 
+import requests
+
 # Initialisiere das pysolr-Objekt (passe die Solr-URL an)
 solr = pysolr.Solr(solr_core_url, always_commit=True)
 
@@ -44,6 +46,8 @@ def oai_pmh(request):
         return list_metadata_formats(request)
     elif verb == 'ListIdentifiers':
         return list_identifiers(request)
+    elif verb == 'ListRecords':
+        return list_records(request)
     elif verb == 'GetRecord':
         return get_record(request)
     else:
@@ -119,46 +123,6 @@ def list_metadata_formats(request):
     return xml_response(root)
 
 
-import xml.etree.ElementTree as ET
-from django.http import HttpResponse
-
-def list_metadata_formats(request):
-    """
-    Handle the OAI-PMH ListMetadataFormats request.
-
-    Returns:
-    HttpResponse: The ListMetadataFormats response containing supported metadata formats.
-    """
-    identifier = request.GET.get('identifier')
-    if identifier and identifier not in RECORDS:
-        return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
-
-    root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
-    response_date = ET.SubElement(root, 'responseDate')
-    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
-
-    list_metadata_formats = ET.SubElement(root, 'ListMetadataFormats')
-    
-    # OAI-DC Format
-    metadata_format_dc = ET.SubElement(list_metadata_formats, 'metadataFormat')
-    metadata_prefix_dc = ET.SubElement(metadata_format_dc, 'metadataPrefix')
-    metadata_prefix_dc.text = 'oai_dc'
-    schema_dc = ET.SubElement(metadata_format_dc, 'schema')
-    schema_dc.text = 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
-    metadata_namespace_dc = ET.SubElement(metadata_format_dc, 'metadataNamespace')
-    metadata_namespace_dc.text = 'http://www.openarchives.org/OAI/2.0/oai_dc/'
-    
-    # LIDO Format
-    metadata_format_lido = ET.SubElement(list_metadata_formats, 'metadataFormat')
-    metadata_prefix_lido = ET.SubElement(metadata_format_lido, 'metadataPrefix')
-    metadata_prefix_lido.text = 'lido'
-    schema_lido = ET.SubElement(metadata_format_lido, 'schema')
-    schema_lido.text = 'http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd'
-    metadata_namespace_lido = ET.SubElement(metadata_format_lido, 'metadataNamespace')
-    metadata_namespace_lido.text = 'http://www.lido-schema.org/'
-
-    return xml_response(root)
-
 def list_identifiers(request):
     """
     Handle the OAI-PMH ListIdentifiers request with pagination support using resumption tokens.
@@ -207,48 +171,20 @@ def list_identifiers(request):
     return xml_response(root)
 
 
-import requests
-import xml.etree.ElementTree as ET
-
-def get_record(request):
+def generate_metadata_element(metadata_prefix, identifier, metadata_json, record_elem):
     """
-    Handle the OAI-PMH GetRecord request by fetching metadata from the API and formatting it in valid LIDO XML.
+    Generate metadata XML element based on the specified metadataPrefix.
+
+    Parameters:
+    metadata_prefix (str): The requested metadata format (e.g., 'oai_dc' or 'lido').
+    ip (InformationPackage): The record from which to extract metadata.
+
+    Returns:
+    Element: The metadata XML element.
     """
-    identifier = request.GET.get('identifier')
-    metadata_prefix = request.GET.get('metadataPrefix')
-
-    if not identifier or not metadata_prefix:
-        return error_response('badArgument', 'The request is missing required arguments.')
-
-    if metadata_prefix not in ['oai_dc', 'lido']:
-        return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported by the item or by the repository.')
-
-    # API call to fetch metadata
-    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json/"
-    response = requests.get(metadata_url)
-    
-    if response.status_code != 200:
-        return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
-    
-    metadata_json = response.json()
-
-    root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
-    response_date = ET.SubElement(root, 'responseDate')
-    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
-
-    request_elem = ET.SubElement(root, 'request', verb='GetRecord', identifier=identifier, metadataPrefix=metadata_prefix)
-    request_elem.text = request.build_absolute_uri()
-
-    get_record = ET.SubElement(root, 'GetRecord')
-    record_elem = ET.SubElement(get_record, 'record')
-    header = ET.SubElement(record_elem, 'header')
-    identifier_elem = ET.SubElement(header, 'identifier')
-    identifier_elem.text = identifier
-    datestamp = ET.SubElement(header, 'datestamp')
-    datestamp.text = metadata_json.get('lastChange', 'Unknown Date')
-
+    metadata_elem = ET.Element('metadata')
     metadata = ET.SubElement(record_elem, 'metadata')
-
+    title = metadata_json.get('title', 'No Title')
     if metadata_prefix == 'lido':
         ET.register_namespace('lido', 'http://www.lido-schema.org/')
         lido_wrap = ET.SubElement(metadata, ET.QName('http://www.lido-schema.org/', 'lidoWrap'))
@@ -258,11 +194,10 @@ def get_record(request):
         ET.SubElement(administrative_metadata, 'recordID').text = metadata_json.get('uid', 'Unknown UID')
         ET.SubElement(administrative_metadata, 'recordSource').text = metadata_json.get('contactPoint', 'Unknown Repository')
 
-
         descriptive_metadata = ET.SubElement(lido_record, 'descriptiveMetadata')
         obj_ident = ET.SubElement(descriptive_metadata, 'objectIdentificationWrap')
         title_elem = ET.SubElement(obj_ident, 'titleWrap')
-        ET.SubElement(title_elem, 'title').text = metadata_json.get('title', 'No Title')
+        ET.SubElement(title_elem, 'title').text = title
         ET.SubElement(obj_ident, 'objectDescriptionWrap').text = metadata_json.get('description', 'No Description')
 
         # Add rights information from the first representation
@@ -396,9 +331,115 @@ where:
                     file_url = f"{django_service_url}/access/{identifier}/{representations_directory}/{rep_id}/data/{file_path}"
                     ET.SubElement(resource, 'resourceRepresentation').text = file_url
 
+    else:  # Default to OAI-DC
+        ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
+        dc_elem = ET.SubElement(metadata_elem, ET.QName('http://www.openarchives.org/OAI/2.0/oai_dc/', 'dc'))
+        ET.SubElement(dc_elem, ET.QName('http://purl.org/dc/elements/1.1/', 'title')).text = title or 'No Title'
+        ET.SubElement(dc_elem, ET.QName('http://purl.org/dc/elements/1.1/', 'identifier')).text = identifier
 
+    return metadata_elem
 
+def list_records(request):
+    """
+    Handle the OAI-PMH ListRecords request.
 
+    Parameters:
+    request (HttpRequest): The incoming HTTP request.
+
+    Returns:
+    HttpResponse: The ListRecords response containing records with full metadata.
+    """
+    metadata_prefix = request.GET.get('metadataPrefix')
+    resumption_token = request.GET.get('resumptionToken')
+    page_size = 10  # Define records per page
+    start_index = int(resumption_token) if resumption_token else 0
+
+    if metadata_prefix not in ['oai_dc', 'lido']:
+        return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported.')
+
+    root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
+    response_date = ET.SubElement(root, 'responseDate')
+    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
+
+    list_records = ET.SubElement(root, 'ListRecords')
+
+    # Query InformationPackage objects
+    packages = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='')[start_index:start_index + page_size]
+
+    for ip in packages:
+        record_elem = ET.SubElement(list_records, 'record')
+        header = ET.SubElement(record_elem, 'header')
+        identifier = ET.SubElement(header, 'identifier')
+        identifier.text = ip.identifier
+        datestamp = ET.SubElement(header, 'datestamp')
+        datestamp.text = date_format(ip.last_change)
+
+        # API call to fetch metadata
+        metadata_url = f"{django_backend_service_api_url}/ips/{identifier.text}/file-resource/metadata/metadata.json/"
+        response = requests.get(metadata_url)
+        if response.status_code != 200:
+            return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
+        metadata_json = response.json()
+
+        # Use the modular metadata generator
+        metadata_elem = generate_metadata_element(metadata_prefix, identifier.text, metadata_json, record_elem)
+        record_elem.append(metadata_elem)
+
+    # Handle pagination with resumptionToken
+    next_index = start_index + page_size
+    total_records = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='').count()
+    if next_index < total_records:
+        resumption_token_elem = ET.SubElement(list_records, 'resumptionToken')
+        resumption_token_elem.text = str(next_index)
+        resumption_token_elem.set('cursor', str(start_index))
+        resumption_token_elem.set('completeListSize', str(total_records))
+    else:
+        resumption_token_elem = ET.SubElement(list_records, 'resumptionToken')
+        resumption_token_elem.text = ''
+
+    return xml_response(root)
+
+def get_record(request):
+    """
+    Handle the OAI-PMH GetRecord request by fetching metadata from the API and formatting it in valid LIDO XML.
+    """
+    identifier = request.GET.get('identifier')
+    metadata_prefix = request.GET.get('metadataPrefix')
+
+    if not identifier or not metadata_prefix:
+        return error_response('badArgument', 'The request is missing required arguments.')
+
+    if metadata_prefix not in ['oai_dc', 'lido']:
+        return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported by the item or by the repository.')
+
+    # API call to fetch metadata
+    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json/"
+    response = requests.get(metadata_url)
+    
+    if response.status_code != 200:
+        return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
+    
+    metadata_json = response.json()
+
+    root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
+    response_date = ET.SubElement(root, 'responseDate')
+    response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
+
+    request_elem = ET.SubElement(root, 'request', verb='GetRecord', identifier=identifier, metadataPrefix=metadata_prefix)
+    request_elem.text = request.build_absolute_uri()
+
+    get_record = ET.SubElement(root, 'GetRecord')
+    record_elem = ET.SubElement(get_record, 'record')
+    header = ET.SubElement(record_elem, 'header')
+    identifier_elem = ET.SubElement(header, 'identifier')
+    identifier_elem.text = identifier
+    datestamp = ET.SubElement(header, 'datestamp')
+    datestamp.text = metadata_json.get('lastChange', 'Unknown Date')
+
+    # Use the modular metadata generator
+    metadata_elem = generate_metadata_element(metadata_prefix, identifier, metadata_json, record_elem)
+    record_elem.append(metadata_elem)
+        
     try:
         xml_data = ET.tostring(root, encoding='utf-8', xml_declaration=True)
     except Exception as e:
