@@ -256,7 +256,7 @@ def get_record(request):
 
         administrative_metadata = ET.SubElement(lido_record, 'administrativeMetadata')
         ET.SubElement(administrative_metadata, 'recordID').text = metadata_json.get('uid', 'Unknown UID')
-        ET.SubElement(administrative_metadata, 'recordSource').text = metadata_json.get('publisher', 'Unknown Repository')
+        ET.SubElement(administrative_metadata, 'recordSource').text = metadata_json.get('contactPoint', 'Unknown Repository')
 
 
         descriptive_metadata = ET.SubElement(lido_record, 'descriptiveMetadata')
@@ -264,6 +264,17 @@ def get_record(request):
         title_elem = ET.SubElement(obj_ident, 'titleWrap')
         ET.SubElement(title_elem, 'title').text = metadata_json.get('title', 'No Title')
         ET.SubElement(obj_ident, 'objectDescriptionWrap').text = metadata_json.get('description', 'No Description')
+
+        # Add rights information from the first representation
+        rights_work_set = ET.SubElement(administrative_metadata, 'rightsWorkSet')
+        credit_line = ET.SubElement(rights_work_set, 'creditLine')
+
+        # Extract the first available access rights
+        representations = metadata_json.get('representations', {})
+        first_representation = next(iter(representations.values()), None)
+        access_rights = first_representation.get('access_rights', 'No Rights Available') if first_representation else 'No Rights Available'
+
+        credit_line.text = access_rights
 
         # linked data
         subject_wrap = ET.SubElement(descriptive_metadata, 'subjectWrap')
