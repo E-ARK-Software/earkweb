@@ -285,45 +285,65 @@ def search(request):
 
 def landing_page(request, identifier):
     """
-    Fetch metadata using the API and display public file resources.
+    Fetch metadata using the API and display public file resources grouped by MIME type.
     """
-    # Fetch metadata from the API
-    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json"
+    # Fetch metadata from API
+    metadata_url = f"{django_backend_service_api_url}/ips/{identifier}/file-resource/metadata/metadata.json/"
     response = requests.get(metadata_url)
 
     if response.status_code != 200:
-        raise Http404("Metadata not found")
+        return HttpResponse("Metadata not found", status=404)
 
     metadata = response.json()
 
-    # Extract metadata fields
     title = metadata.get("title", "Untitled Package")
     description = metadata.get("description", "No description available.")
 
-    # Extract publicly available files and preview image
-    public_files = []
+    contactPoint = metadata.get("contactPoint", "No contact")
+
+    grouped_files = {}
     preview_image = None
 
     for repkey, repdata in metadata.get("representations", {}).items():
-        for filename, file_data in repdata.get("file_metadata", {}).items():
-            file_path = f"representations/{repkey}/data/{filename}"
-            if file_data.get("isPublicAccess", False):
-                file_description = file_data.get("description", filename)  # Use description if available
-                public_files.append({"path": file_path, "description": file_description})
-                if file_data.get("isPreview", False):
-                    preview_image = file_path
+        file_metadata = repdata.get("file_metadata", {})
+        for filename, filedata in file_metadata.items():
+            if filedata.get("isPublicAccess") is True:
+                mime_type = filedata.get("mimeType", "application/octet-stream")
+                file_path = f"representations/{repkey}/data/{filename}"
+                file_info = {
+                    "path": file_path,
+                    "description": filedata.get("description", filename),
+                    "isPreview": filedata.get("isPreview", False),
+                    "mimeType": mime_type,
+                    "bytesSize": filedata.get("bytesSize", "Unknown")
+                }
+                grouped_files.setdefault(mime_type_group(mime_type), []).append(filedata | file_info)
 
-    # Get custom stylesheet from query parameters
-    stylesheet = request.GET.get("stylesheet", None)
+                if filedata.get("isPreview", False) and mime_type.startswith("image"):
+                    preview_image = file_info["path"]
+
+    stylesheet = request.GET.get("stylesheet")
 
     return render(request, "access/package_files.html", {
-        "identifier": identifier,
         "title": title,
         "description": description,
+        "identifier": identifier,
+        "grouped_files": grouped_files,
         "preview_image": preview_image,
-        "public_files": public_files,
-        "stylesheet": stylesheet
+        "stylesheet": f"{contactPoint}.css"
     })
+
+def mime_type_group(mime_type):
+    if mime_type.startswith("image/"):
+        return "Images"
+    elif mime_type.startswith("video/"):
+        return "Videos"
+    elif mime_type.startswith("audio/"):
+        return "Audio"
+    elif mime_type == "application/pdf":
+        return "Documents"
+    else:
+        return "Others"
 
 
 def stream_it(url):
