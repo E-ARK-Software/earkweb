@@ -60,14 +60,18 @@
         <img src="/earkweb/access/{{ identifier }}/{{ preview_image }}" class="preview" alt="Preview Image">
     {% endif %}
 
-    <h2>Available Files</h2>
-    <ul class="file-list">
-        {% for file in public_files %}
-            <li><a href="/earkweb/access/{{ identifier }}/{{ file.path }}/" target="_blank">{{ file.description }}</a></li>
-        {% empty %}
-            <li>No publicly available files.</li>
-        {% endfor %}
-    </ul>
+    <h2 class="mt-5">Available Files</h2>
+    {% for group, files in grouped_files.items %}
+        <h3>{{ group }}</h3>
+        <ul>
+            {% for file in files %}
+                <li>
+                    <a href="/earkweb/access/{{ identifier }}/{{ file.path }}" download>
+                        {{ file.description }} ({{ file.mimeType }}, {{ file.bytesSize }} bytes)
+                    </a>
+                </li>
+            {% endfor %}
+    {% endfor %}
    
 </body>
 </html>
