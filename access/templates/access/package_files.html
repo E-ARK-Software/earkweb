@@ -66,7 +66,7 @@
         <ul>
             {% for file in files %}
                 <li>
-                    <a href="/earkweb/access/{{ identifier }}/{{ file.path }}" download>
+                    <a target="_blank" href="/earkweb/access/{{ identifier }}/{{ file.path }}">
                         {{ file.description }} ({{ file.mimeType }}, {{ file.bytesSize }} bytes)
                     </a>
                 </li>
