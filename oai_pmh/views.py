@@ -293,7 +293,14 @@ where:
         landing_page = f"{django_service_url}/access/{identifier}/"
         resource_set = ET.SubElement(resource_wrap, 'resourceSet')
         ET.SubElement(resource_set, 'resourceID').text = identifier
-        ET.SubElement(resource_set, 'resourceType').text = "Landing Page"
+
+        # Extract the first available distribution_label from representations
+        representations = metadata_json.get('representations', {})
+        first_representation = next(iter(representations.values()), None)
+        distribution_label = first_representation.get('distribution_label', 'Landing Page') if first_representation else 'Landing Page'
+
+        ET.SubElement(resource_set, 'resourceType').text = distribution_label  # Use distribution label
+
         resource = ET.SubElement(resource_set, 'resource')
         ET.SubElement(resource, 'resourceName').text = "Landing Page"
         ET.SubElement(resource, 'resourceDescription').text = "Access the complete package."
