@@ -218,7 +218,12 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
             concept = ET.SubElement(concept_set, 'concept')
             # Label
             concept_id = ET.SubElement(concept, 'conceptID', type="URI")
-            concept_id.text = linked_data.get('link', 'Unknown Link')
+
+            concept_id_text = linked_data.get('link', 'Unknown Link')
+            # modify wikidata from https to http (Europeana requirement)
+            if concept_id_text.startswith("https://www.wikidata.org/"):
+                concept_id_text = concept_id_text.replace("https://", "http://", 1)
+            concept_id.text = concept_id_text
             # Human-readable name
             concept_name = ET.SubElement(concept, 'term')
             concept_name.text = linked_data.get('label', 'Unknown Label')
