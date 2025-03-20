@@ -183,7 +183,7 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
     Element: The metadata XML element.
     """
     metadata_elem = ET.Element('metadata')
-    metadata = ET.SubElement(record_elem, 'metadata')
+    metadata = metadata_elem
     title = metadata_json.get('title', 'No Title')
     if metadata_prefix == 'lido':
         ET.register_namespace('lido', 'http://www.lido-schema.org/')
