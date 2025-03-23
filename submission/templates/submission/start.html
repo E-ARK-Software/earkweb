@@ -194,7 +194,7 @@
         }
 
         // Validate identifier against the regex pattern
-        if (identifierPattern === ".*" || identifierRegex.test(extuid.val())) {
+        if (identifierPattern !== ".*" && !identifierRegex.test(extuid.val())) {
             $("#msgextuid").html('Invalid identifier! Please ensure it matches the <span class="tooltip-container" data-tooltip="^{{identifier_pattern|escapejs }}$">required format</span>');
             setInvalid("extuid");
             return;
