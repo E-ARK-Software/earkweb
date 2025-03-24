@@ -186,9 +186,9 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
     metadata = metadata_elem
     title = metadata_json.get('title', 'No Title')
     if metadata_prefix == 'lido':
-        ET.register_namespace('lido', 'http://www.lido-schema.org/')
-        lido_wrap = ET.SubElement(metadata, ET.QName('http://www.lido-schema.org/', 'lidoWrap'))
-        lido_record = ET.SubElement(lido_wrap, ET.QName('http://www.lido-schema.org/', 'lido'))
+        ET.register_namespace('lido', 'http://www.lido-schema.org')
+        lido_wrap = ET.SubElement(metadata, ET.QName('http://www.lido-schema.org', 'lidoWrap'))
+        lido_record = ET.SubElement(lido_wrap, ET.QName('http://www.lido-schema.org', 'lido'))
 
         administrative_metadata = ET.SubElement(lido_record, 'administrativeMetadata')
         ET.SubElement(administrative_metadata, 'recordID').text = metadata_json.get('uid', 'Unknown UID')
