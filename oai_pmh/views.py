@@ -118,7 +118,7 @@ def list_metadata_formats(request):
     schema_lido = ET.SubElement(metadata_format_lido, 'schema')
     schema_lido.text = 'http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd'
     metadata_namespace_lido = ET.SubElement(metadata_format_lido, 'metadataNamespace')
-    metadata_namespace_lido.text = 'http://www.lido-schema.org/'
+    metadata_namespace_lido.text = 'http://www.lido-schema.org'
 
     return xml_response(root)
 
