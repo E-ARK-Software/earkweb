@@ -29,6 +29,12 @@ logger = logging.getLogger(__name__)
 ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
 ET.register_namespace('dc', 'http://purl.org/dc/elements/1.1/')
 
+lido_ns = 'http://www.lido-schema.org'
+
+
+eark_ns = 'http://www.e-ark-foundation.eu'
+
+
 def oai_pmh(request):
     """
     Main entry point for OAI-PMH requests.
@@ -186,24 +192,26 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
     metadata_elem = ET.Element('metadata')
     metadata = metadata_elem
     title = metadata_json.get('title', 'No Title')
+    
+    ET.register_namespace('eark', eark_ns)
     if metadata_prefix == 'lido':
-        ET.register_namespace('lido', 'http://www.lido-schema.org')
-        lido_wrap = ET.SubElement(metadata, ET.QName('http://www.lido-schema.org', 'lidoWrap'))
-        lido_record = ET.SubElement(lido_wrap, ET.QName('http://www.lido-schema.org', 'lido'))
+        ET.register_namespace('lido', lido_ns)
+        lido_wrap = ET.SubElement(metadata, ET.QName(lido_ns, 'lidoWrap'))
+        lido_record = ET.SubElement(lido_wrap, ET.QName(lido_ns, 'lido'))
 
-        administrative_metadata = ET.SubElement(lido_record, 'administrativeMetadata')
-        ET.SubElement(administrative_metadata, 'recordID').text = metadata_json.get('uid', 'Unknown UID')
-        ET.SubElement(administrative_metadata, 'recordSource').text = metadata_json.get('contactPoint', 'Unknown Repository')
+        administrative_metadata = ET.SubElement(lido_record, ET.QName(lido_ns, 'administrativeMetadata'))
+        ET.SubElement(administrative_metadata, ET.QName(lido_ns, 'recordID')).text = metadata_json.get('uid', 'Unknown UID')
+        ET.SubElement(administrative_metadata, ET.QName(lido_ns, 'recordSource')).text = metadata_json.get('contactPoint', 'Unknown Repository')
 
-        descriptive_metadata = ET.SubElement(lido_record, 'descriptiveMetadata')
-        obj_ident = ET.SubElement(descriptive_metadata, 'objectIdentificationWrap')
-        title_elem = ET.SubElement(obj_ident, 'titleWrap')
-        ET.SubElement(title_elem, 'title').text = title
-        ET.SubElement(obj_ident, 'objectDescriptionWrap').text = metadata_json.get('description', 'No Description')
+        descriptive_metadata = ET.SubElement(lido_record, ET.QName(lido_ns, 'descriptiveMetadata'))
+        obj_ident = ET.SubElement(descriptive_metadata, ET.QName(lido_ns, 'objectIdentificationWrap'))
+        title_elem = ET.SubElement(obj_ident, ET.QName(lido_ns, 'titleWrap'))
+        ET.SubElement(title_elem, ET.QName(lido_ns, 'title')).text = title
+        ET.SubElement(obj_ident, ET.QName(lido_ns, 'objectDescriptionWrap')).text = metadata_json.get('description', 'No Description')
 
         # Add rights information from the first representation
-        rights_work_set = ET.SubElement(administrative_metadata, 'rightsWorkSet')
-        credit_line = ET.SubElement(rights_work_set, 'creditLine')
+        rights_work_set = ET.SubElement(administrative_metadata, ET.QName(lido_ns, 'rightsWorkSet'))
+        credit_line = ET.SubElement(rights_work_set, ET.QName(lido_ns, 'creditLine'))
 
         # Extract the first available access rights
         representations = metadata_json.get('representations', {})
@@ -213,12 +221,12 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
         credit_line.text = access_rights
 
         # linked data
-        subject_wrap = ET.SubElement(descriptive_metadata, 'subjectWrap')
+        subject_wrap = ET.SubElement(descriptive_metadata, ET.QName(lido_ns, 'subjectWrap'))
         for linked_data in metadata_json.get('linkedData', []):
-            concept_set = ET.SubElement(subject_wrap, 'subjectSet')
-            concept = ET.SubElement(concept_set, 'concept')
+            concept_set = ET.SubElement(subject_wrap, ET.QName(lido_ns, 'subjectSet'))
+            concept = ET.SubElement(concept_set, ET.QName(lido_ns, 'concept'))
             # Label
-            concept_id = ET.SubElement(concept, 'conceptID', type="URI")
+            concept_id = ET.SubElement(concept, ET.QName(lido_ns, 'conceptID'), type="URI")
 
             concept_id_text = linked_data.get('link', 'Unknown Link')
             # modify wikidata from https to http (Europeana requirement)
@@ -226,11 +234,11 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
                 concept_id_text = concept_id_text.replace("https://", "http://", 1)
             concept_id.text = concept_id_text
             # Human-readable name
-            concept_name = ET.SubElement(concept, 'term')
+            concept_name = ET.SubElement(concept, ET.QName(lido_ns, 'term'))
             concept_name.text = linked_data.get('label', 'Unknown Label')
 
         # Add event and/or place data
-        event_wrap = ET.SubElement(descriptive_metadata, 'eventWrap')
+        event_wrap = ET.SubElement(descriptive_metadata, ET.QName(lido_ns, 'eventWrap'))
 
         for location in metadata_json.get('locations', []):
             location_event = location.get('locationEvent', '').strip()
@@ -241,34 +249,34 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
 
             if location_event or formatted_event_date:
                 # Add event + place if event data exists
-                event_set = ET.SubElement(event_wrap, 'eventSet')
-                event = ET.SubElement(event_set, 'event')
+                event_set = ET.SubElement(event_wrap, ET.QName(lido_ns, 'eventSet'))
+                event = ET.SubElement(event_set, ET.QName(lido_ns, 'event'))
 
-                ET.SubElement(event, 'eventID').text = location.get('eventIdentifier', 'Unknown event ID')
-                ET.SubElement(event, 'eventName').text = location_event if location_event else 'Unnamed Event'
+                ET.SubElement(event, ET.QName(lido_ns, 'eventID')).text = location.get('eventIdentifier', 'Unknown event ID')
+                ET.SubElement(event, ET.QName(lido_ns, 'eventName')).text = location_event if location_event else 'Unnamed Event'
 
                 if formatted_event_date:
-                    event_date_elem = ET.SubElement(event, 'eventDate')
-                    ET.SubElement(event_date_elem, 'date').text = formatted_event_date
+                    event_date_elem = ET.SubElement(event, ET.QName(lido_ns, 'eventDate'))
+                    ET.SubElement(event_date_elem, ET.QName(lido_ns, 'date')).text = formatted_event_date
 
                 # Place details within event
-                event_place = ET.SubElement(event, 'eventPlace')
+                event_place = ET.SubElement(event, ET.QName(lido_ns, 'eventPlace'))
             else:
                 # If no event details, add only place information
-                event_place = ET.SubElement(event_wrap, 'eventPlace')
+                event_place = ET.SubElement(event_wrap, ET.QName(lido_ns, 'eventPlace'))
 
             # Place information
-            place = ET.SubElement(event_place, 'place')
-            place_id = ET.SubElement(place, 'placeID')
+            place = ET.SubElement(event_place, ET.QName(lido_ns, 'place'))
+            place_id = ET.SubElement(place, ET.QName(lido_ns, 'placeID'))
             place_id.text = location.get('identifier', 'Unknown ID')
 
             # Correctly store the location name
-            place_name = ET.SubElement(place, 'placeName')
+            place_name = ET.SubElement(place, ET.QName(lido_ns, 'placeName'))
             place_name.text = location.get('label', 'Unknown Place')
 
-            place_coordinates = ET.SubElement(place, 'placeCoordinates')
-            ET.SubElement(place_coordinates, 'latitude').text = str(location['coordinates'].get('lat', 'Unknown'))
-            ET.SubElement(place_coordinates, 'longitude').text = str(location['coordinates'].get('lng', 'Unknown'))
+            place_coordinates = ET.SubElement(place, ET.QName(lido_ns, 'placeCoordinates'))
+            ET.SubElement(place_coordinates, ET.QName(lido_ns, 'latitude')).text = str(location['coordinates'].get('lat', 'Unknown'))
+            ET.SubElement(place_coordinates, ET.QName(lido_ns, 'longitude')).text = str(location['coordinates'].get('lng', 'Unknown'))
             place_coordinates.append(ET.Comment("""- Zoom 0   → Entire world view (fully zoomed out)
 - Zoom 1-3 → Continents and large countries
 - Zoom 4-6 → Countries and large regions
@@ -276,12 +284,12 @@ def generate_metadata_element(metadata_prefix, identifier, metadata_json, record
 - Zoom 10-12 → City details, major roads
 - Zoom 13-15 → Streets, individual buildings
 - Zoom 16-18+ → House-level details, very close-up views"""))
-            ET.SubElement(place_coordinates, 'zoomLevel').text = str(location.get('zoomLevel', 'Unknown'))
+            ET.SubElement(place_coordinates, ET.QName(eark_ns, 'zoomLevel')).text = str(location.get('zoomLevel', 'Unknown'))
             place_coordinates.append(ET.Comment("""The locationUncertainty value represents confidence in the recorded location.
 A lower value indicates higher confidence, while a higher value indicates greater uncertainty.
 Possible range: 0 (high confidence) to 100 (low confidence).
 """))
-            ET.SubElement(place_coordinates, 'locationUncertainty').text = str(location.get('locationUncertainty', 'Unknown'))
+            ET.SubElement(place_coordinates, ET.QName(eark_ns, 'locationUncertainty')).text = str(location.get('locationUncertainty', 'Unknown'))
 
             place_coordinates.append(ET.Comment("""The locationUncertaintyRadius is a visualization tool for uncertainty, not an absolute distance.
 It is dynamically adjusted based on the zoom level to maintain a proportional representation on the map.
@@ -291,30 +299,30 @@ where:
     - Higher zoom levels result in smaller radius values.
     - A larger locationUncertainty value increases the radius.
     - The circle serves as an uncertainty visualization and scales dynamically with zoom."""))            
-            ET.SubElement(place_coordinates, 'locationUncertaintyRadius').text = str(location.get('locationUncertaintyRadius', 'Unknown'))
+            ET.SubElement(place_coordinates, ET.QName(eark_ns, 'locationUncertaintyRadius')).text = str(location.get('locationUncertaintyRadius', 'Unknown'))
 
         # Add link to the landing page
-        resource_wrap = ET.SubElement(descriptive_metadata, 'resourceWrap')
+        resource_wrap = ET.SubElement(descriptive_metadata, ET.QName(lido_ns, 'resourceWrap'))
 
         landing_page = f"{django_service_url}/access/{identifier}/"
-        resource_set = ET.SubElement(resource_wrap, 'resourceSet')
-        ET.SubElement(resource_set, 'resourceID').text = identifier
+        resource_set = ET.SubElement(resource_wrap, ET.QName(lido_ns, 'resourceSet'))
+        ET.SubElement(resource_set, ET.QName(lido_ns, 'resourceID')).text = identifier
 
         # Extract the first available distribution_label from representations
         representations = metadata_json.get('representations', {})
         first_representation = next(iter(representations.values()), None)
         distribution_label = first_representation.get('distribution_label', 'Landing Page') if first_representation else 'Landing Page'
 
-        ET.SubElement(resource_set, 'resourceType').text = distribution_label  # Use distribution label
+        ET.SubElement(resource_set, ET.QName(lido_ns, 'resourceType')).text = distribution_label  # Use distribution label
 
-        resource = ET.SubElement(resource_set, 'resource')
-        ET.SubElement(resource, 'resourceName').text = "Landing Page"
-        ET.SubElement(resource, 'resourceDescription').text = "Access the complete package."
-        ET.SubElement(resource, 'resourceRepresentation').text = landing_page
+        resource = ET.SubElement(resource_set, ET.QName(lido_ns, 'resource'))
+        ET.SubElement(resource, ET.QName(lido_ns, 'resourceName')).text = "Landing Page"
+        ET.SubElement(resource, ET.QName(lido_ns, 'resourceDescription')).text = "Access the complete package."
+        ET.SubElement(resource, ET.QName(lido_ns, 'resourceRepresentation')).text = landing_page
 
         for rep_id, rep_data in metadata_json.get('representations', {}).items():
-            resource_set = ET.SubElement(resource_wrap, 'resourceSet')
-            ET.SubElement(resource_set, 'resourceID').text = rep_id
+            resource_set = ET.SubElement(resource_wrap, ET.QName(lido_ns, 'resourceSet'))
+            ET.SubElement(resource_set, ET.QName(lido_ns, 'resourceID')).text = rep_id
 
             file_metadata = rep_data.get('file_metadata', {})
             file_items = rep_data.get('file_items', [])
@@ -328,21 +336,21 @@ where:
 
                 # Only process files where 'isPublicAccess' is explicitly True
                 if file_data.get('isPublicAccess') is True:
-                    resource = ET.SubElement(resource_set, 'resource')
-                    ET.SubElement(resource, 'resourceName').text = file_path
-                    ET.SubElement(resource, 'resourceDescription').text = file_data.get('description', 'No Description')
-                    ET.SubElement(resource, 'isPreview').text = str(file_data.get('isPreview', False))
-                    ET.SubElement(resource, 'bytesSize').text = str(file_data.get('bytesSize', 'Unknown'))
+                    resource = ET.SubElement(resource_set, ET.QName(lido_ns, 'resource'))
+                    ET.SubElement(resource, ET.QName(lido_ns, 'resourceName')).text = file_path
+                    ET.SubElement(resource, ET.QName(lido_ns, 'resourceDescription')).text = file_data.get('description', 'No Description')
+                    ET.SubElement(resource, ET.QName(eark_ns, 'isPreview')).text = str(file_data.get('isPreview', False))
+                    ET.SubElement(resource, ET.QName(lido_ns, 'bytesSize')).text = str(file_data.get('bytesSize', 'Unknown'))
                     mime_type = file_data.get('mimeType', 'application/octet-stream')
-                    ET.SubElement(resource, 'mimeType').text = mime_type
+                    ET.SubElement(resource, ET.QName(lido_ns, 'mimeType')).text = mime_type
 
                     # Add durationSeconds if applicable
                     if mime_type.startswith(('video/', 'audio/')):
-                        ET.SubElement(resource, 'durationSeconds').text = str(file_data.get('durationSeconds', 'Unknown'))
+                        ET.SubElement(resource, ET.QName(eark_ns, 'durationSeconds')).text = str(file_data.get('durationSeconds', 'Unknown'))
 
                     # Construct the full file URL
                     file_url = f"{django_service_url}/access/{identifier}/{representations_directory}/{rep_id}/data/{file_path}"
-                    ET.SubElement(resource, 'resourceRepresentation').text = file_url
+                    ET.SubElement(resource, ET.QName(lido_ns, 'resourceRepresentation')).text = file_url
 
     else:  # Default to OAI-DC
         ET.register_namespace('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
