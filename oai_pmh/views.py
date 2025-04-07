@@ -17,6 +17,7 @@ import pysolr
 from django.utils.safestring import mark_safe
 import xml.etree.ElementTree as ET
 import logging
+import base64
 
 import requests
 
@@ -351,65 +352,78 @@ where:
 
     return metadata_elem
 
+import base64
+
+def encode_resumption_token(start_index, metadata_prefix):
+    token_str = f"{start_index}|{metadata_prefix}"
+    return base64.urlsafe_b64encode(token_str.encode()).decode()
+
+def decode_resumption_token(token):
+    try:
+        decoded = base64.urlsafe_b64decode(token.encode()).decode()
+        start_index_str, metadata_prefix = decoded.split('|')
+        return int(start_index_str), metadata_prefix
+    except Exception:
+        return None, None
+
 def list_records(request):
     """
     Handle the OAI-PMH ListRecords request.
-
-    Parameters:
-    request (HttpRequest): The incoming HTTP request.
-
-    Returns:
-    HttpResponse: The ListRecords response containing records with full metadata.
     """
-    metadata_prefix = request.GET.get('metadataPrefix')
     resumption_token = request.GET.get('resumptionToken')
-    page_size = 10  # Define records per page
-    start_index = int(resumption_token) if resumption_token else 0
-
-    if metadata_prefix not in ['oai_dc', 'lido']:
-        return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported.')
+    
+    if resumption_token:
+        start_index, metadata_prefix = decode_resumption_token(resumption_token)
+        if metadata_prefix not in ['oai_dc', 'lido']:
+            return error_response('cannotDisseminateFormat', 'Unsupported metadataPrefix in resumptionToken.')
+    else:
+        metadata_prefix = request.GET.get('metadataPrefix')
+        if metadata_prefix not in ['oai_dc', 'lido']:
+            return error_response('cannotDisseminateFormat', 'The metadata format identified by the value given for the metadataPrefix argument is not supported.')
+        start_index = 0
 
     root = ET.Element('OAI-PMH', xmlns='http://www.openarchives.org/OAI/2.0/')
     response_date = ET.SubElement(root, 'responseDate')
     response_date.text = current_timestamp(fmt=DT_ISO_FORMAT)
 
-    list_records = ET.SubElement(root, 'ListRecords')
+    list_records_elem = ET.SubElement(root, 'ListRecords')
 
     # Query InformationPackage objects
+    page_size = 10
     packages = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='')[start_index:start_index + page_size]
 
     for ip in packages:
-        record_elem = ET.SubElement(list_records, 'record')
+        record_elem = ET.SubElement(list_records_elem, 'record')
         header = ET.SubElement(record_elem, 'header')
         identifier = ET.SubElement(header, 'identifier')
         identifier.text = ip.identifier
         datestamp = ET.SubElement(header, 'datestamp')
         datestamp.text = date_format(ip.last_change)
 
-        # API call to fetch metadata
+        # Fetch metadata
         metadata_url = f"{django_backend_service_api_url}/ips/{identifier.text}/file-resource/metadata/metadata.json/"
         response = requests.get(metadata_url)
         if response.status_code != 200:
             return error_response('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.')
         metadata_json = response.json()
 
-        # Use the modular metadata generator
         metadata_elem = generate_metadata_element(metadata_prefix, identifier.text, metadata_json, record_elem)
         record_elem.append(metadata_elem)
 
-    # Handle pagination with resumptionToken
-    next_index = start_index + page_size
+    # Handle pagination
     total_records = InformationPackage.objects.exclude(identifier='').exclude(storage_dir='').count()
+    next_index = start_index + page_size
+    resumption_token_elem = ET.SubElement(list_records_elem, 'resumptionToken')
     if next_index < total_records:
-        resumption_token_elem = ET.SubElement(list_records, 'resumptionToken')
-        resumption_token_elem.text = str(next_index)
+        encoded_token = encode_resumption_token(next_index, metadata_prefix)
+        resumption_token_elem.text = encoded_token
         resumption_token_elem.set('cursor', str(start_index))
         resumption_token_elem.set('completeListSize', str(total_records))
     else:
-        resumption_token_elem = ET.SubElement(list_records, 'resumptionToken')
         resumption_token_elem.text = ''
 
     return xml_response(root)
+
 
 def get_record(request):
     """
