@@ -324,7 +324,9 @@ def landing_page(request, identifier):
 
     stylesheet = request.GET.get("stylesheet")
 
-    return render(request, "access/package_files.html", {
+    flag = request.GET.get('flag', 'false').lower() == 'true'
+    template =  "access/package_files.html" if flag else "access/package_files_test.html"
+    return render(request, template, {
         "title": title,
         "description": description,
         "identifier": identifier,
