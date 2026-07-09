@@ -365,11 +365,8 @@ def disseminate(request, identifier, entry):
     url = f"{django_service_url}/api/ips/{identifier}/file-resource/{entry}/"
     
     if request.method == 'HEAD':
-        response = requests.head(url)
-        django_response = HttpResponse(status=response.status_code)
-        for key, value in response.headers.items():
-            django_response[key] = value
-        return django_response
+        from api.views import do_storage_file_resource
+        return do_storage_file_resource(request, identifier, entry)
 
     response = requests.get(url, stream=True)
 
