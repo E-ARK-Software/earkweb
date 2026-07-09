@@ -485,11 +485,17 @@ def do_storage_file_resource(request, identifier, ip_sub_file_path):
         urn%2Buuid%2B42658bbd-a76f-46f5-85da-f0ad2bed94dc.tar
 
     """
+    logger.info("do_storage_file_resource: Starting for identifier=%s, path=%s", identifier, ip_sub_file_path)
     dpts = PairtreeStorage(config_path_storage)
     package_id = from_safe_filename(identifier)
+    
+    logger.info("do_storage_file_resource: Calling curr_version")
     version = dpts.curr_version(package_id).replace("-", "0")
+    logger.info("do_storage_file_resource: curr_version is %s", version)
+    
     access_path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
     aip_root__path = os.path.join(make_storage_data_directory_path(package_id, config_path_storage))
+    
     if ip_sub_file_path == "inventory.json":
         file_path = os.path.join(aip_root__path, ip_sub_file_path)
     else:
@@ -498,38 +504,61 @@ def do_storage_file_resource(request, identifier, ip_sub_file_path):
             file_path = os.path.join(access_path, ip_sub_file_path)
         else:
             file_path = os.path.join(access_path, version, ip_sub_file_path)
-    # Check if file is public
+    
     is_public = False
     metadata_file = os.path.join(access_path, version, "metadata/metadata.json")
+    
+    logger.info("do_storage_file_resource: Checking if metadata.json exists")
     if not os.path.exists(metadata_file):
         return JsonResponse({"error": "Metadata file not found"}, status=404)
+        
+    logger.info("do_storage_file_resource: Loading metadata.json")
     with open(metadata_file, "r", encoding="utf-8") as f:
         metadata = json.load(f)
+    logger.info("do_storage_file_resource: Loaded metadata.json successfully")
+
     for repkey, representation in metadata.get("representations", {}).items():
         file_metadata = representation.get("file_metadata", {})
         file_key = ip_sub_file_path.replace(f'representations/{repkey}/data/','')
         if file_key in file_metadata and file_metadata[file_key].get("isPublicAccess", False):
             is_public = True
             break
-    # Enforce authentication for private files
-    if not ip_sub_file_path.endswith("metadata.json") and not is_public:
-        if not request.user.is_authenticated:
-            return JsonResponse({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
-    # HEAD REQUEST
+            
+    logger.info("do_storage_file_resource: is_public is %s", is_public)
+
+    if not is_public:
+        try:
+            token = request.headers.get('Authorization', '').split(' ')[1]
+            Token.objects.get(key=token)
+        except (IndexError, Token.DoesNotExist):
+            if not request.user.is_authenticated:
+                return HttpResponse(status=401)
+    
+    logger.info("do_storage_file_resource: Request method is %s", request.method)
+
     if request.method == 'HEAD':
+        logger.info("do_storage_file_resource: HEAD - checking if file_path exists: %s", file_path)
         if not os.path.exists(file_path):
+            logger.info("do_storage_file_resource: HEAD - file not found")
             return HttpResponse(status=404)
 
+        logger.info("do_storage_file_resource: HEAD - creating HttpResponse")
         response = HttpResponse()
-
+        
+        logger.info("do_storage_file_resource: HEAD - guessing mime type")
         mime_type, _ = mimetypes.guess_type(file_path)
         response['Content-Type'] = mime_type or 'application/octet-stream'
 
+        logger.info("do_storage_file_resource: HEAD - getting file size")
         response['Content-Length'] = os.path.getsize(file_path)
+        logger.info("do_storage_file_resource: HEAD - got file size: %s", response['Content-Length'])
 
         response['Accept-Ranges'] = 'bytes'
 
+        logger.info("do_storage_file_resource: HEAD - returning response")
         return response
+        
+    logger.info("do_storage_file_resource: GET - delegating to read_file")
     return read_file(file_path)
 
 
