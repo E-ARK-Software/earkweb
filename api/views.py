@@ -582,8 +582,8 @@ def read_file(file_path):
 
                     response = HttpResponse(file_content, content_type=mime)
                 else:
-                    file_content = read_file_content(file_path)
-                    response = HttpResponse(file_content, content_type=mime)
+                    stream = open(file_path, 'rb')
+                    response = FileResponse(stream, content_type=mime)
                 return response
             else:
                 return HttpResponseForbidden("Size of requested file exceeds limit (file size %d > %d)" %
