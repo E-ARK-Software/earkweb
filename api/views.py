@@ -461,7 +461,7 @@ def reception_file_resource(request, ip_sub_file_path):
 
 
 @csrf_exempt
-@api_view(['GET'])
+@api_view(['GET', 'HEAD'])
 @permission_classes([AllowAny])
 def do_storage_file_resource(request, identifier, ip_sub_file_path):
     """
@@ -515,6 +515,21 @@ def do_storage_file_resource(request, identifier, ip_sub_file_path):
     if not ip_sub_file_path.endswith("metadata.json") and not is_public:
         if not request.user.is_authenticated:
             return JsonResponse({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+    # HEAD REQUEST
+    if request.method == 'HEAD':
+        if not os.path.exists(file_path):
+            return HttpResponse(status=404)
+
+        response = HttpResponse()
+
+        mime_type, _ = mimetypes.guess_type(file_path)
+        response['Content-Type'] = mime_type or 'application/octet-stream'
+
+        response['Content-Length'] = os.path.getsize(file_path)
+
+        response['Accept-Ranges'] = 'bytes'
+
+        return response
     return read_file(file_path)
 
 
