@@ -363,35 +363,42 @@ def disseminate(request, identifier, entry):
     logging.debug("Entry path: %s " % entry)
 
     url = f"{django_service_url}/api/ips/{identifier}/file-resource/{entry}/"
+    from api.views import do_storage_file_resource
     
-    if request.method == 'HEAD':
-        from api.views import do_storage_file_resource
-        return do_storage_file_resource(request, identifier, entry)
-
-    response = requests.get(url, stream=True)
-
-    if response.status_code == 404:
+    # Bypass network and call the backend view directly for all methods
+    backend_response = do_storage_file_resource(request, identifier, entry)
+    
+    if backend_response.status_code == 404:
         return render(request, 'earkweb/error.html',
                       {'header': 'Not available',
                        'message': "Resource not found!"})
-    elif response.status_code == 200:
-        content_type = response.headers.get('content-type', '')
+    elif backend_response.status_code == 200:
+        content_type = backend_response.get('Content-Type', '')
         
         if content_type == "application/pdf":
             search_term = request.GET.get("search", None)
             import base64
-            base64_encoded = base64.b64encode(response.content)
+            
+            # Extract content depending on whether it's a streaming response
+            if hasattr(backend_response, 'streaming_content'):
+                file_content = b"".join(backend_response.streaming_content)
+            else:
+                file_content = backend_response.content
+                
+            base64_encoded = base64.b64encode(file_content)
             base64_string = base64_encoded.decode("ascii")
             return render(request, 'access/pdfviewer.html', {'url': url, "search": search_term, 'data': base64_string})
 
         elif content_type.startswith('text'):
-            return HttpResponse(response.content, content_type=f'{content_type}; charset=utf-8')
+            if hasattr(backend_response, 'streaming_content'):
+                file_content = b"".join(backend_response.streaming_content)
+            else:
+                file_content = backend_response.content
+            return HttpResponse(file_content, content_type=f'{content_type}; charset=utf-8')
 
-        elif content_type.startswith('video') or content_type.startswith('audio'):
-            video_mime_type, _ = mimetypes.guess_type(entry)
-            return StreamingHttpResponse(stream_it(url), content_type=video_mime_type)
-
-        return HttpResponse(response.content, content_type=content_type)
+        # For videos, audio, and all other files, the backend_response is already 
+        # a FileResponse (or HttpResponse). We can just return it natively!
+        return backend_response
 
     return render(request, 'earkweb/error.html',
                   {'header': 'An error occurred',
