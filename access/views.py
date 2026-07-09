@@ -363,6 +363,14 @@ def disseminate(request, identifier, entry):
     logging.debug("Entry path: %s " % entry)
 
     url = f"{django_service_url}/api/ips/{identifier}/file-resource/{entry}/"
+    
+    if request.method == 'HEAD':
+        response = requests.head(url)
+        django_response = HttpResponse(status=response.status_code)
+        for key, value in response.headers.items():
+            django_response[key] = value
+        return django_response
+
     response = requests.get(url, stream=True)
 
     if response.status_code == 404:
